@@ -1,0 +1,9 @@
+*.pyc
+*.sh
+*settings.py
+*.yaml
+*.dev
+*.prod
+*.env.*
+*Dockerfile
+!*-tpl
