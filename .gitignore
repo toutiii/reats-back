@@ -7,3 +7,4 @@
 *.env.*
 *Dockerfile
 !*-tpl
+*.vscode
