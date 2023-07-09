@@ -1,0 +1,5 @@
+# Ignoring local installed python modules
+*.venv/*
+
+# Ignoring IDE conf files
+*.vscode/*
