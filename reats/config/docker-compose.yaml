@@ -11,6 +11,8 @@ services:
       - db
     env_file:
       - .env
+    volumes:
+      - ../source:/usr/src/app/source/
   db:
     image: postgres:15
     volumes:
