@@ -1,7 +1,6 @@
 *.pyc
 *.sh
 *settings.py
-*.yaml
 *.dev
 *.prod
 *.env.*
