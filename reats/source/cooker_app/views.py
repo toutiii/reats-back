@@ -1,3 +1,12 @@
-from django.shortcuts import render
+from rest_framework import mixins, viewsets
+from source.custom_renderers.renderers import CustomRendererWithoutData
 
-# Create your views here.
+from .serializers import CookerSignUpSerializer
+
+
+class CookerSignUpView(
+    mixins.CreateModelMixin,
+    viewsets.GenericViewSet,
+):
+    renderer_classes = [CustomRendererWithoutData]
+    serializer_class = CookerSignUpSerializer

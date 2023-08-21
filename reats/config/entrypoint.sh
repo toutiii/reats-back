@@ -11,6 +11,9 @@ then
     echo "PostgreSQL started"
 fi
 
+./wait-for-it.sh -h db -p 5432
 python manage.py flush --no-input
+python manage.py collectstatic --no-input
+python manage.py makemigrations
 python manage.py migrate
 gunicorn source.wsgi

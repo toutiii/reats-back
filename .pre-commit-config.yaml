@@ -21,7 +21,7 @@ repos:
     rev: 4.0.1
     hooks:
       - id: flake8
-        args: ["--max-line-length", "120", "--ignore", "F401"]  # TODO: Remove this error when will add more code
+        args: ["--max-line-length", "120", "--ignore", "F401"]  # TODO: Remove this error when will add more code in all apps!
 
 
   - repo: https://github.com/pre-commit/mirrors-mypy
@@ -29,4 +29,10 @@ repos:
     hooks:
       - id: mypy
         additional_dependencies:
-          - django-stubs == 4.2.3
+          - django-extensions==3.2.3
+          - django-phonenumber-field[phonenumberslite]==7.1.0
+          - django-stubs==4.2.3
+          - djangorestframework-stubs==3.14.2
+          - djangorestframework==3.14.0
+          - python-dotenv==1.0.0
+          - psycopg2==2.9.6

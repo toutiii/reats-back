@@ -15,24 +15,34 @@ RUN mkdir -p /usr/src/app/source
 
 # install dependencies
 RUN pip3 install --upgrade pip
-COPY ../requirements.txt /usr/src/app/
+COPY reats/requirements.txt /usr/src/app/
 RUN pip install -r /usr/src/app/requirements.txt
 
 # copy project
-COPY ./source /usr/src/app/source/
+COPY reats/source /usr/src/app/source/
 
 # copy manage.py
-COPY ./manage.py /usr/src/app/
+COPY reats/manage.py /usr/src/app/
 
 # Expose port
 EXPOSE 8000
 EXPOSE 8001
 
 # copy env files
-COPY config/.env /usr/src/app/
+COPY reats/config/.env /usr/src/app/
+
+# copy wait-for-it.sh
+COPY reats/config/wait-for-it.sh /usr/src/app/
+
+RUN chmod +x /usr/src/app/wait-for-it.sh
 
 # copy entrypoint
-COPY config/entrypoint.sh /usr/src/app/
+COPY reats/config/entrypoint.sh /usr/src/app/
+
+RUN chmod +x /usr/src/app/entrypoint.sh
+
+# copy tox.ini
+COPY tox.ini /usr/src/app/tox.ini
 
 # set work directory
 WORKDIR /usr/src/app/

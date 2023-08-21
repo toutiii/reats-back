@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 import os
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -20,7 +22,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ["SECRET_KEY"]
+try:
+    SECRET_KEY = os.environ["SECRET_KEY"]
+except KeyError:
+    load_dotenv(os.path.join(BASE_DIR, "config/.env"))
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ["DEBUG"]
@@ -38,7 +43,9 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
-    "source",
+    "source.client_app.apps.ClientAppConfig",
+    "source.cooker_app.apps.CookerAppConfig",
+    "source.delivery_app.apps.DeliveryAppConfig",
 ]
 
 MIDDLEWARE = [
@@ -123,5 +130,10 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
-STATIC_URL = "/staticfiles/"
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+STATIC_URL = os.path.join(BASE_DIR, "staticfiles/")
+
+PHONE_REGION = "FR"
+
+
+REST_FRAMEWORK = {"TEST_REQUEST_DEFAULT_FORMAT": "json"}
