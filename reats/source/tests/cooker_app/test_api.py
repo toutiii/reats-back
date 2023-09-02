@@ -8,7 +8,6 @@ from source.cooker_app.models import CookerModel
 @pytest.fixture
 def post_data() -> dict:
     return {
-        "email": "john.doe@gmail.com",
         "firstname": "john",
         "lastname": "Doe",
         "phone": "0601020304",
@@ -17,15 +16,8 @@ def post_data() -> dict:
         "street_name": "rue du terrier du rat",
         "street_number": "1",
         "town": "test",
-        "password": "!!123456A",
-        "password_confirmation": "!!123456A",
         "address_complement": "résidence test",
     }
-
-
-@pytest.fixture(params=["this_is_not_an_email", "test_" * 50 + "@gmail.com"])
-def invalid_email(request) -> str:
-    return request.param
 
 
 @pytest.fixture(params=["john" * 30])
@@ -68,11 +60,6 @@ def invalid_town(request) -> str:
     return request.param
 
 
-@pytest.fixture(params=["b" * 101])
-def invalid_password(request) -> str:
-    return request.param
-
-
 @pytest.fixture(params=["c" * 513])
 def invalid_address_complement(request) -> str:
     return request.param
@@ -81,10 +68,8 @@ def invalid_address_complement(request) -> str:
 @pytest.fixture
 def invalid_post_data(
     invalid_address_complement: str,
-    invalid_email: str,
     invalid_firstname: str,
     invalid_lastname: str,
-    invalid_password: str,
     invalid_phone: str,
     invalid_postal_code: str,
     invalid_siret: str,
@@ -93,7 +78,6 @@ def invalid_post_data(
     invalid_town: str,
 ) -> dict:
     return {
-        "email": invalid_email,
         "firstname": invalid_firstname,
         "lastname": invalid_lastname,
         "phone": invalid_phone,
@@ -102,8 +86,6 @@ def invalid_post_data(
         "street_name": invalid_street_name,
         "street_number": invalid_street_number,
         "town": invalid_town,
-        "password": invalid_password,
-        "password_confirmation": invalid_password,
         "address_complement": invalid_address_complement,
     }
 
@@ -124,11 +106,9 @@ def test_success_create_cooker(
     assert CookerModel.objects.count() == 1
 
     post_data_keys = list(post_data.keys())
-    post_data_keys.remove("password_confirmation")
     assert model_to_dict(
         CookerModel.objects.latest("created"), fields=post_data_keys
     ) == {
-        "email": "john.doe@gmail.com",
         "firstname": "john",
         "lastname": "Doe",
         "phone": "+33 6 01 02 03 04",
@@ -137,7 +117,6 @@ def test_success_create_cooker(
         "street_name": "rue du terrier du rat",
         "street_number": "1",
         "town": "test",
-        "password": "!!123456A",
         "address_complement": "résidence test",
     }
 

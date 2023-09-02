@@ -1,4 +1,4 @@
-from django.core.validators import RegexValidator
+from django.core.validators import MinLengthValidator, RegexValidator
 from django.db.models import AutoField, CharField, DateTimeField, EmailField, Model
 
 
@@ -12,11 +12,9 @@ class ReatsModel(Model):
 
 class CookerModel(ReatsModel):
     id = AutoField(primary_key=True)
-    email = EmailField(max_length=100, unique=True)
-    password = CharField(max_length=100)
     firstname = CharField(max_length=100)
     lastname = CharField(max_length=100)
-    phone = CharField(unique=True, max_length=17)
+    phone = CharField(unique=True, max_length=17, validators=[MinLengthValidator(10)])
     postal_code = CharField(
         max_length=5,
         validators=[RegexValidator(regex=r"[0-9]{5}")],

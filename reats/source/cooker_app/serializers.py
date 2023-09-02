@@ -11,7 +11,6 @@ class CookerSignUpSerializer(ModelSerializer):
     class Meta:
         model = CookerModel
         fields = "__all__"
-        extra_kwargs = {"password_confirmation": {"read_only": True}}
 
     def validate_phone(self, phone):
         try:
