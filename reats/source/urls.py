@@ -7,6 +7,7 @@ from .cooker_app import views
 
 router = DefaultRouter()
 router.register(r"cookers", views.CookerSignUpView, basename="cookers")
+router.register(r"dishes", views.DishView, basename="dishes")
 
 # The API URLs are now determined automatically by the router.
 urlpatterns = [

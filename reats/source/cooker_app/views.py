@@ -1,7 +1,7 @@
 from rest_framework import mixins, viewsets
 from source.custom_renderers.renderers import CustomRendererWithoutData
 
-from .serializers import CookerSignUpSerializer
+from .serializers import CookerSignUpSerializer, DishSerializer
 
 
 class CookerSignUpView(
@@ -10,3 +10,8 @@ class CookerSignUpView(
 ):
     renderer_classes = [CustomRendererWithoutData]
     serializer_class = CookerSignUpSerializer
+
+
+class DishView(viewsets.ModelViewSet):
+    renderer_classes = [CustomRendererWithoutData]
+    serializer_class = DishSerializer

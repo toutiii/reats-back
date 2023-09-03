@@ -1,0 +1,37 @@
+[
+    {
+        "model": "cooker_app.cookermodel",
+        "pk": 1,
+        "fields":{
+            "created": "2023-09-02T22:52:05.718117+02:00",
+            "modified": "2023-09-02T22:52:05.718117+02:00",
+            "firstname": "test",
+            "lastname": "test",
+            "phone": "0600000001",
+            "postal_code": "91100",
+            "siret": "00000000000001",
+            "street_name": "rue du terrier du rat",
+            "street_number": "1",
+            "town": "test",
+            "address_complement": "résidence test"
+        }
+      },
+      {
+        "model": "cooker_app.cookermodel",
+        "pk": 2,
+        "fields":{
+            "created": "2023-09-01T22:52:05.718117+02:00",
+            "modified": "2023-09-01T22:52:05.718117+02:00",
+            "firstname": "test",
+            "lastname": "test",
+            "phone": "0600000002",
+            "postal_code": "91100",
+            "siret": "00000000000002",
+            "street_name": "rue du terrier du rat",
+            "street_number": "1",
+            "town": "test",
+            "address_complement": "résidence test"
+        }
+      }
+  ]
+  

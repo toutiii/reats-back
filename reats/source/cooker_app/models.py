@@ -1,5 +1,14 @@
 from django.core.validators import MinLengthValidator, RegexValidator
-from django.db.models import AutoField, CharField, DateTimeField, EmailField, Model
+from django.db.models import (
+    CASCADE,
+    AutoField,
+    CharField,
+    DateTimeField,
+    FloatField,
+    ForeignKey,
+    Model,
+    TextField,
+)
 
 
 class ReatsModel(Model):
@@ -31,3 +40,23 @@ class CookerModel(ReatsModel):
 
     class Meta:
         db_table = "cookers"
+
+
+class DishModel(ReatsModel):
+    CATEGORY_CHOICES = [
+        ("starter", "starter"),
+        ("main_dish", "main_dish"),
+        ("dessert", "dessert"),
+    ]
+
+    id = AutoField(primary_key=True)
+    category = CharField(max_length=9, choices=CATEGORY_CHOICES)
+    country = CharField(max_length=50)
+    description = TextField(max_length=512, null=True)
+    name = CharField(max_length=128)
+    price = FloatField()
+    photo = CharField(max_length=512)
+    cooker = ForeignKey(CookerModel, on_delete=CASCADE)
+
+    class Meta:
+        db_table = "dishes"

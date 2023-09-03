@@ -136,4 +136,7 @@ STATIC_URL = os.path.join(BASE_DIR, "staticfiles/")
 PHONE_REGION = "FR"
 
 
-REST_FRAMEWORK = {"TEST_REQUEST_DEFAULT_FORMAT": "json"}
+REST_FRAMEWORK = {
+    "EXCEPTION_HANDLER": "source.utils.custom_middlewares.custom_exception_handler",
+    "TEST_REQUEST_DEFAULT_FORMAT": "json",
+}

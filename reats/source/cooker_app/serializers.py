@@ -4,7 +4,7 @@ from phonenumbers.phonenumberutil import NumberParseException
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
 
-from .models import CookerModel
+from .models import CookerModel, DishModel
 
 
 class CookerSignUpSerializer(ModelSerializer):
@@ -23,3 +23,11 @@ class CookerSignUpSerializer(ModelSerializer):
             )
         except NumberParseException:
             raise serializers.ValidationError("Unparsable phone number")
+
+
+class DishSerializer(ModelSerializer):
+    cooker = serializers.PrimaryKeyRelatedField(queryset=CookerModel.objects.all())
+
+    class Meta:
+        model = DishModel
+        fields = "__all__"
