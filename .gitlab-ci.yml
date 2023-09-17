@@ -1,7 +1,7 @@
 build-docker-image:
   script:
     - echo "Building docker image..."
-    - sudo docker compose -f reats/config/docker-compose.yaml up -d
+    - sudo docker compose -f reats/config/docker-compose.yaml up --build -d
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
   stage: build-docker-image
