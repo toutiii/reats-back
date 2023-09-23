@@ -19,7 +19,14 @@ COPY reats/requirements.txt /usr/src/app/
 RUN pip install -r /usr/src/app/requirements.txt
 
 # copy project
+COPY reats/client_app /usr/src/app/client_app/
+COPY reats/cooker_app /usr/src/app/cooker_app/
+COPY reats/custom_renderers /usr/src/app/custom_renderers/
+COPY reats/delivery_app /usr/src/app/delivery_app/
 COPY reats/source /usr/src/app/source/
+COPY reats/tests /usr/src/app/tests/
+COPY reats/utils /usr/src/app/utils/
+
 
 # copy manage.py
 COPY reats/manage.py /usr/src/app/

@@ -3,12 +3,12 @@ from typing import Iterator
 from unittest.mock import MagicMock, patch
 
 import pytest
+from cooker_app.models import DishModel
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from PIL import Image
 from rest_framework import status
 from rest_framework.test import APIClient
-from source.cooker_app.models import DishModel
 
 
 @pytest.fixture
@@ -18,7 +18,7 @@ def path() -> str:
 
 @pytest.fixture
 def upload_fileobj() -> Iterator:
-    patcher = patch("source.cooker_app.views.s3.upload_fileobj")
+    patcher = patch("cooker_app.views.s3.upload_fileobj")
     yield patcher.start()
     patcher.stop()
 

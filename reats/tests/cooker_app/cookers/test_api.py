@@ -1,8 +1,8 @@
 import pytest
+from cooker_app.models import CookerModel
 from django.forms.models import model_to_dict
 from rest_framework import status
 from rest_framework.test import APIClient
-from source.cooker_app.models import CookerModel
 
 
 @pytest.fixture

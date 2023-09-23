@@ -2,10 +2,10 @@ import os
 
 import boto3
 from botocore.exceptions import ClientError
+from custom_renderers.renderers import CustomRendererWithoutData
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from rest_framework import mixins, viewsets
 from rest_framework.parsers import MultiPartParser
-from source.custom_renderers.renderers import CustomRendererWithoutData
 
 from .serializers import CookerSignUpSerializer, DishSerializer
 

@@ -43,9 +43,9 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
-    "source.client_app.apps.ClientAppConfig",
-    "source.cooker_app.apps.CookerAppConfig",
-    "source.delivery_app.apps.DeliveryAppConfig",
+    "client_app.apps.ClientAppConfig",
+    "cooker_app.apps.CookerAppConfig",
+    "delivery_app.apps.DeliveryAppConfig",
 ]
 
 MIDDLEWARE = [
@@ -137,6 +137,6 @@ PHONE_REGION = "FR"
 
 
 REST_FRAMEWORK = {
-    "EXCEPTION_HANDLER": "source.utils.custom_middlewares.custom_exception_handler",
+    "EXCEPTION_HANDLER": "utils.custom_middlewares.custom_exception_handler",
     "TEST_REQUEST_DEFAULT_FORMAT": "json",
 }
