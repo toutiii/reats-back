@@ -5,7 +5,7 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
-router.register(r"cookers", views.CookerSignUpView, basename="cookers")
+router.register(r"cookers", views.CookerView, basename="cookers")
 router.register(r"dishes", views.DishView, basename="dishes")
 
 # The API URLs are now determined automatically by the router.

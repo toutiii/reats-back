@@ -6,11 +6,6 @@ from rest_framework.test import APIClient
 
 
 @pytest.fixture
-def path() -> str:
-    return "/api/v1/cookers/"
-
-
-@pytest.fixture
 def phone() -> str:
     return "0601020304"
 
@@ -50,9 +45,10 @@ def test_create_cooker_success(
     path: str,
     post_data: dict,
 ) -> None:
+    assert CookerModel.objects.count() == 2
     response = client.post(path, post_data)
     assert response.status_code == status.HTTP_201_CREATED
-    assert CookerModel.objects.count() == 1
+    assert CookerModel.objects.count() == 3
 
     post_data_keys = list(post_data.keys())
     assert model_to_dict(
@@ -76,10 +72,12 @@ def test_failed_create_cooker_already_exists(
     path: str,
     post_data: dict,
 ):
+    assert CookerModel.objects.count() == 2
     response = client.post(path, post_data)
+    assert CookerModel.objects.count() == 3
     response = client.post(path, post_data)
     assert response.status_code == status.HTTP_400_BAD_REQUEST
-    assert CookerModel.objects.count() == 1
+    assert CookerModel.objects.count() == 3
 
 
 @pytest.mark.parametrize(
@@ -103,6 +101,7 @@ def test_failed_create_cooker_wrong_data(
     path: str,
     post_data: dict,
 ):
+    assert CookerModel.objects.count() == 2
     response = client.post(path, post_data)
     assert response.status_code == status.HTTP_400_BAD_REQUEST
-    assert CookerModel.objects.count() == 0
+    assert CookerModel.objects.count() == 2

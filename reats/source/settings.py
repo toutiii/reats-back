@@ -43,9 +43,9 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
-    "client_app.apps.ClientAppConfig",
-    "cooker_app.apps.CookerAppConfig",
-    "delivery_app.apps.DeliveryAppConfig",
+    "client_app",
+    "cooker_app",
+    "delivery_app",
 ]
 
 MIDDLEWARE = [

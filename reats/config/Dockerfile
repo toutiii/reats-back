@@ -11,40 +11,47 @@ RUN apt-get -y update \
     && apt-get install -y python3-dev postgresql-server-dev-all gcc musl-dev
 
 # create needed dirs
+RUN mkdir -p /usr/src/app/client_app
+RUN mkdir -p /usr/src/app/cooker_app
+RUN mkdir -p /usr/src/app/custom_renderers
+RUN mkdir -p /usr/src/app/delivery_app
 RUN mkdir -p /usr/src/app/source
+RUN mkdir -p /usr/src/app/tests
+RUN mkdir -p /usr/src/app/utils
+
 
 # install dependencies
 RUN pip3 install --upgrade pip
-COPY reats/requirements.txt /usr/src/app/
+ADD requirements.txt /usr/src/app/
 RUN pip install -r /usr/src/app/requirements.txt
 
 # copy project
-COPY reats/client_app /usr/src/app/client_app/
-COPY reats/cooker_app /usr/src/app/cooker_app/
-COPY reats/custom_renderers /usr/src/app/custom_renderers/
-COPY reats/delivery_app /usr/src/app/delivery_app/
-COPY reats/source /usr/src/app/source/
-COPY reats/tests /usr/src/app/tests/
-COPY reats/utils /usr/src/app/utils/
+COPY client_app /usr/src/app/client_app/
+COPY cooker_app /usr/src/app/cooker_app/
+COPY custom_renderers /usr/src/app/custom_renderers/
+COPY delivery_app /usr/src/app/delivery_app/
+COPY source /usr/src/app/source/
+COPY tests /usr/src/app/tests/
+COPY utils /usr/src/app/utils/
 
 
 # copy manage.py
-COPY reats/manage.py /usr/src/app/
+COPY manage.py /usr/src/app/
 
 # Expose port
 EXPOSE 8000
 EXPOSE 8001
 
 # copy env files
-COPY reats/config/.env /usr/src/app/
+COPY config/.env /usr/src/app/
 
 # copy wait-for-it.sh
-COPY reats/config/wait-for-it.sh /usr/src/app/
+COPY config/wait-for-it.sh /usr/src/app/
 
 RUN chmod +x /usr/src/app/wait-for-it.sh
 
 # copy entrypoint
-COPY reats/config/entrypoint.sh /usr/src/app/
+COPY config/entrypoint.sh /usr/src/app/
 
 RUN chmod +x /usr/src/app/entrypoint.sh
 

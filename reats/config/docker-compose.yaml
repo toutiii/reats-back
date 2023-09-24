@@ -1,18 +1,24 @@
-version: '3.7'
+version: "3.7"
 
 services:
   web:
     build:
-        context: ../..
-        dockerfile: reats/config/Dockerfile
+      context: ..
+      dockerfile: config/Dockerfile
     ports:
-      - '8000:8000'
+      - "8000:8000"
     depends_on:
       - db
     env_file:
       - .env
     volumes:
-      - ../../reats/source:/usr/src/app/source/
+      - ../client_app:/usr/src/app/client_app/
+      - ../cooker_app:/usr/src/app/cooker_app/
+      - ../custom_renderers:/usr/src/app/custom_renderers/
+      - ../delivery_app:/usr/src/app/delivery_app/
+      - ../source:/usr/src/app/source/
+      - ../tests:/usr/src/app/tests/
+      - ../utils:/usr/src/app/utils/
     container_name: django_app
 
   db:
@@ -20,7 +26,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - '8001:5432'
+      - "8001:5432"
     env_file:
       - .env
     container_name: postgres_db

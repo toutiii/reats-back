@@ -2,22 +2,34 @@ import os
 
 import boto3
 from botocore.exceptions import ClientError
-from custom_renderers.renderers import CustomRendererWithoutData
+from custom_renderers.renderers import CustomRendererWithData, CustomRendererWithoutData
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from rest_framework import mixins, viewsets
 from rest_framework.parsers import MultiPartParser
+from rest_framework.renderers import BaseRenderer
 
-from .serializers import CookerSignUpSerializer, DishSerializer
+from .models import CookerModel
+from .serializers import CookerSerializer, DishSerializer
 
 s3 = boto3.client("s3")
 
 
-class CookerSignUpView(
+class CookerView(
     mixins.CreateModelMixin,
+    mixins.RetrieveModelMixin,
     viewsets.GenericViewSet,
 ):
-    renderer_classes = [CustomRendererWithoutData]
-    serializer_class = CookerSignUpSerializer
+    serializer_class = CookerSerializer
+    queryset = CookerModel.objects.all()
+
+    def get_renderers(self) -> list[BaseRenderer]:
+        if self.request.method == "POST":
+            self.renderer_classes = [CustomRendererWithoutData]
+
+        if self.request.method == "GET":
+            self.renderer_classes = [CustomRendererWithData]
+
+        return super().get_renderers()
 
 
 class DishView(viewsets.ModelViewSet):

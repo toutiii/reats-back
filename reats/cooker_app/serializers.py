@@ -7,7 +7,7 @@ from rest_framework.serializers import ModelSerializer
 from .models import CookerModel, DishModel
 
 
-class CookerSignUpSerializer(ModelSerializer):
+class CookerSerializer(ModelSerializer):
     class Meta:
         model = CookerModel
         fields = "__all__"
