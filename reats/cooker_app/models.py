@@ -8,6 +8,7 @@ from django.db.models import (
     ForeignKey,
     Model,
     TextField,
+    URLField,
 )
 
 
@@ -39,6 +40,7 @@ class CookerModel(ReatsModel):
     street_number: CharField = CharField(max_length=10)
     town: CharField = CharField(max_length=100)
     address_complement: CharField = CharField(max_length=512)
+    photo: CharField = URLField(null=True)
 
     class Meta:
         db_table = "cookers"

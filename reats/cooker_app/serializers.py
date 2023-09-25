@@ -10,7 +10,7 @@ from .models import CookerModel, DishModel
 class CookerSerializer(ModelSerializer):
     class Meta:
         model = CookerModel
-        fields = "__all__"
+        exclude = ("photo",)
 
     def validate_phone(self, phone):
         try:
@@ -19,7 +19,7 @@ class CookerSerializer(ModelSerializer):
                     phone,
                     settings.PHONE_REGION,
                 ),
-                phonenumbers.PhoneNumberFormat.INTERNATIONAL,
+                phonenumbers.PhoneNumberFormat.E164,
             )
         except NumberParseException:
             raise serializers.ValidationError("Unparsable phone number")
@@ -30,4 +30,4 @@ class DishSerializer(ModelSerializer):
 
     class Meta:
         model = DishModel
-        fields = "__all__"
+        exclude = ("photo",)

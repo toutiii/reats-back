@@ -16,9 +16,22 @@ def path() -> str:
     return "/api/v1/dishes/"
 
 
+@pytest.fixture(params=["starter", "main_dish", "dessert"])
+def category(request) -> str:
+    return request.param
+
+
 @pytest.fixture
-def upload_fileobj() -> Iterator:
-    patcher = patch("cooker_app.views.s3.upload_fileobj")
+def image_s3_url(category: str) -> str:
+    return f"https://reats-dev-bucket.s3.eu-central-1.amazonaws.com/cookers/1/dishes/{category}/test.jpg"
+
+
+@pytest.fixture
+def upload_fileobj(image_s3_url: str) -> Iterator:
+    patcher = patch(
+        "cooker_app.views.upload_image_to_s3",
+        return_value=image_s3_url,
+    )
     yield patcher.start()
     patcher.stop()
 
@@ -46,14 +59,10 @@ def post_data(category: str) -> dict:
 
 @pytest.mark.django_db
 class TestCreateDishSuccess:
-    @pytest.fixture(params=["starter", "main_dish", "dessert"])
-    def category(self, request) -> str:
-        return request.param
-
     def test_response(
         self,
-        category: str,
         client: APIClient,
+        image_s3_url: str,
         path: str,
         post_data: dict,
         upload_fileobj: MagicMock,
@@ -66,10 +75,7 @@ class TestCreateDishSuccess:
             )
             assert response.status_code == status.HTTP_201_CREATED
             assert DishModel.objects.count() == 1
-            assert (
-                DishModel.objects.latest("pk").photo
-                == f"https://reats-dev-bucket.s3.eu-central-1.amazonaws.com/cookers/1/dishes/{category}/test.jpg"
-            )
+            assert DishModel.objects.latest("pk").photo == image_s3_url
             upload_fileobj.assert_not_called()
 
 
