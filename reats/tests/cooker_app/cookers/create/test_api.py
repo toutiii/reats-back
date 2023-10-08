@@ -1,13 +1,10 @@
-from io import BytesIO
-from typing import Iterator
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, call
 
 import pytest
 from cooker_app.models import CookerModel
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.forms.models import model_to_dict
 from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
-from PIL import Image
 from rest_framework import status
 from rest_framework.test import APIClient
 
@@ -28,34 +25,12 @@ def siret() -> str:
 
 
 @pytest.fixture
-def image_s3_url() -> str:
-    return "https://reats-dev-bucket.s3.eu-central-1.amazonaws.com/cookers/+33601020304/profile/test.jpeg"
-
-
-@pytest.fixture
-def upload_fileobj(image_s3_url: str) -> Iterator:
-    patcher = patch(
-        "cooker_app.views.upload_image_to_s3",
-        return_value=image_s3_url,
-    )
-    yield patcher.start()
-    patcher.stop()
-
-
-@pytest.fixture
 def post_data(
+    image: InMemoryUploadedFile,
     phone: str,
     postal_code: str,
     siret: str,
 ) -> dict:
-    im = Image.new(mode="RGB", size=(200, 200))  # create a new image using PIL
-    im_io = BytesIO()  # a BytesIO object for saving image
-    im.save(im_io, "JPEG")  # save the image to im_io
-    im_io.seek(0)  # seek to the beginning
-
-    image = InMemoryUploadedFile(
-        im_io, None, "test.jpg", "image/jpeg", len(im_io.getvalue()), None
-    )
     return {
         "firstname": "john",
         "lastname": "Doe",
@@ -92,38 +67,44 @@ def post_data_with_no_profile_pic(
 @pytest.mark.django_db
 def test_create_cooker_success(
     client: APIClient,
-    image_s3_url: str,
     path: str,
     post_data: dict,
     upload_fileobj: MagicMock,
 ) -> None:
     assert CookerModel.objects.count() == 2
 
-    with upload_fileobj as upload_fileobj:
-        response = client.post(
-            path,
-            encode_multipart(BOUNDARY, post_data),
-            content_type=MULTIPART_CONTENT,
-        )
-        assert response.status_code == status.HTTP_201_CREATED
-        assert CookerModel.objects.count() == 3
+    response = client.post(
+        path,
+        encode_multipart(BOUNDARY, post_data),
+        content_type=MULTIPART_CONTENT,
+    )
+    assert response.status_code == status.HTTP_201_CREATED
+    assert CookerModel.objects.count() == 3
 
-        post_data_keys = list(post_data.keys())
-        assert model_to_dict(
-            CookerModel.objects.latest("created"), fields=post_data_keys
-        ) == {
-            "firstname": "john",
-            "lastname": "Doe",
-            "phone": "+33601020304",
-            "postal_code": "91100",
-            "siret": "12345671234567",
-            "street_name": "rue du terrier du rat",
-            "street_number": "1",
-            "town": "test",
-            "address_complement": "résidence test",
-            "photo": image_s3_url,
-        }
-        upload_fileobj.assert_not_called()
+    post_data_keys = list(post_data.keys())
+    assert model_to_dict(CookerModel.objects.latest("pk"), fields=post_data_keys) == {
+        "firstname": "john",
+        "lastname": "Doe",
+        "phone": "+33601020304",
+        "postal_code": "91100",
+        "siret": "12345671234567",
+        "street_name": "rue du terrier du rat",
+        "street_number": "1",
+        "town": "test",
+        "address_complement": "résidence test",
+        "photo": "cookers/+33601020304/profile/test.jpg",
+    }
+
+    upload_fileobj.assert_called_once()
+
+    assert len(upload_fileobj.call_args.args) == 3
+
+    arg1, arg2, arg3 = upload_fileobj.call_args.args
+
+    assert isinstance(arg1, InMemoryUploadedFile)
+    assert arg1.name == "test.jpg"
+    assert arg2 == "reats-dev-bucket"
+    assert arg3 == "cookers/+33601020304/profile/test.jpg"
 
 
 @pytest.mark.django_db
@@ -143,9 +124,7 @@ def test_create_cooker_success_with_no_profile_pic(
     assert CookerModel.objects.count() == 3
 
     post_data_keys = list(post_data_with_no_profile_pic.keys()) + ["photo"]
-    assert model_to_dict(
-        CookerModel.objects.latest("created"), fields=post_data_keys
-    ) == {
+    assert model_to_dict(CookerModel.objects.latest("pk"), fields=post_data_keys) == {
         "firstname": "john",
         "lastname": "Doe",
         "phone": "+33601020304",
@@ -168,21 +147,30 @@ def test_failed_create_cooker_already_exists(
 ):
     assert CookerModel.objects.count() == 2
 
-    with upload_fileobj as upload_fileobj:
-        response = client.post(
-            path,
-            encode_multipart(BOUNDARY, post_data),
-            content_type=MULTIPART_CONTENT,
-        )
-        assert CookerModel.objects.count() == 3
-        response = client.post(
-            path,
-            encode_multipart(BOUNDARY, post_data),
-            content_type=MULTIPART_CONTENT,
-        )
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert CookerModel.objects.count() == 3
-        upload_fileobj.assert_not_called()
+    response = client.post(
+        path,
+        encode_multipart(BOUNDARY, post_data),
+        content_type=MULTIPART_CONTENT,
+    )
+    assert CookerModel.objects.count() == 3
+    response = client.post(
+        path,
+        encode_multipart(BOUNDARY, post_data),
+        content_type=MULTIPART_CONTENT,
+    )
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert CookerModel.objects.count() == 3
+
+    upload_fileobj.assert_called_once()
+
+    assert len(upload_fileobj.call_args.args) == 3
+
+    arg1, arg2, arg3 = upload_fileobj.call_args.args
+
+    assert isinstance(arg1, InMemoryUploadedFile)
+    assert arg1.name == "test.jpg"
+    assert arg2 == "reats-dev-bucket"
+    assert arg3 == "cookers/+33601020304/profile/test.jpg"
 
 
 @pytest.mark.parametrize(
@@ -208,12 +196,11 @@ def test_failed_create_cooker_wrong_data(
     upload_fileobj: MagicMock,
 ):
     assert CookerModel.objects.count() == 2
-    with upload_fileobj as upload_fileobj:
-        response = client.post(
-            path,
-            encode_multipart(BOUNDARY, post_data),
-            content_type=MULTIPART_CONTENT,
-        )
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert CookerModel.objects.count() == 2
-        upload_fileobj.assert_not_called()
+    response = client.post(
+        path,
+        encode_multipart(BOUNDARY, post_data),
+        content_type=MULTIPART_CONTENT,
+    )
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert CookerModel.objects.count() == 2
+    upload_fileobj.assert_not_called()

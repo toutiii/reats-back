@@ -1,8 +1,11 @@
+from collections import OrderedDict
+
 from rest_framework import status
 from rest_framework.renderers import JSONRenderer
+from utils.common import get_pre_signed_url
 
 
-class CustomRendererWithData(JSONRenderer):
+class CookerCustomRendererWithData(JSONRenderer):
     def render(self, data, accepted_media_type=None, renderer_context=None):
         try:
             data["detail"].code
@@ -48,6 +51,32 @@ class CustomRendererWithData(JSONRenderer):
                 "status_code": status_code,
             }
 
+        return super().render(response)
+
+
+class CustomRendererWithData(JSONRenderer):
+    def render(self, data, accepted_media_type=None, renderer_context=None):
+        if not data:
+            response = {
+                "ok": True,
+                "status_code": status.HTTP_404_NOT_FOUND,
+            }
+        else:
+            response = {
+                "ok": True,
+                "status_code": status.HTTP_200_OK,
+                "data": [
+                    {
+                        k: get_pre_signed_url(v)
+                        if k == "photo"
+                        else (str(v) if type(v) != bool else v)
+                        for k, v in item.items()
+                    }
+                    for item in data
+                ],
+            }
+
+        print(response)
         return super().render(response)
 
 

@@ -1,0 +1,185 @@
+[
+    {
+        "model": "cooker_app.DishModel",
+        "pk": 1,
+        "fields":{
+            "created": "2023-09-03T22:52:05.718117+02:00",
+            "modified": "2023-09-03T22:52:05.718117+02:00",
+            "category": "starter",
+            "country": "Cameroun",
+            "description": "Test",
+            "name": "Beignets haricots",
+            "price": "10",
+            "photo": "cookers/1/dishes/starter/beignets-haricots.jpg",
+            "cooker": 1
+        }
+    },
+    {
+        "model": "cooker_app.DishModel",
+        "pk": 2,
+        "fields":{
+            "created": "2023-09-04T22:52:05.718117+02:00",
+            "modified": "2023-09-04T22:52:05.718117+02:00",
+            "category": "dish",
+            "country": "Cameroun",
+            "description": "Test",
+            "name": "Gombo porc riz",
+            "price": "13",
+            "photo": "cookers/1/dishes/dish/gombo-porc-riz.jpg",
+            "cooker": 1
+        }
+    },
+    {
+        "model": "cooker_app.DishModel",
+        "pk": 3,
+        "fields":{
+            "created": "2023-09-05T22:52:05.718117+02:00",
+            "modified": "2023-09-05T22:52:05.718117+02:00",
+            "category": "dish",
+            "country": "Cameroun",
+            "description": "Test",
+            "name": "Eru fufu",
+            "price": "15",
+            "photo": "cookers/1/dishes/dish/eru-fufu.jpg",
+            "cooker": 1
+        }
+    },
+    {
+        "model": "cooker_app.DishModel",
+        "pk": 4,
+        "fields":{
+            "created": "2023-09-06T22:52:05.718117+02:00",
+            "modified": "2023-09-06T22:52:05.718117+02:00",
+            "category": "dish",
+            "country": "Cameroun",
+            "description": "Test",
+            "name": "Okok manioc",
+            "price": "15",
+            "photo": "cookers/1/dishes/dish/okok-manioc.jpg",
+            "cooker": 1
+        }
+    },
+    {
+        "model": "cooker_app.DishModel",
+        "pk": 5,
+        "fields":{
+            "created": "2023-09-07T22:52:05.718117+02:00",
+            "modified": "2023-09-07T22:52:05.718117+02:00",
+            "category": "dish",
+            "country": "Cameroun",
+            "description": "Test",
+            "name": "Poulet braisé",
+            "price": "11",
+            "photo": "cookers/1/dishes/dish/poulet-braise.jpg",
+            "cooker": 1
+        }
+    },
+    {
+        "model": "cooker_app.DishModel",
+        "pk": 6,
+        "fields":{
+            "created": "2023-09-08T22:52:05.718117+02:00",
+            "modified": "2023-09-08T22:52:05.718117+02:00",
+            "category": "dish",
+            "country": "Cameroun",
+            "description": "Test",
+            "name": "Poulet DG",
+            "price": "11",
+            "photo": "cookers/1/dishes/dish/poulet-dg.jpg",
+            "cooker": 1
+        }
+    },
+    {
+        "model": "cooker_app.DishModel",
+        "pk": 7,
+        "fields":{
+            "created": "2023-09-09T22:52:05.718117+02:00",
+            "modified": "2023-09-09T22:52:05.718117+02:00",
+            "category": "dish",
+            "country": "Cameroun",
+            "description": "Test",
+            "name": "Koki patate douce",
+            "price": "11",
+            "photo": "cookers/1/dishes/dish/koki-patate-douce.jpg",
+            "cooker": 1
+        }
+    },
+    {
+        "model": "cooker_app.DishModel",
+        "pk": 8,
+        "fields":{
+            "created": "2023-09-10T22:52:05.718117+02:00",
+            "modified": "2023-09-10T22:52:05.718117+02:00",
+            "category": "dish",
+            "country": "Cameroun",
+            "description": "Test",
+            "name": "Ndolé Riz",
+            "price": "11",
+            "photo": "cookers/1/dishes/dish/ndole-riz.jpg",
+            "cooker": 1
+        }
+    },
+    {
+        "model": "cooker_app.DishModel",
+        "pk": 9,
+        "fields":{
+            "created": "2023-09-11T22:52:05.718117+02:00",
+            "modified": "2023-09-11T22:52:05.718117+02:00",
+            "category": "starter",
+            "country": "Cameroun",
+            "description": "Test",
+            "name": "Sanga",
+            "price": "11",
+            "photo": "cookers/1/dishes/starter/sanga.jpg",
+            "cooker": 1
+        }
+    },
+    {
+        "model": "cooker_app.DishModel",
+        "pk": 10,
+        "fields":{
+            "created": "2023-10-07T22:52:05.718117+02:00",
+            "modified": "2023-10-07T22:52:05.718117+02:00",
+            "category": "dish",
+            "country": "Cameroun",
+            "description": "Test",
+            "name": "Ndolé Riz [disabled]",
+            "price": "11",
+            "photo": "cookers/1/dishes/dish/ndole-riz.jpg",
+            "cooker": 1,
+            "is_enabled": false
+        }
+    },
+    {
+        "model": "cooker_app.DishModel",
+        "pk": 11,
+        "fields":{
+            "created": "2023-10-07T22:53:05.718117+02:00",
+            "modified": "2023-10-07T22:53:05.718117+02:00",
+            "category": "starter",
+            "country": "Cameroun",
+            "description": "Test",
+            "name": "Sanga [disabled]",
+            "price": "11",
+            "photo": "cookers/1/dishes/starter/sanga.jpg",
+            "cooker": 1,
+            "is_enabled": false
+        }
+    },
+    {
+        "model": "cooker_app.DishModel",
+        "pk": 12,
+        "fields":{
+            "created": "2023-10-08T22:53:05.718117+02:00",
+            "modified": "2023-10-08T22:53:05.718117+02:00",
+            "category": "dessert",
+            "country": "Cameroun",
+            "description": "Test",
+            "name": "Thiakry",
+            "price": "3",
+            "photo": "cookers/1/dishes/dessert/thiakry.jpg",
+            "cooker": 1,
+            "is_enabled": false
+        }
+    }
+]

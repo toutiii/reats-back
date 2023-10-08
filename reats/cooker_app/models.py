@@ -2,6 +2,7 @@ from django.core.validators import MinLengthValidator, RegexValidator
 from django.db.models import (
     CASCADE,
     AutoField,
+    BooleanField,
     CharField,
     DateTimeField,
     FloatField,
@@ -40,7 +41,7 @@ class CookerModel(ReatsModel):
     street_number: CharField = CharField(max_length=10)
     town: CharField = CharField(max_length=100)
     address_complement: CharField = CharField(max_length=512)
-    photo: CharField = URLField(null=True)
+    photo: CharField = CharField(max_length=512, null=True)
 
     class Meta:
         db_table = "cookers"
@@ -49,7 +50,7 @@ class CookerModel(ReatsModel):
 class DishModel(ReatsModel):
     CATEGORY_CHOICES = [
         ("starter", "starter"),
-        ("main_dish", "main_dish"),
+        ("dish", "dish"),
         ("dessert", "dessert"),
     ]
 
@@ -61,6 +62,7 @@ class DishModel(ReatsModel):
     price: FloatField = FloatField()
     photo: CharField = CharField(max_length=512)
     cooker: ForeignKey = ForeignKey(CookerModel, on_delete=CASCADE)
+    is_enabled: BooleanField = BooleanField(default=True)
 
     class Meta:
         db_table = "dishes"

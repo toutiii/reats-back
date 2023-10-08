@@ -25,7 +25,13 @@ class CookerSerializer(ModelSerializer):
             raise serializers.ValidationError("Unparsable phone number")
 
 
-class DishSerializer(ModelSerializer):
+class DishGETSerializer(ModelSerializer):
+    class Meta:
+        model = DishModel
+        exclude = ("created", "modified", "cooker")
+
+
+class DishPOSTSerializer(ModelSerializer):
     cooker = serializers.PrimaryKeyRelatedField(queryset=CookerModel.objects.all())
 
     class Meta:
