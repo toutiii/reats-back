@@ -123,7 +123,11 @@ def test_create_cooker_success_with_no_profile_pic(
     assert response.status_code == status.HTTP_201_CREATED
     assert CookerModel.objects.count() == 3
 
-    post_data_keys = list(post_data_with_no_profile_pic.keys()) + ["photo"]
+    post_data_keys = list(post_data_with_no_profile_pic.keys()) + [
+        "photo",
+        "max_order_number",
+    ]
+
     assert model_to_dict(CookerModel.objects.latest("pk"), fields=post_data_keys) == {
         "firstname": "john",
         "lastname": "Doe",
@@ -135,6 +139,7 @@ def test_create_cooker_success_with_no_profile_pic(
         "town": "test",
         "address_complement": "résidence test",
         "photo": None,
+        "max_order_number": 10,
     }
 
 

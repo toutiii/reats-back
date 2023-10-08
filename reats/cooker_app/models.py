@@ -7,9 +7,9 @@ from django.db.models import (
     DateTimeField,
     FloatField,
     ForeignKey,
+    IntegerField,
     Model,
     TextField,
-    URLField,
 )
 
 
@@ -42,6 +42,7 @@ class CookerModel(ReatsModel):
     town: CharField = CharField(max_length=100)
     address_complement: CharField = CharField(max_length=512)
     photo: CharField = CharField(max_length=512, null=True)
+    max_order_number: IntegerField = IntegerField(default=10)
 
     class Meta:
         db_table = "cookers"
