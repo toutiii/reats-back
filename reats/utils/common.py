@@ -36,3 +36,12 @@ def get_pre_signed_url(key: str) -> str:
         print(url)
 
     return url
+
+
+def delete_s3_object(key: str) -> None:
+    try:
+        s3.delete_object(Bucket=os.getenv("AWS_S3_BUCKET"), Key=key)
+    except ClientError as err:
+        print(err)
+    else:
+        print(f"{key} has been removed from {os.getenv('AWS_S3_BUCKET')} bucket")

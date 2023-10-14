@@ -6,12 +6,12 @@ from custom_renderers.renderers import (
     CustomRendererWithData,
     CustomRendererWithoutData,
 )
-from django.db.models.query import QuerySet
 from rest_framework import mixins, viewsets
 from rest_framework.parsers import MultiPartParser
 from rest_framework.renderers import BaseRenderer
+from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
-from utils.common import upload_image_to_s3
+from utils.common import delete_s3_object, upload_image_to_s3
 
 from .models import CookerModel, DishModel
 from .serializers import CookerSerializer, DishGETSerializer, DishPOSTSerializer
@@ -61,7 +61,7 @@ class DishView(viewsets.ModelViewSet):
     queryset = DishModel.objects.all()
 
     def get_serializer_class(self) -> type[BaseSerializer]:
-        if self.request.method == "POST":
+        if self.request.method in ("POST", "PUT"):
             self.serializer_class = DishPOSTSerializer
         else:
             self.serializer_class = DishGETSerializer
@@ -69,7 +69,7 @@ class DishView(viewsets.ModelViewSet):
         return super().get_serializer_class()
 
     def get_renderers(self) -> list[BaseRenderer]:
-        if self.request.method == "POST":
+        if self.request.method in ("POST", "PUT"):
             self.renderer_classes = [CustomRendererWithoutData]
 
         if self.request.method == "GET":
@@ -77,7 +77,7 @@ class DishView(viewsets.ModelViewSet):
 
         return super().get_renderers()
 
-    def perform_create(self, serializer) -> None:
+    def perform_create(self, serializer: BaseSerializer) -> None:
         photo = (
             "cookers"
             + "/"
@@ -92,9 +92,38 @@ class DishView(viewsets.ModelViewSet):
 
         upload_image_to_s3(self.request.FILES["photo"], photo)
         serializer.validated_data["photo"] = photo
-        serializer.save()
+        super().perform_create(serializer)
 
-    def get_queryset(self) -> QuerySet:
+    def perform_update(self, serializer: BaseSerializer) -> None:
+        current_object = self.get_object()
+        photo = None
+
+        try:
+            self.request.FILES["photo"]
+        except KeyError:
+            pass
+        else:
+            photo = (
+                "cookers"
+                + "/"
+                + str(serializer.validated_data["cooker"].pk)
+                + "/"
+                + "dishes"
+                + "/"
+                + serializer.validated_data["category"]
+                + "/"
+                + self.request.FILES["photo"].name
+            )
+
+        if photo is not None:
+            upload_image_to_s3(self.request.FILES["photo"], photo)
+            serializer.validated_data["photo"] = photo
+            old_photo_key = current_object.photo
+            delete_s3_object(old_photo_key)
+
+        super().perform_update(serializer)
+
+    def list(self, request, *args, **kwargs) -> Response:
         request_name: Union[str, None] = self.request.query_params.get("name")
         request_category: Union[str, None] = self.request.query_params.get("category")
         request_status: Union[str, None] = self.request.query_params.get("is_enabled")
@@ -111,6 +140,6 @@ class DishView(viewsets.ModelViewSet):
             self.queryset = self.queryset.filter(is_enabled=json.loads(request_status))
 
         if request_name is None and request_category is None and request_status is None:
-            return DishModel.objects.none()
+            self.queryset = DishModel.objects.none()
 
-        return self.queryset
+        return super().list(request, *args, **kwargs)

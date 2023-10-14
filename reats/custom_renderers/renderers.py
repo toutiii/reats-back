@@ -1,5 +1,3 @@
-from collections import OrderedDict
-
 from rest_framework import status
 from rest_framework.renderers import JSONRenderer
 from utils.common import get_pre_signed_url

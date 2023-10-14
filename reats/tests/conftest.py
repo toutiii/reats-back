@@ -32,3 +32,10 @@ def upload_fileobj() -> Iterator:
     patcher = patch("utils.common.s3.upload_fileobj")
     yield patcher.start()
     patcher.stop()
+
+
+@pytest.fixture
+def delete_object() -> Iterator:
+    patcher = patch("utils.common.s3.delete_object")
+    yield patcher.start()
+    patcher.stop()
