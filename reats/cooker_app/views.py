@@ -6,7 +6,7 @@ from custom_renderers.renderers import (
     CustomRendererWithData,
     CustomRendererWithoutData,
 )
-from rest_framework import mixins, viewsets
+from rest_framework import mixins, status, viewsets
 from rest_framework.parsers import MultiPartParser
 from rest_framework.renderers import BaseRenderer
 from rest_framework.response import Response
@@ -68,9 +68,11 @@ class DishView(viewsets.ModelViewSet):
     def get_serializer_class(self) -> type[BaseSerializer]:
         if self.request.method in ("POST", "PUT"):
             self.serializer_class = DishPOSTSerializer
-        elif self.request.method == "PATCH":
+
+        if self.request.method == "PATCH":
             self.serializer_class = DishPATCHSerializer
-        else:
+
+        if self.request.method == "GET":
             self.serializer_class = DishGETSerializer
 
         return super().get_serializer_class()
@@ -150,3 +152,14 @@ class DishView(viewsets.ModelViewSet):
             self.queryset = DishModel.objects.none()
 
         return super().list(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        super().perform_destroy(instance)
+
+        return Response(
+            {
+                "ok": True,
+                "status_code": status.HTTP_204_NO_CONTENT,
+            }
+        )
