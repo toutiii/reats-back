@@ -14,7 +14,12 @@ from rest_framework.serializers import BaseSerializer
 from utils.common import delete_s3_object, upload_image_to_s3
 
 from .models import CookerModel, DishModel
-from .serializers import CookerSerializer, DishGETSerializer, DishPOSTSerializer
+from .serializers import (
+    CookerSerializer,
+    DishGETSerializer,
+    DishPATCHSerializer,
+    DishPOSTSerializer,
+)
 
 
 class CookerView(
@@ -63,13 +68,15 @@ class DishView(viewsets.ModelViewSet):
     def get_serializer_class(self) -> type[BaseSerializer]:
         if self.request.method in ("POST", "PUT"):
             self.serializer_class = DishPOSTSerializer
+        elif self.request.method == "PATCH":
+            self.serializer_class = DishPATCHSerializer
         else:
             self.serializer_class = DishGETSerializer
 
         return super().get_serializer_class()
 
     def get_renderers(self) -> list[BaseRenderer]:
-        if self.request.method in ("POST", "PUT"):
+        if self.request.method in ("POST", "PUT", "PATCH"):
             self.renderer_classes = [CustomRendererWithoutData]
 
         if self.request.method == "GET":

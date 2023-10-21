@@ -31,9 +31,17 @@ class DishGETSerializer(ModelSerializer):
         exclude = ("created", "modified", "cooker")
 
 
-class DishPOSTSerializer(ModelSerializer):
+class DishSerializer(ModelSerializer):
     cooker = serializers.PrimaryKeyRelatedField(queryset=CookerModel.objects.all())
 
+
+class DishPOSTSerializer(DishSerializer):
     class Meta:
         model = DishModel
-        exclude = ("photo",)
+        exclude = ("photo", "is_enabled")
+
+
+class DishPATCHSerializer(DishSerializer):
+    class Meta:
+        model = DishModel
+        fields = ("is_enabled",)
