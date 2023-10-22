@@ -31,7 +31,7 @@ def test_get_existing_cooker_data(
                 "firstname": "test",
                 "lastname": "test",
                 "phone": "0600000001",
-                "max_order_number": "7",
+                "max_order_number": "10",
             },
         },
         "address_section": {

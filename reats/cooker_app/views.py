@@ -25,13 +25,15 @@ from .serializers import (
 class CookerView(
     mixins.CreateModelMixin,
     mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
     viewsets.GenericViewSet,
 ):
+    parser_classes = [MultiPartParser]
     serializer_class = CookerSerializer
     queryset = CookerModel.objects.all()
 
     def get_renderers(self) -> list[BaseRenderer]:
-        if self.request.method == "POST":
+        if self.request.method in ("POST", "PATCH"):
             self.renderer_classes = [CustomRendererWithoutData]
 
         if self.request.method == "GET":

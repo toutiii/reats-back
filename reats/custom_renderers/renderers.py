@@ -28,7 +28,7 @@ class CookerCustomRendererWithData(JSONRenderer):
                             "firstname": data["firstname"],
                             "lastname": data["lastname"],
                             "phone": data["phone"],
-                            "max_order_number": "7",
+                            "max_order_number": str(data["max_order_number"]),
                         },
                     },
                     "address_section": {
