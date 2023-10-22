@@ -15,6 +15,7 @@ from utils.common import delete_s3_object, upload_image_to_s3
 
 from .models import CookerModel, DishModel
 from .serializers import (
+    CookerGETSerializer,
     CookerSerializer,
     DishGETSerializer,
     DishPATCHSerializer,
@@ -29,8 +30,16 @@ class CookerView(
     viewsets.GenericViewSet,
 ):
     parser_classes = [MultiPartParser]
-    serializer_class = CookerSerializer
     queryset = CookerModel.objects.all()
+
+    def get_serializer_class(self) -> type[BaseSerializer]:
+        if self.request.method in ("POST", "PATCH"):
+            self.serializer_class = CookerSerializer
+
+        if self.request.method == "GET":
+            self.serializer_class = CookerGETSerializer
+
+        return super().get_serializer_class()
 
     def get_renderers(self) -> list[BaseRenderer]:
         if self.request.method in ("POST", "PATCH"):
@@ -41,7 +50,12 @@ class CookerView(
 
         return super().get_renderers()
 
-    def perform_create(self, serializer) -> None:
+    def partial_update(self, request, *args, **kwargs) -> Response:
+        kwargs.pop("pk")  # pk is unexpected in parent's partial_update method
+        cooker: CookerModel = self.get_object()
+        old_photo_key: str = cooker.photo
+        photo = None
+
         try:
             self.request.FILES["photo"]
         except KeyError:
@@ -50,17 +64,22 @@ class CookerView(
             photo = (
                 "cookers"
                 + "/"
-                + serializer.validated_data["phone"]
+                + str(cooker.pk)
                 + "/"
-                + "profile"
+                + "profile_pics"
                 + "/"
                 + self.request.FILES["photo"].name
             )
 
+        if photo is not None:
             upload_image_to_s3(self.request.FILES["photo"], photo)
-            serializer.validated_data["photo"] = photo
+            cooker.photo = photo
+            cooker.save()
 
-        super().perform_create(serializer)
+            if not old_photo_key.endswith("default-profile-pic.jpg"):
+                delete_s3_object(old_photo_key)
+
+        return super().partial_update(request, *args, **kwargs)
 
 
 class DishView(viewsets.ModelViewSet):

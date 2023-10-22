@@ -68,49 +68,6 @@ def post_data_with_no_profile_pic(
 def test_create_cooker_success(
     client: APIClient,
     path: str,
-    post_data: dict,
-    upload_fileobj: MagicMock,
-) -> None:
-    assert CookerModel.objects.count() == 2
-
-    response = client.post(
-        path,
-        encode_multipart(BOUNDARY, post_data),
-        content_type=MULTIPART_CONTENT,
-    )
-    assert response.status_code == status.HTTP_201_CREATED
-    assert CookerModel.objects.count() == 3
-
-    post_data_keys = list(post_data.keys())
-    assert model_to_dict(CookerModel.objects.latest("pk"), fields=post_data_keys) == {
-        "firstname": "john",
-        "lastname": "Doe",
-        "phone": "+33601020304",
-        "postal_code": "91100",
-        "siret": "12345671234567",
-        "street_name": "rue du terrier du rat",
-        "street_number": "1",
-        "town": "test",
-        "address_complement": "résidence test",
-        "photo": "cookers/+33601020304/profile/test.jpg",
-    }
-
-    upload_fileobj.assert_called_once()
-
-    assert len(upload_fileobj.call_args.args) == 3
-
-    arg1, arg2, arg3 = upload_fileobj.call_args.args
-
-    assert isinstance(arg1, InMemoryUploadedFile)
-    assert arg1.name == "test.jpg"
-    assert arg2 == "reats-dev-bucket"
-    assert arg3 == "cookers/+33601020304/profile/test.jpg"
-
-
-@pytest.mark.django_db
-def test_create_cooker_success_with_no_profile_pic(
-    client: APIClient,
-    path: str,
     post_data_with_no_profile_pic: dict,
 ) -> None:
     assert CookerModel.objects.count() == 2
@@ -138,7 +95,7 @@ def test_create_cooker_success_with_no_profile_pic(
         "street_number": "1",
         "town": "test",
         "address_complement": "résidence test",
-        "photo": None,
+        "photo": "cookers/1/profile_pics/default-profile-pic.jpg",
         "max_order_number": 10,
     }
 
@@ -148,7 +105,6 @@ def test_failed_create_cooker_already_exists(
     client: APIClient,
     path: str,
     post_data: dict,
-    upload_fileobj: MagicMock,
 ):
     assert CookerModel.objects.count() == 2
 
@@ -165,17 +121,6 @@ def test_failed_create_cooker_already_exists(
     )
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert CookerModel.objects.count() == 3
-
-    upload_fileobj.assert_called_once()
-
-    assert len(upload_fileobj.call_args.args) == 3
-
-    arg1, arg2, arg3 = upload_fileobj.call_args.args
-
-    assert isinstance(arg1, InMemoryUploadedFile)
-    assert arg1.name == "test.jpg"
-    assert arg2 == "reats-dev-bucket"
-    assert arg3 == "cookers/+33601020304/profile/test.jpg"
 
 
 @pytest.mark.parametrize(

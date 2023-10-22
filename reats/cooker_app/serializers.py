@@ -25,10 +25,16 @@ class CookerSerializer(ModelSerializer):
             raise serializers.ValidationError("Unparsable phone number")
 
 
+class CookerGETSerializer(ModelSerializer):
+    class Meta:
+        model = CookerModel
+        exclude = ("created", "modified")
+
+
 class DishGETSerializer(ModelSerializer):
     class Meta:
         model = DishModel
-        exclude = ("created", "modified", "cooker")
+        exclude = ("created", "modified")
 
 
 class DishSerializer(ModelSerializer):

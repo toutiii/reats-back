@@ -41,7 +41,10 @@ class CookerModel(ReatsModel):
     street_number: CharField = CharField(max_length=10)
     town: CharField = CharField(max_length=100)
     address_complement: CharField = CharField(max_length=512)
-    photo: CharField = CharField(max_length=512, null=True)
+    photo: CharField = CharField(
+        max_length=512,
+        default="cookers/1/profile_pics/default-profile-pic.jpg",
+    )
     max_order_number: IntegerField = IntegerField(default=10)
 
     class Meta:
