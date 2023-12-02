@@ -1,5 +1,4 @@
 import pytest
-from django.core.management import call_command
 from rest_framework import status
 from rest_framework.test import APIClient
 

@@ -1,0 +1,51 @@
+[
+  {
+    "model": "cooker_app.DrinkModel",
+    "pk": 1,
+    "fields": {
+      "created": "2023-12-03T22:52:05.718117+02:00",
+      "modified": "2023-12-03T22:52:05.718117+02:00",
+      "unit": "liter",
+      "country": "Sénégal",
+      "description": "Bissap maison",
+      "name": "Bissap",
+      "price": "3.5",
+      "photo": "cookers/1/drinks/bissap.jpg",
+      "cooker": 1,
+      "capacity": 1
+    }
+  },
+  {
+    "model": "cooker_app.DrinkModel",
+    "pk": 2,
+    "fields": {
+      "created": "2023-12-04T22:52:05.718117+02:00",
+      "modified": "2023-12-04T22:52:05.718117+02:00",
+      "unit": "centiliters",
+      "country": "Cameroun",
+      "description": "Gingembre maison",
+      "name": "Gingembre",
+      "price": "5",
+      "photo": "cookers/1/drinks/gingembre.jpg",
+      "cooker": 1,
+      "capacity": 75
+    }
+  },
+  {
+    "model": "cooker_app.DrinkModel",
+    "pk": 3,
+    "fields": {
+      "created": "2023-12-01T22:52:05.718117+02:00",
+      "modified": "2023-12-01T22:52:05.718117+02:00",
+      "unit": "centiliters",
+      "country": "Cameroun",
+      "description": "Limonade maison",
+      "name": "Limonade",
+      "price": "2.5",
+      "photo": "cookers/1/drinks/limonade.jpg",
+      "cooker": 1,
+      "capacity": 33,
+      "is_enabled": false
+    }
+  }
+]

@@ -4,7 +4,7 @@ from phonenumbers.phonenumberutil import NumberParseException
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
 
-from .models import CookerModel, DishModel
+from .models import CookerModel, DishModel, DrinkModel
 
 
 class CookerSerializer(ModelSerializer):
@@ -50,4 +50,26 @@ class DishPOSTSerializer(DishSerializer):
 class DishPATCHSerializer(DishSerializer):
     class Meta:
         model = DishModel
+        fields = ("is_enabled",)
+
+
+class DrinkGETSerializer(ModelSerializer):
+    class Meta:
+        model = DrinkModel
+        exclude = ("created", "modified")
+
+
+class DrinkSerializer(ModelSerializer):
+    cooker = serializers.PrimaryKeyRelatedField(queryset=CookerModel.objects.all())
+
+
+class DrinkPOSTSerializer(DrinkSerializer):
+    class Meta:
+        model = DrinkModel
+        exclude = ("photo", "is_enabled")
+
+
+class DrinkPATCHSerializer(DrinkSerializer):
+    class Meta:
+        model = DrinkModel
         fields = ("is_enabled",)

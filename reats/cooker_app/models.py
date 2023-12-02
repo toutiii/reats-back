@@ -70,3 +70,24 @@ class DishModel(ReatsModel):
 
     class Meta:
         db_table = "dishes"
+
+
+class DrinkModel(ReatsModel):
+    UNIT_CHOICES = [
+        ("liter", "liter"),
+        ("centiliters", "centiliters"),
+    ]
+
+    id: AutoField = AutoField(primary_key=True)
+    unit: CharField = CharField(max_length=20, choices=UNIT_CHOICES)
+    country: CharField = CharField(max_length=50)
+    description: TextField = TextField(max_length=512, null=True)
+    name: CharField = CharField(max_length=128)
+    price: FloatField = FloatField()
+    photo: CharField = CharField(max_length=512)
+    cooker: ForeignKey = ForeignKey(CookerModel, on_delete=CASCADE)
+    is_enabled: BooleanField = BooleanField(default=True)
+    capacity: IntegerField = IntegerField()
+
+    class Meta:
+        db_table = "drinks"

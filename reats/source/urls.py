@@ -7,6 +7,8 @@ from rest_framework.routers import DefaultRouter
 router = DefaultRouter()
 router.register(r"cookers", views.CookerView, basename="cookers")
 router.register(r"dishes", views.DishView, basename="dishes")
+router.register(r"drinks", views.DrinkView, basename="drinks")
+
 
 # The API URLs are now determined automatically by the router.
 urlpatterns = [

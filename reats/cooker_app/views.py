@@ -13,13 +13,16 @@ from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
 from utils.common import delete_s3_object, upload_image_to_s3
 
-from .models import CookerModel, DishModel
+from .models import CookerModel, DishModel, DrinkModel
 from .serializers import (
     CookerGETSerializer,
     CookerSerializer,
     DishGETSerializer,
     DishPATCHSerializer,
     DishPOSTSerializer,
+    DrinkGETSerializer,
+    DrinkPATCHSerializer,
+    DrinkPOSTSerializer,
 )
 
 
@@ -171,6 +174,100 @@ class DishView(viewsets.ModelViewSet):
 
         if request_name is None and request_category is None and request_status is None:
             self.queryset = DishModel.objects.none()
+
+        return super().list(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        super().perform_destroy(instance)
+
+        return Response(
+            {
+                "ok": True,
+                "status_code": status.HTTP_204_NO_CONTENT,
+            }
+        )
+
+
+class DrinkView(viewsets.ModelViewSet):
+    parser_classes = [MultiPartParser]
+    queryset = DrinkModel.objects.all()
+
+    def get_serializer_class(self) -> type[BaseSerializer]:
+        if self.request.method in ("POST", "PUT"):
+            self.serializer_class = DrinkPOSTSerializer
+
+        if self.request.method == "PATCH":
+            self.serializer_class = DrinkPATCHSerializer
+
+        if self.request.method == "GET":
+            self.serializer_class = DrinkGETSerializer
+
+        return super().get_serializer_class()
+
+    def get_renderers(self) -> list[BaseRenderer]:
+        if self.request.method in ("POST", "PUT", "PATCH"):
+            self.renderer_classes = [CustomRendererWithoutData]
+
+        if self.request.method == "GET":
+            self.renderer_classes = [CustomRendererWithData]
+
+        return super().get_renderers()
+
+    def perform_create(self, serializer: BaseSerializer) -> None:
+        photo = (
+            "cookers"
+            + "/"
+            + str(serializer.validated_data["cooker"].pk)
+            + "/"
+            + "drinks"
+            + "/"
+            + self.request.FILES["photo"].name
+        )
+
+        upload_image_to_s3(self.request.FILES["photo"], photo)
+        serializer.validated_data["photo"] = photo
+        super().perform_create(serializer)
+
+    def perform_update(self, serializer: BaseSerializer) -> None:
+        current_object = self.get_object()
+        photo = None
+
+        try:
+            self.request.FILES["photo"]
+        except KeyError:
+            pass
+        else:
+            photo = (
+                "cookers"
+                + "/"
+                + str(serializer.validated_data["cooker"].pk)
+                + "/"
+                + "drinks"
+                + "/"
+                + self.request.FILES["photo"].name
+            )
+
+        if photo is not None:
+            upload_image_to_s3(self.request.FILES["photo"], photo)
+            serializer.validated_data["photo"] = photo
+            old_photo_key = current_object.photo
+            delete_s3_object(old_photo_key)
+
+        super().perform_update(serializer)
+
+    def list(self, request, *args, **kwargs) -> Response:
+        request_name: Union[str, None] = self.request.query_params.get("name")
+        request_status: Union[str, None] = self.request.query_params.get("is_enabled")
+
+        if request_name is not None:
+            self.queryset = self.queryset.filter(name__icontains=request_name)
+
+        if request_status is not None:
+            self.queryset = self.queryset.filter(is_enabled=json.loads(request_status))
+
+        if request_name is None and request_status is None:
+            self.queryset = DrinkModel.objects.none()
 
         return super().list(request, *args, **kwargs)
 
