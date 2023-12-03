@@ -272,3 +272,65 @@ class TestUpdateCookerAccountInfoWithPhotoV2:
                 Bucket="reats-dev-bucket",
                 Key="cookers/1/profile_pics/test.jpg",
             )
+
+
+@pytest.mark.django_db
+class TestUpdateCookerOnlineStatus:
+    @pytest.fixture
+    def post_switch_cooker_online(self) -> dict:
+        return {
+            "is_online": True,
+        }
+
+    @pytest.fixture
+    def post_switch_cooker_offline(self) -> dict:
+        return {
+            "is_online": False,
+        }
+
+    def test_response(
+        self,
+        client: APIClient,
+        delete_object: MagicMock,
+        cooker_id: int,
+        path: str,
+        post_switch_cooker_offline: dict,
+        post_switch_cooker_online: dict,
+        upload_fileobj: MagicMock,
+    ) -> None:
+        cooker: CookerModel = CookerModel.objects.get(pk=cooker_id)
+        assert cooker.is_online is False
+
+        with freeze_time("2023-10-14T22:00:00+00:00"):
+            response = client.patch(
+                f"{path}{cooker_id}/",
+                encode_multipart(BOUNDARY, post_switch_cooker_online),
+                content_type=MULTIPART_CONTENT,
+            )
+
+            assert response.status_code == status.HTTP_200_OK
+
+            cooker = CookerModel.objects.get(pk=cooker_id)
+
+            assert cooker.modified.isoformat() == "2023-10-14T22:00:00+00:00"
+            assert cooker.is_online is True
+
+            upload_fileobj.assert_not_called()
+            delete_object.assert_not_called()
+
+        with freeze_time("2023-10-14T23:00:00+00:00"):
+            response = client.patch(
+                f"{path}{cooker_id}/",
+                encode_multipart(BOUNDARY, post_switch_cooker_offline),
+                content_type=MULTIPART_CONTENT,
+            )
+
+            assert response.status_code == status.HTTP_200_OK
+
+            cooker = CookerModel.objects.get(pk=cooker_id)
+
+            assert cooker.modified.isoformat() == "2023-10-14T23:00:00+00:00"
+            assert cooker.is_online is False
+
+            upload_fileobj.assert_not_called()
+            delete_object.assert_not_called()

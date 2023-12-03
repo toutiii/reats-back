@@ -98,6 +98,7 @@ def test_create_cooker_success(
         "photo": "cookers/1/profile_pics/default-profile-pic.jpg",
         "max_order_number": 10,
     }
+    assert CookerModel.objects.latest("pk").is_online is False
 
 
 @pytest.mark.django_db

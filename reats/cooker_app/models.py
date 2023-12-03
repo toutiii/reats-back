@@ -46,6 +46,7 @@ class CookerModel(ReatsModel):
         default="cookers/1/profile_pics/default-profile-pic.jpg",
     )
     max_order_number: IntegerField = IntegerField(default=10)
+    is_online: BooleanField = BooleanField(default=False)
 
     class Meta:
         db_table = "cookers"
