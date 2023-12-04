@@ -140,3 +140,6 @@ REST_FRAMEWORK = {
     "EXCEPTION_HANDLER": "utils.custom_middlewares.custom_exception_handler",
     "TEST_REQUEST_DEFAULT_FORMAT": "json",
 }
+
+
+COOKER_POOL_OTP_LENGTH = 8

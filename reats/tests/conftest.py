@@ -39,3 +39,10 @@ def delete_object() -> Iterator:
     patcher = patch("utils.common.s3.delete_object")
     yield patcher.start()
     patcher.stop()
+
+
+@pytest.fixture
+def admin_create_user() -> Iterator:
+    patcher = patch("utils.common.cognito_client.admin_create_user")
+    yield patcher.start()
+    patcher.stop()

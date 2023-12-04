@@ -11,7 +11,7 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.renderers import BaseRenderer
 from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
-from utils.common import delete_s3_object, upload_image_to_s3
+from utils.common import add_user_to_cognito_pool, delete_s3_object, upload_image_to_s3
 
 from .models import CookerModel, DishModel, DrinkModel
 from .serializers import (
@@ -43,6 +43,10 @@ class CookerView(
             self.serializer_class = CookerGETSerializer
 
         return super().get_serializer_class()
+
+    def perform_create(self, serializer: BaseSerializer) -> None:
+        add_user_to_cognito_pool(serializer.validated_data)
+        super().perform_create(serializer)
 
     def get_renderers(self) -> list[BaseRenderer]:
         if self.request.method in ("POST", "PATCH"):
