@@ -42,7 +42,7 @@ def delete_object() -> Iterator:
 
 
 @pytest.fixture
-def admin_create_user() -> Iterator:
-    patcher = patch("utils.common.cognito_client.admin_create_user")
+def send_otp_message() -> Iterator:
+    patcher = patch("utils.common.pinpoint_client.send_otp_message")
     yield patcher.start()
     patcher.stop()

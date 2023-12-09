@@ -66,7 +66,7 @@ def post_data_with_no_profile_pic(
 
 @pytest.mark.django_db
 def test_create_cooker_success(
-    admin_create_user: MagicMock,
+    send_otp_message: MagicMock,
     client: APIClient,
     path: str,
     post_data_with_no_profile_pic: dict,
@@ -100,15 +100,19 @@ def test_create_cooker_success(
         "max_order_number": 10,
     }
     assert CookerModel.objects.latest("pk").is_online is False
-    admin_create_user.assert_called_once_with(
-        UserPoolId=ANY,
-        Username="+33601020304",
-        UserAttributes=[
-            {"Name": "given_name", "Value": "john"},
-            {"Name": "family_name", "Value": "Doe"},
-        ],
-        TemporaryPassword=ANY,
-        DesiredDeliveryMediums=["SMS"],
+    send_otp_message.assert_called_once_with(
+        ApplicationId=ANY,
+        SendOTPMessageRequestParameters={
+            "Channel": "SMS",
+            "BrandName": ANY,
+            "CodeLength": 6,
+            "ValidityPeriod": 30,
+            "AllowedAttempts": 3,
+            "Language": "fr-FR",
+            "OriginationIdentity": ANY,
+            "DestinationIdentity": "+33601020304",
+            "ReferenceId": ANY,
+        },
     )
 
 
@@ -120,7 +124,7 @@ class TestFailedCreateCookerAlreadyExists:
     @pytest.mark.django_db
     def test_response(
         self,
-        admin_create_user: MagicMock,
+        send_otp_message: MagicMock,
         client: APIClient,
         path: str,
         post_data: dict,
@@ -135,7 +139,7 @@ class TestFailedCreateCookerAlreadyExists:
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert CookerModel.objects.count() == 2
-        admin_create_user.assert_not_called()
+        send_otp_message.assert_not_called()
 
 
 @pytest.mark.parametrize(
@@ -155,7 +159,7 @@ class TestFailedCreateCookerAlreadyExists:
 )
 @pytest.mark.django_db
 def test_failed_create_cooker_wrong_data(
-    admin_create_user: MagicMock,
+    send_otp_message: MagicMock,
     client: APIClient,
     path: str,
     post_data: dict,
@@ -170,4 +174,4 @@ def test_failed_create_cooker_wrong_data(
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert CookerModel.objects.count() == 2
     upload_fileobj.assert_not_called()
-    admin_create_user.assert_not_called()
+    send_otp_message.assert_not_called()

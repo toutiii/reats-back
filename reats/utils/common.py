@@ -1,3 +1,4 @@
+import hashlib
 import os
 import random
 import string
@@ -9,7 +10,7 @@ from django.core.files.uploadedfile import InMemoryUploadedFile
 
 session = boto3.session.Session(region_name=os.getenv("AWS_REGION"))
 s3 = session.client("s3", config=boto3.session.Config(signature_version="s3v4"))
-cognito_client = session.client("cognito-idp")
+pinpoint_client = boto3.client("pinpoint", region_name=os.getenv("AWS_REGION"))
 
 
 def upload_image_to_s3(image: InMemoryUploadedFile, image_path: str) -> None:
@@ -51,26 +52,29 @@ def delete_s3_object(key: str) -> None:
         print(f"{key} has been removed from {os.getenv('AWS_S3_BUCKET')} bucket")
 
 
-def generate_random_otp() -> str:
-    otp = "".join(
-        random.choice(string.ascii_uppercase + string.digits)
-        for _ in range(settings.COOKER_POOL_OTP_LENGTH - 1)
-    )
-    random_symbol = random.choice(["*", "_", "-", "$", "@", "+"])
-    return otp + random_symbol
+def generate_ref_id(data: dict):
+    reference_id = data["phone"] + data["firstname"] + data["lastname"]
+    return hashlib.md5(reference_id.encode()).hexdigest()
 
 
-def add_user_to_cognito_pool(data: dict) -> None:
+def send_otp(data: dict) -> None:
     try:
-        cognito_client.admin_create_user(
-            UserPoolId=os.getenv("AWS_COOKER_POOL_ID"),
-            Username=data.get("phone"),
-            UserAttributes=[
-                {"Name": "given_name", "Value": data.get("firstname")},
-                {"Name": "family_name", "Value": data.get("lastname")},
-            ],
-            TemporaryPassword=generate_random_otp(),
-            DesiredDeliveryMediums=["SMS"],
+        response = pinpoint_client.send_otp_message(
+            ApplicationId=os.getenv("AWS_PINPOINT_APP_ID"),
+            SendOTPMessageRequestParameters={
+                "Channel": os.getenv("AWS_PINPOINT_CHANNEL"),
+                "BrandName": os.getenv("AWS_PINPOINT_BRAND_NAME"),
+                "CodeLength": int(os.getenv("AWS_PINPOINT_CODE_LENGTH", "6")),
+                "ValidityPeriod": int(os.getenv("AWS_PINPOINT_VALIDITY_PERIOD", "10")),
+                "AllowedAttempts": int(os.getenv("AWS_PINPOINT_ALLOWED_ATTEMPTS", "3")),
+                "Language": os.getenv("AWS_PINPOINT_LANGUAGE"),
+                "OriginationIdentity": os.getenv("AWS_SENDER_ID"),
+                "DestinationIdentity": data["phone"],
+                "ReferenceId": generate_ref_id(data),
+            },
         )
-    except ClientError as err:
-        print(err)
+
+    except ClientError as e:
+        print(e.response)
+    else:
+        print(response)
