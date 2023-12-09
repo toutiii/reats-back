@@ -7,11 +7,12 @@ from custom_renderers.renderers import (
     CustomRendererWithoutData,
 )
 from rest_framework import mixins, status, viewsets
+from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser
 from rest_framework.renderers import BaseRenderer
 from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
-from utils.common import delete_s3_object, send_otp, upload_image_to_s3
+from utils.common import delete_s3_object, is_otp_valid, send_otp, upload_image_to_s3
 
 from .models import CookerModel, DishModel, DrinkModel
 from .serializers import (
@@ -87,6 +88,15 @@ class CookerView(
                 delete_s3_object(old_photo_key)
 
         return super().partial_update(request, *args, **kwargs)
+
+    @action(methods=["post"], detail=False, url_path="otp-verify")
+    def otp_verify(self, request) -> Response:
+        result = is_otp_valid(request.data)
+
+        if result:
+            return Response(status=status.HTTP_200_OK)
+
+        return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
 class DishView(viewsets.ModelViewSet):

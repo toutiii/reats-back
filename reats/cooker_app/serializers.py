@@ -1,8 +1,9 @@
-import phonenumbers
-from django.conf import settings
+import os
+
 from phonenumbers.phonenumberutil import NumberParseException
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
+from utils.common import format_phone
 
 from .models import CookerModel, DishModel, DrinkModel
 
@@ -14,15 +15,11 @@ class CookerSerializer(ModelSerializer):
 
     def validate_phone(self, phone):
         try:
-            return phonenumbers.format_number(
-                phonenumbers.parse(
-                    phone,
-                    settings.PHONE_REGION,
-                ),
-                phonenumbers.PhoneNumberFormat.E164,
-            )
+            e164_phone_format = format_phone(phone)
         except NumberParseException:
             raise serializers.ValidationError("Unparsable phone number")
+        else:
+            return e164_phone_format
 
 
 class CookerGETSerializer(ModelSerializer):

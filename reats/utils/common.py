@@ -4,9 +4,11 @@ import random
 import string
 
 import boto3
+import phonenumbers
 from botocore.exceptions import ClientError
 from django.conf import settings
 from django.core.files.uploadedfile import InMemoryUploadedFile
+from phonenumbers.phonenumberutil import NumberParseException
 
 session = boto3.session.Session(region_name=os.getenv("AWS_REGION"))
 s3 = session.client("s3", config=boto3.session.Config(signature_version="s3v4"))
@@ -52,9 +54,18 @@ def delete_s3_object(key: str) -> None:
         print(f"{key} has been removed from {os.getenv('AWS_S3_BUCKET')} bucket")
 
 
-def generate_ref_id(data: dict):
-    reference_id = data["phone"] + data["firstname"] + data["lastname"]
-    return hashlib.md5(reference_id.encode()).hexdigest()
+def format_phone(phone: str) -> str:
+    return phonenumbers.format_number(
+        phonenumbers.parse(
+            phone,
+            settings.PHONE_REGION,
+        ),
+        phonenumbers.PhoneNumberFormat.E164,
+    )
+
+
+def generate_ref_id(phone: str):
+    return hashlib.md5(phone.encode()).hexdigest()
 
 
 def send_otp(data: dict) -> None:
@@ -70,7 +81,7 @@ def send_otp(data: dict) -> None:
                 "Language": os.getenv("AWS_PINPOINT_LANGUAGE"),
                 "OriginationIdentity": os.getenv("AWS_SENDER_ID"),
                 "DestinationIdentity": data["phone"],
-                "ReferenceId": generate_ref_id(data),
+                "ReferenceId": generate_ref_id(data["phone"]),
             },
         )
 
@@ -78,3 +89,21 @@ def send_otp(data: dict) -> None:
         print(e.response)
     else:
         print(response)
+
+
+def is_otp_valid(data: dict) -> bool:
+    try:
+        response = pinpoint_client.verify_otp_message(
+            ApplicationId=os.getenv("AWS_PINPOINT_APP_ID"),
+            VerifyOTPMessageRequestParameters={
+                "DestinationIdentity": format_phone(data["phone"]),
+                "ReferenceId": generate_ref_id(format_phone(data["phone"])),
+                "Otp": data["otp"],
+            },
+        )
+
+    except ClientError as e:
+        print(e.response)
+        return False
+
+    return response["VerificationResponse"]["Valid"]
