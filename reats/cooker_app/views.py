@@ -6,13 +6,20 @@ from custom_renderers.renderers import (
     CustomRendererWithData,
     CustomRendererWithoutData,
 )
+from django.db import IntegrityError
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser
 from rest_framework.renderers import BaseRenderer
 from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
-from utils.common import delete_s3_object, is_otp_valid, send_otp, upload_image_to_s3
+from utils.common import (
+    activate_user,
+    delete_s3_object,
+    is_otp_valid,
+    send_otp,
+    upload_image_to_s3,
+)
 
 from .models import CookerModel, DishModel, DrinkModel
 from .serializers import (
@@ -46,8 +53,13 @@ class CookerView(
         return super().get_serializer_class()
 
     def perform_create(self, serializer: BaseSerializer) -> None:
+        try:
+            super().perform_create(serializer)
+        except IntegrityError as err:
+            print(err)
+            return
+
         send_otp(serializer.validated_data)
-        super().perform_create(serializer)
 
     def get_renderers(self) -> list[BaseRenderer]:
         if self.request.method in ("POST", "PATCH"):
@@ -94,6 +106,7 @@ class CookerView(
         result = is_otp_valid(request.data)
 
         if result:
+            activate_user(CookerModel, request.data)
             return Response(status=status.HTTP_200_OK)
 
         return Response(status=status.HTTP_400_BAD_REQUEST)

@@ -8,6 +8,7 @@ from django.db.models import (
     FloatField,
     ForeignKey,
     IntegerField,
+    Manager,
     Model,
     TextField,
 )
@@ -47,9 +48,12 @@ class CookerModel(ReatsModel):
     )
     max_order_number: IntegerField = IntegerField(default=10)
     is_online: BooleanField = BooleanField(default=False)
+    is_activated: BooleanField = BooleanField(default=False)
 
     class Meta:
         db_table = "cookers"
+
+    objects: Manager = Manager()  # For linting purposes
 
 
 class DishModel(ReatsModel):

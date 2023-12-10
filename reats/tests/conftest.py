@@ -46,3 +46,31 @@ def send_otp_message() -> Iterator:
     patcher = patch("utils.common.pinpoint_client.send_otp_message")
     yield patcher.start()
     patcher.stop()
+
+
+@pytest.fixture
+def verify_otp_message_success() -> Iterator:
+    patcher = patch(
+        "utils.common.pinpoint_client.verify_otp_message",
+        return_value={
+            "VerificationResponse": {
+                "Valid": True,
+            }
+        },
+    )
+    yield patcher.start()
+    patcher.stop()
+
+
+@pytest.fixture
+def verify_otp_message_failed() -> Iterator:
+    patcher = patch(
+        "utils.common.pinpoint_client.verify_otp_message",
+        return_value={
+            "VerificationResponse": {
+                "Valid": False,
+            }
+        },
+    )
+    yield patcher.start()
+    patcher.stop()

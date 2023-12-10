@@ -1,14 +1,13 @@
 import hashlib
 import os
-import random
-import string
+from typing import Type
 
 import boto3
 import phonenumbers
 from botocore.exceptions import ClientError
+from cooker_app.models import CookerModel
 from django.conf import settings
 from django.core.files.uploadedfile import InMemoryUploadedFile
-from phonenumbers.phonenumberutil import NumberParseException
 
 session = boto3.session.Session(region_name=os.getenv("AWS_REGION"))
 s3 = session.client("s3", config=boto3.session.Config(signature_version="s3v4"))
@@ -107,3 +106,9 @@ def is_otp_valid(data: dict) -> bool:
         return False
 
     return response["VerificationResponse"]["Valid"]
+
+
+def activate_user(model: Type[CookerModel], data: dict) -> None:
+    user = model.objects.get(phone=format_phone(data["phone"]))
+    user.is_activated = True
+    user.save()
