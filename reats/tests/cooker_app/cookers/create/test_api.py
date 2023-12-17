@@ -326,3 +326,65 @@ class TestCookerAuth:
                 "ReferenceId": ANY,
             },
         )
+
+
+class TestCookerAskNewOTP:
+    @pytest.fixture
+    def data(self) -> dict:
+        return {"phone": "0600000003"}
+
+    @pytest.mark.parametrize(
+        "data",
+        [
+            {},
+            {"phone": "this_is_not_a_phone_number"},
+        ],
+        ids=[
+            "missing_phone_number",
+            "invalid_phone_number",
+        ],
+    )
+    @pytest.mark.django_db
+    def test_cooker_ask_new_OTP_failed(
+        self,
+        data: dict,
+        client: APIClient,
+        ask_otp_path: str,
+        send_otp_message: MagicMock,
+    ) -> None:
+        response = client.post(
+            ask_otp_path,
+            encode_multipart(BOUNDARY, data),
+            content_type=MULTIPART_CONTENT,
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        send_otp_message.assert_not_called()
+
+    @pytest.mark.django_db
+    def test_cooker_ask_new_OTP_success(
+        self,
+        data: dict,
+        client: APIClient,
+        ask_otp_path: str,
+        send_otp_message: MagicMock,
+    ) -> None:
+        response = client.post(
+            ask_otp_path,
+            encode_multipart(BOUNDARY, data),
+            content_type=MULTIPART_CONTENT,
+        )
+        assert response.status_code == status.HTTP_200_OK
+        send_otp_message.assert_called_once_with(
+            ApplicationId=ANY,
+            SendOTPMessageRequestParameters={
+                "Channel": "SMS",
+                "BrandName": ANY,
+                "CodeLength": 6,
+                "ValidityPeriod": 30,
+                "AllowedAttempts": 3,
+                "Language": "fr-FR",
+                "OriginationIdentity": ANY,
+                "DestinationIdentity": "+33600000003",
+                "ReferenceId": ANY,
+            },
+        )

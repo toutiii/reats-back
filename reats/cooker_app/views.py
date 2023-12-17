@@ -137,6 +137,19 @@ class CookerView(
 
         return Response(status=200)
 
+    @action(methods=["post"], detail=False, url_path="otp/ask")
+    def ask_otp(self, request) -> Response:
+        phone = request.data.get("phone")
+
+        try:
+            e164_phone_format = format_phone(phone)
+        except NumberParseException:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        send_otp(e164_phone_format)
+
+        return Response(status=200)
+
 
 class DishView(viewsets.ModelViewSet):
     parser_classes = [MultiPartParser]
