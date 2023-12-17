@@ -7,6 +7,7 @@ from custom_renderers.renderers import (
     CustomRendererWithoutData,
 )
 from django.db import IntegrityError
+from phonenumbers.phonenumberutil import NumberParseException
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser
@@ -16,6 +17,7 @@ from rest_framework.serializers import BaseSerializer
 from utils.common import (
     activate_user,
     delete_s3_object,
+    format_phone,
     is_otp_valid,
     send_otp,
     upload_image_to_s3,
@@ -59,7 +61,7 @@ class CookerView(
             print(err)
             return
 
-        send_otp(serializer.validated_data)
+        send_otp(serializer.validated_data.get("phone"))
 
     def get_renderers(self) -> list[BaseRenderer]:
         if self.request.method in ("POST", "PATCH"):
@@ -110,6 +112,30 @@ class CookerView(
             return Response(status=status.HTTP_200_OK)
 
         return Response(status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=["post"], detail=False)
+    def auth(self, request) -> Response:
+        phone = request.data.get("phone")
+
+        if phone is None:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            e164_phone_format = format_phone(phone)
+        except NumberParseException:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            cooker: CookerModel = CookerModel.objects.get(phone=e164_phone_format)
+        except CookerModel.DoesNotExist:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        if not cooker.is_activated:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        send_otp(e164_phone_format)
+
+        return Response(status=200)
 
 
 class DishView(viewsets.ModelViewSet):

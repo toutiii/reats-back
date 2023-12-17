@@ -32,5 +32,23 @@
       "town": "test",
       "address_complement": "résidence test"
     }
+  },
+  {
+    "model": "cooker_app.cookermodel",
+    "pk": 3,
+    "fields": {
+      "created": "2023-12-01T22:52:05.718117+02:00",
+      "modified": "2023-12-01T22:52:05.718117+02:00",
+      "firstname": "test",
+      "lastname": "test",
+      "phone": "+33600000003",
+      "postal_code": "91100",
+      "siret": "00000000000003",
+      "street_name": "rue du terrier du rat",
+      "street_number": "3",
+      "town": "test",
+      "address_complement": "résidence test",
+      "is_activated": true
+    }
   }
 ]

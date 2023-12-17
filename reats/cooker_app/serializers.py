@@ -1,5 +1,3 @@
-import os
-
 from phonenumbers.phonenumberutil import NumberParseException
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer

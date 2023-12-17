@@ -1,9 +1,9 @@
 import pytest
 from cooker_app.models import DishModel
+from django.core.exceptions import ObjectDoesNotExist
 from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from rest_framework import status
 from rest_framework.test import APIClient
-from django.core.exceptions import ObjectDoesNotExist
 
 
 @pytest.fixture

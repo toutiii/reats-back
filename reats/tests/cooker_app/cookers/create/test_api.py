@@ -55,7 +55,7 @@ def test_create_cooker_success(
     path: str,
     post_data: dict,
 ) -> None:
-    assert CookerModel.objects.count() == 2
+    old_count = CookerModel.objects.count()
 
     response = client.post(
         path,
@@ -63,7 +63,9 @@ def test_create_cooker_success(
         content_type=MULTIPART_CONTENT,
     )
     assert response.status_code == status.HTTP_201_CREATED
-    assert CookerModel.objects.count() == 3
+    new_count = CookerModel.objects.count()
+
+    assert new_count - old_count == 1
 
     post_data_keys = list(post_data.keys()) + [
         "photo",
@@ -178,7 +180,7 @@ class TestActivateCookerFailed:
 class TestCreateSameCookerTwice:
     @pytest.fixture
     def phone(self) -> str:
-        return "0600000003"
+        return "0700000000"
 
     @pytest.mark.django_db
     def test_response(
@@ -187,8 +189,8 @@ class TestCreateSameCookerTwice:
         client: APIClient,
         path: str,
         post_data: dict,
-    ):
-        assert CookerModel.objects.count() == 2
+    ) -> None:
+        old_count = CookerModel.objects.count()
 
         response = client.post(
             path,
@@ -196,7 +198,9 @@ class TestCreateSameCookerTwice:
             content_type=MULTIPART_CONTENT,
         )
         assert response.status_code == status.HTTP_201_CREATED
-        assert CookerModel.objects.count() == 3
+        new_count = CookerModel.objects.count()
+
+        assert new_count - old_count == 1
 
         response = client.post(
             path,
@@ -204,7 +208,7 @@ class TestCreateSameCookerTwice:
             content_type=MULTIPART_CONTENT,
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert CookerModel.objects.count() == 3
+        assert CookerModel.objects.count() == new_count
 
         send_otp_message.assert_called_once_with(
             ApplicationId=ANY,
@@ -216,7 +220,7 @@ class TestCreateSameCookerTwice:
                 "AllowedAttempts": 3,
                 "Language": "fr-FR",
                 "OriginationIdentity": ANY,
-                "DestinationIdentity": "+33600000003",
+                "DestinationIdentity": "+33700000000",
                 "ReferenceId": ANY,
             },
         )
@@ -244,14 +248,81 @@ def test_failed_create_cooker_wrong_data(
     path: str,
     post_data: dict,
     upload_fileobj: MagicMock,
-):
-    assert CookerModel.objects.count() == 2
+) -> None:
+    old_count = CookerModel.objects.count()
     response = client.post(
         path,
         encode_multipart(BOUNDARY, post_data),
         content_type=MULTIPART_CONTENT,
     )
     assert response.status_code == status.HTTP_400_BAD_REQUEST
-    assert CookerModel.objects.count() == 2
+    new_count = CookerModel.objects.count()
+    assert old_count == new_count
     upload_fileobj.assert_not_called()
     send_otp_message.assert_not_called()
+
+
+class TestCookerAuth:
+    @pytest.fixture
+    def auth_data(self) -> dict:
+        return {"phone": "0600000003"}
+
+    @pytest.mark.parametrize(
+        "auth_data",
+        [
+            {},
+            {"phone": "this_is_not_a_phone_number"},
+            {"phone": "0600000000"},
+            {"phone": "0600000002"},
+        ],
+        ids=[
+            "missing_phone_number",
+            "invalid_phone_number",
+            "unknown_user",
+            "known_but_non_activated_user",
+        ],
+    )
+    @pytest.mark.django_db
+    def test_cooker_auth_failed(
+        self,
+        auth_data: dict,
+        client: APIClient,
+        auth_path: str,
+        send_otp_message: MagicMock,
+    ) -> None:
+        response = client.post(
+            auth_path,
+            encode_multipart(BOUNDARY, auth_data),
+            content_type=MULTIPART_CONTENT,
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        send_otp_message.assert_not_called()
+
+    @pytest.mark.django_db
+    def test_cooker_auth_success(
+        self,
+        auth_data: dict,
+        client: APIClient,
+        auth_path: str,
+        send_otp_message: MagicMock,
+    ) -> None:
+        response = client.post(
+            auth_path,
+            encode_multipart(BOUNDARY, auth_data),
+            content_type=MULTIPART_CONTENT,
+        )
+        assert response.status_code == status.HTTP_200_OK
+        send_otp_message.assert_called_once_with(
+            ApplicationId=ANY,
+            SendOTPMessageRequestParameters={
+                "Channel": "SMS",
+                "BrandName": ANY,
+                "CodeLength": 6,
+                "ValidityPeriod": 30,
+                "AllowedAttempts": 3,
+                "Language": "fr-FR",
+                "OriginationIdentity": ANY,
+                "DestinationIdentity": "+33600000003",
+                "ReferenceId": ANY,
+            },
+        )

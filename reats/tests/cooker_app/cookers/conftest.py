@@ -1,11 +1,16 @@
 import pytest
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def path() -> str:
     return "/api/v1/cookers/"
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def otp_verify_path() -> str:
     return "/api/v1/cookers/otp-verify/"
+
+
+@pytest.fixture(scope="session")
+def auth_path() -> str:
+    return "/api/v1/cookers/auth/"

@@ -67,7 +67,7 @@ def generate_ref_id(phone: str):
     return hashlib.md5(phone.encode()).hexdigest()
 
 
-def send_otp(data: dict) -> None:
+def send_otp(phone: str) -> None:
     try:
         response = pinpoint_client.send_otp_message(
             ApplicationId=os.getenv("AWS_PINPOINT_APP_ID"),
@@ -79,8 +79,8 @@ def send_otp(data: dict) -> None:
                 "AllowedAttempts": int(os.getenv("AWS_PINPOINT_ALLOWED_ATTEMPTS", "3")),
                 "Language": os.getenv("AWS_PINPOINT_LANGUAGE"),
                 "OriginationIdentity": os.getenv("AWS_SENDER_ID"),
-                "DestinationIdentity": data["phone"],
-                "ReferenceId": generate_ref_id(data["phone"]),
+                "DestinationIdentity": phone,
+                "ReferenceId": generate_ref_id(phone),
             },
         )
 
