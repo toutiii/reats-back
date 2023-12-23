@@ -133,9 +133,32 @@ class CookerView(
         if not cooker.is_activated:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
-        send_otp(e164_phone_format)
+        otp_response: Union[dict, None] = send_otp(e164_phone_format)
 
-        return Response(status=200)
+        if otp_response is None:
+            return Response(status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+        otp_response_status_code = (
+            otp_response.get("MessageResponse", {})
+            .get("Result", {})
+            .get(e164_phone_format, {})
+            .get("StatusCode")
+        )
+
+        if otp_response_status_code != status.HTTP_200_OK:
+            return Response(status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+        otp_response_delivery_status = (
+            otp_response.get("MessageResponse", {})
+            .get("Result", {})
+            .get(e164_phone_format, {})
+            .get("DeliveryStatus")
+        )
+
+        if otp_response_delivery_status != "SUCCESSFUL":
+            return Response(status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+        return Response(status=status.HTTP_200_OK)
 
     @action(methods=["post"], detail=False, url_path="otp/ask")
     def ask_otp(self, request) -> Response:
@@ -148,7 +171,7 @@ class CookerView(
 
         send_otp(e164_phone_format)
 
-        return Response(status=200)
+        return Response(status=status.HTTP_200_OK)
 
 
 class DishView(viewsets.ModelViewSet):

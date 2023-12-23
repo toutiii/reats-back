@@ -12,8 +12,15 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 import os
 from pathlib import Path
 
+import boto3
+from botocore.exceptions import ClientError
 from dotenv import load_dotenv
 
+session = boto3.session.Session()
+secretsmanager_client = session.client(
+    service_name="secretsmanager", region_name=os.getenv("AWS_REGION")
+)
+ssm_client = boto3.client("ssm", region_name=os.getenv("AWS_REGION"))
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -21,14 +28,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-try:
-    SECRET_KEY = os.environ["SECRET_KEY"]
-except KeyError:
-    load_dotenv(os.path.join(BASE_DIR, "config/.env"))
-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ["DEBUG"]
+
+SECRET_KEY = os.getenv("SECRET_KEY")
+
+
+# Load all env vars in config/.env
+load_dotenv(os.path.join(BASE_DIR, "config/.env"))
 
 ALLOWED_HOSTS = os.environ["DJANGO_ALLOWED_HOSTS"].split(" ")
 
@@ -139,7 +146,30 @@ PHONE_REGION = "FR"
 REST_FRAMEWORK = {
     "EXCEPTION_HANDLER": "utils.custom_middlewares.custom_exception_handler",
     "TEST_REQUEST_DEFAULT_FORMAT": "json",
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ),
 }
 
+try:
+    get_secret_value_response = secretsmanager_client.get_secret_value(
+        SecretId=os.getenv("RSA_PRIVATE_KEY_PATH")
+    )
+except ClientError as e:
+    raise e
 
-COOKER_POOL_OTP_LENGTH = 8
+try:
+    response = ssm_client.get_parameter(
+        Name=os.getenv("RSA_PUBLIC_KEY_PATH"), WithDecryption=False
+    )
+except ClientError as e:
+    raise e
+
+secret_key = get_secret_value_response["SecretString"]
+verifying_key = response["Parameter"]["Value"]
+
+SIMPLE_JWT = {
+    "ALGORITHM": os.getenv("DJANGO_SIMPLE_JWT_ALGORITHM"),
+    "SIGNING_KEY": secret_key,
+    "VERIFYING_KEY": verifying_key,
+}

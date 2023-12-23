@@ -1,6 +1,6 @@
 import hashlib
 import os
-from typing import Type
+from typing import Type, Union
 
 import boto3
 import phonenumbers
@@ -67,9 +67,9 @@ def generate_ref_id(phone: str):
     return hashlib.md5(phone.encode()).hexdigest()
 
 
-def send_otp(phone: str) -> None:
+def send_otp(phone: str) -> Union[dict, None]:
     try:
-        response = pinpoint_client.send_otp_message(
+        response: dict = pinpoint_client.send_otp_message(
             ApplicationId=os.getenv("AWS_PINPOINT_APP_ID"),
             SendOTPMessageRequestParameters={
                 "Channel": os.getenv("AWS_PINPOINT_CHANNEL"),
@@ -86,8 +86,9 @@ def send_otp(phone: str) -> None:
 
     except ClientError as e:
         print(e.response)
-    else:
-        print(response)
+        return None
+
+    return response
 
 
 def is_otp_valid(data: dict) -> bool:

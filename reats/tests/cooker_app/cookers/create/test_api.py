@@ -10,6 +10,11 @@ from rest_framework.test import APIClient
 
 
 @pytest.fixture
+def e164_phone() -> str:
+    return "+33601020304"
+
+
+@pytest.fixture
 def phone() -> str:
     return "0601020304"
 
@@ -48,9 +53,9 @@ def post_data(
     }
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db
 def test_create_cooker_success(
-    send_otp_message: MagicMock,
+    send_otp_message_success: MagicMock,
     client: APIClient,
     path: str,
     post_data: dict,
@@ -87,7 +92,7 @@ def test_create_cooker_success(
     }
     assert CookerModel.objects.latest("pk").is_online is False
     assert CookerModel.objects.latest("pk").is_activated is False
-    send_otp_message.assert_called_once_with(
+    send_otp_message_success.assert_called_once_with(
         ApplicationId=ANY,
         SendOTPMessageRequestParameters={
             "Channel": "SMS",
@@ -179,13 +184,17 @@ class TestActivateCookerFailed:
 
 class TestCreateSameCookerTwice:
     @pytest.fixture
+    def e164_phone(self) -> str:
+        return "+33700000000"
+
+    @pytest.fixture
     def phone(self) -> str:
         return "0700000000"
 
     @pytest.mark.django_db
     def test_response(
         self,
-        send_otp_message: MagicMock,
+        send_otp_message_success: MagicMock,
         client: APIClient,
         path: str,
         post_data: dict,
@@ -210,7 +219,7 @@ class TestCreateSameCookerTwice:
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert CookerModel.objects.count() == new_count
 
-        send_otp_message.assert_called_once_with(
+        send_otp_message_success.assert_called_once_with(
             ApplicationId=ANY,
             SendOTPMessageRequestParameters={
                 "Channel": "SMS",
@@ -243,7 +252,7 @@ class TestCreateSameCookerTwice:
 )
 @pytest.mark.django_db
 def test_failed_create_cooker_wrong_data(
-    send_otp_message: MagicMock,
+    send_otp_message_success: MagicMock,
     client: APIClient,
     path: str,
     post_data: dict,
@@ -259,10 +268,14 @@ def test_failed_create_cooker_wrong_data(
     new_count = CookerModel.objects.count()
     assert old_count == new_count
     upload_fileobj.assert_not_called()
-    send_otp_message.assert_not_called()
+    send_otp_message_success.assert_not_called()
 
 
 class TestCookerAuth:
+    @pytest.fixture
+    def e164_phone(self) -> str:
+        return "+33600000003"
+
     @pytest.fixture
     def auth_data(self) -> dict:
         return {"phone": "0600000003"}
@@ -288,7 +301,7 @@ class TestCookerAuth:
         auth_data: dict,
         client: APIClient,
         auth_path: str,
-        send_otp_message: MagicMock,
+        send_otp_message_success: MagicMock,
     ) -> None:
         response = client.post(
             auth_path,
@@ -296,7 +309,7 @@ class TestCookerAuth:
             content_type=MULTIPART_CONTENT,
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        send_otp_message.assert_not_called()
+        send_otp_message_success.assert_not_called()
 
     @pytest.mark.django_db
     def test_cooker_auth_success(
@@ -304,7 +317,7 @@ class TestCookerAuth:
         auth_data: dict,
         client: APIClient,
         auth_path: str,
-        send_otp_message: MagicMock,
+        send_otp_message_success: MagicMock,
     ) -> None:
         response = client.post(
             auth_path,
@@ -312,7 +325,7 @@ class TestCookerAuth:
             content_type=MULTIPART_CONTENT,
         )
         assert response.status_code == status.HTTP_200_OK
-        send_otp_message.assert_called_once_with(
+        send_otp_message_success.assert_called_once_with(
             ApplicationId=ANY,
             SendOTPMessageRequestParameters={
                 "Channel": "SMS",
@@ -329,6 +342,10 @@ class TestCookerAuth:
 
 
 class TestCookerAskNewOTP:
+    @pytest.fixture
+    def e164_phone(self) -> str:
+        return "+33600000003"
+
     @pytest.fixture
     def data(self) -> dict:
         return {"phone": "0600000003"}
@@ -350,7 +367,7 @@ class TestCookerAskNewOTP:
         data: dict,
         client: APIClient,
         ask_otp_path: str,
-        send_otp_message: MagicMock,
+        send_otp_message_success: MagicMock,
     ) -> None:
         response = client.post(
             ask_otp_path,
@@ -358,7 +375,7 @@ class TestCookerAskNewOTP:
             content_type=MULTIPART_CONTENT,
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        send_otp_message.assert_not_called()
+        send_otp_message_success.assert_not_called()
 
     @pytest.mark.django_db
     def test_cooker_ask_new_OTP_success(
@@ -366,7 +383,7 @@ class TestCookerAskNewOTP:
         data: dict,
         client: APIClient,
         ask_otp_path: str,
-        send_otp_message: MagicMock,
+        send_otp_message_success: MagicMock,
     ) -> None:
         response = client.post(
             ask_otp_path,
@@ -374,7 +391,7 @@ class TestCookerAskNewOTP:
             content_type=MULTIPART_CONTENT,
         )
         assert response.status_code == status.HTTP_200_OK
-        send_otp_message.assert_called_once_with(
+        send_otp_message_success.assert_called_once_with(
             ApplicationId=ANY,
             SendOTPMessageRequestParameters={
                 "Channel": "SMS",
