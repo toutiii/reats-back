@@ -113,3 +113,10 @@ def verify_otp_message_failed() -> Iterator:
     )
     yield patcher.start()
     patcher.stop()
+
+
+@pytest.fixture
+def ssm_get_parameter() -> Iterator:
+    patcher = patch("source.settings.ssm_client.get_parameter")
+    yield patcher.start()
+    patcher.stop()

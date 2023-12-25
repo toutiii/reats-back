@@ -17,9 +17,7 @@ from botocore.exceptions import ClientError
 from dotenv import load_dotenv
 
 session = boto3.session.Session()
-secretsmanager_client = session.client(
-    service_name="secretsmanager", region_name=os.getenv("AWS_REGION")
-)
+
 ssm_client = boto3.client("ssm", region_name=os.getenv("AWS_REGION"))
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -82,6 +80,7 @@ TEMPLATES = [
         },
     },
 ]
+
 
 WSGI_APPLICATION = "source.wsgi.application"
 
@@ -152,11 +151,13 @@ REST_FRAMEWORK = {
 }
 
 try:
-    get_secret_value_response = secretsmanager_client.get_secret_value(
-        SecretId=os.getenv("RSA_PRIVATE_KEY_PATH")
+    response = ssm_client.get_parameter(
+        Name=os.getenv("RSA_PRIVATE_KEY_PATH"), WithDecryption=False
     )
 except ClientError as e:
     raise e
+
+secret_key = response["Parameter"]["Value"]
 
 try:
     response = ssm_client.get_parameter(
@@ -165,8 +166,8 @@ try:
 except ClientError as e:
     raise e
 
-secret_key = get_secret_value_response["SecretString"]
 verifying_key = response["Parameter"]["Value"]
+
 
 SIMPLE_JWT = {
     "ALGORITHM": os.getenv("DJANGO_SIMPLE_JWT_ALGORITHM"),

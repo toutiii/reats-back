@@ -14,6 +14,7 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.renderers import BaseRenderer
 from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
+from rest_framework_simplejwt.views import TokenViewBase
 from utils.common import (
     activate_user,
     delete_s3_object,
@@ -33,6 +34,7 @@ from .serializers import (
     DrinkGETSerializer,
     DrinkPATCHSerializer,
     DrinkPOSTSerializer,
+    TokenObtainPairWithoutPasswordSerializer,
 )
 
 
@@ -370,3 +372,7 @@ class DrinkView(viewsets.ModelViewSet):
                 "status_code": status.HTTP_204_NO_CONTENT,
             }
         )
+
+
+class TokenObtainPairWithoutPasswordView(TokenViewBase):
+    serializer_class = TokenObtainPairWithoutPasswordSerializer

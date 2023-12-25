@@ -405,3 +405,57 @@ class TestCookerAskNewOTP:
                 "ReferenceId": ANY,
             },
         )
+
+
+class TestTokenFetch:
+    @pytest.mark.parametrize(
+        "data",
+        [
+            {},
+            {"unexpected_field": "test_data"},
+            {"username": "test", "password": "test"},
+        ],
+        ids=[
+            "missing_field",
+            "invalid_field",
+            "deprecated_fields",
+        ],
+    )
+    def test_fetch_token_failed_with_missing_phone_field(
+        self,
+        client: APIClient,
+        data: dict,
+        get_token_path: str,
+        ssm_get_parameter: MagicMock,
+    ) -> None:
+        response = client.post(
+            get_token_path,
+            encode_multipart(BOUNDARY, data),
+            content_type=MULTIPART_CONTENT,
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        ssm_get_parameter.assert_not_called()
+
+    @pytest.fixture
+    def data(self) -> dict:
+        return {"phone": "0600000003"}
+
+    @pytest.mark.django_db
+    def test_fetch_token_success(
+        self,
+        client: APIClient,
+        data: dict,
+        get_token_path: str,
+        ssm_get_parameter: MagicMock,
+    ) -> None:
+        response = client.post(
+            get_token_path,
+            encode_multipart(BOUNDARY, data),
+            content_type=MULTIPART_CONTENT,
+        )
+        assert response.status_code == status.HTTP_200_OK
+        ssm_get_parameter.assert_not_called()
+        assert response.json().get("ok") is True
+        assert response.json().get("token") is not None
+        assert type(response.json().get("token")) == dict
+        assert list(response.json().get("token").keys()) == ["refresh", "access"]
