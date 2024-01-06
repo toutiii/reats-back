@@ -111,5 +111,7 @@ def is_otp_valid(data: dict) -> bool:
 
 def activate_user(model: Type[CookerModel], data: dict) -> None:
     user = model.objects.get(phone=format_phone(data["phone"]))
-    user.is_activated = True
-    user.save()
+
+    if not user.is_activated:
+        user.is_activated = True
+        user.save()

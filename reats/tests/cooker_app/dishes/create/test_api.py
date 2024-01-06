@@ -30,6 +30,7 @@ def post_data(category: str, image: InMemoryUploadedFile) -> dict:
 class TestCreateDishSuccess:
     def test_response(
         self,
+        auth_headers: dict,
         client: APIClient,
         path: str,
         post_data: dict,
@@ -41,6 +42,8 @@ class TestCreateDishSuccess:
             path,
             encode_multipart(BOUNDARY, post_data),
             content_type=MULTIPART_CONTENT,
+            follow=False,
+            **auth_headers,
         )
 
         assert response.status_code == status.HTTP_201_CREATED
@@ -70,6 +73,7 @@ class TestCreateDishFailedInvalidCategory:
 
     def test_response(
         self,
+        auth_headers: dict,
         client: APIClient,
         path: str,
         post_data: dict,
@@ -80,6 +84,8 @@ class TestCreateDishFailedInvalidCategory:
             path,
             encode_multipart(BOUNDARY, post_data),
             content_type=MULTIPART_CONTENT,
+            follow=False,
+            **auth_headers,
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert DishModel.objects.count() == pre_create_count

@@ -10,6 +10,8 @@ logger = logging.getLogger(__file__)
 def custom_exception_handler(exc, context):
     # Get standard error response from REST framework's default exception handler:
     response = exception_handler(exc, context)
+    print(exc)
+    print(context)
 
     if response is not None and response.status_code == HTTPStatus.BAD_REQUEST:
         # Log response data for bad request to simplify debugging:

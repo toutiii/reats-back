@@ -3,8 +3,17 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 
-def test_empty_query_params(client: APIClient, path: str) -> None:
-    response = client.get(path)
+@pytest.mark.django_db
+def test_empty_query_params(
+    auth_headers: dict,
+    client: APIClient,
+    path: str,
+) -> None:
+    response = client.get(
+        path,
+        follow=False,
+        **auth_headers,
+    )
 
     assert response.status_code == status.HTTP_200_OK
     assert response.json().get("data") is None
@@ -12,8 +21,17 @@ def test_empty_query_params(client: APIClient, path: str) -> None:
 
 
 @pytest.mark.django_db
-def test_get_enabled_drinks(client: APIClient, path: str) -> None:
-    response = client.get(path, {"is_enabled": "true"})
+def test_get_enabled_drinks(
+    auth_headers: dict,
+    client: APIClient,
+    path: str,
+) -> None:
+    response = client.get(
+        path,
+        {"is_enabled": "true"},
+        follow=False,
+        **auth_headers,
+    )
 
     assert response.status_code == status.HTTP_200_OK
     assert response.json().get("ok") is True
@@ -25,8 +43,17 @@ def test_get_enabled_drinks(client: APIClient, path: str) -> None:
 
 
 @pytest.mark.django_db
-def test_get_disabled_drinks(client: APIClient, path: str) -> None:
-    response = client.get(path, {"is_enabled": "false"})
+def test_get_disabled_drinks(
+    auth_headers: dict,
+    client: APIClient,
+    path: str,
+) -> None:
+    response = client.get(
+        path,
+        {"is_enabled": "false"},
+        follow=False,
+        **auth_headers,
+    )
 
     assert response.status_code == status.HTTP_200_OK
     assert response.json().get("ok") is True

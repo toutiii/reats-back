@@ -31,6 +31,7 @@ def post_data_without_photo() -> dict:
 class TestUpdateDrinkWithoutPhotoSuccess:
     def test_response(
         self,
+        auth_headers: dict,
         client: APIClient,
         drink_id: int,
         path: str,
@@ -41,6 +42,8 @@ class TestUpdateDrinkWithoutPhotoSuccess:
                 f"{path}{drink_id}/",
                 encode_multipart(BOUNDARY, post_data_without_photo),
                 content_type=MULTIPART_CONTENT,
+                follow=False,
+                **auth_headers,
             )
 
             assert response.status_code == status.HTTP_200_OK
@@ -74,6 +77,7 @@ def post_data_with_photo(image: InMemoryUploadedFile) -> dict:
 class TestUpdateDrinkWithPhotoSuccess:
     def test_response(
         self,
+        auth_headers: dict,
         client: APIClient,
         delete_object: MagicMock,
         drink_id: int,
@@ -86,6 +90,8 @@ class TestUpdateDrinkWithPhotoSuccess:
                 f"{path}{drink_id}/",
                 encode_multipart(BOUNDARY, post_data_with_photo),
                 content_type=MULTIPART_CONTENT,
+                follow=False,
+                **auth_headers,
             )
 
             assert response.status_code == status.HTTP_200_OK
@@ -124,6 +130,7 @@ class TestUpdateDrinkToDisableState:
 
     def test_response(
         self,
+        auth_headers: dict,
         client: APIClient,
         drink_id: int,
         drink_post_data: dict,
@@ -134,6 +141,8 @@ class TestUpdateDrinkToDisableState:
                 f"{path}{drink_id}/",
                 encode_multipart(BOUNDARY, drink_post_data),
                 content_type=MULTIPART_CONTENT,
+                follow=False,
+                **auth_headers,
             )
 
             assert response.status_code == status.HTTP_200_OK
@@ -156,6 +165,7 @@ class TestUpdateDrinkToEnableState:
 
     def test_response(
         self,
+        auth_headers: dict,
         client: APIClient,
         drink_id: int,
         drink_post_data: dict,
@@ -166,6 +176,8 @@ class TestUpdateDrinkToEnableState:
                 f"{path}{drink_id}/",
                 encode_multipart(BOUNDARY, drink_post_data),
                 content_type=MULTIPART_CONTENT,
+                follow=False,
+                **auth_headers,
             )
 
             assert response.status_code == status.HTTP_200_OK

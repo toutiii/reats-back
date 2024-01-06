@@ -148,6 +148,7 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
+    "DEFAULT_PERMISSION_CLASSES": ("utils.custom_permissions.UserPermission",),
 }
 
 try:
@@ -173,4 +174,7 @@ SIMPLE_JWT = {
     "ALGORITHM": os.getenv("DJANGO_SIMPLE_JWT_ALGORITHM"),
     "SIGNING_KEY": secret_key,
     "VERIFYING_KEY": verifying_key,
+    "TOKEN_OBTAIN_SERIALIZER": "cookers_app.serializers.TokenObtainPairWithoutPasswordSerializer",
 }
+
+AUTH_USER_MODEL = "cooker_app.GenericUser"

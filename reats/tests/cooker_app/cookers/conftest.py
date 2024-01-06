@@ -17,10 +17,10 @@ def auth_path() -> str:
 
 
 @pytest.fixture(scope="session")
-def ask_otp_path() -> str:
+def otp_path() -> str:
     return "/api/v1/cookers/otp/ask/"
 
 
 @pytest.fixture(scope="session")
-def get_token_path() -> str:
+def token_path() -> str:
     return "/api/v1/token/"

@@ -15,6 +15,7 @@ def dish_id() -> int:
 class TestSuccessfulDishDeletion:
     def test_response(
         self,
+        auth_headers: dict,
         client: APIClient,
         dish_id: int,
         path: str,
@@ -23,6 +24,8 @@ class TestSuccessfulDishDeletion:
             f"{path}{dish_id}/",
             encode_multipart(BOUNDARY, {}),
             content_type=MULTIPART_CONTENT,
+            follow=False,
+            **auth_headers,
         )
 
         assert response.status_code == status.HTTP_200_OK

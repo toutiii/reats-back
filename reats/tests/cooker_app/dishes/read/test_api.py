@@ -3,8 +3,13 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 
-def test_empty_query_params(client: APIClient, path: str) -> None:
-    response = client.get(path)
+@pytest.mark.django_db
+def test_empty_query_params(auth_headers: dict, client: APIClient, path: str) -> None:
+    response = client.get(
+        path,
+        follow=False,
+        **auth_headers,
+    )
 
     assert response.status_code == status.HTTP_200_OK
     assert response.json().get("data") is None
@@ -12,8 +17,13 @@ def test_empty_query_params(client: APIClient, path: str) -> None:
 
 
 @pytest.mark.django_db
-def test_get_enabled_dishes(client: APIClient, path: str) -> None:
-    response = client.get(path, {"is_enabled": "true"})
+def test_get_enabled_dishes(auth_headers: dict, client: APIClient, path: str) -> None:
+    response = client.get(
+        path,
+        {"is_enabled": "true"},
+        follow=False,
+        **auth_headers,
+    )
 
     assert response.status_code == status.HTTP_200_OK
     assert response.json().get("ok") is True
@@ -25,8 +35,13 @@ def test_get_enabled_dishes(client: APIClient, path: str) -> None:
 
 
 @pytest.mark.django_db
-def test_get_disabled_dishes(client: APIClient, path: str) -> None:
-    response = client.get(path, {"is_enabled": "false"})
+def test_get_disabled_dishes(auth_headers: dict, client: APIClient, path: str) -> None:
+    response = client.get(
+        path,
+        {"is_enabled": "false"},
+        follow=False,
+        **auth_headers,
+    )
 
     assert response.status_code == status.HTTP_200_OK
     assert response.json().get("ok") is True
@@ -38,8 +53,13 @@ def test_get_disabled_dishes(client: APIClient, path: str) -> None:
 
 
 @pytest.mark.django_db
-def test_get_starters(client: APIClient, path: str) -> None:
-    response = client.get(path, {"category": "starter"})
+def test_get_starters(auth_headers: dict, client: APIClient, path: str) -> None:
+    response = client.get(
+        path,
+        {"category": "starter"},
+        follow=False,
+        **auth_headers,
+    )
 
     assert response.status_code == status.HTTP_200_OK
     assert response.json().get("ok") is True
@@ -51,8 +71,13 @@ def test_get_starters(client: APIClient, path: str) -> None:
 
 
 @pytest.mark.django_db
-def test_get_dishes(client: APIClient, path: str) -> None:
-    response = client.get(path, {"category": "dish"})
+def test_get_dishes(auth_headers: dict, client: APIClient, path: str) -> None:
+    response = client.get(
+        path,
+        {"category": "dish"},
+        follow=False,
+        **auth_headers,
+    )
 
     assert response.status_code == status.HTTP_200_OK
     assert response.json().get("ok") is True
@@ -64,8 +89,13 @@ def test_get_dishes(client: APIClient, path: str) -> None:
 
 
 @pytest.mark.django_db
-def test_get_desserts(client: APIClient, path: str) -> None:
-    response = client.get(path, {"category": "dessert"})
+def test_get_desserts(auth_headers: dict, client: APIClient, path: str) -> None:
+    response = client.get(
+        path,
+        {"category": "dessert"},
+        follow=False,
+        **auth_headers,
+    )
 
     assert response.status_code == status.HTTP_200_OK
     assert response.json().get("ok") is True
@@ -77,8 +107,13 @@ def test_get_desserts(client: APIClient, path: str) -> None:
 
 
 @pytest.mark.django_db
-def test_get_all_categories(client: APIClient, path: str) -> None:
-    response = client.get(path, {"category": "starter,dish,dessert"})
+def test_get_all_categories(auth_headers: dict, client: APIClient, path: str) -> None:
+    response = client.get(
+        path,
+        {"category": "starter,dish,dessert"},
+        follow=False,
+        **auth_headers,
+    )
 
     assert response.status_code == status.HTTP_200_OK
     assert response.json().get("ok") is True
@@ -91,13 +126,17 @@ def test_get_all_categories(client: APIClient, path: str) -> None:
 
 
 @pytest.mark.django_db
-def test_get_all_enabled_categories(client: APIClient, path: str) -> None:
+def test_get_all_enabled_categories(
+    auth_headers: dict, client: APIClient, path: str
+) -> None:
     response = client.get(
         path,
         {
             "category": "starter,dish,dessert",
             "is_enabled": "true",
         },
+        follow=False,
+        **auth_headers,
     )
 
     assert response.status_code == status.HTTP_200_OK
@@ -111,13 +150,17 @@ def test_get_all_enabled_categories(client: APIClient, path: str) -> None:
 
 
 @pytest.mark.django_db
-def test_get_all_disabled_categories(client: APIClient, path: str) -> None:
+def test_get_all_disabled_categories(
+    auth_headers: dict, client: APIClient, path: str
+) -> None:
     response = client.get(
         path,
         {
             "category": "starter,dish,dessert",
             "is_enabled": "false",
         },
+        follow=False,
+        **auth_headers,
     )
 
     assert response.status_code == status.HTTP_200_OK

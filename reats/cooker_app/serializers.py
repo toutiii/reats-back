@@ -75,13 +75,12 @@ class TokenObtainPairWithoutPasswordSerializer(TokenObtainPairSerializer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["password"].required = False
-        self.fields["username"].required = False
 
     phone = serializers.CharField()
 
-    def validate(self, attrs):
+    def validate(self, attrs) -> dict:
         try:
-            self.user = CookerModel.objects.get(
+            self.user: CookerModel = CookerModel.objects.get(
                 phone=format_phone(self.initial_data["phone"])
             )
         except CookerModel.DoesNotExist:
@@ -93,4 +92,4 @@ class TokenObtainPairWithoutPasswordSerializer(TokenObtainPairSerializer):
         data["refresh"] = str(refresh)
         data["access"] = str(refresh.access_token)
 
-        return {"ok": True, "token": data}
+        return {"ok": True, "token": data, "user_id": self.user.pk}

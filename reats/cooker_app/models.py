@@ -1,3 +1,4 @@
+from django.contrib.auth.models import AbstractBaseUser
 from django.core.validators import MinLengthValidator, RegexValidator
 from django.db.models import (
     CASCADE,
@@ -96,3 +97,13 @@ class DrinkModel(ReatsModel):
 
     class Meta:
         db_table = "drinks"
+
+
+class GenericUser(AbstractBaseUser):
+    phone: CharField = CharField(
+        unique=True, max_length=17, validators=[MinLengthValidator(10)]
+    )
+    USERNAME_FIELD = "phone"
+
+    class Meta:
+        db_table = "generic_users"

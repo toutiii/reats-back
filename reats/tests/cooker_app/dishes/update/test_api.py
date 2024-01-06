@@ -30,6 +30,7 @@ def post_data_without_photo() -> dict:
 class TestUpdateDishWithoutPhotoSuccess:
     def test_response(
         self,
+        auth_headers: dict,
         client: APIClient,
         dish_id: int,
         path: str,
@@ -40,6 +41,8 @@ class TestUpdateDishWithoutPhotoSuccess:
                 f"{path}{dish_id}/",
                 encode_multipart(BOUNDARY, post_data_without_photo),
                 content_type=MULTIPART_CONTENT,
+                follow=False,
+                **auth_headers,
             )
 
             assert response.status_code == status.HTTP_200_OK
@@ -74,6 +77,7 @@ def post_data_with_photo(image: InMemoryUploadedFile) -> dict:
 class TestUpdateDishWithPhotoSuccess:
     def test_response(
         self,
+        auth_headers: dict,
         client: APIClient,
         delete_object: MagicMock,
         dish_id: int,
@@ -86,6 +90,8 @@ class TestUpdateDishWithPhotoSuccess:
                 f"{path}{dish_id}/",
                 encode_multipart(BOUNDARY, post_data_with_photo),
                 content_type=MULTIPART_CONTENT,
+                follow=False,
+                **auth_headers,
             )
 
             assert response.status_code == status.HTTP_200_OK
@@ -129,6 +135,7 @@ class TestUpdateDishToDisableState:
 
     def test_response(
         self,
+        auth_headers: dict,
         client: APIClient,
         dish_id: int,
         dish_post_data: dict,
@@ -139,6 +146,8 @@ class TestUpdateDishToDisableState:
                 f"{path}{dish_id}/",
                 encode_multipart(BOUNDARY, dish_post_data),
                 content_type=MULTIPART_CONTENT,
+                follow=False,
+                **auth_headers,
             )
 
             assert response.status_code == status.HTTP_200_OK
@@ -165,6 +174,7 @@ class TestUpdateDishToEnableState:
 
     def test_response(
         self,
+        auth_headers: dict,
         client: APIClient,
         dish_id: int,
         dish_post_data: dict,
@@ -175,6 +185,8 @@ class TestUpdateDishToEnableState:
                 f"{path}{dish_id}/",
                 encode_multipart(BOUNDARY, dish_post_data),
                 content_type=MULTIPART_CONTENT,
+                follow=False,
+                **auth_headers,
             )
 
             assert response.status_code == status.HTTP_200_OK

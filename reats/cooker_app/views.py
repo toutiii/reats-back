@@ -23,6 +23,7 @@ from utils.common import (
     send_otp,
     upload_image_to_s3,
 )
+from utils.custom_permissions import UserPermission
 
 from .models import CookerModel, DishModel, DrinkModel
 from .serializers import (
@@ -46,6 +47,19 @@ class CookerView(
 ):
     parser_classes = [MultiPartParser]
     queryset = CookerModel.objects.all()
+
+    def get_permissions(self) -> list:
+        if self.action in (
+            "auth",
+            "ask_otp",
+            "create",
+            "otp_verify",
+        ):
+            permission_classes = []
+        else:
+            permission_classes = [UserPermission]
+
+        return [permission() for permission in permission_classes]
 
     def get_serializer_class(self) -> type[BaseSerializer]:
         if self.request.method in ("POST", "PATCH"):

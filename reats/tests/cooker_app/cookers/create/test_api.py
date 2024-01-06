@@ -366,11 +366,11 @@ class TestCookerAskNewOTP:
         self,
         data: dict,
         client: APIClient,
-        ask_otp_path: str,
+        otp_path: str,
         send_otp_message_success: MagicMock,
     ) -> None:
         response = client.post(
-            ask_otp_path,
+            otp_path,
             encode_multipart(BOUNDARY, data),
             content_type=MULTIPART_CONTENT,
         )
@@ -382,11 +382,11 @@ class TestCookerAskNewOTP:
         self,
         data: dict,
         client: APIClient,
-        ask_otp_path: str,
+        otp_path: str,
         send_otp_message_success: MagicMock,
     ) -> None:
         response = client.post(
-            ask_otp_path,
+            otp_path,
             encode_multipart(BOUNDARY, data),
             content_type=MULTIPART_CONTENT,
         )
@@ -425,11 +425,11 @@ class TestTokenFetch:
         self,
         client: APIClient,
         data: dict,
-        get_token_path: str,
+        token_path: str,
         ssm_get_parameter: MagicMock,
     ) -> None:
         response = client.post(
-            get_token_path,
+            token_path,
             encode_multipart(BOUNDARY, data),
             content_type=MULTIPART_CONTENT,
         )
@@ -445,17 +445,21 @@ class TestTokenFetch:
         self,
         client: APIClient,
         data: dict,
-        get_token_path: str,
+        token_path: str,
         ssm_get_parameter: MagicMock,
     ) -> None:
         response = client.post(
-            get_token_path,
+            token_path,
             encode_multipart(BOUNDARY, data),
             content_type=MULTIPART_CONTENT,
         )
         assert response.status_code == status.HTTP_200_OK
+        assert response.json() == {
+            "ok": True,
+            "token": {
+                "access": ANY,
+                "refresh": ANY,
+            },
+            "user_id": ANY,
+        }
         ssm_get_parameter.assert_not_called()
-        assert response.json().get("ok") is True
-        assert response.json().get("token") is not None
-        assert type(response.json().get("token")) == dict
-        assert list(response.json().get("token").keys()) == ["refresh", "access"]

@@ -26,6 +26,7 @@ def post_data(image: InMemoryUploadedFile) -> dict:
 class TestCreateDrinkSuccess:
     def test_response(
         self,
+        auth_headers: dict,
         client: APIClient,
         path: str,
         post_data: dict,
@@ -37,6 +38,8 @@ class TestCreateDrinkSuccess:
             path,
             encode_multipart(BOUNDARY, post_data),
             content_type=MULTIPART_CONTENT,
+            follow=False,
+            **auth_headers
         )
 
         assert response.status_code == status.HTTP_201_CREATED
