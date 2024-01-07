@@ -1,7 +1,7 @@
 import os
 from datetime import datetime, timedelta
 from io import BytesIO
-from unittest.mock import MagicMock
+from unittest.mock import ANY, MagicMock
 from uuid import uuid4
 
 import jwt
@@ -436,8 +436,8 @@ FhxtAirMySNzId/rIu6k6wPIqyziXjh0DBu0eI4flX3CJe1In0UfX9oqcFuw+VbY
                 follow=False,
                 **wrong_auth_header,
             )
-
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
+        assert response.json().get("error_code") == "token_not_valid"
 
 
 @pytest.mark.django_db
@@ -478,13 +478,160 @@ class TestUpdateCookerFailedWithUnexpectedUserIDInToken:
         path: str,
         data: dict,
     ) -> None:
-        with freeze_time("2024-01-06T22:00:00+00:00"):
-            response = client.patch(
-                f"{path}{cooker_id}/",
-                encode_multipart(BOUNDARY, data),
-                content_type=MULTIPART_CONTENT,
-                follow=False,
-                **wrong_auth_header,
-            )
+        response = client.patch(
+            f"{path}{cooker_id}/",
+            encode_multipart(BOUNDARY, data),
+            content_type=MULTIPART_CONTENT,
+            follow=False,
+            **wrong_auth_header,
+        )
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
+        assert response.json().get("error_code") == "authentication_failed"
+
+
+@pytest.mark.django_db
+class TestRequestIsRejectedWithExpiredAccessToken:
+    @pytest.fixture(scope="class")
+    def expired_access_token(self) -> str:
+        return """Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoi
+YWNjZXNzIiwiZXhwIjoxNzA0NTY5MDk3LCJpYXQiOjE3MDQ1Njg3OTcsImp0aSI6IjB
+iZDM5OTI1MDU5NTQxYmM4MGNiNTk0ZTQ3YjU3MmY1IiwidXNlcl9pZCI6NH0.P2JPrF
+j0czpJeNzYtd7l7beMZuooP2vsyED3PqogYewJBSycurei1EVOGBF-hSzSryxpL4q3H
+ZD9hWTanL_44j19IqDE0aZWPRsjMQAVHyJsg36KQvjmkXUYPyliMIxY11GcEzzb3s8e
+vs3f7F2KXip8w5RaVaQuWOGDof137D4jDei-PIAHdnC4f64NIiMazNX2-BzCHMoAKVa
+dLog8S0GtmuY3tPGOgHoqu5L5mXR6Ea8BH_x0lcXW5pFFpR6Mk1pdKhi6ZKuc0VnGU2
+vWVKl8aFYiCLU1Lx2vTpkG0fqziSqcxCofG_Y-cEMoDpLW51ESoItVEGJE5me7YQXNU
+ggC3pc9izQZENtdW8Z6L7KkWPf-h4S6wfEMI1dVK1Y-Jcg7MXwgyAgRCnnSBjaO89rq
+JTJFR2KO9elgH9RtMDCSTXocepnoop-SDri1qN8AKyNoIrYQFmMm5FhQam636jwkTYI
+8yZ6DgakrNf2nzPoHBXtF6yHyCe_EUwRMnJ4gMmseQi4hPNNqZh3aMdvyEjOBNpaCgJ
+N1t6w1knQaNpkJtxf4kzLSq0zdATk7GHF2NqP6cIi3zmbJyG-jqG3Y-LGZlpWWBk_ZZ
+ct4oFdWCTtEg1i4CV0LS43lOnu1Gv168nOvqc-WFXqMMNJnT88Ruz1St96KbpPw0m6K
+7tWuyyI"""
+
+    @pytest.fixture(scope="class")
+    def data(self) -> dict:
+        return {}
+
+    def test_response(
+        self,
+        expired_access_token: str,
+        client: APIClient,
+        cooker_id: int,
+        path: str,
+        data: dict,
+    ) -> None:
+        expired_auth_header = {
+            "HTTP_AUTHORIZATION": expired_access_token.replace("\n", "")
+        }
+        response = client.patch(
+            f"{path}{cooker_id}/",
+            encode_multipart(BOUNDARY, data),
+            content_type=MULTIPART_CONTENT,
+            follow=False,
+            **expired_auth_header,
+        )
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+        assert response.json().get("error_code") == "token_not_valid"
+
+
+@pytest.mark.django_db
+class TestAccessTokenRenew:
+    @pytest.fixture
+    def post_switch_cooker_online(self) -> dict:
+        return {
+            "is_online": True,
+        }
+
+    @pytest.fixture(scope="class")
+    def data(self) -> dict:
+        return {"phone": "0600000003"}
+
+    def test_response(
+        self,
+        client: APIClient,
+        cooker_id: int,
+        data: dict,
+        path: str,
+        post_switch_cooker_online: dict,
+        refresh_token_path: str,
+        token_path: str,
+    ) -> None:
+        with freeze_time("2024-01-07T14:00:00+00:00") as frozen_datetime:
+            # First we ask a token as usual
+            response = client.post(
+                token_path,
+                encode_multipart(BOUNDARY, data),
+                content_type=MULTIPART_CONTENT,
+            )
+            assert response.status_code == status.HTTP_200_OK
+            assert response.json() == {
+                "ok": True,
+                "status_code": status.HTTP_200_OK,
+                "token": {
+                    "access": ANY,
+                    "refresh": ANY,
+                },
+                "user_id": ANY,
+            }
+
+            # Extracting access and refresh tokens from the API response
+            access_token = response.json().get("token").get("access")
+            refresh_token = response.json().get("token").get("refresh")
+            access_auth_header = {"HTTP_AUTHORIZATION": f"Bearer {access_token}"}
+            refresh_token_data = {"refresh": refresh_token}
+
+            # Secondly we try a simple request:
+            response = client.patch(
+                f"{path}{cooker_id}/",
+                encode_multipart(BOUNDARY, post_switch_cooker_online),
+                content_type=MULTIPART_CONTENT,
+                follow=False,
+                **access_auth_header,
+            )
+            assert response.status_code == status.HTTP_200_OK
+
+            # Going to 5 min in the future
+            token_expired_date = datetime.utcnow() + timedelta(minutes=5)
+            frozen_datetime.move_to(token_expired_date)
+
+            # Then we attempt the same request as 5 min ago
+            response = client.patch(
+                f"{path}{cooker_id}/",
+                encode_multipart(BOUNDARY, post_switch_cooker_online),
+                content_type=MULTIPART_CONTENT,
+                follow=False,
+                **access_auth_header,
+            )
+            assert response.status_code == status.HTTP_401_UNAUTHORIZED
+            assert response.json().get("error_code") == "token_not_valid"
+
+            # We try now to ask a new access token using the refresh token
+            response = client.post(
+                refresh_token_path,
+                encode_multipart(BOUNDARY, refresh_token_data),
+                content_type=MULTIPART_CONTENT,
+                follow=False,
+            )
+
+            assert response.status_code == status.HTTP_200_OK
+            assert response.json() == {
+                "ok": True,
+                "status_code": status.HTTP_200_OK,
+                "access": ANY,
+            }
+            new_access_token = response.json().get("access")
+            assert new_access_token != access_token
+
+            # Finally we try again the request with our new access token
+            new_access_auth_header = {
+                "HTTP_AUTHORIZATION": f"Bearer {new_access_token}"
+            }
+            response = client.patch(
+                f"{path}{cooker_id}/",
+                encode_multipart(BOUNDARY, post_switch_cooker_online),
+                content_type=MULTIPART_CONTENT,
+                follow=False,
+                **new_access_auth_header,
+            )
+            assert response.status_code == status.HTTP_200_OK

@@ -2,7 +2,6 @@ from unittest.mock import ANY, MagicMock
 
 import pytest
 from cooker_app.models import CookerModel
-from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.forms.models import model_to_dict
 from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from rest_framework import status
@@ -456,6 +455,7 @@ class TestTokenFetch:
         assert response.status_code == status.HTTP_200_OK
         assert response.json() == {
             "ok": True,
+            "status_code": status.HTTP_200_OK,
             "token": {
                 "access": ANY,
                 "refresh": ANY,

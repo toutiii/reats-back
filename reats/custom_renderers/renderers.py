@@ -81,13 +81,30 @@ class CustomRendererWithData(JSONRenderer):
 
 class CustomRendererWithoutData(JSONRenderer):
     def render(self, data, accepted_media_type=None, renderer_context=None):
+        print(data)
         status_code = renderer_context["response"].status_code
         response = {
             "ok": True,
             "status_code": status_code,
         }
 
+        if data and status_code == status.HTTP_200_OK:
+            if "token" in data:
+                response["token"] = data["token"]
+
+            if "user_id" in data:
+                response["user_id"] = data["user_id"]
+
+            if "access" in data:
+                response["access"] = data["access"]
+
         if not str(status_code).startswith("2"):
             response["ok"] = False
+
+        if status_code == status.HTTP_401_UNAUTHORIZED:
+            try:
+                response["error_code"] = data["detail"].code
+            except KeyError:
+                pass
 
         return super().render(response)

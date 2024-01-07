@@ -1,7 +1,12 @@
+from typing import Any, Dict
+
 from phonenumbers.phonenumberutil import NumberParseException
 from rest_framework import serializers, status
 from rest_framework.serializers import ModelSerializer
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.serializers import (
+    TokenObtainPairSerializer,
+    TokenRefreshSerializer,
+)
 from utils.common import format_phone
 
 from .models import CookerModel, DishModel, DrinkModel
@@ -92,4 +97,12 @@ class TokenObtainPairWithoutPasswordSerializer(TokenObtainPairSerializer):
         data["refresh"] = str(refresh)
         data["access"] = str(refresh.access_token)
 
-        return {"ok": True, "token": data, "user_id": self.user.pk}
+        return {"token": data, "user_id": self.user.pk}
+
+
+class TokenObtainRefreshWithoutPasswordSerializer(TokenRefreshSerializer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def validate(self, attrs: Dict[str, Any]) -> Dict[str, str]:
+        return super().validate(attrs)

@@ -36,6 +36,7 @@ from .serializers import (
     DrinkPATCHSerializer,
     DrinkPOSTSerializer,
     TokenObtainPairWithoutPasswordSerializer,
+    TokenObtainRefreshWithoutPasswordSerializer,
 )
 
 
@@ -390,3 +391,9 @@ class DrinkView(viewsets.ModelViewSet):
 
 class TokenObtainPairWithoutPasswordView(TokenViewBase):
     serializer_class = TokenObtainPairWithoutPasswordSerializer
+    renderer_classes = [CustomRendererWithoutData]
+
+
+class TokenObtainRefreshWithoutPasswordView(TokenViewBase):
+    serializer_class = TokenObtainRefreshWithoutPasswordSerializer
+    renderer_classes = [CustomRendererWithoutData]
