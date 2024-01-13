@@ -635,3 +635,116 @@ class TestAccessTokenRenew:
                 **new_access_auth_header,
             )
             assert response.status_code == status.HTTP_200_OK
+
+
+@pytest.mark.django_db
+class TestRefreshTokenRenew:
+    @pytest.fixture
+    def post_switch_cooker_online(self) -> dict:
+        return {
+            "is_online": True,
+        }
+
+    @pytest.fixture(scope="class")
+    def data(self) -> dict:
+        return {"phone": "0600000003"}
+
+    def test_response(
+        self,
+        client: APIClient,
+        cooker_id: int,
+        data: dict,
+        path: str,
+        post_switch_cooker_online: dict,
+        refresh_token_path: str,
+        token_path: str,
+    ) -> None:
+        with freeze_time("2024-01-13T14:00:00+00:00") as frozen_datetime:
+            # First we ask a token pair as usual
+            response = client.post(
+                token_path,
+                encode_multipart(BOUNDARY, data),
+                content_type=MULTIPART_CONTENT,
+            )
+            assert response.status_code == status.HTTP_200_OK
+            assert response.json() == {
+                "ok": True,
+                "status_code": status.HTTP_200_OK,
+                "token": {
+                    "access": ANY,
+                    "refresh": ANY,
+                },
+                "user_id": ANY,
+            }
+
+            # Extracting access and refresh tokens from the API response
+            access_token = response.json().get("token").get("access")
+            refresh_token = response.json().get("token").get("refresh")
+            access_auth_header = {"HTTP_AUTHORIZATION": f"Bearer {access_token}"}
+            refresh_token_data = {"refresh": refresh_token}
+
+            # Secondly we try a simple request:
+            response = client.patch(
+                f"{path}{cooker_id}/",
+                encode_multipart(BOUNDARY, post_switch_cooker_online),
+                content_type=MULTIPART_CONTENT,
+                follow=False,
+                **access_auth_header,
+            )
+            assert response.status_code == status.HTTP_200_OK
+
+            # Travel to one day and plus in the future
+            refresh_token_expired_date = datetime.utcnow() + timedelta(hours=24.1)
+            frozen_datetime.move_to(refresh_token_expired_date)
+
+            # Then we attempt the same request as approximtively 24h ago
+            response = client.patch(
+                f"{path}{cooker_id}/",
+                encode_multipart(BOUNDARY, post_switch_cooker_online),
+                content_type=MULTIPART_CONTENT,
+                follow=False,
+                **access_auth_header,
+            )
+            assert response.status_code == status.HTTP_401_UNAUTHORIZED
+            assert response.json().get("error_code") == "token_not_valid"
+
+            # We try now to ask a new access token using the expired refresh token
+            response = client.post(
+                refresh_token_path,
+                encode_multipart(BOUNDARY, refresh_token_data),
+                content_type=MULTIPART_CONTENT,
+                follow=False,
+            )
+            assert response.status_code == status.HTTP_401_UNAUTHORIZED
+            assert response.json().get("error_code") == "token_not_valid"
+
+            # So now we have to ask again a new token pair
+            response = client.post(
+                token_path,
+                encode_multipart(BOUNDARY, data),
+                content_type=MULTIPART_CONTENT,
+            )
+            assert response.status_code == status.HTTP_200_OK
+            assert response.json() == {
+                "ok": True,
+                "status_code": status.HTTP_200_OK,
+                "token": {
+                    "access": ANY,
+                    "refresh": ANY,
+                },
+                "user_id": ANY,
+            }
+
+            # Finally we try again the request with our new access token
+            new_access_token = response.json().get("token").get("access")
+            new_access_auth_header = {
+                "HTTP_AUTHORIZATION": f"Bearer {new_access_token}"
+            }
+            response = client.patch(
+                f"{path}{cooker_id}/",
+                encode_multipart(BOUNDARY, post_switch_cooker_online),
+                content_type=MULTIPART_CONTENT,
+                follow=False,
+                **new_access_auth_header,
+            )
+            assert response.status_code == status.HTTP_200_OK
