@@ -170,6 +170,17 @@ except ClientError as e:
 verifying_key = response["Parameter"]["Value"]
 
 
+try:
+    response = ssm_client.get_parameter(
+        Name=os.getenv("AWS_API_KEY_COOKER_APP"), WithDecryption=False
+    )
+except ClientError as e:
+    raise e
+
+COOKER_APP_API_KEY = response["Parameter"]["Value"]
+COOKER_APP_ORIGIN = "cooker"
+
+
 SIMPLE_JWT = {
     "ALGORITHM": os.getenv("DJANGO_SIMPLE_JWT_ALGORITHM"),
     "SIGNING_KEY": secret_key,

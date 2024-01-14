@@ -549,6 +549,7 @@ class TestAccessTokenRenew:
 
     def test_response(
         self,
+        api_key_header: dict,
         client: APIClient,
         cooker_id: int,
         data: dict,
@@ -563,6 +564,8 @@ class TestAccessTokenRenew:
                 token_path,
                 encode_multipart(BOUNDARY, data),
                 content_type=MULTIPART_CONTENT,
+                follow=False,
+                **api_key_header,
             )
             assert response.status_code == status.HTTP_200_OK
             assert response.json() == {
@@ -651,6 +654,7 @@ class TestRefreshTokenRenew:
 
     def test_response(
         self,
+        api_key_header: dict,
         client: APIClient,
         cooker_id: int,
         data: dict,
@@ -665,6 +669,8 @@ class TestRefreshTokenRenew:
                 token_path,
                 encode_multipart(BOUNDARY, data),
                 content_type=MULTIPART_CONTENT,
+                follow=False,
+                **api_key_header,
             )
             assert response.status_code == status.HTTP_200_OK
             assert response.json() == {
@@ -723,6 +729,8 @@ class TestRefreshTokenRenew:
                 token_path,
                 encode_multipart(BOUNDARY, data),
                 content_type=MULTIPART_CONTENT,
+                follow=False,
+                **api_key_header,
             )
             assert response.status_code == status.HTTP_200_OK
             assert response.json() == {

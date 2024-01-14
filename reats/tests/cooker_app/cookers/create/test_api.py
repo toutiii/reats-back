@@ -54,6 +54,7 @@ def post_data(
 
 @pytest.mark.django_db
 def test_create_cooker_success(
+    api_key_header: dict,
     send_otp_message_success: MagicMock,
     client: APIClient,
     path: str,
@@ -65,6 +66,8 @@ def test_create_cooker_success(
         path,
         encode_multipart(BOUNDARY, post_data),
         content_type=MULTIPART_CONTENT,
+        follow=False,
+        **api_key_header
     )
     assert response.status_code == status.HTTP_201_CREATED
     new_count = CookerModel.objects.count()
@@ -115,6 +118,7 @@ class TestActivateCookerSuccessful:
     @pytest.mark.django_db
     def test_response(
         self,
+        api_key_header: dict,
         client: APIClient,
         otp_data: dict,
         otp_verify_path: str,
@@ -128,6 +132,8 @@ class TestActivateCookerSuccessful:
             otp_verify_path,
             encode_multipart(BOUNDARY, otp_data),
             content_type=MULTIPART_CONTENT,
+            follow=False,
+            **api_key_header
         )
 
         assert response.status_code == status.HTTP_200_OK
@@ -152,6 +158,7 @@ class TestActivateCookerFailed:
     @pytest.mark.django_db
     def test_response(
         self,
+        api_key_header: dict,
         client: APIClient,
         otp_data: dict,
         otp_verify_path: str,
@@ -165,6 +172,8 @@ class TestActivateCookerFailed:
             otp_verify_path,
             encode_multipart(BOUNDARY, otp_data),
             content_type=MULTIPART_CONTENT,
+            follow=False,
+            **api_key_header
         )
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
@@ -193,6 +202,7 @@ class TestCreateSameCookerTwice:
     @pytest.mark.django_db
     def test_response(
         self,
+        api_key_header: dict,
         send_otp_message_success: MagicMock,
         client: APIClient,
         path: str,
@@ -204,6 +214,8 @@ class TestCreateSameCookerTwice:
             path,
             encode_multipart(BOUNDARY, post_data),
             content_type=MULTIPART_CONTENT,
+            follow=False,
+            **api_key_header
         )
         assert response.status_code == status.HTTP_201_CREATED
         new_count = CookerModel.objects.count()
@@ -214,6 +226,8 @@ class TestCreateSameCookerTwice:
             path,
             encode_multipart(BOUNDARY, post_data),
             content_type=MULTIPART_CONTENT,
+            follow=False,
+            **api_key_header
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert CookerModel.objects.count() == new_count
@@ -251,6 +265,7 @@ class TestCreateSameCookerTwice:
 )
 @pytest.mark.django_db
 def test_failed_create_cooker_wrong_data(
+    api_key_header: dict,
     send_otp_message_success: MagicMock,
     client: APIClient,
     path: str,
@@ -262,6 +277,8 @@ def test_failed_create_cooker_wrong_data(
         path,
         encode_multipart(BOUNDARY, post_data),
         content_type=MULTIPART_CONTENT,
+        follow=False,
+        **api_key_header
     )
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     new_count = CookerModel.objects.count()
@@ -297,6 +314,7 @@ class TestCookerAuth:
     @pytest.mark.django_db
     def test_cooker_auth_failed(
         self,
+        api_key_header: dict,
         auth_data: dict,
         client: APIClient,
         auth_path: str,
@@ -306,6 +324,8 @@ class TestCookerAuth:
             auth_path,
             encode_multipart(BOUNDARY, auth_data),
             content_type=MULTIPART_CONTENT,
+            follow=False,
+            **api_key_header
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         send_otp_message_success.assert_not_called()
@@ -313,6 +333,7 @@ class TestCookerAuth:
     @pytest.mark.django_db
     def test_cooker_auth_success(
         self,
+        api_key_header: dict,
         auth_data: dict,
         client: APIClient,
         auth_path: str,
@@ -322,6 +343,8 @@ class TestCookerAuth:
             auth_path,
             encode_multipart(BOUNDARY, auth_data),
             content_type=MULTIPART_CONTENT,
+            follow=False,
+            **api_key_header
         )
         assert response.status_code == status.HTTP_200_OK
         send_otp_message_success.assert_called_once_with(
@@ -363,6 +386,7 @@ class TestCookerAskNewOTP:
     @pytest.mark.django_db
     def test_cooker_ask_new_OTP_failed(
         self,
+        api_key_header: dict,
         data: dict,
         client: APIClient,
         otp_path: str,
@@ -372,6 +396,8 @@ class TestCookerAskNewOTP:
             otp_path,
             encode_multipart(BOUNDARY, data),
             content_type=MULTIPART_CONTENT,
+            follow=False,
+            **api_key_header
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         send_otp_message_success.assert_not_called()
@@ -379,6 +405,7 @@ class TestCookerAskNewOTP:
     @pytest.mark.django_db
     def test_cooker_ask_new_OTP_success(
         self,
+        api_key_header: dict,
         data: dict,
         client: APIClient,
         otp_path: str,
@@ -388,6 +415,8 @@ class TestCookerAskNewOTP:
             otp_path,
             encode_multipart(BOUNDARY, data),
             content_type=MULTIPART_CONTENT,
+            follow=False,
+            **api_key_header
         )
         assert response.status_code == status.HTTP_200_OK
         send_otp_message_success.assert_called_once_with(
@@ -422,6 +451,7 @@ class TestTokenFetch:
     )
     def test_fetch_token_failed_with_missing_phone_field(
         self,
+        api_key_header: dict,
         client: APIClient,
         data: dict,
         token_path: str,
@@ -431,6 +461,8 @@ class TestTokenFetch:
             token_path,
             encode_multipart(BOUNDARY, data),
             content_type=MULTIPART_CONTENT,
+            follow=False,
+            **api_key_header
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         ssm_get_parameter.assert_not_called()
@@ -442,6 +474,7 @@ class TestTokenFetch:
     @pytest.mark.django_db
     def test_fetch_token_success(
         self,
+        api_key_header: dict,
         client: APIClient,
         data: dict,
         token_path: str,
@@ -451,6 +484,8 @@ class TestTokenFetch:
             token_path,
             encode_multipart(BOUNDARY, data),
             content_type=MULTIPART_CONTENT,
+            follow=False,
+            **api_key_header
         )
         assert response.status_code == status.HTTP_200_OK
         assert response.json() == {

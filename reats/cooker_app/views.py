@@ -1,5 +1,5 @@
 import json
-from typing import Union
+from typing import Type, Union
 
 from custom_renderers.renderers import (
     CookerCustomRendererWithData,
@@ -11,6 +11,7 @@ from phonenumbers.phonenumberutil import NumberParseException
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser
+from rest_framework.permissions import BasePermission
 from rest_framework.renderers import BaseRenderer
 from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
@@ -23,7 +24,7 @@ from utils.common import (
     send_otp,
     upload_image_to_s3,
 )
-from utils.custom_permissions import UserPermission
+from utils.custom_permissions import CustomAPIKeyPermission, UserPermission
 
 from .models import CookerModel, DishModel, DrinkModel
 from .serializers import (
@@ -50,15 +51,16 @@ class CookerView(
     queryset = CookerModel.objects.all()
 
     def get_permissions(self) -> list:
+        permission_classes: list[Type[BasePermission]] = []
         if self.action in (
             "auth",
             "ask_otp",
             "create",
             "otp_verify",
         ):
-            permission_classes = []
+            permission_classes.append(CustomAPIKeyPermission)
         else:
-            permission_classes = [UserPermission]
+            permission_classes.append(UserPermission)
 
         return [permission() for permission in permission_classes]
 
@@ -392,6 +394,7 @@ class DrinkView(viewsets.ModelViewSet):
 class TokenObtainPairWithoutPasswordView(TokenViewBase):
     serializer_class = TokenObtainPairWithoutPasswordSerializer
     renderer_classes = [CustomRendererWithoutData]
+    permission_classes = [CustomAPIKeyPermission]
 
 
 class TokenObtainRefreshWithoutPasswordView(TokenViewBase):
