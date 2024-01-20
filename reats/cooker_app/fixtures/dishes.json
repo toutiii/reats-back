@@ -11,7 +11,7 @@
       "name": "Beignets haricots",
       "price": "10",
       "photo": "cookers/1/dishes/starter/beignets-haricots.jpg",
-      "cooker": 1
+      "cooker": 4
     }
   },
   {
@@ -26,7 +26,7 @@
       "name": "Gombo porc riz",
       "price": "13",
       "photo": "cookers/1/dishes/dish/gombo-porc-riz.jpg",
-      "cooker": 1
+      "cooker": 4
     }
   },
   {
@@ -41,7 +41,7 @@
       "name": "Eru fufu",
       "price": "15",
       "photo": "cookers/1/dishes/dish/eru-fufu.jpg",
-      "cooker": 1
+      "cooker": 4
     }
   },
   {

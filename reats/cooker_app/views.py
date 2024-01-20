@@ -283,6 +283,8 @@ class DishView(viewsets.ModelViewSet):
         if request_name is None and request_category is None and request_status is None:
             self.queryset = DishModel.objects.none()
 
+        self.queryset = self.queryset.filter(cooker__id=request.user.pk)
+
         return super().list(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
@@ -376,6 +378,8 @@ class DrinkView(viewsets.ModelViewSet):
 
         if request_name is None and request_status is None:
             self.queryset = DrinkModel.objects.none()
+
+        self.queryset = self.queryset.filter(cooker__id=request.user.pk)
 
         return super().list(request, *args, **kwargs)
 
