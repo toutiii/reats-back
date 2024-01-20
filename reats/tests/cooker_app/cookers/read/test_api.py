@@ -1,3 +1,5 @@
+from unittest.mock import ANY
+
 import pytest
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -27,7 +29,34 @@ def test_get_existing_cooker_data(
     )
     assert response.status_code == status.HTTP_200_OK
     assert response.json().get("ok") is True
-    assert response.json().get("data") is not None  # TODO: A json schema here
+    assert response.json() == {
+        "data": {
+            "address_section": {
+                "data": {
+                    "address_complement": "résidence test",
+                    "postal_code": "91100",
+                    "street_name": "rue du terrier du rat",
+                    "street_number": "1",
+                    "town": "test",
+                },
+                "title": "address",
+            },
+            "personal_infos_section": {
+                "data": {
+                    "firstname": "test",
+                    "is_online": False,
+                    "lastname": "test",
+                    "max_order_number": "10",
+                    "phone": "0600000001",
+                    "photo": ANY,
+                    "siret": "00000000000001",
+                },
+                "title": "personal_infos",
+            },
+        },
+        "ok": True,
+        "status_code": 200,
+    }
 
 
 @pytest.mark.django_db

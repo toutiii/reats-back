@@ -1,3 +1,5 @@
+import phonenumbers
+from django.conf import settings
 from rest_framework import status
 from rest_framework.renderers import JSONRenderer
 from utils.common import get_pre_signed_url
@@ -27,7 +29,12 @@ class CookerCustomRendererWithData(JSONRenderer):
                             "siret": data["siret"],
                             "firstname": data["firstname"],
                             "lastname": data["lastname"],
-                            "phone": data["phone"],
+                            "phone": phonenumbers.format_number(
+                                phonenumbers.parse(
+                                    data["phone"], settings.PHONE_REGION
+                                ),
+                                phonenumbers.PhoneNumberFormat.NATIONAL,
+                            ).replace(" ", ""),
                             "max_order_number": str(data["max_order_number"]),
                             "is_online": data["is_online"],
                         },
@@ -55,25 +62,45 @@ class CookerCustomRendererWithData(JSONRenderer):
 
 class CustomRendererWithData(JSONRenderer):
     def render(self, data, accepted_media_type=None, renderer_context=None):
-        if not data:
+        print(data)
+        status_code = renderer_context["response"].status_code
+        response = {
+            "ok": True,
+            "status_code": status_code,
+        }
+
+        if not data and status_code == status.HTTP_200_OK:
             response = {
                 "ok": True,
                 "status_code": status.HTTP_404_NOT_FOUND,
             }
-        else:
+
+        if data and status_code == status.HTTP_200_OK:
+            response.update(
+                {
+                    "data": [
+                        {
+                            k: get_pre_signed_url(v)
+                            if k == "photo"
+                            else (str(v) if type(v) != bool else v)
+                            for k, v in item.items()
+                        }
+                        for item in data
+                    ],
+                }
+            )
+
+        if not str(status_code).startswith("2"):
             response = {
-                "ok": True,
-                "status_code": status.HTTP_200_OK,
-                "data": [
-                    {
-                        k: get_pre_signed_url(v)
-                        if k == "photo"
-                        else (str(v) if type(v) != bool else v)
-                        for k, v in item.items()
-                    }
-                    for item in data
-                ],
+                "ok": False,
+                "status_code": status_code,
             }
+
+        if status_code == status.HTTP_401_UNAUTHORIZED:
+            try:
+                response["error_code"] = data["detail"].code
+            except KeyError:
+                pass
 
         print(response)
         return super().render(response)
