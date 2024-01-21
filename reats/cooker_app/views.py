@@ -41,12 +41,7 @@ from .serializers import (
 )
 
 
-class CookerView(
-    mixins.CreateModelMixin,
-    mixins.RetrieveModelMixin,
-    mixins.UpdateModelMixin,
-    viewsets.GenericViewSet,
-):
+class CookerView(viewsets.ModelViewSet):
     parser_classes = [MultiPartParser]
     queryset = CookerModel.objects.all()
 
@@ -83,7 +78,7 @@ class CookerView(
         send_otp(serializer.validated_data.get("phone"))
 
     def get_renderers(self) -> list[BaseRenderer]:
-        if self.request.method in ("POST", "PATCH"):
+        if self.request.method in ("POST", "PATCH", "DELETE"):
             self.renderer_classes = [CustomRendererWithoutData]
 
         if self.request.method == "GET":
@@ -121,6 +116,17 @@ class CookerView(
                 delete_s3_object(old_photo_key)
 
         return super().partial_update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs) -> Response:
+        instance = self.get_object()
+        super().perform_destroy(instance)
+
+        return Response(
+            {
+                "ok": True,
+                "status_code": status.HTTP_200_OK,
+            }
+        )
 
     @action(methods=["post"], detail=False, url_path="otp-verify")
     def otp_verify(self, request) -> Response:
@@ -210,7 +216,7 @@ class DishView(viewsets.ModelViewSet):
         return super().get_serializer_class()
 
     def get_renderers(self) -> list[BaseRenderer]:
-        if self.request.method in ("POST", "PUT", "PATCH"):
+        if self.request.method in ("POST", "PUT", "PATCH", "DELETE"):
             self.renderer_classes = [CustomRendererWithoutData]
 
         if self.request.method == "GET":
@@ -287,14 +293,14 @@ class DishView(viewsets.ModelViewSet):
 
         return super().list(request, *args, **kwargs)
 
-    def destroy(self, request, *args, **kwargs):
+    def destroy(self, request, *args, **kwargs) -> Response:
         instance = self.get_object()
         super().perform_destroy(instance)
 
         return Response(
             {
                 "ok": True,
-                "status_code": status.HTTP_204_NO_CONTENT,
+                "status_code": status.HTTP_200_OK,
             }
         )
 
@@ -316,7 +322,7 @@ class DrinkView(viewsets.ModelViewSet):
         return super().get_serializer_class()
 
     def get_renderers(self) -> list[BaseRenderer]:
-        if self.request.method in ("POST", "PUT", "PATCH"):
+        if self.request.method in ("POST", "PUT", "PATCH", "DELETE"):
             self.renderer_classes = [CustomRendererWithoutData]
 
         if self.request.method == "GET":
@@ -383,14 +389,14 @@ class DrinkView(viewsets.ModelViewSet):
 
         return super().list(request, *args, **kwargs)
 
-    def destroy(self, request, *args, **kwargs):
+    def destroy(self, request, *args, **kwargs) -> Response:
         instance = self.get_object()
         super().perform_destroy(instance)
 
         return Response(
             {
                 "ok": True,
-                "status_code": status.HTTP_204_NO_CONTENT,
+                "status_code": status.HTTP_200_OK,
             }
         )
 
