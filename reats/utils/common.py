@@ -1,4 +1,5 @@
 import hashlib
+import logging
 import os
 from typing import Type, Union
 
@@ -9,6 +10,7 @@ from cooker_app.models import CookerModel
 from django.conf import settings
 from django.core.files.uploadedfile import InMemoryUploadedFile
 
+logger = logging.getLogger("watchtower-logger")
 session = boto3.session.Session(region_name=os.getenv("AWS_REGION"))
 s3 = session.client("s3", config=boto3.session.Config(signature_version="s3v4"))
 pinpoint_client = boto3.client("pinpoint", region_name=os.getenv("AWS_REGION"))
@@ -22,9 +24,9 @@ def upload_image_to_s3(image: InMemoryUploadedFile, image_path: str) -> None:
             image_path,
         )
     except ClientError as err:
-        print(err)
+        logger.error(err)
     else:
-        print(f"{image_path} has been uploaded to S3.")
+        logger.info(f"{image_path} has been uploaded to S3.")
 
 
 def get_pre_signed_url(key: str) -> str:
@@ -37,9 +39,9 @@ def get_pre_signed_url(key: str) -> str:
             },
         )
     except ClientError as err:
-        print(err)
+        logger.error(err)
     else:
-        print(url)
+        logger.info(url)
 
     return url
 
@@ -48,9 +50,9 @@ def delete_s3_object(key: str) -> None:
     try:
         s3.delete_object(Bucket=os.getenv("AWS_S3_BUCKET"), Key=key)
     except ClientError as err:
-        print(err)
+        logger.error(err)
     else:
-        print(f"{key} has been removed from {os.getenv('AWS_S3_BUCKET')} bucket")
+        logger.info(f"{key} has been removed from {os.getenv('AWS_S3_BUCKET')} bucket")
 
 
 def format_phone(phone: str) -> str:
@@ -85,7 +87,7 @@ def send_otp(phone: str) -> Union[dict, None]:
         )
 
     except ClientError as e:
-        print(e.response)
+        logger.info(e.response)
         return None
 
     return response
@@ -103,7 +105,7 @@ def is_otp_valid(data: dict) -> bool:
         )
 
     except ClientError as e:
-        print(e.response)
+        logger.info(e.response)
         return False
 
     return response["VerificationResponse"]["Valid"]

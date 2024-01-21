@@ -1,4 +1,5 @@
 import json
+import logging
 from typing import Type, Union
 
 from custom_renderers.renderers import (
@@ -40,6 +41,8 @@ from .serializers import (
     TokenObtainRefreshWithoutPasswordSerializer,
 )
 
+logger = logging.getLogger("watchtower-logger")
+
 
 class CookerView(viewsets.ModelViewSet):
     parser_classes = [MultiPartParser]
@@ -72,7 +75,7 @@ class CookerView(viewsets.ModelViewSet):
         try:
             super().perform_create(serializer)
         except IntegrityError as err:
-            print(err)
+            logger.error(err)
             return
 
         send_otp(serializer.validated_data.get("phone"))

@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/3.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.1/ref/settings/
 """
+import logging
 import os
 from pathlib import Path
 
@@ -16,9 +17,11 @@ import boto3
 from botocore.exceptions import ClientError
 from dotenv import load_dotenv
 
+boto3.set_stream_logger(name="botocore.credentials", level=logging.ERROR)
 session = boto3.session.Session()
 
 ssm_client = boto3.client("ssm", region_name=os.getenv("AWS_REGION"))
+boto3_logs_client = boto3.client("logs", region_name=os.getenv("AWS_REGION"))
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -189,3 +192,61 @@ SIMPLE_JWT = {
 }
 
 AUTH_USER_MODEL = "cooker_app.GenericUser"
+
+propagate = True
+handlers = ["watchtower"]
+
+if os.getenv("ENV") == "local":
+    propagate = False
+    handlers = ["console"]
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "aws": {
+            # you can add specific format for aws here
+            # if you want to change format, you can read:
+            #    https://stackoverflow.com/questions/533048/how-to-log-source-file-name-and-line-number-in-python/44401529
+            "format": "%(asctime)s [%(levelname)-8s] %(message)s [%(pathname)s:%(lineno)d]",
+            "datefmt": "%Y-%m-%d %H:%M:%S",
+        },
+    },
+    "root": {
+        "level": "INFO",
+        # Adding the watchtower handler here causes all loggers in the project that
+        # have propagate=True (the default) to send messages to watchtower. If you
+        # wish to send only from specific loggers instead, remove "watchtower" here
+        # and configure individual loggers below.
+        "handlers": handlers,
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "aws",
+        },
+        "watchtower": {
+            "class": "watchtower.CloudWatchLogHandler",
+            "boto3_client": boto3_logs_client,
+            "log_group_name": os.getenv("AWS_LOG_GROUP_NAME"),
+            # Decrease the verbosity level here to send only those logs to watchtower,
+            # but still see more verbose logs in the console. See the watchtower
+            # documentation for other parameters that can be set here.
+            "level": "INFO",
+            "formatter": "aws",
+        },
+    },
+    "loggers": {
+        # In the debug server (`manage.py runserver`), several Django system loggers cause
+        # deadlocks when using threading in the logging handler, and are not supported by
+        # watchtower. This limitation does not apply when running on production WSGI servers
+        # (gunicorn, uwsgi, etc.), so we recommend that you set `propagate=True` below in your
+        # production-specific Django settings file to receive Django system logs in CloudWatch.
+        "reats_logger": {
+            "level": "INFO",
+            "handlers": handlers,
+            "propagate": propagate,
+        }
+        # Add any other logger-specific configuration here.
+    },
+}

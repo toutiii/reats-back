@@ -4,14 +4,14 @@ from pprint import pformat
 
 from rest_framework.views import exception_handler
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger("watchtower-logger")
 
 
 def custom_exception_handler(exc, context):
     # Get standard error response from REST framework's default exception handler:
     response = exception_handler(exc, context)
-    print(exc)
-    print(context)
+    logger.info(exc)
+    logger.info(context)
 
     if response is not None and response.status_code == HTTPStatus.BAD_REQUEST:
         # Log response data for bad request to simplify debugging:

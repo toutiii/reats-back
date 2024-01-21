@@ -1,8 +1,12 @@
+import logging
+
 import phonenumbers
 from django.conf import settings
 from rest_framework import status
 from rest_framework.renderers import JSONRenderer
 from utils.common import get_pre_signed_url
+
+logger = logging.getLogger("watchtower-logger")
 
 
 class CookerCustomRendererWithData(JSONRenderer):
@@ -12,7 +16,7 @@ class CookerCustomRendererWithData(JSONRenderer):
         except KeyError:
             status_code = status.HTTP_200_OK
         except Exception as err:
-            print(err)
+            logger.error(err)
             status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
         else:
             status_code = status.HTTP_404_NOT_FOUND
@@ -62,7 +66,7 @@ class CookerCustomRendererWithData(JSONRenderer):
 
 class CustomRendererWithData(JSONRenderer):
     def render(self, data, accepted_media_type=None, renderer_context=None):
-        print(data)
+        logger.info(data)
         status_code = renderer_context["response"].status_code
         response = {
             "ok": True,
@@ -102,13 +106,13 @@ class CustomRendererWithData(JSONRenderer):
             except KeyError:
                 pass
 
-        print(response)
+        logger.info(response)
         return super().render(response)
 
 
 class CustomRendererWithoutData(JSONRenderer):
     def render(self, data, accepted_media_type=None, renderer_context=None):
-        print(data)
+        logger.info(data)
         status_code = renderer_context["response"].status_code
         response = {
             "ok": True,
