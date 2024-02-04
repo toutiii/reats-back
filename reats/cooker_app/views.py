@@ -9,7 +9,7 @@ from custom_renderers.renderers import (
 )
 from django.db import IntegrityError
 from phonenumbers.phonenumberutil import NumberParseException
-from rest_framework import mixins, status, viewsets
+from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import BasePermission

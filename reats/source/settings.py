@@ -51,7 +51,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
-    "client_app",
+    "customer_app",
     "cooker_app",
     "delivery_app",
 ]

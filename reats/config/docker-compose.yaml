@@ -12,7 +12,7 @@ services:
     env_file:
       - .env
     volumes:
-      - ../client_app:/usr/src/app/client_app/
+      - ../customer_app:/usr/src/app/customer_app/
       - ../cooker_app:/usr/src/app/cooker_app/
       - ../custom_renderers:/usr/src/app/custom_renderers/
       - ../delivery_app:/usr/src/app/delivery_app/

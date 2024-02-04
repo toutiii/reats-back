@@ -11,7 +11,7 @@ RUN apt-get -y update \
     && apt-get install -y python3-dev postgresql-server-dev-all gcc musl-dev
 
 # create needed dirs
-RUN mkdir -p /usr/src/app/client_app
+RUN mkdir -p /usr/src/app/customer_app
 RUN mkdir -p /usr/src/app/cooker_app
 RUN mkdir -p /usr/src/app/custom_renderers
 RUN mkdir -p /usr/src/app/delivery_app
@@ -26,7 +26,7 @@ ADD requirements.txt /usr/src/app/
 RUN pip install -r /usr/src/app/requirements.txt
 
 # copy project
-COPY client_app /usr/src/app/client_app/
+COPY customer_app /usr/src/app/customer_app/
 COPY cooker_app /usr/src/app/cooker_app/
 COPY custom_renderers /usr/src/app/custom_renderers/
 COPY delivery_app /usr/src/app/delivery_app/
