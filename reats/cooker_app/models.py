@@ -5,22 +5,13 @@ from django.db.models import (
     AutoField,
     BooleanField,
     CharField,
-    DateTimeField,
     FloatField,
     ForeignKey,
     IntegerField,
     Manager,
-    Model,
     TextField,
 )
-
-
-class ReatsModel(Model):
-    created: DateTimeField = DateTimeField(auto_now_add=True)
-    modified: DateTimeField = DateTimeField(auto_now=True)
-
-    class Meta:
-        abstract = True
+from utils.models import ReatsModel
 
 
 class CookerModel(ReatsModel):

@@ -9,7 +9,8 @@ router = DefaultRouter()
 router.register(r"cookers", cooker_app_views.CookerView, basename="cookers")
 router.register(r"dishes", cooker_app_views.DishView, basename="dishes")
 router.register(r"drinks", cooker_app_views.DrinkView, basename="drinks")
-router.register(r"customers", customer_app_views.DishView)
+router.register(r"customers", customer_app_views.CustomerView, basename="customers")
+# router.register(r"customers/dishes", customer_app_views.DishView)
 
 
 # The API URLs are now determined automatically by the router.

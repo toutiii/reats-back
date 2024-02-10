@@ -84,9 +84,11 @@ class CustomRendererWithData(JSONRenderer):
                 {
                     "data": [
                         {
-                            k: get_pre_signed_url(v)
-                            if k == "photo"
-                            else (str(v) if type(v) != bool else v)
+                            k: (
+                                get_pre_signed_url(v)
+                                if k == "photo"
+                                else (str(v) if type(v) != bool else v)
+                            )
                             for k, v in item.items()
                         }
                         for item in data

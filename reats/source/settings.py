@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/3.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.1/ref/settings/
 """
+
 import logging
 import os
 from pathlib import Path
@@ -182,6 +183,17 @@ except ClientError as e:
 
 COOKER_APP_API_KEY = response["Parameter"]["Value"]
 COOKER_APP_ORIGIN = "cooker"
+
+
+try:
+    response = ssm_client.get_parameter(
+        Name=os.getenv("AWS_API_KEY_CUSTOMER_APP"), WithDecryption=False
+    )
+except ClientError as e:
+    raise e
+
+CUSTOMER_APP_API_KEY = response["Parameter"]["Value"]
+CUSTOMER_APP_ORIGIN = "customer"
 
 
 SIMPLE_JWT = {

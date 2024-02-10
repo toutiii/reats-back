@@ -7,6 +7,11 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 
 logger = logging.getLogger("watchtower-logger")
 
+WHITE_LIST = [
+    (settings.COOKER_APP_ORIGIN, settings.COOKER_APP_API_KEY),
+    (settings.CUSTOMER_APP_ORIGIN, settings.CUSTOMER_APP_API_KEY),
+]
+
 
 class UserPermission(BasePermission):
     def has_permission(self, request: Request, view) -> bool:
@@ -34,10 +39,7 @@ class CustomAPIKeyPermission(BasePermission):
         if app_origin is None:
             return False
 
-        if (
-            app_origin == settings.COOKER_APP_ORIGIN
-            and api_key != settings.COOKER_APP_API_KEY
-        ):
+        if (app_origin, api_key) not in WHITE_LIST:
             return False
 
         return True
