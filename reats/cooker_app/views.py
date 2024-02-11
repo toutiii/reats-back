@@ -289,10 +289,10 @@ class DishView(viewsets.ModelViewSet):
         if request_status is not None:
             self.queryset = self.queryset.filter(is_enabled=json.loads(request_status))
 
+        self.queryset = self.queryset.filter(cooker__id=request.user.pk)
+
         if request_name is None and request_category is None and request_status is None:
             self.queryset = DishModel.objects.none()
-
-        self.queryset = self.queryset.filter(cooker__id=request.user.pk)
 
         return super().list(request, *args, **kwargs)
 
