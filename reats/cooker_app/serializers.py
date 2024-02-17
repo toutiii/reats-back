@@ -1,5 +1,6 @@
-from typing import Any, Dict
+from typing import Any, Dict, Union
 
+from customer_app.models import CustomerModel
 from phonenumbers.phonenumberutil import NumberParseException
 from rest_framework import serializers, status
 from rest_framework.serializers import ModelSerializer
@@ -84,15 +85,27 @@ class TokenObtainPairWithoutPasswordSerializer(TokenObtainPairSerializer):
     phone = serializers.CharField()
 
     def validate(self, attrs) -> dict:
+        user: Union[CookerModel, CustomerModel, None] = None
+        phone = self.initial_data["phone"]
+        search_user_in_customer_table = False
+
         try:
-            self.user: CookerModel = CookerModel.objects.get(
-                phone=format_phone(self.initial_data["phone"])
-            )
+            user = CookerModel.objects.get(phone=format_phone(phone))
         except CookerModel.DoesNotExist:
+            search_user_in_customer_table = True
+
+        if search_user_in_customer_table:
+            try:
+                user = CustomerModel.objects.get(phone=format_phone(phone))
+            except CustomerModel.DoesNotExist:
+                pass
+
+        if user is None:
             return {"ok": False, "status": status.HTTP_400_BAD_REQUEST}
 
-        refresh = self.get_token(self.user)
+        self.user = user
 
+        refresh = self.get_token(self.user)
         data = {}
         data["refresh"] = str(refresh)
         data["access"] = str(refresh.access_token)

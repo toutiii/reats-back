@@ -207,3 +207,29 @@ def simple_jwt_overload(settings, private_key: str, public_key: str) -> None:
 @pytest.fixture(autouse=True, scope="session")
 def auth_headers(token_with_bearer: str) -> dict:
     return {"HTTP_AUTHORIZATION": token_with_bearer}
+
+
+@pytest.fixture(autouse=True)
+def customer_app_api_key(settings) -> None:
+    settings.CUSTOMER_APP_API_KEY = "some-api-key-for-customer-app"
+
+
+@pytest.fixture
+def customer_api_key_header(settings) -> dict:
+    return {
+        "HTTP_X-Api-Key": settings.CUSTOMER_APP_API_KEY,
+        "HTTP_App-Origin": "customer",
+    }
+
+
+@pytest.fixture(autouse=True)
+def cooker_app_api_key(settings) -> None:
+    settings.COOKER_APP_API_KEY = "some-api-key-for-cooker-app"
+
+
+@pytest.fixture
+def cooker_api_key_header(settings) -> dict:
+    return {
+        "HTTP_X-Api-Key": settings.COOKER_APP_API_KEY,
+        "HTTP_App-Origin": "cooker",
+    }

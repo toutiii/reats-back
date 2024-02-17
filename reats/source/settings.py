@@ -144,7 +144,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 STATIC_URL = os.path.join(BASE_DIR, "staticfiles/")
 
 PHONE_REGION = "FR"
-
+PHONE_BLACK_LIST = ("0000000000",)
 
 REST_FRAMEWORK = {
     "EXCEPTION_HANDLER": "utils.custom_middlewares.custom_exception_handler",

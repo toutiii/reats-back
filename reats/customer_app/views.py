@@ -71,6 +71,12 @@ class CustomerView(ModelViewSet):
         except NumberParseException:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
+        try:
+            CustomerModel.objects.get(phone=e164_phone_format)
+        except CustomerModel.DoesNotExist:
+            logger.error(f"Customer with phone {e164_phone_format} does not exist.")
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
         send_otp(e164_phone_format)
 
         return Response(status=status.HTTP_200_OK)
@@ -92,7 +98,7 @@ class CustomerView(ModelViewSet):
         try:
             customer: CustomerModel = CustomerModel.objects.get(phone=e164_phone_format)
         except CustomerModel.DoesNotExist:
-            logger.info(f"Customer with phone {e164_phone_format} does not exist.")
+            logger.error(f"Customer with phone {e164_phone_format} does not exist.")
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
         if not customer.is_activated:

@@ -74,7 +74,7 @@ class TestOneCookerCantSeeOtherCookerDrinks:
 
     def test_response(
         self,
-        api_key_header: dict,
+        cooker_api_key_header: dict,
         client: APIClient,
         data: dict,
         path: str,
@@ -87,7 +87,7 @@ class TestOneCookerCantSeeOtherCookerDrinks:
                 encode_multipart(BOUNDARY, data),
                 content_type=MULTIPART_CONTENT,
                 follow=False,
-                **api_key_header,
+                **cooker_api_key_header,
             )
 
             assert token_response.status_code == status.HTTP_200_OK

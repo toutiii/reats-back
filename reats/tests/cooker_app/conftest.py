@@ -13,16 +13,3 @@ def django_db_setup(django_db_setup, django_db_blocker):
 @pytest.fixture(scope="session")
 def token_path() -> str:
     return "/api/v1/token/"
-
-
-@pytest.fixture(autouse=True)
-def cooker_app_api_key(settings) -> None:
-    settings.COOKER_APP_API_KEY = "some-api-key"
-
-
-@pytest.fixture
-def api_key_header(settings) -> dict:
-    return {
-        "HTTP_X-Api-Key": settings.COOKER_APP_API_KEY,
-        "HTTP_App-Origin": "cooker",
-    }

@@ -10,6 +10,7 @@ from cooker_app.models import CookerModel
 from customer_app.models import CustomerModel
 from django.conf import settings
 from django.core.files.uploadedfile import InMemoryUploadedFile
+from phonenumbers.phonenumberutil import NumberParseException
 
 from .models import ReatsModel
 
@@ -59,13 +60,20 @@ def delete_s3_object(key: str) -> None:
 
 
 def format_phone(phone: str) -> str:
-    return phonenumbers.format_number(
+    if phone in settings.PHONE_BLACK_LIST:
+        raise NumberParseException(
+            NumberParseException.NOT_A_NUMBER,
+            "This phone number is forbidden",
+        )
+
+    e164_phone_number = phonenumbers.format_number(
         phonenumbers.parse(
             phone,
             settings.PHONE_REGION,
         ),
         phonenumbers.PhoneNumberFormat.E164,
     )
+    return e164_phone_number
 
 
 def generate_ref_id(phone: str):

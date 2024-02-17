@@ -1,28 +1,37 @@
 [
     {
       "model": "customer_app.CustomerModel",
-      "pk": 1,
+      "pk": 2,
       "fields": {
         "created": "2024-02-10T22:52:05.718117+02:00",
         "modified": "2024-02-10T22:52:05.718117+02:00",
         "firstname": "John",
         "lastname": "DOE",
         "phone": "+33649510110",
-        "photo": "customers/1/profile_pics/customer_1.png",
         "is_activated": true
       }
     },
     {
         "model": "customer_app.CustomerModel",
-        "pk": 2,
+        "pk": 3,
         "fields": {
           "created": "2024-02-10T22:55:05.718117+02:00",
           "modified": "2024-02-10T22:55:05.718117+02:00",
           "firstname": "Adam",
           "lastname": "Smith",
-          "phone": "+33700000002",
-          "photo": "customers/2/profile_pics/customer_2.jpg",
+          "phone": "+33700000003",
           "is_activated": true
+        }
+    },
+    {
+        "model": "customer_app.CustomerModel",
+        "pk": 4,
+        "fields": {
+          "created": "2024-02-17T22:55:05.718117+02:00",
+          "modified": "2024-02-17T22:55:05.718117+02:00",
+          "firstname": "Max",
+          "lastname": "Payne",
+          "phone": "+33700000004"
         }
     }
 ]
