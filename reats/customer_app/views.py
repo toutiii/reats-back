@@ -2,7 +2,11 @@ import logging
 from typing import Type, Union
 
 from cooker_app.models import DishModel
-from custom_renderers.renderers import CustomRendererWithData, CustomRendererWithoutData
+from custom_renderers.renderers import (
+    CustomerCustomRendererWithData,
+    CustomRendererWithData,
+    CustomRendererWithoutData,
+)
 from django.db import IntegrityError
 from phonenumbers.phonenumberutil import NumberParseException
 from rest_framework import status
@@ -11,14 +15,22 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.mixins import ListModelMixin
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import BasePermission
+from rest_framework.renderers import BaseRenderer
 from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
-from utils.common import activate_user, format_phone, is_otp_valid, send_otp
+from utils.common import (
+    activate_user,
+    delete_s3_object,
+    format_phone,
+    is_otp_valid,
+    send_otp,
+    upload_image_to_s3,
+)
 from utils.custom_permissions import CustomAPIKeyPermission, UserPermission
 
 from .models import CustomerModel
-from .serializers import CustomerSerializer, DishGETSerializer
+from .serializers import CustomerGETSerializer, CustomerSerializer, DishGETSerializer
 
 logger = logging.getLogger("watchtower-logger")
 
@@ -26,8 +38,24 @@ logger = logging.getLogger("watchtower-logger")
 class CustomerView(ModelViewSet):
     parser_classes = [MultiPartParser]
     queryset = CustomerModel.objects.all()
-    serializer_class = CustomerSerializer
-    renderer_classes = [CustomRendererWithoutData]
+
+    def get_serializer_class(self) -> type[BaseSerializer]:
+        if self.request.method in ("POST", "PATCH"):
+            self.serializer_class = CustomerSerializer
+
+        if self.request.method == "GET":
+            self.serializer_class = CustomerGETSerializer
+
+        return super().get_serializer_class()
+
+    def get_renderers(self) -> list[BaseRenderer]:
+        if self.request.method in ("POST", "PATCH", "DELETE"):
+            self.renderer_classes = [CustomRendererWithoutData]
+
+        if self.request.method == "GET":
+            self.renderer_classes = [CustomerCustomRendererWithData]
+
+        return super().get_renderers()
 
     def get_permissions(self) -> list:
         permission_classes: list[Type[BasePermission]] = []
@@ -51,6 +79,49 @@ class CustomerView(ModelViewSet):
             raise ValidationError("Integrity error occurred during customer creation.")
 
         send_otp(serializer.validated_data.get("phone"))
+
+    def partial_update(self, request, *args, **kwargs) -> Response:
+        kwargs.pop("pk")  # pk is unexpected in parent's partial_update method
+        customer: CustomerModel = self.get_object()
+        old_photo_key: str = customer.photo
+        new_photo_key = None
+
+        try:
+            self.request.FILES["photo"]
+        except KeyError:
+            pass
+        else:
+            new_photo_key = (
+                "customers"
+                + "/"
+                + str(customer.pk)
+                + "/"
+                + "profile_pics"
+                + "/"
+                + self.request.FILES["photo"].name
+            )
+
+        if new_photo_key is not None:
+            upload_image_to_s3(self.request.FILES["photo"], new_photo_key)
+            customer.photo = new_photo_key
+            customer.save()
+
+            if not old_photo_key.endswith("default-profile-pic.jpg"):
+                if old_photo_key != new_photo_key:
+                    delete_s3_object(old_photo_key)
+
+        return super().partial_update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs) -> Response:
+        instance = self.get_object()
+        super().perform_destroy(instance)
+
+        return Response(
+            {
+                "ok": True,
+                "status_code": status.HTTP_200_OK,
+            }
+        )
 
     @action(methods=["post"], detail=False, url_path="otp-verify")
     def otp_verify(self, request) -> Response:

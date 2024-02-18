@@ -1,7 +1,6 @@
 from unittest.mock import ANY, MagicMock
 
 import pytest
-from django.forms.models import model_to_dict
 from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -45,7 +44,7 @@ class TestCustomerAuth:
             encode_multipart(BOUNDARY, auth_data),
             content_type=MULTIPART_CONTENT,
             follow=False,
-            **customer_api_key_header
+            **customer_api_key_header,
         )
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
@@ -65,7 +64,7 @@ class TestCustomerAuth:
             encode_multipart(BOUNDARY, auth_data),
             content_type=MULTIPART_CONTENT,
             follow=False,
-            **customer_api_key_header
+            **customer_api_key_header,
         )
         assert response.status_code == status.HTTP_200_OK
         send_otp_message_success.assert_called_once_with(
@@ -120,7 +119,7 @@ class TestCustomerAskNewOTP:
             encode_multipart(BOUNDARY, data),
             content_type=MULTIPART_CONTENT,
             follow=False,
-            **customer_api_key_header
+            **customer_api_key_header,
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         send_otp_message_success.assert_not_called()
@@ -139,7 +138,7 @@ class TestCustomerAskNewOTP:
             encode_multipart(BOUNDARY, data),
             content_type=MULTIPART_CONTENT,
             follow=False,
-            **customer_api_key_header
+            **customer_api_key_header,
         )
         assert response.status_code == status.HTTP_200_OK
         send_otp_message_success.assert_called_once_with(
@@ -185,7 +184,7 @@ class TestTokenFetch:
             encode_multipart(BOUNDARY, data),
             content_type=MULTIPART_CONTENT,
             follow=False,
-            **customer_api_key_header
+            **customer_api_key_header,
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         ssm_get_parameter.assert_not_called()
@@ -208,7 +207,7 @@ class TestTokenFetch:
             encode_multipart(BOUNDARY, data),
             content_type=MULTIPART_CONTENT,
             follow=False,
-            **customer_api_key_header
+            **customer_api_key_header,
         )
 
         assert response.status_code == status.HTTP_200_OK

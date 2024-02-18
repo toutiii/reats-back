@@ -64,6 +64,48 @@ class CookerCustomRendererWithData(JSONRenderer):
         return super().render(response)
 
 
+class CustomerCustomRendererWithData(JSONRenderer):
+    def render(self, data, accepted_media_type=None, renderer_context=None):
+        try:
+            data["detail"].code
+        except KeyError:
+            status_code = status.HTTP_200_OK
+        except Exception as err:
+            logger.error(err)
+            status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+        else:
+            status_code = status.HTTP_404_NOT_FOUND
+
+        if status_code == status.HTTP_200_OK:
+            response = {
+                "ok": True,
+                "status_code": status_code,
+                "data": {
+                    "personal_infos_section": {
+                        "title": "personal_infos",
+                        "data": {
+                            "photo": get_pre_signed_url(data["photo"]),
+                            "firstname": data["firstname"],
+                            "lastname": data["lastname"],
+                            "phone": phonenumbers.format_number(
+                                phonenumbers.parse(
+                                    data["phone"], settings.PHONE_REGION
+                                ),
+                                phonenumbers.PhoneNumberFormat.NATIONAL,
+                            ).replace(" ", ""),
+                        },
+                    },
+                },
+            }
+        else:
+            response = {
+                "ok": False,
+                "status_code": status_code,
+            }
+
+        return super().render(response)
+
+
 class CustomRendererWithData(JSONRenderer):
     def render(self, data, accepted_media_type=None, renderer_context=None):
         logger.info(data)

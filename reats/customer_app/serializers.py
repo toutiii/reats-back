@@ -21,6 +21,12 @@ class CustomerSerializer(ModelSerializer):
             return e164_phone_format
 
 
+class CustomerGETSerializer(ModelSerializer):
+    class Meta:
+        model = CustomerModel
+        exclude = ("created", "modified")
+
+
 class DishGETSerializer(ModelSerializer):
     class Meta:
         model = DishModel
