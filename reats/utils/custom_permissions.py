@@ -3,7 +3,7 @@ import logging
 from django.conf import settings
 from rest_framework.permissions import BasePermission
 from rest_framework.request import Request
-from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework_simplejwt.authentication import JWTStatelessUserAuthentication
 
 logger = logging.getLogger("watchtower-logger")
 
@@ -15,7 +15,7 @@ WHITE_LIST = [
 
 class UserPermission(BasePermission):
     def has_permission(self, request: Request, view) -> bool:
-        JWT_authenticator = JWTAuthentication()
+        JWT_authenticator = JWTStatelessUserAuthentication()
         response = JWT_authenticator.authenticate(request)
         logger.info(request)
         logger.info(response)

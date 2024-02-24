@@ -22,7 +22,6 @@ class TestCustomerDeleteSuccess:
         token_path: str,
     ) -> None:
         customer_id = 3
-        before_delete_count = CustomerModel.objects.count()
 
         with freeze_time("2024-01-20T17:05:45+00:00"):
             # First we ask a token as usual
@@ -44,14 +43,14 @@ class TestCustomerDeleteSuccess:
                 **access_auth_header,
             )
 
-            after_delete_count = CustomerModel.objects.count()
-
             assert response.status_code == status.HTTP_200_OK
             assert response.json() == {
                 "ok": True,
                 "status_code": status.HTTP_200_OK,
             }
-            assert before_delete_count - after_delete_count == 1
 
             with pytest.raises(ObjectDoesNotExist):
-                CustomerModel.objects.get(pk=customer_id)
+                CustomerModel.objects.get(phone=data.get("phone"))
+
+            with pytest.raises(ObjectDoesNotExist):
+                CustomerModel.objects.get(pk=3)

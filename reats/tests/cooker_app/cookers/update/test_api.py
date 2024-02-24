@@ -441,56 +441,6 @@ FhxtAirMySNzId/rIu6k6wPIqyziXjh0DBu0eI4flX3CJe1In0UfX9oqcFuw+VbY
 
 
 @pytest.mark.django_db
-class TestUpdateCookerFailedWithUnexpectedUserIDInToken:
-    @pytest.fixture(scope="class")
-    def token_with_unexpected_user_id(self, private_key: str) -> str:
-        due_date = datetime.utcnow() + timedelta(minutes=60)
-        payload = {
-            "exp": int(due_date.timestamp()),
-            "jti": str(uuid4()),
-            "user_id": 100,  # Different user than cooker_id fixture
-            "token_type": "access",
-        }
-        secret = load_pem_private_key(private_key.encode(), None)
-        assert isinstance(secret, rsa.RSAPrivateKey)
-
-        test_token = jwt.encode(
-            payload,
-            secret,
-            algorithm=os.getenv("DJANGO_SIMPLE_JWT_ALGORITHM"),
-        )
-
-        return f"Bearer {test_token}"
-
-    @pytest.fixture(scope="class")
-    def wrong_auth_header(self, token_with_unexpected_user_id: str) -> dict:
-        return {"HTTP_AUTHORIZATION": token_with_unexpected_user_id}
-
-    @pytest.fixture(scope="class")
-    def data(self) -> dict:
-        return {}
-
-    def test_response(
-        self,
-        wrong_auth_header: dict,
-        client: APIClient,
-        cooker_id: int,
-        path: str,
-        data: dict,
-    ) -> None:
-        response = client.patch(
-            f"{path}{cooker_id}/",
-            encode_multipart(BOUNDARY, data),
-            content_type=MULTIPART_CONTENT,
-            follow=False,
-            **wrong_auth_header,
-        )
-
-        assert response.status_code == status.HTTP_401_UNAUTHORIZED
-        assert response.json().get("error_code") == "authentication_failed"
-
-
-@pytest.mark.django_db
 class TestRequestIsRejectedWithExpiredAccessToken:
     @pytest.fixture(scope="class")
     def expired_access_token(self) -> str:

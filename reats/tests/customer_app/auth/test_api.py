@@ -1,6 +1,7 @@
 from unittest.mock import ANY, MagicMock
 
 import pytest
+from customer_app.models import CustomerModel
 from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -140,6 +141,7 @@ class TestCustomerAskNewOTP:
             follow=False,
             **customer_api_key_header,
         )
+
         assert response.status_code == status.HTTP_200_OK
         send_otp_message_success.assert_called_once_with(
             ApplicationId=ANY,
@@ -221,3 +223,42 @@ class TestTokenFetch:
             "user_id": ANY,
         }
         ssm_get_parameter.assert_not_called()
+
+
+class TestTokenFetchWhenUserIsPresentOnMultipleTables:
+    @pytest.fixture
+    def data(self) -> dict:
+        return {"phone": "+33700000006"}
+
+    @pytest.mark.django_db
+    def test_fetch_token_success(
+        self,
+        customer_api_key_header: dict,
+        client: APIClient,
+        data: dict,
+        token_path: str,
+        ssm_get_parameter: MagicMock,
+    ) -> None:
+        response = client.post(
+            token_path,
+            encode_multipart(BOUNDARY, data),
+            content_type=MULTIPART_CONTENT,
+            follow=False,
+            **customer_api_key_header,
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json() == {
+            "ok": True,
+            "status_code": status.HTTP_200_OK,
+            "token": {
+                "access": ANY,
+                "refresh": ANY,
+            },
+            "user_id": ANY,
+        }
+        ssm_get_parameter.assert_not_called()
+        assert (
+            response.json()["user_id"]
+            == CustomerModel.objects.get(phone="+33700000006").pk
+        )

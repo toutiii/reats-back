@@ -150,7 +150,7 @@ REST_FRAMEWORK = {
     "EXCEPTION_HANDLER": "utils.custom_middlewares.custom_exception_handler",
     "TEST_REQUEST_DEFAULT_FORMAT": "json",
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "rest_framework_simplejwt.authentication.JWTStatelessUserAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": ("utils.custom_permissions.UserPermission",),
 }
@@ -202,8 +202,6 @@ SIMPLE_JWT = {
     "VERIFYING_KEY": verifying_key,
     "TOKEN_OBTAIN_SERIALIZER": "cookers_app.serializers.TokenObtainPairWithoutPasswordSerializer",
 }
-
-AUTH_USER_MODEL = "cooker_app.GenericUser"
 
 propagate = True
 handlers = ["watchtower"]
