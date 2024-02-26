@@ -29,8 +29,7 @@
       "siret": "00000000000002",
       "street_name": "rue du terrier du rat",
       "street_number": "1",
-      "town": "test",
-      "address_complement": "résidence test"
+      "town": "test"
     }
   },
   {
@@ -47,7 +46,6 @@
       "street_name": "rue du terrier du rat",
       "street_number": "3",
       "town": "test",
-      "address_complement": "résidence test",
       "is_activated": true
     }
   },

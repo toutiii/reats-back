@@ -1,5 +1,17 @@
 [
-    {
+  {
+    "model": "customer_app.CustomerModel",
+    "pk": 1,
+    "fields": {
+      "created": "2024-02-10T22:51:05.718117+02:00",
+      "modified": "2024-02-10T22:51:05.718117+02:00",
+      "firstname": "Ben",
+      "lastname": "TEN",
+      "phone": "+33700000001",
+      "is_activated": true
+    }
+  },  
+  {
       "model": "customer_app.CustomerModel",
       "pk": 2,
       "fields": {

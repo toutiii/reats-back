@@ -1,5 +1,12 @@
 from django.core.validators import MinLengthValidator
-from django.db.models import AutoField, BooleanField, CharField, Manager
+from django.db.models import (
+    CASCADE,
+    AutoField,
+    BooleanField,
+    CharField,
+    ForeignKey,
+    Manager,
+)
 from utils.models import ReatsModel
 
 
@@ -20,3 +27,23 @@ class CustomerModel(ReatsModel):
         db_table = "customers"
 
     objects: Manager = Manager()  # For linting purposes
+
+
+class AddressModel(ReatsModel):
+    id: AutoField = AutoField(primary_key=True)
+    street_name: CharField = CharField(max_length=100)
+    street_number: CharField = CharField(max_length=10)
+    town: CharField = CharField(max_length=100)
+    postal_code: CharField = CharField(max_length=5)
+    address_complement: CharField = CharField(max_length=512, null=True)
+    customer: ForeignKey = ForeignKey(
+        CustomerModel, on_delete=CASCADE, related_name="addresses"
+    )
+
+    class Meta:
+        db_table = "addresses"
+
+    def __str__(self):
+        return (
+            f"{self.street_number} {self.street_name}, {self.postal_code} {self.town}"
+        )

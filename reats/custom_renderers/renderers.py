@@ -183,3 +183,21 @@ class CustomRendererWithoutData(JSONRenderer):
                 pass
 
         return super().render(response)
+
+
+class AddressCustomRendererWithData(JSONRenderer):
+    def render(self, data, accepted_media_type=None, renderer_context=None):
+        if data:
+            response = {
+                "ok": True,
+                "status_code": status.HTTP_200_OK,
+                "data": [dict(item) for item in data],
+            }
+        else:
+            response = {
+                "ok": False,
+                "status_code": status.HTTP_404_NOT_FOUND,
+                "data": [],
+            }
+
+        return super().render(response)

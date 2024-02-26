@@ -3,6 +3,7 @@ from typing import Type, Union
 
 from cooker_app.models import DishModel
 from custom_renderers.renderers import (
+    AddressCustomRendererWithData,
     CustomerCustomRendererWithData,
     CustomRendererWithData,
     CustomRendererWithoutData,
@@ -16,6 +17,7 @@ from rest_framework.mixins import ListModelMixin
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import BasePermission
 from rest_framework.renderers import BaseRenderer
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
@@ -29,8 +31,14 @@ from utils.common import (
 )
 from utils.custom_permissions import CustomAPIKeyPermission, UserPermission
 
-from .models import CustomerModel
-from .serializers import CustomerGETSerializer, CustomerSerializer, DishGETSerializer
+from .models import AddressModel, CustomerModel
+from .serializers import (
+    AddressGETSerializer,
+    AddressSerializer,
+    CustomerGETSerializer,
+    CustomerSerializer,
+    DishGETSerializer,
+)
 
 logger = logging.getLogger("watchtower-logger")
 
@@ -211,6 +219,45 @@ class CustomerView(ModelViewSet):
             return Response(status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
         return Response(status=status.HTTP_200_OK)
+
+
+class AddressView(ModelViewSet):
+    queryset = AddressModel.objects.all()
+    parser_classes = [MultiPartParser]
+    permission_classes = [UserPermission]
+
+    def get_renderers(self) -> list[BaseRenderer]:
+        if self.request.method in ("POST", "PUT", "DELETE"):
+            self.renderer_classes = [CustomRendererWithoutData]
+
+        if self.request.method == "GET":
+            self.renderer_classes = [AddressCustomRendererWithData]
+
+        return super().get_renderers()
+
+    def get_serializer_class(self) -> type[BaseSerializer]:
+        if self.request.method in ("POST", "PUT"):
+            self.serializer_class = AddressSerializer
+
+        if self.request.method == "GET":
+            self.serializer_class = AddressGETSerializer
+
+        return super().get_serializer_class()
+
+    def destroy(self, request, *args, **kwargs) -> Response:
+        instance = self.get_object()
+        super().perform_destroy(instance)
+
+        return Response(
+            {
+                "ok": True,
+                "status_code": status.HTTP_200_OK,
+            }
+        )
+
+    def list(self, request, *args, **kwargs) -> Response:
+        self.queryset = self.queryset.filter(customer__id=request.user.pk)
+        return super().list(request, *args, **kwargs)
 
 
 class DishView(ListModelMixin, GenericViewSet):
