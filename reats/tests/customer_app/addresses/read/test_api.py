@@ -18,7 +18,7 @@ class TestReadAddressesSuccess:
         customer_address_path: str,
     ) -> None:
 
-        # we check that the customer has both addresses
+        # we check that the customer has some addresses
         assert CustomerModel.objects.get(pk=customer_id).addresses.count() == 4
 
         # Then we list addresses
@@ -37,7 +37,7 @@ class TestReadAddressesSuccess:
                     "postal_code": "91100",
                     "street_name": "rue du terrier du rat",
                     "street_number": "1",
-                    "town": "Ville-De-Test",
+                    "town": "Villabé",
                 },
                 {
                     "address_complement": "résidence test",
@@ -46,25 +46,25 @@ class TestReadAddressesSuccess:
                     "postal_code": "91100",
                     "street_name": "rue du terrier du rat",
                     "street_number": "2",
-                    "town": "Ville-De-Test",
+                    "town": "Corbeil-Essonnes",
                 },
                 {
                     "address_complement": None,
                     "customer": 1,
                     "id": 3,
-                    "postal_code": "91100",
+                    "postal_code": "91000",
                     "street_name": "rue du terrier du rat",
                     "street_number": "3",
-                    "town": "Ville-De-Test",
+                    "town": "Évry-Courcouronnes",
                 },
                 {
                     "address_complement": None,
                     "customer": 1,
                     "id": 4,
-                    "postal_code": "91100",
+                    "postal_code": "91540",
                     "street_name": "rue du terrier du rat",
                     "street_number": "4",
-                    "town": "Ville-De-Test",
+                    "town": "Mennecy",
                 },
             ],
             "ok": True,

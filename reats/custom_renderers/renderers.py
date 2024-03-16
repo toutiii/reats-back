@@ -1,3 +1,4 @@
+import json
 import logging
 
 import phonenumbers
@@ -191,7 +192,7 @@ class AddressCustomRendererWithData(JSONRenderer):
             response = {
                 "ok": True,
                 "status_code": status.HTTP_200_OK,
-                "data": [dict(item) for item in data],
+                "data": json.loads(json.dumps(data)),
             }
         else:
             response = {
