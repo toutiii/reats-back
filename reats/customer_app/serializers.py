@@ -1,4 +1,4 @@
-from cooker_app.models import DishModel
+from cooker_app.models import DishModel, DrinkModel
 from phonenumbers.phonenumberutil import NumberParseException
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
@@ -42,4 +42,10 @@ class AddressSerializer(ModelSerializer):
 class AddressGETSerializer(ModelSerializer):
     class Meta:
         model = AddressModel
+        exclude = ("created", "modified")
+
+
+class DrinkGETSerializer(ModelSerializer):
+    class Meta:
+        model = DrinkModel
         exclude = ("created", "modified")

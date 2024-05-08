@@ -11,6 +11,9 @@ router.register(r"dishes", cooker_app_views.DishView, basename="dishes")
 router.register(r"drinks", cooker_app_views.DrinkView, basename="drinks")
 router.register(r"customers", customer_app_views.CustomerView, basename="customers")
 router.register(r"customers-dishes", customer_app_views.DishView)
+router.register(r"customers-drinks", customer_app_views.DrinkView)
+router.register(r"customers-desserts", customer_app_views.DessertView)
+router.register(r"customers-starters", customer_app_views.StarterView)
 router.register(
     r"customers-addresses",
     customer_app_views.AddressView,

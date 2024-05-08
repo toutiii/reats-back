@@ -233,3 +233,13 @@ def cooker_api_key_header(settings) -> dict:
         "HTTP_X-Api-Key": settings.COOKER_APP_API_KEY,
         "HTTP_App-Origin": "cooker",
     }
+
+
+@pytest.fixture(autouse=True, scope="session")
+def mock_get_pre_signed_url() -> Iterator:
+    patcher = patch(
+        "utils.common.get_pre_signed_url",
+        return_value="https://some-url.com",
+    )
+    yield patcher.start()
+    patcher.stop()

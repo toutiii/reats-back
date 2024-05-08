@@ -1,7 +1,7 @@
 import logging
 from typing import Type, Union
 
-from cooker_app.models import DishModel
+from cooker_app.models import DishModel, DrinkModel
 from custom_renderers.renderers import (
     AddressCustomRendererWithData,
     CustomerCustomRendererWithData,
@@ -38,6 +38,7 @@ from .serializers import (
     CustomerGETSerializer,
     CustomerSerializer,
     DishGETSerializer,
+    DrinkGETSerializer,
 )
 
 logger = logging.getLogger("watchtower-logger")
@@ -264,14 +265,18 @@ class DishView(ListModelMixin, GenericViewSet):
     serializer_class = DishGETSerializer
     renderer_classes = [CustomRendererWithData]
     parser_classes = [MultiPartParser]
-    queryset = DishModel.objects.all()
+    queryset = DishModel.objects.filter(category="dish").all()
 
     def list(self, request, *args, **kwargs) -> Response:
         request_sort: Union[str, None] = self.request.query_params.get("sort")
         request_name: Union[str, None] = self.request.query_params.get("name")
+        request_category: Union[str, None] = self.request.query_params.get("category")
 
         if request_name is not None:
             self.queryset = self.queryset.filter(name__icontains=request_name)
+
+        if request_category is not None:
+            self.queryset = self.queryset.filter(category=request_category)
 
         if request_sort is not None:
             if request_sort == "new":
@@ -281,7 +286,94 @@ class DishView(ListModelMixin, GenericViewSet):
 
         self.queryset.filter(is_enabled=True)
 
-        if request_sort is None and request_name is None:
+        if request_sort is None and request_name is None and request_category is None:
+            self.queryset = DishModel.objects.none()
+
+        return super().list(request, *args, **kwargs)
+
+
+class DrinkView(ListModelMixin, GenericViewSet):
+    serializer_class = DrinkGETSerializer
+    renderer_classes = [CustomRendererWithData]
+    parser_classes = [MultiPartParser]
+    queryset = DrinkModel.objects.all()
+
+    def list(self, request, *args, **kwargs) -> Response:
+        request_cooker_id: Union[str, int, None] = self.request.query_params.get(
+            "cooker_id"
+        )
+        request_cooker_ids: list = self.request.query_params.get(
+            "cooker_ids", ""
+        ).split(",")
+        request_cooker_ids = [item for item in request_cooker_ids if item]
+
+        if request_cooker_ids:
+            self.queryset = self.queryset.filter(cooker__id__in=request_cooker_ids)
+
+        if request_cooker_id is not None:
+            self.queryset = self.queryset.filter(cooker__id=request_cooker_id)
+
+        self.queryset = self.queryset.filter(is_enabled=True)
+
+        if request_cooker_id is None and not request_cooker_ids:
+            self.queryset = DrinkModel.objects.none()
+
+        return super().list(request, *args, **kwargs)
+
+
+class DessertView(ListModelMixin, GenericViewSet):
+    serializer_class = DishGETSerializer
+    renderer_classes = [CustomRendererWithData]
+    parser_classes = [MultiPartParser]
+    queryset = DishModel.objects.filter(category="dessert").all()
+
+    def list(self, request, *args, **kwargs) -> Response:
+        request_cooker_id: Union[str, int, None] = self.request.query_params.get(
+            "cooker_id"
+        )
+        request_cooker_ids: list = self.request.query_params.get(
+            "cooker_ids", ""
+        ).split(",")
+        request_cooker_ids = [item for item in request_cooker_ids if item]
+
+        if request_cooker_id is not None:
+            self.queryset = self.queryset.filter(cooker__id=request_cooker_id)
+
+        if request_cooker_ids:
+            self.queryset = self.queryset.filter(cooker__id__in=request_cooker_ids)
+
+        self.queryset = self.queryset.filter(is_enabled=True)
+
+        if request_cooker_id is None and not request_cooker_ids:
+            self.queryset = DishModel.objects.none()
+
+        return super().list(request, *args, **kwargs)
+
+
+class StarterView(ListModelMixin, GenericViewSet):
+    serializer_class = DishGETSerializer
+    renderer_classes = [CustomRendererWithData]
+    parser_classes = [MultiPartParser]
+    queryset = DishModel.objects.filter(category="starter").all()
+
+    def list(self, request, *args, **kwargs) -> Response:
+        request_cooker_id: Union[str, int, None] = self.request.query_params.get(
+            "cooker_id"
+        )
+        request_cooker_ids: list = self.request.query_params.get(
+            "cooker_ids", ""
+        ).split(",")
+        request_cooker_ids = [item for item in request_cooker_ids if item]
+
+        if request_cooker_id is not None:
+            self.queryset = self.queryset.filter(cooker__id=request_cooker_id)
+
+        if request_cooker_ids:
+            self.queryset = self.queryset.filter(cooker__id__in=request_cooker_ids)
+
+        self.queryset = self.queryset.filter(is_enabled=True)
+
+        if request_cooker_id is None and not request_cooker_ids:
             self.queryset = DishModel.objects.none()
 
         return super().list(request, *args, **kwargs)

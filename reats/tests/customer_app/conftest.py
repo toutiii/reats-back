@@ -4,7 +4,7 @@ from django.core.management import call_command
 
 @pytest.fixture(scope="session")
 def django_db_setup(django_db_blocker):
-    fixtures = ["addresses", "customers", "cookers"]
+    fixtures = ["addresses", "customers", "cookers", "dishes", "drinks"]
 
     with django_db_blocker.unblock():
         call_command("loaddata", *fixtures)
@@ -43,3 +43,23 @@ def refresh_token_path() -> str:
 @pytest.fixture(scope="session")
 def customer_address_path() -> str:
     return "/api/v1/customers-addresses/"
+
+
+@pytest.fixture(scope="session")
+def customer_dish_path() -> str:
+    return "/api/v1/customers-dishes/"
+
+
+@pytest.fixture(scope="session")
+def customer_drink_path() -> str:
+    return "/api/v1/customers-drinks/"
+
+
+@pytest.fixture(scope="session")
+def customer_dessert_path() -> str:
+    return "/api/v1/customers-desserts/"
+
+
+@pytest.fixture(scope="session")
+def customer_starter_path() -> str:
+    return "/api/v1/customers-starters/"

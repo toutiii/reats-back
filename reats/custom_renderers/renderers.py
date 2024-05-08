@@ -188,17 +188,34 @@ class CustomRendererWithoutData(JSONRenderer):
 
 class AddressCustomRendererWithData(JSONRenderer):
     def render(self, data, accepted_media_type=None, renderer_context=None):
-        if data:
-            response = {
-                "ok": True,
-                "status_code": status.HTTP_200_OK,
-                "data": json.loads(json.dumps(data)),
-            }
-        else:
-            response = {
-                "ok": False,
-                "status_code": status.HTTP_404_NOT_FOUND,
-                "data": [],
-            }
+        status_code = renderer_context["response"].status_code
 
+        response = {
+            "ok": True,
+            "status_code": status_code,
+        }
+
+        if status_code == status.HTTP_401_UNAUTHORIZED:
+            try:
+                response["error_code"] = data["detail"].code
+            except KeyError:
+                pass
+
+        if not str(status_code).startswith("2"):
+            response["ok"] = False
+
+        if status_code == status.HTTP_200_OK:
+            if data:
+                response = {
+                    "ok": True,
+                    "status_code": status.HTTP_200_OK,
+                    "data": json.loads(json.dumps(data)),
+                }
+            else:
+                response = {
+                    "ok": False,
+                    "status_code": status.HTTP_404_NOT_FOUND,
+                    "data": [],
+                }
+        logger.info(response)
         return super().render(response)
