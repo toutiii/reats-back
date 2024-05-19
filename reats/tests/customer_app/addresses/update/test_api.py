@@ -78,4 +78,5 @@ def test_update_address_success(
         "address_complement": "résidence nouveau test",
         "town": "Ville-De-Nouveau-Test",
         "customer": customer_id,
+        "is_enabled": True,
     }

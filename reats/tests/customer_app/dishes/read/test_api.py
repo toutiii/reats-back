@@ -6,9 +6,9 @@ from rest_framework.test import APIClient
 @pytest.mark.parametrize(
     "query_parameter",
     [
-        "?name=pou",
-        "?sort=new",
-        "?sort=famous",
+        {"name": "pou"},
+        {"sort": "new"},
+        {"sort": "famous"},
     ],
     ids=[
         "search_by_name",
@@ -23,14 +23,15 @@ class TestListDishesForCustomerSuccess:
         auth_headers: dict,
         client: APIClient,
         customer_dish_path: str,
-        query_parameter: str,
+        query_parameter: dict,
     ) -> None:
 
         # Then we list the dishes
         response = client.get(
-            f"{customer_dish_path}{query_parameter}",
+            f"{customer_dish_path}",
             follow=False,
             **auth_headers,
+            data=query_parameter,
         )
         assert response.status_code == status.HTTP_200_OK
         assert response.json().get("ok") is True

@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from io import BytesIO
 from typing import Iterator
 from unittest.mock import patch
@@ -175,7 +175,7 @@ IQIDAQAB
 
 @pytest.fixture(scope="session")
 def token_with_bearer(private_key: str) -> str:
-    due_date = datetime.utcnow() + timedelta(minutes=60)
+    due_date = datetime.now(timezone.utc) + timedelta(minutes=60)
     payload = {
         "exp": int(due_date.timestamp()),
         "jti": str(uuid4()),

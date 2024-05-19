@@ -7,17 +7,18 @@ from custom_renderers.renderers import (
     CustomerCustomRendererWithData,
     CustomRendererWithData,
     CustomRendererWithoutData,
+    OrderCustomRendererWithData,
+    OrderHistoryCustomRendererWithData,
 )
 from django.db import IntegrityError
 from phonenumbers.phonenumberutil import NumberParseException
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
-from rest_framework.mixins import ListModelMixin
+from rest_framework.mixins import CreateModelMixin, ListModelMixin
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import BasePermission
 from rest_framework.renderers import BaseRenderer
-from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
@@ -31,7 +32,7 @@ from utils.common import (
 )
 from utils.custom_permissions import CustomAPIKeyPermission, UserPermission
 
-from .models import AddressModel, CustomerModel
+from .models import AddressModel, CustomerModel, OrderModel
 from .serializers import (
     AddressGETSerializer,
     AddressSerializer,
@@ -39,6 +40,9 @@ from .serializers import (
     CustomerSerializer,
     DishGETSerializer,
     DrinkGETSerializer,
+    OrderGETSerializer,
+    OrderHistoryGETSerializer,
+    OrderSerializer,
 )
 
 logger = logging.getLogger("watchtower-logger")
@@ -246,8 +250,9 @@ class AddressView(ModelViewSet):
         return super().get_serializer_class()
 
     def destroy(self, request, *args, **kwargs) -> Response:
-        instance = self.get_object()
-        super().perform_destroy(instance)
+        instance: AddressModel = self.get_object()
+        instance.is_enabled = False
+        instance.save()
 
         return Response(
             {
@@ -257,7 +262,9 @@ class AddressView(ModelViewSet):
         )
 
     def list(self, request, *args, **kwargs) -> Response:
-        self.queryset = self.queryset.filter(customer__id=request.user.pk)
+        self.queryset = self.queryset.filter(customer__id=request.user.pk).filter(
+            is_enabled=True
+        )
         return super().list(request, *args, **kwargs)
 
 
@@ -375,5 +382,65 @@ class StarterView(ListModelMixin, GenericViewSet):
 
         if request_cooker_id is None and not request_cooker_ids:
             self.queryset = DishModel.objects.none()
+
+        return super().list(request, *args, **kwargs)
+
+
+class OrderView(CreateModelMixin, ListModelMixin, GenericViewSet):
+    permission_classes = [UserPermission]
+    queryset = OrderModel.objects.all()
+    parser_classes = [MultiPartParser]
+
+    def get_renderers(self) -> list[BaseRenderer]:
+        if self.request.method in ("POST", "PUT", "DELETE"):
+            self.renderer_classes = [CustomRendererWithoutData]
+
+        if self.request.method == "GET":
+            self.renderer_classes = [OrderCustomRendererWithData]
+
+        return super().get_renderers()
+
+    def get_serializer_class(self) -> type[BaseSerializer]:
+        if self.request.method in ("POST", "PUT"):
+            self.serializer_class = OrderSerializer
+
+        if self.request.method == "GET":
+            self.serializer_class = OrderGETSerializer
+
+        return super().get_serializer_class()
+
+    def list(self, request, *args, **kwargs) -> Response:
+        self.queryset = self.queryset.filter(customer__id=request.user.pk)
+        request_status: Union[str, None] = self.request.query_params.get("status")
+
+        if request_status is not None:
+            self.queryset = self.queryset.filter(status=request_status)
+
+        if request_status is None or request_status not in [
+            "pending",
+            "processing",
+            "completed",
+        ]:
+            logger.error(f"Invalid status {request_status}")
+            self.queryset = OrderModel.objects.none()
+
+        return super().list(request, *args, **kwargs)
+
+
+class HistoryOrderView(ListModelMixin, GenericViewSet):
+    permission_classes = [UserPermission]
+    queryset = OrderModel.objects.all().filter(
+        status__in=[
+            "delivered",
+            "cancelled_by_customer",
+            "cancelled_by_cooker",
+        ]
+    )
+    parser_classes = [MultiPartParser]
+    renderer_classes = [OrderHistoryCustomRendererWithData]
+    serializer_class = OrderHistoryGETSerializer
+
+    def list(self, request, *args, **kwargs) -> Response:
+        self.queryset = self.queryset.filter(customer__id=request.user.pk)
 
         return super().list(request, *args, **kwargs)

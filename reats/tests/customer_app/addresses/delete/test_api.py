@@ -1,5 +1,6 @@
 import pytest
 from customer_app.models import AddressModel, CustomerModel
+from django.forms.models import model_to_dict
 from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -83,13 +84,23 @@ def test_delete_address_success(
     assert delete_response.json() == {"ok": True, "status_code": 200}
 
     # Then we check that the 2nd address is not in the database anymore
-    assert not AddressModel.objects.filter(pk=second_address.pk).exists()
+    second_address_dict = model_to_dict(AddressModel.objects.get(pk=second_address.pk))
+    del second_address_dict["id"]
+    assert second_address_dict == {
+        "street_name": "rue du terrier du rat",
+        "street_number": "2",
+        "postal_code": "91100",
+        "address_complement": "résidence test",
+        "town": "Ville-De-Test-2",
+        "is_enabled": False,
+        "customer": customer_id,
+    }
 
     # Then we check that the 1st address is still in the database
     assert AddressModel.objects.filter(pk=first_address.pk).exists()
 
-    # Then we check that the customer still has the 1st address
-    assert CustomerModel.objects.get(pk=customer_id).addresses.count() == 1
+    # Then we check that the customer still has both addresses
+    assert CustomerModel.objects.get(pk=customer_id).addresses.count() == 2
 
 
 @pytest.mark.django_db

@@ -4,7 +4,10 @@ from django.db.models import (
     AutoField,
     BooleanField,
     CharField,
+    DateTimeField,
+    DecimalField,
     ForeignKey,
+    IntegerField,
     Manager,
 )
 from utils.models import ReatsModel
@@ -39,6 +42,7 @@ class AddressModel(ReatsModel):
     customer: ForeignKey = ForeignKey(
         CustomerModel, on_delete=CASCADE, related_name="addresses"
     )
+    is_enabled: BooleanField = BooleanField(default=True)
 
     class Meta:
         db_table = "addresses"
@@ -47,3 +51,82 @@ class AddressModel(ReatsModel):
         return (
             f"{self.street_number} {self.street_name}, {self.postal_code} {self.town}"
         )
+
+
+class OrderModel(ReatsModel):
+    STATUSES = [
+        (
+            "pending",
+            "pending",
+        ),  # Order has been paid, this is the initial state
+        (
+            "processing",
+            "processing",
+        ),  # State when the order has been accepted by the cooker
+        (
+            "completed",
+            "completed",
+        ),  # State when the order is ready for delivery
+        (
+            "cancelled_by_customer",
+            "cancelled_by_customer",
+        ),  # State when the order has been cancelled by the customer, this is a final state.
+        (
+            "cancelled_by_cooker",
+            "cancelled_by_cooker",
+        ),  # State when the order has been cancelled by the cooker, this is a final state.
+        (
+            "delivered",
+            "delivered",
+        ),  # State when the order has been delivered, this is a final state.
+    ]
+    id: AutoField = AutoField(primary_key=True)
+    customer: ForeignKey = ForeignKey(
+        CustomerModel,
+        on_delete=CASCADE,
+        related_name="orders",
+    )
+    address: ForeignKey = ForeignKey(
+        AddressModel,
+        on_delete=CASCADE,
+        related_name="orders",
+        null=True,
+    )
+    delivery_date: DateTimeField = DateTimeField()
+
+    status: CharField = CharField(
+        max_length=50,
+        choices=STATUSES,
+        default="pending",
+    )
+
+    class Meta:
+        db_table = "orders"
+
+    objects: Manager = Manager()  # For linting purposes
+
+
+class OrderItemModel(ReatsModel):
+    id: AutoField = AutoField(primary_key=True)
+    order: ForeignKey = ForeignKey(
+        OrderModel,
+        on_delete=CASCADE,
+        related_name="items",
+    )
+    dish: ForeignKey = ForeignKey(
+        "cooker_app.DishModel",
+        on_delete=CASCADE,
+        null=True,
+    )
+    drink: ForeignKey = ForeignKey(
+        "cooker_app.DrinkModel",
+        on_delete=CASCADE,
+        null=True,
+    )
+    dish_quantity: IntegerField = IntegerField(null=True)
+    drink_quantity: IntegerField = IntegerField(null=True)
+
+    class Meta:
+        db_table = "order_items"
+
+    objects: Manager = Manager()  # For linting purposes

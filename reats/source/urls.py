@@ -19,6 +19,16 @@ router.register(
     customer_app_views.AddressView,
     basename="addresses",
 )
+router.register(
+    r"customers-orders",
+    customer_app_views.OrderView,
+    basename="orders",
+)
+router.register(
+    r"customers-orders-history",
+    customer_app_views.HistoryOrderView,
+    basename="orders-history",
+)
 
 # The API URLs are now determined automatically by the router.
 urlpatterns = [

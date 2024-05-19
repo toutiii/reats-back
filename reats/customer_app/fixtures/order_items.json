@@ -1,0 +1,222 @@
+[
+    {
+        "model": "customer_app.OrderItemModel",
+        "pk": 1,
+        "fields":{
+            "order": 1,
+            "dish": 1,
+            "dish_quantity": 2,
+            "created": "2024-05-09T22:50:05.718117+02:00",
+            "modified": "2024-05-09T22:50:05.718117+02:00"
+        }
+    },
+    {
+        "model": "customer_app.OrderItemModel",
+        "pk": 2,
+        "fields":{
+            "order": 1,
+            "dish": 2,
+            "dish_quantity": 1,
+            "created": "2024-05-09T22:51:05.718117+02:00",
+            "modified": "2024-05-09T22:51:05.718117+02:00"
+        }
+    },
+    {
+        "model": "customer_app.OrderItemModel",
+        "pk": 3,
+        "fields":{
+            "order": 1,
+            "drink": 2,
+            "drink_quantity": 4,
+            "created": "2024-05-09T22:52:05.718117+02:00",
+            "modified": "2024-05-09T22:52:05.718117+02:00"
+        }
+    },
+    {
+        "model": "customer_app.OrderItemModel",
+        "pk": 4,
+        "fields":{
+            "order": 1,
+            "dish": 11,
+            "dish_quantity": 1,
+            "created": "2024-05-09T22:53:05.718117+02:00",
+            "modified": "2024-05-09T22:53:05.718117+02:00"
+        }
+    },
+    {
+        "model": "customer_app.OrderItemModel",
+        "pk": 5,
+        "fields":{
+            "order": 2,
+            "dish": 1,
+            "dish_quantity": 2,
+            "created": "2024-05-09T22:54:05.718117+02:00",
+            "modified": "2024-05-09T22:54:05.718117+02:00"
+        }
+    },
+    {
+        "model": "customer_app.OrderItemModel",
+        "pk": 6,
+        "fields":{
+            "order": 2,
+            "dish": 2,
+            "dish_quantity": 1,
+            "created": "2024-05-09T22:55:05.718117+02:00",
+            "modified": "2024-05-09T22:55:05.718117+02:00"
+        }
+    },
+    {
+        "model": "customer_app.OrderItemModel",
+        "pk": 7,
+        "fields":{
+            "order": 3,
+            "dish": 1,
+            "dish_quantity": 2,
+            "created": "2024-03-09T22:50:05.718117+02:00",
+            "modified": "2024-03-09T22:50:05.718117+02:00"
+        }
+    },
+    {
+        "model": "customer_app.OrderItemModel",
+        "pk": 8,
+        "fields":{
+            "order": 3,
+            "dish": 2,
+            "dish_quantity": 1,
+            "created": "2024-03-09T22:51:05.718117+02:00",
+            "modified": "2024-03-09T22:51:05.718117+02:00"
+        }
+    },
+    {
+        "model": "customer_app.OrderItemModel",
+        "pk": 9,
+        "fields":{
+            "order": 3,
+            "drink": 2,
+            "drink_quantity": 4,
+            "created": "2024-03-09T22:52:05.718117+02:00",
+            "modified": "2024-03-09T22:52:05.718117+02:00"
+        }
+    },
+    {
+        "model": "customer_app.OrderItemModel",
+        "pk": 10,
+        "fields":{
+            "order": 3,
+            "dish": 11,
+            "dish_quantity": 1,
+            "created": "2024-03-09T22:53:05.718117+02:00",
+            "modified": "2024-03-09T22:53:05.718117+02:00"
+        }
+    },
+    {
+        "model": "customer_app.OrderItemModel",
+        "pk": 11,
+        "fields":{
+            "order": 4,
+            "dish": 1,
+            "dish_quantity": 2,
+            "created": "2024-04-09T22:54:05.718117+02:00",
+            "modified": "2024-04-09T22:54:05.718117+02:00"
+        }
+    },
+    {
+        "model": "customer_app.OrderItemModel",
+        "pk": 12,
+        "fields":{
+            "order": 4,
+            "dish": 2,
+            "dish_quantity": 1,
+            "created": "2024-04-09T22:55:05.718117+02:00",
+            "modified": "2024-04-09T22:55:05.718117+02:00"
+        }
+    },
+    {
+        "model": "customer_app.OrderItemModel",
+        "pk": 13,
+        "fields":{
+            "order": 5,
+            "dish": 1,
+            "dish_quantity": 2,
+            "created": "2024-02-09T22:56:05.718117+02:00",
+            "modified": "2024-02-09T22:56:05.718117+02:00"
+        }
+    },
+    {
+        "model": "customer_app.OrderItemModel",
+        "pk": 14,
+        "fields":{
+            "order": 5,
+            "dish": 2,
+            "dish_quantity": 1,
+            "created": "2024-02-09T22:57:05.718117+02:00",
+            "modified": "2024-02-09T22:57:05.718117+02:00"
+        }
+    },
+    {
+        "model": "customer_app.OrderItemModel",
+        "pk": 15,
+        "fields":{
+            "order": 6,
+            "dish": 1,
+            "dish_quantity": 2,
+            "created": "2024-01-09T22:58:05.718117+02:00",
+            "modified": "2024-01-09T22:58:05.718117+02:00"
+        }
+    },
+    {
+        "model": "customer_app.OrderItemModel",
+        "pk": 16,
+        "fields":{
+            "order": 6,
+            "dish": 2,
+            "dish_quantity": 1,
+            "created": "2024-01-09T22:59:05.718117+02:00",
+            "modified": "2024-01-09T22:59:05.718117+02:00"
+        }
+    },
+    {
+        "model": "customer_app.OrderItemModel",
+        "pk": 17,
+        "fields":{
+            "order": 7,
+            "dish": 1,
+            "dish_quantity": 2,
+            "created": "2024-05-11T22:57:05.718117+02:00",
+            "modified": "2024-05-11T22:57:05.718117+02:00"
+        }
+    },
+    {
+        "model": "customer_app.OrderItemModel",
+        "pk": 18,
+        "fields":{
+            "order": 7,
+            "dish": 2,
+            "dish_quantity": 1,
+            "created": "2024-05-11T22:57:06.718117+02:00",
+            "modified": "2024-05-11T22:57:06.718117+02:00"
+        }
+    },
+    {
+        "model": "customer_app.OrderItemModel",
+        "pk": 18,
+        "fields":{
+            "order": 8,
+            "dish": 1,
+            "dish_quantity": 2,
+            "created": "2024-05-11T22:57:07.718117+02:00",
+            "modified": "2024-05-11T22:57:07.718117+02:00"
+        }
+    },
+    {
+        "model": "customer_app.OrderItemModel",
+        "pk": 19,
+        "fields":{
+            "order": 8,
+            "dish": 2,
+            "dish_quantity": 1,
+            "created": "2024-05-11T22:57:08.718117+02:00",
+            "modified": "2024-05-11T22:57:08.718117+02:00"
+        }
+    }
+]

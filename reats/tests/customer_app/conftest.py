@@ -4,7 +4,15 @@ from django.core.management import call_command
 
 @pytest.fixture(scope="session")
 def django_db_setup(django_db_blocker):
-    fixtures = ["addresses", "customers", "cookers", "dishes", "drinks"]
+    fixtures = [
+        "addresses",
+        "customers",
+        "cookers",
+        "dishes",
+        "drinks",
+        "orders",
+        "order_items",
+    ]
 
     with django_db_blocker.unblock():
         call_command("loaddata", *fixtures)
@@ -63,3 +71,13 @@ def customer_dessert_path() -> str:
 @pytest.fixture(scope="session")
 def customer_starter_path() -> str:
     return "/api/v1/customers-starters/"
+
+
+@pytest.fixture(scope="session")
+def customer_order_path() -> str:
+    return "/api/v1/customers-orders/"
+
+
+@pytest.fixture(scope="session")
+def customer_order_history_path() -> str:
+    return "/api/v1/customers-orders-history/"

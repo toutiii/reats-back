@@ -52,6 +52,7 @@ def test_create_address_success(
         "postal_code": "91100",
         "address_complement": "résidence test",
         "town": "Ville-De-Test",
+        "is_enabled": True,
         "customer": customer_id,
     }
     assert CustomerModel.objects.get(pk=customer_id).addresses.count() == 1
