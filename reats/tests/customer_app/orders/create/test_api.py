@@ -1,9 +1,7 @@
-import datetime
 import json
 
 import pytest
 from customer_app.models import CustomerModel, OrderItemModel, OrderModel
-from django.forms.models import model_to_dict
 from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from freezegun import freeze_time
 from rest_framework import status
@@ -60,16 +58,13 @@ def test_create_order_success(
         new_count = OrderModel.objects.count()
 
         assert new_count - old_count == 1
-        order = model_to_dict(OrderModel.objects.latest("pk"))
-        del order["id"]
-        assert order == {
-            "delivery_date": datetime.datetime(
-                2024, 5, 10, 12, 30, tzinfo=datetime.timezone.utc
-            ),
-            "customer": customer_id,
-            "address": address_id,
-            "status": "pending",
-        }
+        order: OrderModel = OrderModel.objects.latest("pk")
+
+        assert order.delivery_date.isoformat() == "2024-05-10T12:30:00+00:00"
+        assert order.customer.pk == customer_id
+        assert order.address.pk == address_id
+        assert order.status == "pending"
+
         assert CustomerModel.objects.get(pk=customer_id).orders.count() > 0
         order_item_query = OrderItemModel.objects.filter(
             order__id=OrderModel.objects.latest("pk").pk

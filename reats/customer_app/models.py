@@ -5,7 +5,6 @@ from django.db.models import (
     BooleanField,
     CharField,
     DateTimeField,
-    DecimalField,
     ForeignKey,
     IntegerField,
     Manager,
@@ -90,6 +89,11 @@ class OrderModel(ReatsModel):
         AddressModel,
         on_delete=CASCADE,
         related_name="orders",
+        null=True,
+    )
+    delivery_man: ForeignKey = ForeignKey(
+        "delivery_app.DeliverModel",
+        on_delete=CASCADE,
         null=True,
     )
     delivery_date: DateTimeField = DateTimeField()

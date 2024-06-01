@@ -40,6 +40,7 @@ def test_orders_history_list_success(
                     "town": "Corbeil-Essonnes",
                 },
                 "created": "2024-03-02T20:53:05.718117Z",
+                "delivery_man": None,
                 "delivery_date": "2024-03-10T16:30:00Z",
                 "id": 3,
                 "items": [
@@ -117,6 +118,7 @@ def test_orders_history_list_success(
                 },
                 "created": "2024-04-02T20:53:05.718117Z",
                 "delivery_date": "2024-04-10T16:30:00Z",
+                "delivery_man": None,
                 "id": 4,
                 "items": [
                     {
@@ -164,6 +166,7 @@ def test_orders_history_list_success(
                 },
                 "created": "2024-02-02T20:53:05.718117Z",
                 "delivery_date": "2024-02-10T16:30:00Z",
+                "delivery_man": None,
                 "id": 5,
                 "items": [
                     {
@@ -211,6 +214,7 @@ def test_orders_history_list_success(
                 },
                 "created": "2024-01-02T20:53:05.718117Z",
                 "delivery_date": "2024-01-10T16:30:00Z",
+                "delivery_man": None,
                 "id": 6,
                 "items": [
                     {

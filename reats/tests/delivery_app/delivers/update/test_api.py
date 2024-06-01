@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from io import BytesIO
 from unittest.mock import MagicMock
 from uuid import uuid4
@@ -8,7 +8,7 @@ import jwt
 import pytest
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives.serialization import load_pem_private_key
-from customer_app.models import CustomerModel
+from delivery_app.models import DeliverModel
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from freezegun import freeze_time
@@ -18,57 +18,51 @@ from rest_framework.test import APIClient
 
 
 @pytest.fixture
-def post_address_data() -> dict:
+def post_data_without_photo() -> dict:
     return {
-        "postal_code": "89000",
-        "street_name": "rue René Cassin",
-        "street_number": "99",
-        "town": "EVREUX",
-        "address_complement": "résidence de la brume",
+        "delivery_postal_code": "91100",
+        "delivery_radius": 5,
+        "delivery_town": "New town",
+        "delivery_vehicile": "car",
+        "max_capacity_per_delivery": 10,
+        "firstname": "New John test delivery",
+        "lastname": "DOE AGAIN",
     }
 
 
 @pytest.fixture
-def post_personal_information_data_without_photo() -> dict:
+def post_data_with_photo(
+    image: InMemoryUploadedFile,
+    post_data_without_photo: dict,
+) -> dict:
     return {
-        "firstname": "John",
-        "lastname": "DOE",
-    }
-
-
-@pytest.fixture
-def post_personal_information_data_with_photo(image: InMemoryUploadedFile) -> dict:
-    return {
-        "firstname": "John",
-        "lastname": "DOE",
+        **post_data_without_photo,
         "photo": image,
     }
 
 
 @pytest.fixture
-def customer_id() -> int:
-    return 3
+def deliver_id() -> int:
+    return 1
 
 
 @pytest.mark.django_db
-class TestUpdateCustomerAccountInfoWithoutPhoto:
+class TestUpdateDeliverAccountInfoWithoutPhoto:
     def test_response(
         self,
         auth_headers: dict,
         client: APIClient,
         delete_object: MagicMock,
-        customer_id: int,
+        deliver_id: int,
         path: str,
-        post_personal_information_data_without_photo: dict,
+        post_data_without_photo: dict,
         upload_fileobj: MagicMock,
     ) -> None:
 
         with freeze_time("2023-10-14T22:00:00+00:00"):
             response = client.patch(
-                f"{path}{customer_id}/",
-                encode_multipart(
-                    BOUNDARY, post_personal_information_data_without_photo
-                ),
+                f"{path}{deliver_id}/",
+                encode_multipart(BOUNDARY, post_data_without_photo),
                 content_type=MULTIPART_CONTENT,
                 follow=False,
                 **auth_headers,
@@ -76,18 +70,24 @@ class TestUpdateCustomerAccountInfoWithoutPhoto:
 
             assert response.status_code == status.HTTP_200_OK
 
-            customer = CustomerModel.objects.get(pk=customer_id)
+            deliver: DeliverModel = DeliverModel.objects.get(pk=deliver_id)
 
-            assert customer.modified.isoformat() == "2023-10-14T22:00:00+00:00"
-            assert customer.firstname == "John"
-            assert customer.lastname == "DOE"
+            assert deliver.modified.isoformat() == "2023-10-14T22:00:00+00:00"
+            assert deliver.photo == "delivers/1/profile_pics/default-profile-pic.jpg"
+            assert deliver.delivery_postal_code == "91100"
+            assert deliver.delivery_radius == 5
+            assert deliver.delivery_town == "New town"
+            assert deliver.delivery_vehicile == "car"
+            assert deliver.max_capacity_per_delivery == 10
+            assert deliver.firstname == "New John test delivery"
+            assert deliver.lastname == "DOE AGAIN"
 
             upload_fileobj.assert_not_called()
             delete_object.assert_not_called()
 
 
 @pytest.mark.django_db
-class TestUpdateCustomerAccountInfoWithPhotoV1:
+class TestUpdateDeliverAccountInfoWithPhotoV1:
     """
     Here the initial photo is the default one which is not supposed
     to be deleted by the update
@@ -98,15 +98,15 @@ class TestUpdateCustomerAccountInfoWithPhotoV1:
         auth_headers: dict,
         client: APIClient,
         delete_object: MagicMock,
-        customer_id: int,
+        deliver_id: int,
         path: str,
-        post_personal_information_data_with_photo: dict,
+        post_data_with_photo: dict,
         upload_fileobj: MagicMock,
     ) -> None:
         with freeze_time("2023-10-14T22:00:00+00:00"):
             response = client.patch(
-                f"{path}{customer_id}/",
-                encode_multipart(BOUNDARY, post_personal_information_data_with_photo),
+                f"{path}{deliver_id}/",
+                encode_multipart(BOUNDARY, post_data_with_photo),
                 content_type=MULTIPART_CONTENT,
                 follow=False,
                 **auth_headers,
@@ -114,12 +114,17 @@ class TestUpdateCustomerAccountInfoWithPhotoV1:
 
             assert response.status_code == status.HTTP_200_OK
 
-            customer = CustomerModel.objects.get(pk=customer_id)
+            deliver = DeliverModel.objects.get(pk=deliver_id)
 
-            assert customer.modified.isoformat() == "2023-10-14T22:00:00+00:00"
-            assert customer.firstname == "John"
-            assert customer.lastname == "DOE"
-            assert customer.photo == "customers/3/profile_pics/test.jpg"
+            assert deliver.modified.isoformat() == "2023-10-14T22:00:00+00:00"
+            assert deliver.photo == "delivers/1/profile_pics/test.jpg"
+            assert deliver.delivery_postal_code == "91100"
+            assert deliver.delivery_radius == 5
+            assert deliver.delivery_town == "New town"
+            assert deliver.delivery_vehicile == "car"
+            assert deliver.max_capacity_per_delivery == 10
+            assert deliver.firstname == "New John test delivery"
+            assert deliver.lastname == "DOE AGAIN"
 
             upload_fileobj.assert_called_once()
             assert len(upload_fileobj.call_args.args) == 3
@@ -129,12 +134,12 @@ class TestUpdateCustomerAccountInfoWithPhotoV1:
             assert isinstance(arg1, InMemoryUploadedFile)
             assert arg1.name == "test.jpg"
             assert arg2 == "reats-dev-bucket"
-            assert arg3 == "customers/3/profile_pics/test.jpg"
+            assert arg3 == "delivers/1/profile_pics/test.jpg"
             delete_object.assert_not_called()
 
 
 @pytest.mark.django_db
-class TestUpdateCustomerAccountInfoWithPhotoV2:
+class TestUpdateDeliverAccountInfoWithPhotoV2:
     """
     Here the initial photo is not the default one so we expect a deletion in S3 here.
     """
@@ -158,7 +163,7 @@ class TestUpdateCustomerAccountInfoWithPhotoV2:
         return image
 
     @pytest.fixture
-    def second_post_personal_information_data_with_photo(
+    def post_data_with_photo_v2(
         self,
         second_profile_pic: InMemoryUploadedFile,
     ) -> dict:
@@ -173,18 +178,18 @@ class TestUpdateCustomerAccountInfoWithPhotoV2:
         auth_headers: dict,
         client: APIClient,
         delete_object: MagicMock,
-        customer_id: int,
+        deliver_id: int,
         path: str,
-        post_personal_information_data_with_photo: dict,
-        second_post_personal_information_data_with_photo: dict,
+        post_data_with_photo: dict,
+        post_data_with_photo_v2: dict,
         upload_fileobj: MagicMock,
     ) -> None:
         with freeze_time("2023-10-14T22:00:00+00:00"):
             response = client.patch(
-                f"{path}{customer_id}/",
+                f"{path}{deliver_id}/",
                 encode_multipart(
                     BOUNDARY,
-                    post_personal_information_data_with_photo,
+                    post_data_with_photo,
                 ),
                 content_type=MULTIPART_CONTENT,
                 follow=False,
@@ -193,12 +198,10 @@ class TestUpdateCustomerAccountInfoWithPhotoV2:
 
             assert response.status_code == status.HTTP_200_OK
 
-            customer = CustomerModel.objects.get(pk=customer_id)
+            deliver = DeliverModel.objects.get(pk=deliver_id)
 
-            assert customer.modified.isoformat() == "2023-10-14T22:00:00+00:00"
-            assert customer.firstname == "John"
-            assert customer.lastname == "DOE"
-            assert customer.photo == "customers/3/profile_pics/test.jpg"
+            assert deliver.modified.isoformat() == "2023-10-14T22:00:00+00:00"
+            assert deliver.photo == "delivers/1/profile_pics/test.jpg"
 
             upload_fileobj.call_count == 1
             assert len(upload_fileobj.call_args.args) == 3
@@ -208,16 +211,16 @@ class TestUpdateCustomerAccountInfoWithPhotoV2:
             assert isinstance(arg1, InMemoryUploadedFile)
             assert arg1.name == "test.jpg"
             assert arg2 == "reats-dev-bucket"
-            assert arg3 == "customers/3/profile_pics/test.jpg"
+            assert arg3 == "delivers/1/profile_pics/test.jpg"
             delete_object.assert_not_called()
 
         # SECOND CALL #
         with freeze_time("2023-10-22T22:00:00+00:00"):
             response = client.patch(
-                f"{path}{customer_id}/",
+                f"{path}{deliver_id}/",
                 encode_multipart(
                     BOUNDARY,
-                    second_post_personal_information_data_with_photo,
+                    post_data_with_photo_v2,
                 ),
                 content_type=MULTIPART_CONTENT,
                 follow=False,
@@ -226,12 +229,10 @@ class TestUpdateCustomerAccountInfoWithPhotoV2:
 
             assert response.status_code == status.HTTP_200_OK
 
-            customer = CustomerModel.objects.get(pk=customer_id)
+            deliver = DeliverModel.objects.get(pk=deliver_id)
 
-            assert customer.modified.isoformat() == "2023-10-22T22:00:00+00:00"
-            assert customer.firstname == "John"
-            assert customer.lastname == "DOE"
-            assert customer.photo == "customers/3/profile_pics/second_profile_pic.jpg"
+            assert deliver.modified.isoformat() == "2023-10-22T22:00:00+00:00"
+            assert deliver.photo == "delivers/1/profile_pics/second_profile_pic.jpg"
 
             upload_fileobj.call_count == 2
             assert len(upload_fileobj.call_args.args) == 3
@@ -241,16 +242,16 @@ class TestUpdateCustomerAccountInfoWithPhotoV2:
             assert isinstance(arg1, InMemoryUploadedFile)
             assert arg1.name == "second_profile_pic.jpg"
             assert arg2 == "reats-dev-bucket"
-            assert arg3 == "customers/3/profile_pics/second_profile_pic.jpg"
+            assert arg3 == "delivers/1/profile_pics/second_profile_pic.jpg"
 
             delete_object.assert_called_once_with(
                 Bucket="reats-dev-bucket",
-                Key="customers/3/profile_pics/test.jpg",
+                Key="delivers/1/profile_pics/test.jpg",
             )
 
 
 @pytest.mark.django_db
-class TestUpdateCustomerFailedWithTokenSignedByAnUnknownPrivateKey:
+class TestUpdateDeliverFailedWithTokenSignedByAnUnknownPrivateKey:
     @pytest.fixture(scope="class")
     def unknown_private_key(self) -> str:
         return """-----BEGIN RSA PRIVATE KEY-----
@@ -283,7 +284,7 @@ FhxtAirMySNzId/rIu6k6wPIqyziXjh0DBu0eI4flX3CJe1In0UfX9oqcFuw+VbY
 
     @pytest.fixture(scope="class")
     def token_signed_with_unknown_private_key(self, unknown_private_key: str) -> str:
-        due_date = datetime.utcnow() + timedelta(minutes=60)
+        due_date = datetime.now(timezone.utc) + timedelta(minutes=60)
         payload = {
             "exp": int(due_date.timestamp()),
             "jti": str(uuid4()),
@@ -313,13 +314,13 @@ FhxtAirMySNzId/rIu6k6wPIqyziXjh0DBu0eI4flX3CJe1In0UfX9oqcFuw+VbY
         self,
         wrong_auth_header: dict,
         client: APIClient,
-        customer_id: int,
+        deliver_id: int,
         path: str,
         data: dict,
     ) -> None:
         with freeze_time("2023-10-14T22:00:00+00:00"):
             response = client.patch(
-                f"{path}{customer_id}/",
+                f"{path}{deliver_id}/",
                 encode_multipart(BOUNDARY, data),
                 content_type=MULTIPART_CONTENT,
                 follow=False,
@@ -356,7 +357,7 @@ ct4oFdWCTtEg1i4CV0LS43lOnu1Gv168nOvqc-WFXqMMNJnT88Ruz1St96KbpPw0m6K
         self,
         expired_access_token: str,
         client: APIClient,
-        customer_id: int,
+        deliver_id: int,
         path: str,
         data: dict,
     ) -> None:
@@ -364,7 +365,7 @@ ct4oFdWCTtEg1i4CV0LS43lOnu1Gv168nOvqc-WFXqMMNJnT88Ruz1St96KbpPw0m6K
             "HTTP_AUTHORIZATION": expired_access_token.replace("\n", "")
         }
         response = client.patch(
-            f"{path}{customer_id}/",
+            f"{path}{deliver_id}/",
             encode_multipart(BOUNDARY, data),
             content_type=MULTIPART_CONTENT,
             follow=False,

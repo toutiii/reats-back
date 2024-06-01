@@ -235,6 +235,19 @@ def cooker_api_key_header(settings) -> dict:
     }
 
 
+@pytest.fixture(autouse=True)
+def delivery_app_api_key(settings) -> None:
+    settings.DELIVERY_APP_API_KEY = "some-api-key-for-delivery-app"
+
+
+@pytest.fixture
+def delivery_api_key_header(settings) -> dict:
+    return {
+        "HTTP_X-Api-Key": settings.DELIVERY_APP_API_KEY,
+        "HTTP_App-Origin": "delivery",
+    }
+
+
 @pytest.fixture(autouse=True, scope="session")
 def mock_get_pre_signed_url() -> Iterator:
     patcher = patch(

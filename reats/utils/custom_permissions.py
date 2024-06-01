@@ -10,6 +10,7 @@ logger = logging.getLogger("watchtower-logger")
 WHITE_LIST = [
     (settings.COOKER_APP_ORIGIN, settings.COOKER_APP_API_KEY),
     (settings.CUSTOMER_APP_ORIGIN, settings.CUSTOMER_APP_API_KEY),
+    (settings.DELIVERY_APP_ORIGIN, settings.DELIVERY_APP_API_KEY),
 ]
 
 
@@ -33,6 +34,7 @@ class CustomAPIKeyPermission(BasePermission):
         logger.info(request.headers)
         app_origin = request.headers.get("App-Origin")
         api_key = request.headers.get("X-Api-Key")
+
         if api_key is None:
             return False
 

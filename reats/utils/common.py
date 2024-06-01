@@ -8,11 +8,10 @@ import phonenumbers
 from botocore.exceptions import ClientError
 from cooker_app.models import CookerModel
 from customer_app.models import CustomerModel
+from delivery_app.models import DeliverModel
 from django.conf import settings
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from phonenumbers.phonenumberutil import NumberParseException
-
-from .models import ReatsModel
 
 logger = logging.getLogger("watchtower-logger")
 session = boto3.session.Session(region_name=os.getenv("AWS_REGION"))
@@ -122,7 +121,9 @@ def is_otp_valid(data: dict) -> bool:
     return response["VerificationResponse"]["Valid"]
 
 
-def activate_user(model: Type[Union[CookerModel, CustomerModel]], data: dict) -> None:
+def activate_user(
+    model: Type[Union[CookerModel, CustomerModel, DeliverModel]], data: dict
+) -> None:
     user = model.objects.get(phone=format_phone(data["phone"]))
 
     if not user.is_activated:

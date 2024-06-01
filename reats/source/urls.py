@@ -1,5 +1,6 @@
 from cooker_app import views as cooker_app_views
 from customer_app import views as customer_app_views
+from delivery_app import views as delivery_app_views
 from django.conf import settings
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.urls import include, path
@@ -28,6 +29,11 @@ router.register(
     r"customers-orders-history",
     customer_app_views.HistoryOrderView,
     basename="orders-history",
+)
+router.register(
+    r"delivers",
+    delivery_app_views.DeliverView,
+    basename="delivers",
 )
 
 # The API URLs are now determined automatically by the router.

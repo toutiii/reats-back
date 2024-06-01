@@ -195,6 +195,16 @@ except ClientError as e:
 CUSTOMER_APP_API_KEY = response["Parameter"]["Value"]
 CUSTOMER_APP_ORIGIN = "customer"
 
+try:
+    response = ssm_client.get_parameter(
+        Name=os.getenv("AWS_API_KEY_DELIVERY_APP"), WithDecryption=False
+    )
+except ClientError as e:
+    raise e
+
+DELIVERY_APP_API_KEY = response["Parameter"]["Value"]
+DELIVERY_APP_ORIGIN = "delivery"
+
 
 SIMPLE_JWT = {
     "ALGORITHM": os.getenv("DJANGO_SIMPLE_JWT_ALGORITHM"),

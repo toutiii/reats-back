@@ -1,6 +1,7 @@
 from typing import Any, Dict, Union
 
 from customer_app.models import CustomerModel
+from delivery_app.models import DeliverModel
 from phonenumbers.phonenumberutil import NumberParseException
 from rest_framework import serializers, status
 from rest_framework.exceptions import ValidationError
@@ -92,36 +93,46 @@ class TokenObtainPairWithoutPasswordSerializer(TokenObtainPairSerializer):
         phone = attrs["phone"]
         request_headers = self.context.get("request").headers
         app_origin = request_headers.get("App-Origin")
+        formatted_phone = format_phone(phone)
 
-        if app_origin not in ["cooker", "customer"]:
-            raise ValidationError(f"Invalid App-Origin header value {app_origin}")
+        if app_origin not in ["cooker", "customer", "delivery"]:
+            raise ValidationError(f"Unknown App-Origin header value {app_origin}")
 
         try:
             cooker_user: Union[CookerModel, None] = CookerModel.objects.get(
-                phone=format_phone(phone)
+                phone=formatted_phone
             )
         except CookerModel.DoesNotExist:
             cooker_user = None
 
         try:
             customer_user: Union[CustomerModel, None] = CustomerModel.objects.get(
-                phone=format_phone(phone)
+                phone=formatted_phone
             )
+
         except CustomerModel.DoesNotExist:
             customer_user = None
 
-        if cooker_user is None and customer_user is None:
+        try:
+            deliver_user: Union[DeliverModel, None] = DeliverModel.objects.get(
+                phone=formatted_phone
+            )
+        except DeliverModel.DoesNotExist:
+            deliver_user = None
+
+        if cooker_user is None and customer_user is None and deliver_user is None:
             return {"ok": False, "status": status.HTTP_400_BAD_REQUEST}
 
-        self.user: Union[CustomerModel, CookerModel, None] = (
-            cooker_user
-            if app_origin == "cooker"
-            else (
-                customer_user
-                if app_origin == "customer"
-                else cooker_user or customer_user
-            )
-        )
+        self.user: Union[CookerModel, CustomerModel, DeliverModel, None] = None
+
+        if app_origin == "cooker":
+            self.user = cooker_user
+        elif app_origin == "customer":
+            self.user = customer_user
+        elif app_origin == "delivery":
+            self.user = deliver_user
+        else:
+            self.user = None
 
         if self.user is None:
             return {"ok": False, "status": status.HTTP_400_BAD_REQUEST}
