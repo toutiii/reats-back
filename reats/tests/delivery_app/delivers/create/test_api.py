@@ -29,11 +29,10 @@ def post_data(phone: str) -> dict:
         "firstname": "John",
         "lastname": "DOE",
         "phone": phone,
-        "delivery_vehicile": "bike",
-        "max_capacity_per_delivery": 5,
-        "delivery_postal_code": "91100",
-        "delivery_town": "Corbeil-Essonnes",
+        "delivery_vehicle": "bike",
+        "town": "Corbeil-Essonnes",
         "delivery_radius": 10,
+        "siret": "12345678901234",
     }
 
 
@@ -58,18 +57,25 @@ def test_create_deliver_success(
 
     assert new_count - old_count == 1
 
-    post_data_keys = list(post_data.keys()) + ["photo"]
+    post_data_keys = list(post_data.keys()) + [
+        "photo",
+        "is_activated",
+        "is_deleted",
+        "is_online",
+    ]
 
     assert model_to_dict(DeliverModel.objects.latest("pk"), fields=post_data_keys) == {
         "firstname": "John",
         "lastname": "DOE",
         "phone": "+33601020304",
         "photo": "delivers/1/profile_pics/default-profile-pic.jpg",
-        "delivery_vehicile": "bike",
-        "max_capacity_per_delivery": 5,
-        "delivery_postal_code": "91100",
-        "delivery_town": "Corbeil-Essonnes",
+        "delivery_vehicle": "bike",
+        "town": "Corbeil-Essonnes",
         "delivery_radius": 10,
+        "is_activated": False,
+        "siret": "12345678901234",
+        "is_deleted": False,
+        "is_online": False,
     }
     assert DeliverModel.objects.latest("pk").is_activated is False
     send_otp_message_success.assert_called_once_with(

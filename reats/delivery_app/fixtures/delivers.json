@@ -8,12 +8,11 @@
             "firstname": "John test delivery man",
             "lastname": "DOE",
             "phone": "+33700000001",
-            "delivery_vehicile": "bike",
-            "max_capacity_per_delivery": 7,
-            "delivery_postal_code": "91000",
-            "delivery_town": "Evry-Courcouronnes",
+            "delivery_vehicle": "bike",
+            "town": "Evry-Courcouronnes",
             "delivery_radius": 15,
-            "is_activated": true
+            "is_activated": true,
+            "siret": "00000000000000"
         }
     },
     {
@@ -24,13 +23,12 @@
             "modified": "2024-02-10T22:52:05.718117+02:00",
             "firstname": "Adam test delivery man",
             "lastname": "DOE",
-            "delivery_vehicile": "bike",
-            "max_capacity_per_delivery": 5,
-            "delivery_postal_code": "91100",
-            "delivery_town": "Corbeil-Essonnes",
+            "delivery_vehicle": "bike",
+            "town": "Corbeil-Essonnes",
             "delivery_radius": 10,
             "phone": "+33649510110",
-            "is_activated": true
+            "is_activated": true,
+            "siret": "00000000000001"
         }
     }
 ]

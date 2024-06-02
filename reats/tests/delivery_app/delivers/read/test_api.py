@@ -30,13 +30,11 @@ def test_get_existing_deliver_data(
         "data": {
             "personal_infos_section": {
                 "data": {
-                    "delivery_postal_code": "91000",
                     "delivery_radius": 15,
-                    "delivery_town": "Evry-Courcouronnes",
-                    "delivery_vehicile": "bike",
+                    "town": "Evry-Courcouronnes",
+                    "delivery_vehicle": "bike",
                     "firstname": "John test delivery " "man",
                     "lastname": "DOE",
-                    "max_capacity_per_delivery": 7,
                     "phone": "0700000001",
                     "photo": "https://some-url.com",
                 },

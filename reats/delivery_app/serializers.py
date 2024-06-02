@@ -9,7 +9,7 @@ from .models import DeliverModel
 class DeliverSerializer(ModelSerializer):
     class Meta:
         model = DeliverModel
-        exclude = ("photo", "is_enabled")
+        exclude = ("photo", "is_deleted", "is_online", "is_activated")
 
     def validate_phone(self, phone):
         try:

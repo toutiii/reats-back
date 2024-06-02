@@ -20,11 +20,9 @@ from rest_framework.test import APIClient
 @pytest.fixture
 def post_data_without_photo() -> dict:
     return {
-        "delivery_postal_code": "91100",
         "delivery_radius": 5,
-        "delivery_town": "New town",
-        "delivery_vehicile": "car",
-        "max_capacity_per_delivery": 10,
+        "town": "New town",
+        "delivery_vehicle": "car",
         "firstname": "New John test delivery",
         "lastname": "DOE AGAIN",
     }
@@ -74,11 +72,9 @@ class TestUpdateDeliverAccountInfoWithoutPhoto:
 
             assert deliver.modified.isoformat() == "2023-10-14T22:00:00+00:00"
             assert deliver.photo == "delivers/1/profile_pics/default-profile-pic.jpg"
-            assert deliver.delivery_postal_code == "91100"
             assert deliver.delivery_radius == 5
-            assert deliver.delivery_town == "New town"
-            assert deliver.delivery_vehicile == "car"
-            assert deliver.max_capacity_per_delivery == 10
+            assert deliver.town == "New town"
+            assert deliver.delivery_vehicle == "car"
             assert deliver.firstname == "New John test delivery"
             assert deliver.lastname == "DOE AGAIN"
 
@@ -118,11 +114,9 @@ class TestUpdateDeliverAccountInfoWithPhotoV1:
 
             assert deliver.modified.isoformat() == "2023-10-14T22:00:00+00:00"
             assert deliver.photo == "delivers/1/profile_pics/test.jpg"
-            assert deliver.delivery_postal_code == "91100"
             assert deliver.delivery_radius == 5
-            assert deliver.delivery_town == "New town"
-            assert deliver.delivery_vehicile == "car"
-            assert deliver.max_capacity_per_delivery == 10
+            assert deliver.town == "New town"
+            assert deliver.delivery_vehicle == "car"
             assert deliver.firstname == "New John test delivery"
             assert deliver.lastname == "DOE AGAIN"
 

@@ -130,12 +130,8 @@ class DeliverCustomRendererWithData(JSONRenderer):
                             "photo": get_pre_signed_url(data["photo"]),
                             "firstname": data["firstname"],
                             "lastname": data["lastname"],
-                            "delivery_vehicile": data["delivery_vehicile"],
-                            "max_capacity_per_delivery": data[
-                                "max_capacity_per_delivery"
-                            ],
-                            "delivery_postal_code": data["delivery_postal_code"],
-                            "delivery_town": data["delivery_town"],
+                            "delivery_vehicle": data["delivery_vehicle"],
+                            "town": data["town"],
                             "delivery_radius": data["delivery_radius"],
                             "phone": phonenumbers.format_number(
                                 phonenumbers.parse(

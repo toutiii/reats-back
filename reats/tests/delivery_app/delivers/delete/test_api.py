@@ -33,11 +33,10 @@ def post_data(phone: str) -> dict:
         "firstname": "John",
         "lastname": "DOE",
         "phone": phone,
-        "delivery_vehicile": "bike",
-        "max_capacity_per_delivery": 5,
-        "delivery_postal_code": "91100",
-        "delivery_town": "Corbeil-Essonnes",
+        "delivery_vehicle": "bike",
+        "town": "Corbeil-Essonnes",
         "delivery_radius": 10,
+        "siret": "12345678901234",
     }
 
 
@@ -61,20 +60,25 @@ def test_delete_deliver_success(
     assert response.status_code == status.HTTP_201_CREATED
     created_deliver = DeliverModel.objects.get(phone=e164_phone)
 
-    post_data_keys = list(post_data.keys()) + ["photo", "is_activated", "is_enabled"]
+    post_data_keys = list(post_data.keys()) + [
+        "photo",
+        "is_activated",
+        "is_deleted",
+        "is_online",
+    ]
 
     assert model_to_dict(created_deliver, fields=post_data_keys) == {
         "firstname": "John",
         "lastname": "DOE",
         "phone": "+33601020304",
         "photo": "delivers/1/profile_pics/default-profile-pic.jpg",
-        "delivery_vehicile": "bike",
-        "max_capacity_per_delivery": 5,
-        "delivery_postal_code": "91100",
-        "delivery_town": "Corbeil-Essonnes",
+        "delivery_vehicle": "bike",
+        "town": "Corbeil-Essonnes",
         "delivery_radius": 10,
         "is_activated": False,
-        "is_enabled": True,
+        "is_online": False,
+        "is_deleted": False,
+        "siret": "12345678901234",
     }
 
     with freeze_time("2024-01-20T17:05:45+00:00"):
@@ -107,11 +111,11 @@ def test_delete_deliver_success(
             "lastname": "DOE",
             "phone": "+33601020304",
             "photo": "delivers/1/profile_pics/default-profile-pic.jpg",
-            "delivery_vehicile": "bike",
-            "max_capacity_per_delivery": 5,
-            "delivery_postal_code": "91100",
-            "delivery_town": "Corbeil-Essonnes",
+            "delivery_vehicle": "bike",
+            "town": "Corbeil-Essonnes",
             "delivery_radius": 10,
             "is_activated": False,
-            "is_enabled": False,
+            "is_deleted": False,
+            "siret": "12345678901234",
+            "is_online": False,
         }
