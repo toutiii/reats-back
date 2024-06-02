@@ -115,7 +115,7 @@ def test_delete_deliver_success(
             "town": "Corbeil-Essonnes",
             "delivery_radius": 10,
             "is_activated": False,
-            "is_deleted": False,
+            "is_deleted": True,
             "siret": "12345678901234",
             "is_online": False,
         }

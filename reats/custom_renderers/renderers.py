@@ -133,6 +133,7 @@ class DeliverCustomRendererWithData(JSONRenderer):
                             "delivery_vehicle": data["delivery_vehicle"],
                             "town": data["town"],
                             "delivery_radius": data["delivery_radius"],
+                            "siret": data["siret"],
                             "phone": phonenumbers.format_number(
                                 phonenumbers.parse(
                                     data["phone"], settings.PHONE_REGION

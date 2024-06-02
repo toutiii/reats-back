@@ -37,6 +37,7 @@ def test_get_existing_deliver_data(
                     "lastname": "DOE",
                     "phone": "0700000001",
                     "photo": "https://some-url.com",
+                    "siret": "00000000000000",
                 },
                 "title": "personal_infos",
             }

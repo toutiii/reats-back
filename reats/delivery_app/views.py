@@ -111,7 +111,7 @@ class DeliverView(ModelViewSet):
 
     def destroy(self, request, *args, **kwargs) -> Response:
         instance: DeliverModel = self.get_object()
-        instance.is_enabled = False
+        instance.is_deleted = True
         instance.save()
 
         return Response(
