@@ -1,5 +1,12 @@
 from django.core.validators import MinLengthValidator, RegexValidator
-from django.db.models import AutoField, BooleanField, CharField, IntegerField, Manager
+from django.db.models import (
+    AutoField,
+    BooleanField,
+    CharField,
+    FloatField,
+    IntegerField,
+    Manager,
+)
 from utils.models import ReatsModel
 
 
@@ -38,6 +45,7 @@ class DeliverModel(ReatsModel):
         max_length=14,
     )
     is_online: BooleanField = BooleanField(default=False)
+    grades: FloatField = FloatField(default=0.0)
 
     class Meta:
         db_table = "delivers"

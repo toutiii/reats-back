@@ -85,12 +85,12 @@ class OrderGETSerializer(ModelSerializer):
                 item.pop("drink")
                 item.pop("drink_quantity")
 
-            item["delivery_date"] = data["delivery_date"]
+            item["scheduled_delivery_date"] = data["scheduled_delivery_date"]
             item["created"] = data["created"]
             item["address"] = data["address"]
             item["status"] = data["status"]
 
-        del data["delivery_date"]
+        del data["scheduled_delivery_date"]
         del data["created"]
         del data["address"]
         del data["status"]
@@ -116,6 +116,8 @@ class OrderSerializer(ModelSerializer):
         data_to_validate: dict = {}
         data_to_validate["customer"] = data.get("customerID")
         data_to_validate["address"] = data.get("addressID")
+        data_to_validate["delivery_fees"] = data.get("deliveryFees")
+        data_to_validate["delivery_fees_bonus"] = data.get("deliveryFeesBonus")
 
         # Dealing with delivery datetime
         delivery_datetime_string = f"{data.get('date')} {data.get('time')}"
@@ -127,7 +129,7 @@ class OrderSerializer(ModelSerializer):
             delivery_datetime_object_naive
         )
         utc_delivery_datetime = local_delivery_datetime.astimezone(pytz.UTC)
-        data_to_validate["delivery_date"] = utc_delivery_datetime
+        data_to_validate["scheduled_delivery_date"] = utc_delivery_datetime
         data_to_validate["items"] = []
 
         order_items = [
@@ -179,7 +181,14 @@ class OrderHistoryGETSerializer(ModelSerializer):
 
     class Meta:
         model = OrderModel
-        exclude = ("customer",)
+        exclude = (
+            "customer",
+            "processing_date",
+            "completed_date",
+            "delivery_in_progress_date",
+            "delivery_distance",
+            "delivery_initial_distance",
+        )
         many = True
 
     def to_representation(self, instance):

@@ -5,6 +5,7 @@ from django.db.models import (
     BooleanField,
     CharField,
     DateTimeField,
+    FloatField,
     ForeignKey,
     IntegerField,
     Manager,
@@ -96,13 +97,24 @@ class OrderModel(ReatsModel):
         on_delete=CASCADE,
         null=True,
     )
-    delivery_date: DateTimeField = DateTimeField()
+    scheduled_delivery_date: DateTimeField = DateTimeField()
+    is_scheduled: BooleanField = BooleanField(default=False)
 
     status: CharField = CharField(
         max_length=50,
         choices=STATUSES,
         default="pending",
     )
+    processing_date: DateTimeField = DateTimeField(null=True)
+    completed_date: DateTimeField = DateTimeField(null=True)
+    delivery_in_progress_date: DateTimeField = DateTimeField(null=True)
+    cancelled_date: DateTimeField = DateTimeField(null=True)
+    delivered_date: DateTimeField = DateTimeField(null=True)
+
+    delivery_fees: FloatField = FloatField()
+    delivery_fees_bonus: FloatField = FloatField()
+    delivery_distance: FloatField = FloatField(null=True)
+    delivery_initial_distance: FloatField = FloatField(null=True)
 
     class Meta:
         db_table = "orders"

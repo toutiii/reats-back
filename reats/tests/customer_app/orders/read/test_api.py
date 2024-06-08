@@ -27,7 +27,7 @@ def customer_id() -> int:
                         "town": "Villabé",
                     },
                     "created": "2024-05-09T20:52:05.718117Z",
-                    "delivery_date": "2024-05-10T12:30:00Z",
+                    "scheduled_delivery_date": "2024-05-10T12:30:00Z",
                     "dish": {
                         "category": "starter",
                         "cooker": 4,
@@ -53,7 +53,7 @@ def customer_id() -> int:
                         "town": "Villabé",
                     },
                     "created": "2024-05-09T20:52:05.718117Z",
-                    "delivery_date": "2024-05-10T12:30:00Z",
+                    "scheduled_delivery_date": "2024-05-10T12:30:00Z",
                     "dish": {
                         "category": "dish",
                         "cooker": 4,
@@ -79,7 +79,7 @@ def customer_id() -> int:
                         "town": "Villabé",
                     },
                     "created": "2024-05-09T20:52:05.718117Z",
-                    "delivery_date": "2024-05-10T12:30:00Z",
+                    "scheduled_delivery_date": "2024-05-10T12:30:00Z",
                     "drink": {
                         "capacity": 75,
                         "cooker": 1,
@@ -106,7 +106,7 @@ def customer_id() -> int:
                         "town": "Villabé",
                     },
                     "created": "2024-05-09T20:52:05.718117Z",
-                    "delivery_date": "2024-05-10T12:30:00Z",
+                    "scheduled_delivery_date": "2024-05-10T12:30:00Z",
                     "dish": {
                         "category": "dessert",
                         "cooker": 1,
@@ -139,7 +139,7 @@ def customer_id() -> int:
                         "town": "Mennecy",
                     },
                     "created": "2024-05-11T20:54:05.718117Z",
-                    "delivery_date": "2024-05-20T16:30:00Z",
+                    "scheduled_delivery_date": "2024-05-20T16:30:00Z",
                     "dish": {
                         "category": "starter",
                         "cooker": 4,
@@ -172,7 +172,7 @@ def customer_id() -> int:
                         "town": "Mennecy",
                     },
                     "created": "2024-05-11T20:53:05.718117Z",
-                    "delivery_date": "2024-05-17T16:30:00Z",
+                    "scheduled_delivery_date": "2024-05-17T16:30:00Z",
                     "dish": {
                         "category": "starter",
                         "cooker": 4,
@@ -198,7 +198,7 @@ def customer_id() -> int:
                         "town": "Mennecy",
                     },
                     "created": "2024-05-11T20:53:05.718117Z",
-                    "delivery_date": "2024-05-17T16:30:00Z",
+                    "scheduled_delivery_date": "2024-05-17T16:30:00Z",
                     "dish": {
                         "category": "dish",
                         "cooker": 4,

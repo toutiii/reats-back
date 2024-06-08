@@ -4,18 +4,22 @@ from typing import Type, Union
 from custom_renderers.renderers import (
     CustomRendererWithoutData,
     DeliverCustomRendererWithData,
+    DeliveryStatsCustomRendererWithData,
 )
+from customer_app.models import OrderModel
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import IntegrityError
 from phonenumbers.phonenumberutil import NumberParseException
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
+from rest_framework.mixins import ListModelMixin
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import BasePermission
 from rest_framework.renderers import BaseRenderer
 from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from utils.common import (
     activate_user,
     delete_s3_object,
@@ -212,3 +216,72 @@ class DeliverView(ModelViewSet):
             return Response(status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
         return Response(status=status.HTTP_200_OK)
+
+
+class DeliveryOrderStatsView(GenericViewSet, ListModelMixin):
+    permission_classes = [UserPermission]
+    queryset = OrderModel.objects.all().filter(status="delivered")
+    parser_classes = [MultiPartParser]
+    renderer_classes = [DeliveryStatsCustomRendererWithData]
+
+    def list(self, request, *args, **kwargs) -> Response:
+        self.queryset = self.queryset.filter(delivery_man__id=request.user.pk)
+        start_date = self.request.query_params.get("start_date")
+        end_date = self.request.query_params.get("end_date")
+
+        if not all([start_date, end_date]):
+            self.queryset = OrderModel.objects.none()
+
+        if start_date:
+            try:
+                self.queryset = self.queryset.filter(created__gte=start_date)
+            except DjangoValidationError as err:
+                logger.error(err)
+                self.queryset = OrderModel.objects.none()
+
+        if end_date:
+            try:
+                self.queryset = self.queryset.filter(created__lte=end_date)
+            except DjangoValidationError as err:
+                logger.error(err)
+                self.queryset = OrderModel.objects.none()
+
+        if self.queryset.count() == 0:
+            return Response(
+                {
+                    "ok": False,
+                    "status_code": status.HTTP_404_NOT_FOUND,
+                }
+            )
+
+        stats = {}
+        stats["total_delivery_fees"] = 0.0
+        stats["total_delivery_time"] = 0.0
+        stats["total_delivery_distance"] = 0.0
+
+        for order in self.queryset:
+            stats["total_delivery_fees"] += (
+                order.delivery_fees + order.delivery_fees_bonus
+            )
+            stats["total_delivery_time"] += (
+                order.delivered_date - order.delivery_in_progress_date
+            ).total_seconds()
+            stats["total_delivery_distance"] += (
+                order.delivery_distance + order.delivery_initial_distance
+            )
+
+        stats["total_delivery_fees"] = round(stats["total_delivery_fees"], 2)
+        stats["total_delivery_distance"] = round(stats["total_delivery_distance"], 2)
+        stats["total_number_of_deliveries"] = self.queryset.count()
+        stats["delivery_mean_time"] = round(
+            stats["total_delivery_time"] / stats["total_number_of_deliveries"], 2
+        )
+        del stats["total_delivery_time"]
+
+        return Response(
+            {
+                "data": stats,
+                "ok": True,
+                "status_code": status.HTTP_200_OK,
+            }
+        )

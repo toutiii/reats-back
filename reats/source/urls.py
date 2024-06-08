@@ -35,7 +35,11 @@ router.register(
     delivery_app_views.DeliverView,
     basename="delivers",
 )
-
+router.register(
+    r"delivers-stats",
+    delivery_app_views.DeliveryOrderStatsView,
+    basename="delivers-stats",
+)
 # The API URLs are now determined automatically by the router.
 urlpatterns = [
     path("api/v1/", include(router.urls)),

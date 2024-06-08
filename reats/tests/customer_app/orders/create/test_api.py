@@ -23,6 +23,8 @@ def post_data(address_id: int, customer_id: int) -> dict:
     return {
         "addressID": address_id,
         "customerID": customer_id,
+        "deliveryFees": 4.15,
+        "deliveryFeesBonus": 1.28,
         "date": "5/10/2024",
         "items": json.dumps(
             [
@@ -60,7 +62,7 @@ def test_create_order_success(
         assert new_count - old_count == 1
         order: OrderModel = OrderModel.objects.latest("pk")
 
-        assert order.delivery_date.isoformat() == "2024-05-10T12:30:00+00:00"
+        assert order.scheduled_delivery_date.isoformat() == "2024-05-10T12:30:00+00:00"
         assert order.customer.pk == customer_id
         assert order.address.pk == address_id
         assert order.status == "pending"

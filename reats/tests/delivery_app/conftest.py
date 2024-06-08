@@ -47,3 +47,8 @@ def otp_path() -> str:
 @pytest.fixture(scope="session")
 def refresh_token_path() -> str:
     return "/api/v1/token/refresh/"
+
+
+@pytest.fixture(scope="session")
+def delivery_stats_path() -> str:
+    return "/api/v1/delivers-stats/"
