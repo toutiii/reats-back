@@ -5,8 +5,10 @@ from custom_renderers.renderers import (
     CustomRendererWithoutData,
     DeliverCustomRendererWithData,
     DeliveryStatsCustomRendererWithData,
+    OrderHistoryCustomRendererWithData,
 )
 from customer_app.models import OrderModel
+from customer_app.serializers import OrderHistoryGETSerializer
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import IntegrityError
 from phonenumbers.phonenumberutil import NumberParseException
@@ -285,3 +287,24 @@ class DeliveryOrderStatsView(GenericViewSet, ListModelMixin):
                 "status_code": status.HTTP_200_OK,
             }
         )
+
+
+class DeliveryHistoryView(ListModelMixin, GenericViewSet):
+    permission_classes = [UserPermission]
+    queryset = OrderModel.objects.all().filter(status="delivered")
+    parser_classes = [MultiPartParser]
+    renderer_classes = [OrderHistoryCustomRendererWithData]
+    serializer_class = OrderHistoryGETSerializer
+
+    def list(self, request, *args, **kwargs) -> Response:
+        self.queryset = self.queryset.filter(customer__id=request.user.pk)
+        start_date = self.request.query_params.get("start_date")
+
+        if start_date:
+            try:
+                self.queryset = self.queryset.filter(created__gte=start_date)
+            except DjangoValidationError as err:
+                logger.error(err)
+                self.queryset = OrderModel.objects.none()
+
+        return super().list(request, *args, **kwargs)

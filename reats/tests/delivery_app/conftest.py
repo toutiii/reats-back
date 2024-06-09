@@ -52,3 +52,8 @@ def refresh_token_path() -> str:
 @pytest.fixture(scope="session")
 def delivery_stats_path() -> str:
     return "/api/v1/delivers-stats/"
+
+
+@pytest.fixture(scope="session")
+def delivery_history_path() -> str:
+    return "/api/v1/delivers-history/"
