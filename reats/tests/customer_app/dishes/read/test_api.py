@@ -1,3 +1,5 @@
+from unittest.mock import MagicMock
+
 import pytest
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -6,17 +8,36 @@ from rest_framework.test import APIClient
 @pytest.mark.parametrize(
     "query_parameter",
     [
-        {"name": "pou"},
-        {"sort": "new"},
-        {"sort": "famous"},
+        {
+            "search_address_id": "1",
+        },
+        {
+            "name": "pou",
+            "search_address_id": "1",
+        },
+        {
+            "country": "Cameroun",
+            "search_address_id": "1",
+        },
+        {
+            "search_radius": "2",
+            "search_address_id": "1",
+        },
+        {
+            "name": "pou",
+            "country": "Cameroun",
+            "search_address_id": "1",
+        },
     ],
     ids=[
-        "search_by_name",
-        "sort_by_new",
-        "sort_by_famous",
+        "search_by_address",
+        "search_by_name and address",
+        "search_by_country and address",
+        "search_by_radius and address",
+        "search_by_name_and_country and_address",
     ],
 )
-class TestListDishesForCustomerSuccess:
+class TestListDishesForCustomerNoResultsWithQueryParameterGivenByUser:
     @pytest.mark.django_db
     def test_response(
         self,
@@ -24,9 +45,9 @@ class TestListDishesForCustomerSuccess:
         client: APIClient,
         customer_dish_path: str,
         query_parameter: dict,
+        mock_googlemaps_distance_matrix: MagicMock,
     ) -> None:
 
-        # Then we list the dishes
         response = client.get(
             f"{customer_dish_path}",
             follow=False,
@@ -34,12 +55,181 @@ class TestListDishesForCustomerSuccess:
             data=query_parameter,
         )
         assert response.status_code == status.HTTP_200_OK
+        mock_googlemaps_distance_matrix.assert_called_once()
+        if query_parameter.get("search_radius") == "2":
+            assert response.json().get("ok") is True
+            assert response.json().get("status_code") == status.HTTP_404_NOT_FOUND
+            assert not response.json().get("data")
+
+
+@pytest.mark.parametrize(
+    "query_parameter",
+    [
+        {
+            "search_radius": "10",
+            "search_address_id": "1",
+        },
+        {
+            "name": "pou",
+            "country": "Cameroun",
+            "search_address_id": "1",
+            "search_radius": "10",
+        },
+    ],
+    ids=[
+        "search_by_radius",
+        "search_by_name_and_country_and_radius_and_address",
+    ],
+)
+class TestListDishesForCustomerSuccessWithQueryParameterGivenByUser:
+    @pytest.mark.django_db
+    def test_response(
+        self,
+        auth_headers: dict,
+        client: APIClient,
+        customer_dish_path: str,
+        query_parameter: dict,
+        mock_googlemaps_distance_matrix: MagicMock,
+    ) -> None:
+
+        response = client.get(
+            f"{customer_dish_path}",
+            follow=False,
+            **auth_headers,
+            data=query_parameter,
+        )
+        assert response.status_code == status.HTTP_200_OK
+        mock_googlemaps_distance_matrix.assert_called_once()
+
         assert response.json().get("ok") is True
         assert response.json().get("status_code") == 200
-        assert response.json().get("data")
+
+        if "name" in query_parameter and "country" in query_parameter:
+            assert sorted(response.json().get("data"), key=lambda x: x["id"]) == [
+                {
+                    "id": "5",
+                    "category": "dish",
+                    "country": "Cameroun",
+                    "description": "Test",
+                    "name": "Poulet braisé",
+                    "price": "11.0",
+                    "photo": "https://some-url.com",
+                    "is_enabled": True,
+                    "cooker": "1",
+                    "is_suitable_for_quick_delivery": False,
+                    "is_suitable_for_scheduled_delivery": True,
+                },
+                {
+                    "id": "6",
+                    "category": "dish",
+                    "country": "Cameroun",
+                    "description": "Test",
+                    "name": "Poulet DG",
+                    "price": "11.0",
+                    "photo": "https://some-url.com",
+                    "is_enabled": True,
+                    "cooker": "1",
+                    "is_suitable_for_quick_delivery": False,
+                    "is_suitable_for_scheduled_delivery": False,
+                },
+            ]
+        else:
+            assert sorted(response.json().get("data"), key=lambda x: x["id"]) == [
+                {
+                    "category": "dish",
+                    "cooker": "4",
+                    "country": "Congo",
+                    "description": "Test",
+                    "id": "2",
+                    "is_enabled": True,
+                    "is_suitable_for_quick_delivery": False,
+                    "is_suitable_for_scheduled_delivery": False,
+                    "name": "Gombo porc riz",
+                    "photo": "https://some-url.com",
+                    "price": "13.0",
+                },
+                {
+                    "category": "dish",
+                    "cooker": "4",
+                    "country": "Cameroun",
+                    "description": "Test",
+                    "id": "3",
+                    "is_enabled": True,
+                    "is_suitable_for_quick_delivery": True,
+                    "is_suitable_for_scheduled_delivery": False,
+                    "name": "Eru fufu",
+                    "photo": "https://some-url.com",
+                    "price": "15.0",
+                },
+                {
+                    "id": "4",
+                    "category": "dish",
+                    "country": "Benin",
+                    "description": "Test",
+                    "name": "Okok manioc",
+                    "price": "15.0",
+                    "photo": "https://some-url.com",
+                    "is_enabled": True,
+                    "cooker": "1",
+                    "is_suitable_for_quick_delivery": False,
+                    "is_suitable_for_scheduled_delivery": False,
+                },
+                {
+                    "id": "5",
+                    "category": "dish",
+                    "country": "Cameroun",
+                    "description": "Test",
+                    "name": "Poulet braisé",
+                    "price": "11.0",
+                    "photo": "https://some-url.com",
+                    "is_enabled": True,
+                    "cooker": "1",
+                    "is_suitable_for_quick_delivery": False,
+                    "is_suitable_for_scheduled_delivery": True,
+                },
+                {
+                    "id": "6",
+                    "category": "dish",
+                    "country": "Cameroun",
+                    "description": "Test",
+                    "name": "Poulet DG",
+                    "price": "11.0",
+                    "photo": "https://some-url.com",
+                    "is_enabled": True,
+                    "cooker": "1",
+                    "is_suitable_for_quick_delivery": False,
+                    "is_suitable_for_scheduled_delivery": False,
+                },
+                {
+                    "id": "7",
+                    "category": "dish",
+                    "country": "Nigeria",
+                    "description": "Test",
+                    "name": "Koki patate douce",
+                    "price": "11.0",
+                    "photo": "https://some-url.com",
+                    "is_enabled": True,
+                    "cooker": "1",
+                    "is_suitable_for_quick_delivery": False,
+                    "is_suitable_for_scheduled_delivery": False,
+                },
+                {
+                    "id": "8",
+                    "category": "dish",
+                    "country": "Cameroun",
+                    "description": "Test",
+                    "name": "Ndolé Riz",
+                    "price": "11.0",
+                    "photo": "https://some-url.com",
+                    "is_enabled": True,
+                    "cooker": "1",
+                    "is_suitable_for_quick_delivery": False,
+                    "is_suitable_for_scheduled_delivery": False,
+                },
+            ]
 
 
-class TestListDishesForCustomerWithMissingQueryParameter:
+class TestListDishesForCustomerWithMissingSearchAddressId:
     @pytest.mark.django_db
     def test_response(
         self,
@@ -48,11 +238,96 @@ class TestListDishesForCustomerWithMissingQueryParameter:
         customer_dish_path: str,
     ) -> None:
 
-        # Then we list the dishes
         response = client.get(
             f"{customer_dish_path}",
             follow=False,
             **auth_headers,
         )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.json() == {
+            "ok": False,
+            "status_code": status.HTTP_400_BAD_REQUEST,
+        }
+
+
+@pytest.mark.parametrize(
+    "query_parameter,expected_results",
+    [
+        (
+            {
+                "delivery_mode": "now",
+                "search_address_id": "1",
+            },
+            {
+                "ok": True,
+                "status_code": 200,
+                "data": [
+                    {
+                        "id": "3",
+                        "category": "dish",
+                        "country": "Cameroun",
+                        "description": "Test",
+                        "name": "Eru fufu",
+                        "price": "15.0",
+                        "photo": "https://some-url.com",
+                        "cooker": "4",
+                        "is_enabled": True,
+                        "is_suitable_for_quick_delivery": True,
+                        "is_suitable_for_scheduled_delivery": False,
+                    }
+                ],
+            },
+        ),
+        (
+            {
+                "delivery_mode": "scheduled",
+                "search_address_id": "1",
+            },
+            {
+                "ok": True,
+                "status_code": 200,
+                "data": [
+                    {
+                        "id": "5",
+                        "category": "dish",
+                        "country": "Cameroun",
+                        "description": "Test",
+                        "name": "Poulet braisé",
+                        "price": "11.0",
+                        "photo": "https://some-url.com",
+                        "cooker": "1",
+                        "is_enabled": True,
+                        "is_suitable_for_quick_delivery": False,
+                        "is_suitable_for_scheduled_delivery": True,
+                    }
+                ],
+            },
+        ),
+    ],
+    ids=[
+        "search_by_delivery_mode_now",
+        "search_by_delivery_mode_scheduled",
+    ],
+)
+class TestListDishesWithDeliveryModeFilter:
+    @pytest.mark.django_db
+    def test_response(
+        self,
+        auth_headers: dict,
+        client: APIClient,
+        customer_dish_path: str,
+        query_parameter: dict,
+        mock_googlemaps_distance_matrix: MagicMock,
+        expected_results: dict,
+    ):
+        response = client.get(
+            f"{customer_dish_path}",
+            follow=False,
+            **auth_headers,
+            data=query_parameter,
+        )
+
         assert response.status_code == status.HTTP_200_OK
-        assert response.json() == {"ok": True, "status_code": 404}
+        mock_googlemaps_distance_matrix.assert_called_once()
+
+        assert response.json() == expected_results

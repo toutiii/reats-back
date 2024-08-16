@@ -10,7 +10,7 @@ build-docker-image:
 run-unit-tests:
   script:
     - echo "Running unit tests..."
-    - docker exec -t django_app pytest -x -v
+    - docker exec -t django_app pytest -x -vv
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
   stage: run-unit-tests

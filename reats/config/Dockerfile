@@ -11,21 +11,23 @@ RUN apt-get -y update \
     && apt-get install -y python3-dev postgresql-server-dev-all gcc musl-dev
 
 # create needed dirs
-RUN mkdir -p /usr/src/app/customer_app
-RUN mkdir -p /usr/src/app/cooker_app
-RUN mkdir -p /usr/src/app/custom_renderers
-RUN mkdir -p /usr/src/app/delivery_app
-RUN mkdir -p /usr/src/app/source
-RUN mkdir -p /usr/src/app/tests
-RUN mkdir -p /usr/src/app/utils
+RUN mkdir -p /usr/src/app/customer_app \
+    /usr/src/app/cooker_app \
+    /usr/src/app/custom_renderers \
+    /usr/src/app/delivery_app \
+    /usr/src/app/source \
+    /usr/src/app/tests \
+    /usr/src/app/utils
 
+# set work directory
+WORKDIR /usr/src/app/
 
 # install dependencies
-RUN pip3 install --upgrade pip
-ADD requirements.txt /usr/src/app/
-RUN pip install -r /usr/src/app/requirements.txt
+COPY requirements.txt /usr/src/app/
+RUN pip3 install --upgrade pip \
+    && pip install -r requirements.txt
 
-# copy project
+# copy project files
 COPY customer_app /usr/src/app/customer_app/
 COPY cooker_app /usr/src/app/cooker_app/
 COPY custom_renderers /usr/src/app/custom_renderers/
@@ -34,32 +36,22 @@ COPY source /usr/src/app/source/
 COPY tests /usr/src/app/tests/
 COPY utils /usr/src/app/utils/
 
-
 # copy manage.py
 COPY manage.py /usr/src/app/
 
-# Expose port
-EXPOSE 8000
-EXPOSE 8001
-
-# copy env files
+# copy config files
 COPY config/.env /usr/src/app/
-
-# copy wait-for-it.sh
 COPY config/wait-for-it.sh /usr/src/app/
-
-RUN chmod +x /usr/src/app/wait-for-it.sh
-
-# copy entrypoint
 COPY config/entrypoint.sh /usr/src/app/
-
-RUN chmod +x /usr/src/app/entrypoint.sh
-
-# copy tox.ini
 COPY tox.ini /usr/src/app/tox.ini
 
-# set work directory
-WORKDIR /usr/src/app/
+# set permissions
+RUN chmod +x /usr/src/app/wait-for-it.sh \
+    && chmod +x /usr/src/app/entrypoint.sh
+
+# Expose ports
+EXPOSE 8000
+EXPOSE 8001
 
 # run entrypoint.sh
 ENTRYPOINT ["/usr/src/app/entrypoint.sh"]

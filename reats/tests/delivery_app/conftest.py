@@ -1,22 +1,4 @@
 import pytest
-from django.core.management import call_command
-
-
-@pytest.fixture(scope="session")
-def django_db_setup(django_db_blocker):
-    fixtures = [
-        "addresses",
-        "customers",
-        "cookers",
-        "delivers",
-        "dishes",
-        "drinks",
-        "orders",
-        "order_items",
-    ]
-
-    with django_db_blocker.unblock():
-        call_command("loaddata", *fixtures)
 
 
 @pytest.fixture(scope="session")

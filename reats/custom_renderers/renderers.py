@@ -176,7 +176,7 @@ class CustomRendererWithData(JSONRenderer):
                             k: (
                                 get_pre_signed_url(v)
                                 if k == "photo"
-                                else (str(v) if type(v) != bool else v)
+                                else (str(v) if not isinstance(v, bool) else v)
                             )
                             for k, v in item.items()
                         }

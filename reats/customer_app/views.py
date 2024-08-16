@@ -1,7 +1,7 @@
 import logging
 from typing import Type, Union
 
-from cooker_app.models import DishModel, DrinkModel
+from cooker_app.models import CookerModel, DishModel, DrinkModel
 from custom_renderers.renderers import (
     AddressCustomRendererWithData,
     CustomerCustomRendererWithData,
@@ -10,6 +10,7 @@ from custom_renderers.renderers import (
     OrderCustomRendererWithData,
     OrderHistoryCustomRendererWithData,
 )
+from django.conf import settings
 from django.db import IntegrityError
 from phonenumbers.phonenumberutil import NumberParseException
 from rest_framework import status
@@ -31,6 +32,7 @@ from utils.common import (
     upload_image_to_s3,
 )
 from utils.custom_permissions import CustomAPIKeyPermission, UserPermission
+from utils.distance_computer import get_closest_cookers_ids_from_customer_search_address
 
 from .models import AddressModel, CustomerModel, OrderModel
 from .serializers import (
@@ -278,6 +280,27 @@ class DishView(ListModelMixin, GenericViewSet):
         request_sort: Union[str, None] = self.request.query_params.get("sort")
         request_name: Union[str, None] = self.request.query_params.get("name")
         request_category: Union[str, None] = self.request.query_params.get("category")
+        request_country: Union[str, None] = self.request.query_params.get("country")
+        request_search_radius: Union[str, None] = self.request.query_params.get(
+            "search_radius",
+            "10",
+        )
+        request_address_id: Union[str, None] = self.request.query_params.get(
+            "search_address_id"
+        )
+        request_delivery_mode: Union[str, None] = self.request.query_params.get(
+            "delivery_mode"
+        )
+        closest_cookers_ids: list = []
+
+        if request_address_id is None:
+            logger.error("search_address_id is mandatory to run a search")
+            return Response(
+                {
+                    "error": "search_address_id is mandatory to run a search",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         if request_name is not None:
             self.queryset = self.queryset.filter(name__icontains=request_name)
@@ -285,15 +308,66 @@ class DishView(ListModelMixin, GenericViewSet):
         if request_category is not None:
             self.queryset = self.queryset.filter(category=request_category)
 
+        if request_country is not None:
+            self.queryset = self.queryset.filter(country=request_country)
+
         if request_sort is not None:
             if request_sort == "new":
                 self.queryset = self.queryset.order_by("created")
-            else:
+            elif request_sort == "famous":
+                # TODO: change this we'll be able to know the most ordered dishes in user's town
                 self.queryset = self.queryset.order_by("created")
+            else:
+                logger.error(f"Invalid sort value {request_sort}")
+                self.queryset = DishModel.objects.none()
 
-        self.queryset.filter(is_enabled=True)
+        if request_address_id is not None:
+            customer_address: AddressModel = AddressModel.objects.get(
+                pk=request_address_id
+            )
+            closest_cookers_ids = get_closest_cookers_ids_from_customer_search_address(
+                str(customer_address),
+                CookerModel.objects.filter(
+                    postal_code__startswith=customer_address.postal_code[:2]
+                ),
+                (
+                    int(request_search_radius)
+                    if request_search_radius
+                    else settings.DEFAULT_SEARCH_RADIUS
+                ),
+            )
 
-        if request_sort is None and request_name is None and request_category is None:
+        if not closest_cookers_ids:
+            self.queryset = DishModel.objects.none()
+            return super().list(request, *args, **kwargs)
+
+        if request_delivery_mode is not None:
+            if request_delivery_mode == "now":
+                self.queryset = self.queryset.filter(
+                    is_suitable_for_quick_delivery=True
+                )
+            elif request_delivery_mode == "scheduled":
+                self.queryset = self.queryset.filter(
+                    is_suitable_for_scheduled_delivery=True
+                )
+            else:
+                logger.error(f"Invalid delivery mode {request_delivery_mode}")
+                self.queryset = DishModel.objects.none()
+
+        self.queryset = (
+            self.queryset.filter(cooker__id__in=closest_cookers_ids)
+            .filter(cooker__is_online=True)
+            .filter(is_enabled=True)
+        )
+
+        if (
+            request_sort is None
+            and request_name is None
+            and request_category is None
+            and request_country is None
+            and request_search_radius is None
+            and request_delivery_mode is None
+        ):
             self.queryset = DishModel.objects.none()
 
         return super().list(request, *args, **kwargs)
@@ -444,3 +518,24 @@ class HistoryOrderView(ListModelMixin, GenericViewSet):
         self.queryset = self.queryset.filter(customer__id=request.user.pk)
 
         return super().list(request, *args, **kwargs)
+
+
+class DishCountriesView(ListModelMixin, GenericViewSet):
+
+    queryset = (
+        DishModel.objects.values_list("country", flat=True)
+        .filter(is_enabled=True)
+        .filter(category="dish")
+        .distinct()
+        .order_by("country")
+    )
+
+    def list(self, request, *args, **kwargs) -> Response:
+        return Response(
+            status=status.HTTP_200_OK,
+            data={
+                "ok": True,
+                "status_code": status.HTTP_200_OK,
+                "data": [country for country in self.queryset],
+            },
+        )

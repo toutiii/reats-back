@@ -10,6 +10,7 @@ import pytest
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives.serialization import load_pem_private_key
 from django.core.files.uploadedfile import InMemoryUploadedFile
+from django.core.management import call_command
 from PIL import Image
 from rest_framework.test import APIClient
 
@@ -256,3 +257,64 @@ def mock_get_pre_signed_url() -> Iterator:
     )
     yield patcher.start()
     patcher.stop()
+
+
+@pytest.fixture(autouse=True)
+def mock_googlemaps_distance_matrix() -> Iterator:
+    patcher = patch(
+        "utils.distance_computer.google_map_client.distance_matrix",
+        return_value={
+            "destination_addresses": [
+                "1 Rue André Lalande, 91000 Évry-Courcouronnes, " "France",
+                "49 Rue de la Clairière, 91000 Évry-Courcouronnes, " "France",
+                "52 Av. de la Commune de Paris, 91220 " "Brétigny-sur-Orge, France",
+                "14 Rue Marie Roche, 91090 Lisses, France",
+            ],
+            "origin_addresses": ["1 Rue René Cassin, 91100 Corbeil-Essonnes, France"],
+            "rows": [
+                {
+                    "elements": [
+                        {
+                            "distance": {"text": "9.2 km", "value": 9206},
+                            "duration": {"text": "13 mins", "value": 800},
+                            "status": "OK",
+                        },
+                        {
+                            "distance": {"text": "12.0 km", "value": 11955},
+                            "duration": {"text": "15 mins", "value": 886},
+                            "status": "OK",
+                        },
+                        {
+                            "distance": {"text": "22.0 km", "value": 21955},
+                            "duration": {"text": "24 mins", "value": 1417},
+                            "status": "OK",
+                        },
+                        {
+                            "distance": {"text": "9.2 km", "value": 9160},
+                            "duration": {"text": "13 mins", "value": 797},
+                            "status": "OK",
+                        },
+                    ]
+                }
+            ],
+        },
+    )
+    yield patcher.start()
+    patcher.stop()
+
+
+@pytest.fixture(scope="session")
+def django_db_setup(django_db_blocker):
+    fixtures = [
+        "customers",
+        "addresses",
+        "cookers",
+        "delivers",
+        "dishes",
+        "drinks",
+        "orders",
+        "order_items",
+    ]
+
+    with django_db_blocker.unblock():
+        call_command("loaddata", *fixtures)

@@ -23,6 +23,7 @@ class CookerModel(ReatsModel):
     postal_code: CharField = CharField(
         max_length=5,
         validators=[RegexValidator(regex=r"[0-9]{5}")],
+        db_index=True,
     )
     siret: CharField = CharField(
         unique=True,
@@ -63,6 +64,8 @@ class DishModel(ReatsModel):
     photo: CharField = CharField(max_length=512)
     cooker: ForeignKey = ForeignKey(CookerModel, on_delete=CASCADE)
     is_enabled: BooleanField = BooleanField(default=True)
+    is_suitable_for_quick_delivery: BooleanField = BooleanField(default=False)
+    is_suitable_for_scheduled_delivery: BooleanField = BooleanField(default=False)
 
     class Meta:
         db_table = "dishes"
@@ -84,6 +87,8 @@ class DrinkModel(ReatsModel):
     cooker: ForeignKey = ForeignKey(CookerModel, on_delete=CASCADE)
     is_enabled: BooleanField = BooleanField(default=True)
     capacity: IntegerField = IntegerField()
+    is_suitable_for_quick_delivery: BooleanField = BooleanField(default=False)
+    is_suitable_for_scheduled_delivery: BooleanField = BooleanField(default=False)
 
     class Meta:
         db_table = "drinks"

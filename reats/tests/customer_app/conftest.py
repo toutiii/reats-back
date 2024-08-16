@@ -1,22 +1,4 @@
 import pytest
-from django.core.management import call_command
-
-
-@pytest.fixture(scope="session")
-def django_db_setup(django_db_blocker):
-    fixtures = [
-        "customers",
-        "addresses",
-        "cookers",
-        "delivers",
-        "dishes",
-        "drinks",
-        "orders",
-        "order_items",
-    ]
-
-    with django_db_blocker.unblock():
-        call_command("loaddata", *fixtures)
 
 
 @pytest.fixture(scope="session")
@@ -82,3 +64,8 @@ def customer_order_path() -> str:
 @pytest.fixture(scope="session")
 def customer_order_history_path() -> str:
     return "/api/v1/customers-orders-history/"
+
+
+@pytest.fixture(scope="session")
+def customer_dishes_countries_path() -> str:
+    return "/api/v1/customers-dishes-countries/"

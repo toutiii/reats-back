@@ -8,12 +8,12 @@
       "firstname": "test",
       "lastname": "test",
       "phone": "+33600000001",
-      "postal_code": "91100",
+      "postal_code": "91000",
       "siret": "00000000000001",
-      "street_name": "rue du terrier du rat",
+      "street_name": "rue André Lalande",
       "street_number": "1",
-      "town": "test",
-      "address_complement": "résidence test"
+      "town": "Evry",
+      "is_online": true
     }
   },
   {
@@ -25,11 +25,11 @@
       "firstname": "test",
       "lastname": "test",
       "phone": "+33600000002",
-      "postal_code": "91100",
+      "postal_code": "91000",
       "siret": "00000000000002",
-      "street_name": "rue du terrier du rat",
-      "street_number": "1",
-      "town": "test"
+      "street_name": "rue de la Clairière",
+      "street_number": "49",
+      "town": "Evry"
     }
   },
   {
@@ -41,11 +41,11 @@
       "firstname": "test",
       "lastname": "test",
       "phone": "+33600000003",
-      "postal_code": "91100",
+      "postal_code": "91220",
       "siret": "00000000000003",
-      "street_name": "rue du terrier du rat",
-      "street_number": "3",
-      "town": "test",
+      "street_name": "Av. de la Commune de Paris",
+      "street_number": "52",
+      "town": "Brétigny-sur-Orge",
       "is_activated": true
     }
   },
@@ -58,13 +58,13 @@
       "firstname": "toutii",
       "lastname": "N",
       "phone": "+33649510110",
-      "postal_code": "91100",
+      "postal_code": "91090",
       "siret": "00000000000004",
-      "street_name": "rue du terrier du rat",
-      "street_number": "4",
-      "town": "test",
-      "address_complement": "résidence test",
-      "is_activated": true
+      "street_name": "rue marie roche",
+      "street_number": "14",
+      "town": "Lisses",
+      "is_activated": true,
+      "is_online": true
     }
   },
   {
@@ -76,12 +76,11 @@
       "firstname": "Reiner",
       "lastname": "N",
       "phone": "+33700000006",
-      "postal_code": "91100",
+      "postal_code": "75014",
       "siret": "00000000000005",
-      "street_name": "rue du terrier du rat",
-      "street_number": "5",
-      "town": "test",
-      "address_complement": "résidence test",
+      "street_name": "rue Dareau",
+      "street_number": "14",
+      "town": "Paris",
       "is_activated": true
     }
   }

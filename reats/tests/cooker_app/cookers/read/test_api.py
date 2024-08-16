@@ -1,5 +1,3 @@
-from unittest.mock import ANY
-
 import pytest
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -33,22 +31,22 @@ def test_get_existing_cooker_data(
         "data": {
             "address_section": {
                 "data": {
-                    "address_complement": "résidence test",
-                    "postal_code": "91100",
-                    "street_name": "rue du terrier du rat",
+                    "address_complement": None,
+                    "postal_code": "91000",
+                    "street_name": "rue André Lalande",
                     "street_number": "1",
-                    "town": "test",
+                    "town": "Evry",
                 },
                 "title": "address",
             },
             "personal_infos_section": {
                 "data": {
                     "firstname": "test",
-                    "is_online": False,
+                    "is_online": True,
                     "lastname": "test",
                     "max_order_number": "10",
                     "phone": "0600000001",
-                    "photo": ANY,
+                    "photo": "https://some-url.com",
                     "siret": "00000000000001",
                 },
                 "title": "personal_infos",

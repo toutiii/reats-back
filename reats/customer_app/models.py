@@ -48,9 +48,7 @@ class AddressModel(ReatsModel):
         db_table = "addresses"
 
     def __str__(self):
-        return (
-            f"{self.street_number} {self.street_name}, {self.postal_code} {self.town}"
-        )
+        return f"{self.street_number} {self.street_name} {self.address_complement}, {self.postal_code} {self.town}"
 
 
 class OrderModel(ReatsModel):

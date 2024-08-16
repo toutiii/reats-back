@@ -21,7 +21,7 @@
       "created": "2023-09-04T22:52:05.718117+02:00",
       "modified": "2023-09-04T22:52:05.718117+02:00",
       "category": "dish",
-      "country": "Cameroun",
+      "country": "Congo",
       "description": "Test",
       "name": "Gombo porc riz",
       "price": "13",
@@ -41,7 +41,8 @@
       "name": "Eru fufu",
       "price": "15",
       "photo": "cookers/1/dishes/dish/eru-fufu.jpg",
-      "cooker": 4
+      "cooker": 4,
+      "is_suitable_for_quick_delivery": true
     }
   },
   {
@@ -51,7 +52,7 @@
       "created": "2023-09-06T22:52:05.718117+02:00",
       "modified": "2023-09-06T22:52:05.718117+02:00",
       "category": "dish",
-      "country": "Cameroun",
+      "country": "Benin",
       "description": "Test",
       "name": "Okok manioc",
       "price": "15",
@@ -71,7 +72,8 @@
       "name": "Poulet braisé",
       "price": "11",
       "photo": "cookers/1/dishes/dish/poulet-braise.jpg",
-      "cooker": 1
+      "cooker": 1,
+      "is_suitable_for_scheduled_delivery": true
     }
   },
   {
@@ -96,7 +98,7 @@
       "created": "2023-09-09T22:52:05.718117+02:00",
       "modified": "2023-09-09T22:52:05.718117+02:00",
       "category": "dish",
-      "country": "Cameroun",
+      "country": "Nigeria",
       "description": "Test",
       "name": "Koki patate douce",
       "price": "11",

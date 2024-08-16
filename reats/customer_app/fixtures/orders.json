@@ -16,7 +16,7 @@
         "model": "customer_app.OrderModel",
         "pk": 2,
         "fields": {
-            "address": 5,
+            "address": 3,
             "customer": 2,
             "scheduled_delivery_date": "2024-05-10T18:30:00+02:00",
             "delivery_fees": 2.6,
@@ -71,7 +71,7 @@
         "model": "customer_app.OrderModel",
         "pk": 5,
         "fields": {
-            "address": 4,
+            "address": 3,
             "customer": 1,
             "scheduled_delivery_date": "2024-02-10T18:30:00+02:00",
             "delivery_fees": 4.1,
@@ -85,7 +85,7 @@
         "model": "customer_app.OrderModel",
         "pk": 6,
         "fields": {
-            "address": 4,
+            "address": 3,
             "customer": 1,
             "scheduled_delivery_date": "2024-01-10T18:30:00+02:00",
             "delivery_fees": 4.5,
@@ -99,7 +99,7 @@
         "model": "customer_app.OrderModel",
         "pk": 7,
         "fields": {
-            "address": 4,
+            "address": 3,
             "customer": 1,
             "scheduled_delivery_date": "2024-05-20T18:30:00+02:00",
             "delivery_fees": 2.7,
@@ -113,7 +113,7 @@
         "model": "customer_app.OrderModel",
         "pk": 8,
         "fields": {
-            "address": 4,
+            "address": 3,
             "customer": 1,
             "scheduled_delivery_date": "2024-05-17T18:30:00+02:00",
             "delivery_fees": 2.4,

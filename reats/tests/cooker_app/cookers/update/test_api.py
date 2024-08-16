@@ -319,7 +319,7 @@ class TestUpdateCookerOnlineStatus:
         upload_fileobj: MagicMock,
     ) -> None:
         cooker: CookerModel = CookerModel.objects.get(pk=cooker_id)
-        assert cooker.is_online is False
+        assert cooker.is_online is True
 
         with freeze_time("2023-10-14T22:00:00+00:00"):
             response = client.patch(

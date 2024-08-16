@@ -46,6 +46,8 @@ class TestListDrinksForCustomerSuccess:
                     "photo": "https://some-url.com",
                     "price": "3.5",
                     "unit": "liter",
+                    "is_suitable_for_quick_delivery": False,
+                    "is_suitable_for_scheduled_delivery": False,
                 },
                 {
                     "capacity": "75",
@@ -58,6 +60,8 @@ class TestListDrinksForCustomerSuccess:
                     "photo": "https://some-url.com",
                     "price": "5.0",
                     "unit": "centiliters",
+                    "is_suitable_for_quick_delivery": False,
+                    "is_suitable_for_scheduled_delivery": False,
                 },
             ],
             "ok": True,

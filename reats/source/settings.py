@@ -206,6 +206,19 @@ DELIVERY_APP_API_KEY = response["Parameter"]["Value"]
 DELIVERY_APP_ORIGIN = "delivery"
 
 
+try:
+    response = ssm_client.get_parameter(
+        Name=os.getenv("GOOGLE_API_KEY"), WithDecryption=False
+    )
+except ClientError as e:
+    raise e
+
+GOOGLE_API_KEY = response["Parameter"]["Value"]
+
+DEFAULT_SEARCH_COUNTRY = "France"
+
+DEFAULT_SEARCH_RADIUS = 2  # in KM
+
 SIMPLE_JWT = {
     "ALGORITHM": os.getenv("DJANGO_SIMPLE_JWT_ALGORITHM"),
     "SIGNING_KEY": secret_key,
