@@ -203,3 +203,9 @@ class OrderHistoryGETSerializer(ModelSerializer):
                 item.pop("drink_quantity")
 
         return data
+
+
+class DishCountriesGETSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DishModel
+        fields = ("country",)

@@ -201,6 +201,40 @@ class CustomRendererWithData(JSONRenderer):
         return super().render(response)
 
 
+class DishesCountriesCustomRendererWithData(JSONRenderer):
+    def render(self, data, accepted_media_type=None, renderer_context=None):
+        logger.info(data)
+        status_code = renderer_context["response"].status_code
+        response = {
+            "ok": True,
+            "status_code": status_code,
+        }
+
+        if not data and status_code == status.HTTP_200_OK:
+            response = {
+                "ok": True,
+                "status_code": status.HTTP_404_NOT_FOUND,
+            }
+
+        if data and status_code == status.HTTP_200_OK:
+            response.update({"data": [item["country"] for item in data]})
+
+        if not str(status_code).startswith("2"):
+            response = {
+                "ok": False,
+                "status_code": status_code,
+            }
+
+        if status_code == status.HTTP_401_UNAUTHORIZED:
+            try:
+                response["error_code"] = data["detail"].code
+            except KeyError:
+                pass
+
+        logger.info(response)
+        return super().render(response)
+
+
 class CustomRendererWithoutData(JSONRenderer):
     def render(self, data, accepted_media_type=None, renderer_context=None):
         logger.info(data)

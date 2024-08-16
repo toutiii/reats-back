@@ -119,3 +119,42 @@ def test_delete_deliver_success(
             "siret": "12345678901234",
             "is_online": False,
         }
+
+
+@pytest.mark.django_db
+class TestDeliverDeleteFailedWithExpiredToken:
+    @pytest.fixture(scope="class")
+    def data(self) -> dict:
+        return {"phone": "+33700000001"}
+
+    def test_response(
+        self,
+        delivery_api_key_header: dict,
+        client: APIClient,
+        data: dict,
+        path: str,
+    ) -> None:
+        deliver_id = 1
+
+        with freeze_time("2024-01-20T17:05:45+00:00"):
+            token_response = client.post(
+                "/api/v1/token/",
+                encode_multipart(BOUNDARY, data),
+                content_type=MULTIPART_CONTENT,
+                follow=False,
+                **delivery_api_key_header,
+            )
+
+            assert token_response.status_code == status.HTTP_200_OK
+            access_token = token_response.json().get("token").get("access")
+            access_auth_header = {"HTTP_AUTHORIZATION": f"Bearer {access_token}"}
+
+        with freeze_time("2024-01-20T17:15:45+00:00"):
+            response = client.delete(
+                f"{path}{deliver_id}/",
+                follow=False,
+                **access_auth_header,
+            )
+
+            assert response.status_code == status.HTTP_401_UNAUTHORIZED
+            assert response.json().get("error_code") == "token_not_valid"

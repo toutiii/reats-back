@@ -1,5 +1,6 @@
 import pytest
 from customer_app.models import OrderModel
+from deepdiff import DeepDiff
 from rest_framework import status
 from rest_framework.test import APIClient
 
@@ -181,9 +182,9 @@ def customer_id() -> int:
                         "price": 10.0,
                         "photo": "https://some-url.com",
                         "is_enabled": True,
-                        "cooker": 4,
                         "is_suitable_for_quick_delivery": False,
                         "is_suitable_for_scheduled_delivery": False,
+                        "cooker": 4,
                     },
                     "dish_quantity": 2,
                     "scheduled_delivery_date": "2024-05-17T16:30:00Z",
@@ -209,9 +210,9 @@ def customer_id() -> int:
                         "price": 13.0,
                         "photo": "https://some-url.com",
                         "is_enabled": True,
-                        "cooker": 4,
                         "is_suitable_for_quick_delivery": False,
                         "is_suitable_for_scheduled_delivery": False,
+                        "cooker": 4,
                     },
                     "dish_quantity": 1,
                     "scheduled_delivery_date": "2024-05-17T16:30:00Z",
@@ -270,6 +271,7 @@ def test_orders_list_success(
     assert response.status_code == status.HTTP_200_OK
     assert response.json().get("ok") == ok_value
     assert response.json().get("status_code") == expected_status_code
-    assert (
-        sorted(response.json().get("data"), key=lambda x: x["created"]) == expected_data
-    )
+
+    diff = DeepDiff(response.json().get("data"), expected_data, ignore_order=True)
+
+    assert not diff

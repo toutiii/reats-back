@@ -7,6 +7,7 @@ from custom_renderers.renderers import (
     CustomerCustomRendererWithData,
     CustomRendererWithData,
     CustomRendererWithoutData,
+    DishesCountriesCustomRendererWithData,
     OrderCustomRendererWithData,
     OrderHistoryCustomRendererWithData,
 )
@@ -40,6 +41,7 @@ from .serializers import (
     AddressSerializer,
     CustomerGETSerializer,
     CustomerSerializer,
+    DishCountriesGETSerializer,
     DishGETSerializer,
     DrinkGETSerializer,
     OrderGETSerializer,
@@ -521,21 +523,14 @@ class HistoryOrderView(ListModelMixin, GenericViewSet):
 
 
 class DishCountriesView(ListModelMixin, GenericViewSet):
-
+    renderer_classes = [DishesCountriesCustomRendererWithData]
+    serializer_class = DishCountriesGETSerializer
     queryset = (
-        DishModel.objects.values_list("country", flat=True)
-        .filter(is_enabled=True)
+        DishModel.objects.filter(is_enabled=True)
         .filter(category="dish")
-        .distinct()
         .order_by("country")
+        .distinct("country")
     )
 
     def list(self, request, *args, **kwargs) -> Response:
-        return Response(
-            status=status.HTTP_200_OK,
-            data={
-                "ok": True,
-                "status_code": status.HTTP_200_OK,
-                "data": [country for country in self.queryset],
-            },
-        )
+        return super().list(request, *args, **kwargs)

@@ -15,6 +15,43 @@ class TestCookerDeleteSuccess:
 
     def test_response(
         self,
+        auth_headers: dict,
+        client: APIClient,
+        data: dict,
+        path: str,
+    ) -> None:
+        cooker_id = 1
+
+        response = client.delete(
+            f"{path}{cooker_id}/",
+            follow=False,
+            **auth_headers,
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json() == {
+            "ok": True,
+            "status_code": status.HTTP_200_OK,
+        }
+
+        with pytest.raises(ObjectDoesNotExist):
+            CookerModel.objects.get(phone=data.get("phone"))
+
+        with pytest.raises(ObjectDoesNotExist):
+            CookerModel.objects.get(pk=1)
+
+        assert DishModel.objects.filter(cooker__id=cooker_id).count() == 0
+        assert DrinkModel.objects.filter(cooker__id=cooker_id).count() == 0
+
+
+@pytest.mark.django_db
+class TestCookerDeleteFailedWithExpiredToken:
+    @pytest.fixture(scope="class")
+    def data(self) -> dict:
+        return {"phone": "+33600000001"}
+
+    def test_response(
+        self,
         cooker_api_key_header: dict,
         client: APIClient,
         data: dict,
@@ -24,7 +61,6 @@ class TestCookerDeleteSuccess:
         cooker_id = 1
 
         with freeze_time("2024-01-20T17:05:45+00:00"):
-            # First we ask a token as usual
             token_response = client.post(
                 token_path,
                 encode_multipart(BOUNDARY, data),
@@ -37,23 +73,11 @@ class TestCookerDeleteSuccess:
             access_token = token_response.json().get("token").get("access")
             access_auth_header = {"HTTP_AUTHORIZATION": f"Bearer {access_token}"}
 
+        with freeze_time("2024-01-20T17:30:45+00:00"):
             response = client.delete(
                 f"{path}{cooker_id}/",
                 follow=False,
                 **access_auth_header,
             )
-
-            assert response.status_code == status.HTTP_200_OK
-            assert response.json() == {
-                "ok": True,
-                "status_code": status.HTTP_200_OK,
-            }
-
-            with pytest.raises(ObjectDoesNotExist):
-                CookerModel.objects.get(phone=data.get("phone"))
-
-            with pytest.raises(ObjectDoesNotExist):
-                CookerModel.objects.get(pk=1)
-
-            assert DishModel.objects.filter(cooker__id=cooker_id).count() == 0
-            assert DrinkModel.objects.filter(cooker__id=cooker_id).count() == 0
+            assert response.status_code == status.HTTP_401_UNAUTHORIZED
+            assert response.json().get("error_code") == "token_not_valid"

@@ -2,6 +2,7 @@ import pytest
 from customer_app.models import AddressModel, CustomerModel
 from django.forms.models import model_to_dict
 from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
+from freezegun import freeze_time
 from rest_framework import status
 from rest_framework.test import APIClient
 
@@ -121,7 +122,7 @@ def test_delete_address_failed_not_existing(
 
 
 @pytest.mark.django_db
-def test_delete_customer_will_delete_addresses(
+def test_delete_customer_will_also_delete_his_addresses(
     auth_headers: dict,
     client: APIClient,
     customer_id: int,
@@ -177,3 +178,41 @@ def test_delete_customer_will_delete_addresses(
 
     # Then we check that the customer is not in the database anymore
     assert not CustomerModel.objects.filter(pk=customer_id).exists()
+
+
+@pytest.mark.django_db
+class TestDeleteAddressFailedWithExpiredToken:
+    @pytest.fixture(scope="class")
+    def data(self) -> dict:
+        return {"phone": "+33700000001"}
+
+    def test_response(
+        self,
+        customer_api_key_header: dict,
+        client: APIClient,
+        data: dict,
+        customer_address_path: str,
+    ) -> None:
+        address_id = 1
+
+        with freeze_time("2024-01-20T17:05:45+00:00"):
+            token_response = client.post(
+                "/api/v1/token/",
+                encode_multipart(BOUNDARY, data),
+                content_type=MULTIPART_CONTENT,
+                follow=False,
+                **customer_api_key_header,
+            )
+
+            assert token_response.status_code == status.HTTP_200_OK
+            access_token = token_response.json().get("token").get("access")
+            access_auth_header = {"HTTP_AUTHORIZATION": f"Bearer {access_token}"}
+
+        with freeze_time("2024-01-20T17:30:45+00:00"):
+            response = client.delete(
+                f"{customer_address_path}{address_id}/",
+                follow=False,
+                **access_auth_header,
+            )
+            assert response.status_code == status.HTTP_401_UNAUTHORIZED
+            assert response.json().get("error_code") == "token_not_valid"
