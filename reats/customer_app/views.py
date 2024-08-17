@@ -293,6 +293,7 @@ class DishView(ListModelMixin, GenericViewSet):
         request_delivery_mode: Union[str, None] = self.request.query_params.get(
             "delivery_mode"
         )
+        request_cooker_id: Union[str, None] = self.request.query_params.get("cooker_id")
         closest_cookers_ids: list = []
 
         if request_address_id is None:
@@ -312,6 +313,9 @@ class DishView(ListModelMixin, GenericViewSet):
 
         if request_country is not None:
             self.queryset = self.queryset.filter(country=request_country)
+
+        if request_cooker_id is not None and request_cooker_id.isnumeric():
+            self.queryset = self.queryset.filter(cooker__id=request_cooker_id)
 
         if request_sort is not None:
             if request_sort == "new":

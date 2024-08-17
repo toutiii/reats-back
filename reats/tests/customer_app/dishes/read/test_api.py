@@ -331,3 +331,60 @@ class TestListDishesWithDeliveryModeFilter:
         mock_googlemaps_distance_matrix.assert_called_once()
 
         assert response.json() == expected_results
+
+
+@pytest.mark.parametrize(
+    "query_parameter,expected_results",
+    [
+        (
+            {
+                "cooker_id": "1",
+                "search_address_id": "1",
+                "delivery_mode": "scheduled",
+            },
+            {
+                "data": [
+                    {
+                        "category": "dish",
+                        "cooker": "1",
+                        "country": "Cameroun",
+                        "description": "Test",
+                        "id": "5",
+                        "is_enabled": True,
+                        "is_suitable_for_quick_delivery": False,
+                        "is_suitable_for_scheduled_delivery": True,
+                        "name": "Poulet braisé",
+                        "photo": "https://some-url.com",
+                        "price": "11.0",
+                    }
+                ],
+                "ok": True,
+                "status_code": 200,
+            },
+        ),
+    ],
+    ids=[
+        "search_by_cooker_id",
+    ],
+)
+class TestListDishesWithCookerIdFilter:
+    @pytest.mark.django_db
+    def test_response(
+        self,
+        auth_headers: dict,
+        client: APIClient,
+        customer_dish_path: str,
+        query_parameter: dict,
+        mock_googlemaps_distance_matrix: MagicMock,
+        expected_results: dict,
+    ):
+        response = client.get(
+            f"{customer_dish_path}",
+            follow=False,
+            **auth_headers,
+            data=query_parameter,
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        mock_googlemaps_distance_matrix.assert_called_once()
+        assert response.json() == expected_results
