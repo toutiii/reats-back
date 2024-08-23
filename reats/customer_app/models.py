@@ -48,15 +48,22 @@ class AddressModel(ReatsModel):
         db_table = "addresses"
 
     def __str__(self):
-        return f"{self.street_number} {self.street_name} {self.address_complement}, {self.postal_code} {self.town}"
+        if self.address_complement:
+            return f"{self.street_number} {self.street_name} {self.address_complement} {self.postal_code} {self.town}"
+
+        return f"{self.street_number} {self.street_name} {self.postal_code} {self.town}"
 
 
 class OrderModel(ReatsModel):
     STATUSES = [
         (
+            "draft",
+            "draft",
+        ),  # Intial state for an order, a draft order has not been paid yet
+        (
             "pending",
             "pending",
-        ),  # Order has been paid, this is the initial state
+        ),  # Order has been paid, waiting for the cooker acceptance or rejection
         (
             "processing",
             "processing",
@@ -95,13 +102,13 @@ class OrderModel(ReatsModel):
         on_delete=CASCADE,
         null=True,
     )
-    scheduled_delivery_date: DateTimeField = DateTimeField()
+    scheduled_delivery_date: DateTimeField = DateTimeField(null=True)
     is_scheduled: BooleanField = BooleanField(default=False)
 
     status: CharField = CharField(
-        max_length=50,
+        max_length=30,
         choices=STATUSES,
-        default="pending",
+        default="draft",
     )
     processing_date: DateTimeField = DateTimeField(null=True)
     completed_date: DateTimeField = DateTimeField(null=True)
@@ -109,8 +116,8 @@ class OrderModel(ReatsModel):
     cancelled_date: DateTimeField = DateTimeField(null=True)
     delivered_date: DateTimeField = DateTimeField(null=True)
 
-    delivery_fees: FloatField = FloatField()
-    delivery_fees_bonus: FloatField = FloatField()
+    delivery_fees: FloatField = FloatField(null=True)
+    delivery_fees_bonus: FloatField = FloatField(null=True)
     delivery_distance: FloatField = FloatField(null=True)
     delivery_initial_distance: FloatField = FloatField(null=True)
 

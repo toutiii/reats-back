@@ -42,6 +42,13 @@ class CookerModel(ReatsModel):
     is_online: BooleanField = BooleanField(default=False)
     is_activated: BooleanField = BooleanField(default=False)
 
+    @property
+    def full_address(self) -> str:
+        if self.address_complement:
+            return f"{self.street_number} {self.street_name} {self.address_complement} {self.postal_code} {self.town}"  # noqa
+
+        return f"{self.street_number} {self.street_name} {self.postal_code} {self.town}"
+
     class Meta:
         db_table = "cookers"
 

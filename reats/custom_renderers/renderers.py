@@ -304,7 +304,6 @@ class AddressCustomRendererWithData(JSONRenderer):
 class OrderCustomRendererWithData(JSONRenderer):
     def render(self, data, accepted_media_type=None, renderer_context=None):
         status_code = renderer_context["response"].status_code
-
         response = {
             "ok": True,
             "status_code": status_code,
@@ -320,26 +319,28 @@ class OrderCustomRendererWithData(JSONRenderer):
             response["ok"] = False
 
         if status_code == status.HTTP_200_OK:
-            data = json.loads(json.dumps(data))
-            items_values = [item["items"] for item in data]
-            flattened_items = [item for sublist in items_values for item in sublist]
+            data: list[dict] = json.loads(json.dumps(data))
+            for order_dict_item in data:
+                for item in order_dict_item["items"]:
+                    try:
+                        item["dish"]["photo"] = get_pre_signed_url(
+                            item["dish"]["photo"]
+                        )
+                    except KeyError as err:
+                        logger.error(err)
 
-            for item in flattened_items:
-                try:
-                    item["dish"]["photo"] = get_pre_signed_url(item["dish"]["photo"])
-                except KeyError as err:
-                    logger.error(err)
+                    try:
+                        item["drink"]["photo"] = get_pre_signed_url(
+                            item["drink"]["photo"]
+                        )
+                    except KeyError as err:
+                        logger.error(err)
 
-                try:
-                    item["drink"]["photo"] = get_pre_signed_url(item["drink"]["photo"])
-                except KeyError as err:
-                    logger.error(err)
-
-            if flattened_items:
+            if data:
                 response = {
                     "ok": True,
                     "status_code": status.HTTP_200_OK,
-                    "data": flattened_items,
+                    "data": data,
                 }
             else:
                 response = {

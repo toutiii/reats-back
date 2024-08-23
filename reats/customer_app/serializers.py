@@ -85,16 +85,6 @@ class OrderGETSerializer(ModelSerializer):
                 item.pop("drink")
                 item.pop("drink_quantity")
 
-            item["scheduled_delivery_date"] = data["scheduled_delivery_date"]
-            item["created"] = data["created"]
-            item["address"] = data["address"]
-            item["status"] = data["status"]
-
-        del data["scheduled_delivery_date"]
-        del data["created"]
-        del data["address"]
-        del data["status"]
-
         return data
 
 
@@ -109,36 +99,42 @@ class OrderSerializer(ModelSerializer):
 
     class Meta:
         model = OrderModel
-        exclude = ("created", "modified", "status")
+        exclude = (
+            "created",
+            "modified",
+            "delivery_fees",
+            "delivery_fees_bonus",
+            "status",
+        )
 
     def to_internal_value(self, data):
         # Modify the incoming data before validation
         data_to_validate: dict = {}
         data_to_validate["customer"] = data.get("customerID")
         data_to_validate["address"] = data.get("addressID")
-        data_to_validate["delivery_fees"] = data.get("deliveryFees")
-        data_to_validate["delivery_fees_bonus"] = data.get("deliveryFeesBonus")
+        data_to_validate["delivery_planning"] = data.get("deliveryPlanning")
 
         # Dealing with delivery datetime
-        delivery_datetime_string = f"{data.get('date')} {data.get('time')}"
-        delivery_datetime_object_naive = datetime.strptime(
-            delivery_datetime_string, "%m/%d/%Y %H:%M:%S"
-        )
-        local_timezone = pytz.timezone("Europe/Paris")
-        local_delivery_datetime = local_timezone.localize(
-            delivery_datetime_object_naive
-        )
-        utc_delivery_datetime = local_delivery_datetime.astimezone(pytz.UTC)
-        data_to_validate["scheduled_delivery_date"] = utc_delivery_datetime
-        data_to_validate["items"] = []
+        if data.get("date") and data.get("time"):
+            delivery_datetime_string = f"{data.get('date')} {data.get('time')}"
+            delivery_datetime_object_naive = datetime.strptime(
+                delivery_datetime_string, "%m/%d/%Y %H:%M:%S"
+            )
+            local_timezone = pytz.timezone("Europe/Paris")
+            local_delivery_datetime = local_timezone.localize(
+                delivery_datetime_object_naive
+            )
+            utc_delivery_datetime = local_delivery_datetime.astimezone(pytz.UTC)
+            data_to_validate["scheduled_delivery_date"] = utc_delivery_datetime
 
+        clean_order_items: list[dict] = []
         order_items = [
             ast.literal_eval(item)
             for item in self.context["request"].POST.getlist("items")
         ]
 
         for order_item in order_items[0]:
-            temp_data = {}
+            temp_data: dict = {}
             try:
                 temp_data["drink"] = order_item["drinkID"]
                 temp_data["drink_quantity"] = order_item["drinkOrderedQuantity"]
@@ -153,7 +149,9 @@ class OrderSerializer(ModelSerializer):
                 temp_data["dish"] = None
                 temp_data["dish_quantity"] = None
 
-            data_to_validate["items"].append(temp_data)
+            clean_order_items.append(temp_data)
+
+        data_to_validate["items"] = clean_order_items
 
         return super().to_internal_value(data_to_validate)
 

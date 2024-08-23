@@ -33,7 +33,11 @@ from utils.common import (
     upload_image_to_s3,
 )
 from utils.custom_permissions import CustomAPIKeyPermission, UserPermission
-from utils.distance_computer import get_closest_cookers_ids_from_customer_search_address
+from utils.distance_computer import (
+    compute_distance,
+    get_closest_cookers_ids_from_customer_search_address,
+)
+from utils.distance_ratio import get_distance_radio
 
 from .models import AddressModel, CustomerModel, OrderModel
 from .serializers import (
@@ -471,6 +475,31 @@ class OrderView(CreateModelMixin, ListModelMixin, GenericViewSet):
     queryset = OrderModel.objects.all()
     parser_classes = [MultiPartParser]
 
+    def perform_create(self, serializer: BaseSerializer) -> None:
+        distance_dict: dict = compute_distance(
+            origins=[str(serializer.validated_data.get("address"))],
+            destinations=[
+                serializer.validated_data.get("items")[0]["dish"].cooker.full_address
+            ],  # As on order is bound to only one cooker, fetch the first item's cooker is enough
+        )
+        if distance_dict.get("status") == "KO":
+            logger.error("Failed to compute distance")
+            raise ValidationError("Failed to compute distance")
+
+        order_instance: OrderModel = serializer.save()
+        delivery_distance: float = distance_dict["rows"][0]["elements"][0]["distance"][
+            "value"
+        ]
+        order_instance.delivery_distance = delivery_distance
+        order_instance.delivery_fees = delivery_distance * get_distance_radio(
+            delivery_distance
+        )
+
+        if serializer.validated_data.get("scheduled_delivery_date"):
+            order_instance.is_scheduled = True
+
+        order_instance.save()
+
     def get_renderers(self) -> list[BaseRenderer]:
         if self.request.method in ("POST", "PUT", "DELETE"):
             self.renderer_classes = [CustomRendererWithoutData]
@@ -495,7 +524,6 @@ class OrderView(CreateModelMixin, ListModelMixin, GenericViewSet):
 
         if request_status is not None:
             self.queryset = self.queryset.filter(status=request_status)
-
         if request_status is None or request_status not in [
             "pending",
             "processing",

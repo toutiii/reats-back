@@ -10,6 +10,39 @@ logger = logging.getLogger("watchtower-logger")
 google_map_client = googlemaps.Client(key=settings.GOOGLE_API_KEY)
 
 
+def compute_distance(
+    origins: list[str],
+    destinations: list[str],
+) -> dict:
+    """
+    Compute the distance between two addresses
+
+    :param origins: list of origin addresses
+    :param destinations: list of destination addresses
+    :return: dict containing the distance between addresses
+    """
+    try:
+        distance_dict: dict[str, Any] = google_map_client.distance_matrix(
+            origins=origins,
+            destinations=destinations,
+        )
+    except (
+        ApiError,
+        TransportError,
+        Timeout,
+        HTTPError,
+    ) as e:
+        logger.error(e)
+        distance_dict = {"status": "KO"}
+        return distance_dict
+    except Exception as e:
+        logger.error(e)
+        distance_dict = {"status": "KO"}
+        return distance_dict
+
+    return distance_dict
+
+
 def get_closest_cookers_ids_from_customer_search_address(
     customer_address: str,
     cookers: QuerySet,
@@ -36,24 +69,10 @@ def get_closest_cookers_ids_from_customer_search_address(
         zip(cookers_ids, cookers_adresses)
     )
 
-    try:
-        distance_dict: dict[str, Any] = google_map_client.distance_matrix(
-            origins=[customer_address + f", {settings.DEFAULT_SEARCH_COUNTRY}"],
-            destinations=list(cookers_ids_addresses_dict.values()),
-        )
-    except (
-        ApiError,
-        TransportError,
-        Timeout,
-        HTTPError,
-    ) as e:
-        logger.error(e)
-        distance_dict = {"status": "KO"}
-        return closest_cookers_ids
-    except Exception as e:
-        logger.error(e)
-        distance_dict = {"status": "KO"}
-        return closest_cookers_ids
+    distance_dict: dict[str, Any] = compute_distance(
+        origins=[customer_address + f", {settings.DEFAULT_SEARCH_COUNTRY}"],
+        destinations=list(cookers_ids_addresses_dict.values()),
+    )
 
     logger.debug(distance_dict)
 

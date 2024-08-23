@@ -3,11 +3,11 @@
         "model": "customer_app.OrderModel",
         "pk": 1,
         "fields": {
-            "address": 1,
+            "address": 2,
             "customer": 1,
-            "scheduled_delivery_date": "2024-05-10T14:30:00+02:00",
-            "delivery_fees": 4.3,
-            "delivery_fees_bonus": 1.5,
+            "delivery_distance": 1390.0,
+            "delivery_fees": 1390.0,
+            "status": "pending",
             "created": "2024-05-09T22:52:05.718117+02:00",
             "modified": "2024-05-09T22:52:05.718117+02:00"
         }
