@@ -55,6 +55,11 @@ class AddressModel(ReatsModel):
 
 
 class OrderModel(ReatsModel):
+    class Meta:
+        db_table = "orders"
+
+    objects: Manager = Manager()  # For linting purposes
+
     STATUSES = [
         (
             "draft",
@@ -120,11 +125,39 @@ class OrderModel(ReatsModel):
     delivery_fees_bonus: FloatField = FloatField(null=True)
     delivery_distance: FloatField = FloatField(null=True)
     delivery_initial_distance: FloatField = FloatField(null=True)
+    paid_date: DateTimeField = DateTimeField(null=True)
 
-    class Meta:
-        db_table = "orders"
+    def get_state_map(self) -> dict:
+        return {
+            "draft": DraftState(),
+            "pending": PendingState(),
+            "processing": ProcessingState(),
+            "completed": CompletedState(),
+            "cancelled_by_customer": CancelledByCustomerState(),
+            "cancelled_by_cooker": CancelledByCookerState(),
+            "delivered": DeliveredState(),
+        }
 
-    objects: Manager = Manager()  # For linting purposes
+    def get_reverse_state_map(self) -> dict:
+        return {
+            "DraftState": "draft",
+            "PendingState": "pending",
+            "ProcessingState": "processing",
+            "CompletedState": "completed",
+            "CancelledByCustomerState": "cancelled_by_customer",
+            "CancelledByCookerState": "cancelled_by_cooker",
+            "DeliveredState": "delivered",
+        }
+
+    def get_state(self):
+        return self.get_state_map().get(self.status, DraftState())
+
+    def transition_to(self, new_status) -> None:
+        current_state: OrderState = self.get_state()
+        new_state: OrderState | None = self.get_state_map().get(new_status)
+
+        if new_state:
+            current_state.transition_to(self, new_state)
 
 
 class OrderItemModel(ReatsModel):
@@ -151,3 +184,62 @@ class OrderItemModel(ReatsModel):
         db_table = "order_items"
 
     objects: Manager = Manager()  # For linting purposes
+
+
+class OrderState:
+    def can_transition_to(self, new_state):
+        raise NotImplementedError("Subclasses must implement this method.")
+
+    def transition_to(self, order: OrderModel, new_state):
+        if self.can_transition_to(new_state):
+            order.status = order.get_reverse_state_map().get(
+                new_state.__class__.__name__
+            )
+            order.save()
+        else:
+            raise ValueError(
+                f"Cannot transition from {self.__class__.__name__} to {new_state.__class__.__name__}"
+            )
+
+
+class DraftState(OrderState):
+    def can_transition_to(self, new_state: OrderState):
+        return isinstance(new_state, PendingState)
+
+
+class PendingState(OrderState):
+    def can_transition_to(self, new_state: OrderState):
+        return (
+            isinstance(new_state, ProcessingState)
+            or isinstance(new_state, CancelledByCustomerState)
+            or isinstance(new_state, CancelledByCookerState)
+        )
+
+
+class ProcessingState(OrderState):
+    def can_transition_to(self, new_state: OrderState):
+        return isinstance(new_state, CompletedState)
+
+
+class CompletedState(OrderState):
+    def can_transition_to(self, new_state: OrderState):
+        return isinstance(new_state, DeliveredState)
+
+
+class CancelledByCustomerState(OrderState):
+    def can_transition_to(self, new_state: OrderState):
+        raise ValueError(
+            "Cannot transition from CancelledByCustomerState to any other state."
+        )
+
+
+class CancelledByCookerState(OrderState):
+    def can_transition_to(self, new_state: OrderState):
+        raise ValueError(
+            "Cannot transition from CancelledByCookerState to any other state."
+        )
+
+
+class DeliveredState(OrderState):
+    def can_transition_to(self, new_state: OrderState):
+        raise ValueError("Cannot transition from DeliveredState to any other state.")

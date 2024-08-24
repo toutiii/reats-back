@@ -3,8 +3,8 @@ version: "3.7"
 services:
   web:
     build:
-      context: ..
-      dockerfile: config/Dockerfile
+      context: ../..
+      dockerfile: reats/config/Dockerfile
     ports:
       - "8000:8000"
     depends_on:
@@ -12,13 +12,13 @@ services:
     env_file:
       - .env
     volumes:
-      - ../customer_app:/usr/src/app/customer_app/
-      - ../cooker_app:/usr/src/app/cooker_app/
-      - ../custom_renderers:/usr/src/app/custom_renderers/
-      - ../delivery_app:/usr/src/app/delivery_app/
-      - ../source:/usr/src/app/source/
-      - ../tests:/usr/src/app/tests/
-      - ../utils:/usr/src/app/utils/
+      - ../customer_app:/usr/src/app/reats/customer_app/
+      - ../cooker_app:/usr/src/app/reats/cooker_app/
+      - ../custom_renderers:/usr/src/app/reats/custom_renderers/
+      - ../delivery_app:/usr/src/app/reats/delivery_app/
+      - ../source:/usr/src/app/reats/source/
+      - ../tests:/usr/src/app/reats/tests/
+      - ../utils:/usr/src/app/reats/utils/
     container_name: django_app
 
   db:

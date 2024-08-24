@@ -125,6 +125,7 @@ def test_delivery_orders_history_list_success(
                 "delivery_fees": 3.2,
                 "delivery_fees_bonus": 1.5,
                 "delivery_man": 1,
+                "paid_date": None,
             },
             {
                 "id": 4,
@@ -182,6 +183,7 @@ def test_delivery_orders_history_list_success(
                 "delivery_fees": 3.7,
                 "delivery_fees_bonus": 1.3,
                 "delivery_man": 1,
+                "paid_date": None,
             },
         ],
     }
@@ -259,6 +261,7 @@ def test_get_latest_deliveries(
                 "order_amount": 33.0,
                 "scheduled_delivery_date": "2024-04-10T16:30:00Z",
                 "status": "delivered",
+                "paid_date": None,
             }
         ],
         "ok": True,

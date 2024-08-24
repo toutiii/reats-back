@@ -120,6 +120,7 @@ def test_orders_history_list_success(
                 "delivery_fees": 3.2,
                 "delivery_fees_bonus": 1.5,
                 "delivery_man": 1,
+                "paid_date": None,
             },
             {
                 "id": 4,
@@ -177,6 +178,7 @@ def test_orders_history_list_success(
                 "delivery_fees": 3.7,
                 "delivery_fees_bonus": 1.3,
                 "delivery_man": 1,
+                "paid_date": None,
             },
             {
                 "id": 5,
@@ -234,6 +236,7 @@ def test_orders_history_list_success(
                 "delivery_fees": 4.1,
                 "delivery_fees_bonus": 1.2,
                 "delivery_man": None,
+                "paid_date": None,
             },
             {
                 "id": 6,
@@ -291,6 +294,7 @@ def test_orders_history_list_success(
                 "delivery_fees": 4.5,
                 "delivery_fees_bonus": 1.1,
                 "delivery_man": None,
+                "paid_date": None,
             },
         ],
     }

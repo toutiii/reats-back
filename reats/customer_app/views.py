@@ -17,7 +17,7 @@ from phonenumbers.phonenumberutil import NumberParseException
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
-from rest_framework.mixins import CreateModelMixin, ListModelMixin
+from rest_framework.mixins import CreateModelMixin, ListModelMixin, UpdateModelMixin
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import BasePermission
 from rest_framework.renderers import BaseRenderer
@@ -50,6 +50,7 @@ from .serializers import (
     DrinkGETSerializer,
     OrderGETSerializer,
     OrderHistoryGETSerializer,
+    OrderPATCHSerializer,
     OrderSerializer,
 )
 
@@ -470,7 +471,12 @@ class StarterView(ListModelMixin, GenericViewSet):
         return super().list(request, *args, **kwargs)
 
 
-class OrderView(CreateModelMixin, ListModelMixin, GenericViewSet):
+class OrderView(
+    CreateModelMixin,
+    ListModelMixin,
+    UpdateModelMixin,
+    GenericViewSet,
+):
     permission_classes = [UserPermission]
     queryset = OrderModel.objects.all()
     parser_classes = [MultiPartParser]
@@ -500,6 +506,18 @@ class OrderView(CreateModelMixin, ListModelMixin, GenericViewSet):
 
         order_instance.save()
 
+    def partial_update(self, request, *args, **kwargs):
+        instance: OrderModel = self.get_object()
+        new_status = request.data.get("status")
+        if new_status:
+            try:
+                instance.transition_to(new_status)
+            except ValueError as e:
+                logger.error(e)
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return super().partial_update(request, *args, **kwargs)
+
     def get_renderers(self) -> list[BaseRenderer]:
         if self.request.method in ("POST", "PUT", "DELETE"):
             self.renderer_classes = [CustomRendererWithoutData]
@@ -513,8 +531,11 @@ class OrderView(CreateModelMixin, ListModelMixin, GenericViewSet):
         if self.request.method in ("POST", "PUT"):
             self.serializer_class = OrderSerializer
 
-        if self.request.method == "GET":
+        elif self.request.method == "GET":
             self.serializer_class = OrderGETSerializer
+
+        elif self.request.method == "PATCH":
+            self.serializer_class = OrderPATCHSerializer
 
         return super().get_serializer_class()
 

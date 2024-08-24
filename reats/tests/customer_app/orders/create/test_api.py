@@ -74,6 +74,7 @@ def test_create_order_success_with_asap_delivery(
             "delivery_initial_distance": None,
             "delivery_man": None,
             "id": 9,
+            "paid_date": None,
             "is_scheduled": False,
             "processing_date": None,
             "scheduled_delivery_date": None,
@@ -155,6 +156,7 @@ def test_create_order_success_with_scheduled_delivery(
             "delivery_man": None,
             "id": 10,
             "is_scheduled": True,
+            "paid_date": None,
             "processing_date": None,
             "scheduled_delivery_date": datetime(
                 2024, 5, 10, 12, 30, tzinfo=timezone.utc

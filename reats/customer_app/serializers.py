@@ -203,6 +203,62 @@ class OrderHistoryGETSerializer(ModelSerializer):
         return data
 
 
+class OrderPATCHSerializer(serializers.ModelSerializer):
+    status = serializers.CharField(required=True)
+
+    class Meta:
+        model = OrderModel
+        fields = (
+            "status",
+            "paid_date",
+            "processing_date",
+            "completed_date",
+            "cancelled_date",
+            "delivered_date",
+        )
+
+    def update(self, instance: OrderModel, validated_data: dict):
+        status = validated_data.get("status", instance.status)
+
+        # Validate the status transition
+        # self.validate_status_transition(instance.status, status)
+
+        # Apply status-specific updates
+        now = datetime.now()
+        if status == "pending":
+            instance.paid_date = now
+        elif status == "processing":
+            instance.processing_date = now
+        elif status == "completed":
+            instance.completed_date = now
+        elif status in ["cancelled_by_customer", "cancelled_by_cooker"]:
+            instance.cancelled_date = now
+        elif status == "delivered":
+            instance.delivered_date = now
+
+        # Update status and save
+        instance.status = status
+        instance.save()
+
+        return instance
+
+    # def validate_status_transition(self, current_status, new_status):
+    #     transitions = {
+    #         "draft": ["pending"],
+    #         "pending": ["processing", "cancelled_by_customer", "cancelled_by_cooker"],
+    #         "processing": ["completed"],
+    #         "completed": ["delivered"],
+    #         "delivered": [],
+    #         "cancelled_by_customer": [],
+    #         "cancelled_by_cooker": [],
+    #     }
+
+    #     if new_status not in transitions[current_status]:
+    #         raise serializers.ValidationError(
+    #             f"Cannot transition from {current_status} to {new_status}."
+    #         )
+
+
 class DishCountriesGETSerializer(serializers.ModelSerializer):
     class Meta:
         model = DishModel

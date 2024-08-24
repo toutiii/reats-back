@@ -7,6 +7,15 @@ build-docker-image:
   stage: build-docker-image
 
 
+pre-commit:
+  script:
+    - echo "Running pre-commit hooks..."
+    - docker exec -t django_app sh -c "pre-commit run -a"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+  stage: pre-commit
+
+
 run-unit-tests:
   script:
     - echo "Running unit tests..."
@@ -17,4 +26,5 @@ run-unit-tests:
 
 stages:
   - build-docker-image
+  - pre-commit
   - run-unit-tests

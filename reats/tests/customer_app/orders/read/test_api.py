@@ -109,6 +109,7 @@ def customer_id() -> int:
                     "delivery_distance": 1390.0,
                     "delivery_initial_distance": None,
                     "delivery_man": None,
+                    "paid_date": None,
                 }
             ],
             200,
@@ -160,6 +161,7 @@ def customer_id() -> int:
                     "delivery_distance": None,
                     "delivery_initial_distance": None,
                     "delivery_man": None,
+                    "paid_date": None,
                 }
             ],
             200,
@@ -227,6 +229,7 @@ def customer_id() -> int:
                     "delivery_distance": None,
                     "delivery_initial_distance": None,
                     "delivery_man": None,
+                    "paid_date": None,
                 }
             ],
             200,
