@@ -62,6 +62,13 @@ class CookerCustomRendererWithData(JSONRenderer):
                 "status_code": status_code,
             }
 
+        if status_code == status.HTTP_401_UNAUTHORIZED:
+            try:
+                response["error_code"] = data["detail"].code
+            except KeyError:
+                pass
+
+        logger.info(response)
         return super().render(response)
 
 
@@ -104,6 +111,13 @@ class CustomerCustomRendererWithData(JSONRenderer):
                 "status_code": status_code,
             }
 
+        if status_code == status.HTTP_401_UNAUTHORIZED:
+            try:
+                response["error_code"] = data["detail"].code
+            except KeyError:
+                pass
+
+        logger.info(response)
         return super().render(response)
 
 
@@ -309,45 +323,46 @@ class OrderCustomRendererWithData(JSONRenderer):
             "status_code": status_code,
         }
 
+        if not str(status_code).startswith("2"):
+            response["ok"] = False
+
+        if status_code in (status.HTTP_201_CREATED, status.HTTP_200_OK):
+            data = json.loads(json.dumps(data))
+            if isinstance(data, list):
+                for order_item in data:
+                    for item in order_item["items"]:
+                        try:
+                            item["dish"]["photo"] = get_pre_signed_url(
+                                item["dish"]["photo"]
+                            )
+                        except KeyError as err:
+                            logger.error(err)
+
+                        try:
+                            item["drink"]["photo"] = get_pre_signed_url(
+                                item["drink"]["photo"]
+                            )
+                        except KeyError as err:
+                            logger.error(err)
+                response = {
+                    "ok": True,
+                    "status_code": status.HTTP_200_OK,
+                    "data": data if data else [],
+                }
+            else:
+                del data["id"]
+                response = {
+                    "ok": True,
+                    "status_code": status.HTTP_200_OK,
+                    "data": data,
+                }
+
         if status_code == status.HTTP_401_UNAUTHORIZED:
             try:
                 response["error_code"] = data["detail"].code
             except KeyError:
                 pass
 
-        if not str(status_code).startswith("2"):
-            response["ok"] = False
-
-        if status_code == status.HTTP_200_OK:
-            data: list[dict] = json.loads(json.dumps(data))
-            for order_dict_item in data:
-                for item in order_dict_item["items"]:
-                    try:
-                        item["dish"]["photo"] = get_pre_signed_url(
-                            item["dish"]["photo"]
-                        )
-                    except KeyError as err:
-                        logger.error(err)
-
-                    try:
-                        item["drink"]["photo"] = get_pre_signed_url(
-                            item["drink"]["photo"]
-                        )
-                    except KeyError as err:
-                        logger.error(err)
-
-            if data:
-                response = {
-                    "ok": True,
-                    "status_code": status.HTTP_200_OK,
-                    "data": data,
-                }
-            else:
-                response = {
-                    "ok": False,
-                    "status_code": status.HTTP_404_NOT_FOUND,
-                    "data": [],
-                }
         logger.info(response)
         return super().render(response)
 

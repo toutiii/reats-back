@@ -102,7 +102,6 @@ class OrderSerializer(ModelSerializer):
         exclude = (
             "created",
             "modified",
-            "delivery_fees",
             "delivery_fees_bonus",
             "status",
         )
@@ -112,7 +111,6 @@ class OrderSerializer(ModelSerializer):
         data_to_validate: dict = {}
         data_to_validate["customer"] = data.get("customerID")
         data_to_validate["address"] = data.get("addressID")
-        data_to_validate["delivery_planning"] = data.get("deliveryPlanning")
 
         # Dealing with delivery datetime
         if data.get("date") and data.get("time"):

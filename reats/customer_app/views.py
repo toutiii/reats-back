@@ -519,10 +519,10 @@ class OrderView(
         return super().partial_update(request, *args, **kwargs)
 
     def get_renderers(self) -> list[BaseRenderer]:
-        if self.request.method in ("POST", "PUT", "DELETE"):
+        if self.request.method in ("PUT", "DELETE"):
             self.renderer_classes = [CustomRendererWithoutData]
 
-        if self.request.method == "GET":
+        if self.request.method in ("GET", "POST"):
             self.renderer_classes = [OrderCustomRendererWithData]
 
         return super().get_renderers()

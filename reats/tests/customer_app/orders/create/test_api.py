@@ -35,7 +35,6 @@ def post_data_for_order_with_asap_delivery(
                 {"drinkID": "2", "drinkOrderedQuantity": 3},
             ]
         ),
-        "deliveryPlanning": "asap",
     }
 
 
@@ -60,8 +59,44 @@ def test_create_order_success_with_asap_delivery(
             **auth_headers,
         )
         assert response.status_code == status.HTTP_201_CREATED
+        assert response.json() == {
+            "ok": True,
+            "status_code": 200,
+            "data": {
+                "items": [
+                    {
+                        "dish_quantity": 1,
+                        "drink_quantity": None,
+                        "dish": 11,
+                        "drink": None,
+                    },
+                    {
+                        "dish_quantity": None,
+                        "drink_quantity": 3,
+                        "dish": None,
+                        "drink": 2,
+                    },
+                ],
+                "scheduled_delivery_date": None,
+                "is_scheduled": False,
+                "processing_date": None,
+                "completed_date": None,
+                "delivery_in_progress_date": None,
+                "cancelled_date": None,
+                "delivered_date": None,
+                "delivery_fees": 1390.0,
+                "delivery_distance": 1390.0,
+                "delivery_initial_distance": None,
+                "paid_date": None,
+                "customer": 1,
+                "address": 2,
+                "delivery_man": None,
+            },
+        }
+        order_dict = model_to_dict(OrderModel.objects.latest("pk"))
+        del order_dict["id"]
 
-        assert model_to_dict(OrderModel.objects.latest("pk")) == {
+        assert order_dict == {
             "address": 2,
             "cancelled_date": None,
             "completed_date": None,
@@ -73,7 +108,6 @@ def test_create_order_success_with_asap_delivery(
             "delivery_in_progress_date": None,
             "delivery_initial_distance": None,
             "delivery_man": None,
-            "id": 9,
             "paid_date": None,
             "is_scheduled": False,
             "processing_date": None,
@@ -110,17 +144,14 @@ def post_data_for_order_with_scheduled_delivery(
     return {
         "addressID": address_id,
         "customerID": customer_id,
-        "deliveryFees": 4.15,
-        "deliveryFeesBonus": 1.28,
         "date": "5/10/2024",
+        "time": "14:30:00",
         "items": json.dumps(
             [
                 {"dishID": "11", "dishOrderedQuantity": 1},
                 {"drinkID": "2", "drinkOrderedQuantity": 3},
             ]
         ),
-        "time": "14:30:00",
-        "deliveryPlanning": "scheduled",
     }
 
 
@@ -142,7 +173,43 @@ def test_create_order_success_with_scheduled_delivery(
             **auth_headers,
         )
         assert response.status_code == status.HTTP_201_CREATED
-        assert model_to_dict(OrderModel.objects.latest("pk")) == {
+        assert response.json() == {
+            "data": {
+                "address": 2,
+                "cancelled_date": None,
+                "completed_date": None,
+                "customer": 1,
+                "delivered_date": None,
+                "delivery_distance": 1390.0,
+                "delivery_fees": 1390.0,
+                "delivery_in_progress_date": None,
+                "delivery_initial_distance": None,
+                "delivery_man": None,
+                "is_scheduled": True,
+                "items": [
+                    {
+                        "dish": 11,
+                        "dish_quantity": 1,
+                        "drink": None,
+                        "drink_quantity": None,
+                    },
+                    {
+                        "dish": None,
+                        "dish_quantity": None,
+                        "drink": 2,
+                        "drink_quantity": 3,
+                    },
+                ],
+                "paid_date": None,
+                "processing_date": None,
+                "scheduled_delivery_date": "2024-05-10T12:30:00Z",
+            },
+            "ok": True,
+            "status_code": 200,
+        }
+        order_dict = model_to_dict(OrderModel.objects.latest("pk"))
+        del order_dict["id"]
+        assert order_dict == {
             "address": 2,
             "cancelled_date": None,
             "completed_date": None,
@@ -154,7 +221,6 @@ def test_create_order_success_with_scheduled_delivery(
             "delivery_in_progress_date": None,
             "delivery_initial_distance": None,
             "delivery_man": None,
-            "id": 10,
             "is_scheduled": True,
             "paid_date": None,
             "processing_date": None,
