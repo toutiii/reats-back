@@ -249,3 +249,60 @@ def test_create_order_success_with_scheduled_delivery(
             origins=["13 rue des Mazières 91000 Evry"],
             destinations=["1 rue André Lalande 91000 Evry"],
         )
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "date, time, expected_status_code",
+    [
+        (
+            "5/08/2024",
+            "14:30:00",
+            status.HTTP_400_BAD_REQUEST,
+        ),
+        (
+            "09/08/2024",
+            "12:30:00",
+            status.HTTP_400_BAD_REQUEST,
+        ),
+    ],
+    ids=[
+        "scheduled order is in the past",
+        "scheduler order is the same day but prior to the current htime",
+    ],
+)
+def test_create_scheduled_order_failed_with_wrong_delivery_infos(
+    auth_headers: dict,
+    client: APIClient,
+    customer_order_path: str,
+    mock_googlemaps_distance_matrix: MagicMock,
+    address_id: int,
+    customer_id: int,
+    date: str,
+    time: str,
+    expected_status_code: int,
+) -> None:
+
+    scheduled_order_data: dict = {
+        "addressID": address_id,
+        "customerID": customer_id,
+        "date": date,
+        "time": time,
+        "items": json.dumps(
+            [
+                {"dishID": "11", "dishOrderedQuantity": 1},
+                {"drinkID": "2", "drinkOrderedQuantity": 3},
+            ]
+        ),
+    }
+
+    with freeze_time("2024-09-08T10:16:00+00:00"):
+        response = client.post(
+            customer_order_path,
+            encode_multipart(BOUNDARY, scheduled_order_data),
+            content_type=MULTIPART_CONTENT,
+            follow=False,
+            **auth_headers,
+        )
+        assert response.status_code == expected_status_code
+        mock_googlemaps_distance_matrix.assert_not_called()

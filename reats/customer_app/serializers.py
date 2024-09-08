@@ -1,5 +1,5 @@
 import ast
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pytz
 from cooker_app.models import DishModel, DrinkModel
@@ -123,6 +123,21 @@ class OrderSerializer(ModelSerializer):
                 delivery_datetime_object_naive
             )
             utc_delivery_datetime = local_delivery_datetime.astimezone(pytz.UTC)
+
+            # Check if utc_delivery_datetime is in the past and return a 400 response
+            if utc_delivery_datetime < datetime.now(pytz.UTC):
+                raise serializers.ValidationError(
+                    {"date": "Scheduled delivery date must be in the future"},
+                )
+
+            # Check if utc_delivery_datetime is at least one hour in the future
+            if utc_delivery_datetime < datetime.now(pytz.UTC) + timedelta(hours=1):
+                raise serializers.ValidationError(
+                    {
+                        "date": "Scheduled delivery date must be at least one hour in the future"
+                    },
+                )
+
             data_to_validate["scheduled_delivery_date"] = utc_delivery_datetime
 
         clean_order_items: list[dict] = []
@@ -218,9 +233,6 @@ class OrderPATCHSerializer(serializers.ModelSerializer):
     def update(self, instance: OrderModel, validated_data: dict):
         status = validated_data.get("status", instance.status)
 
-        # Validate the status transition
-        # self.validate_status_transition(instance.status, status)
-
         # Apply status-specific updates
         now = datetime.now()
         if status == "pending":
@@ -239,22 +251,6 @@ class OrderPATCHSerializer(serializers.ModelSerializer):
         instance.save()
 
         return instance
-
-    # def validate_status_transition(self, current_status, new_status):
-    #     transitions = {
-    #         "draft": ["pending"],
-    #         "pending": ["processing", "cancelled_by_customer", "cancelled_by_cooker"],
-    #         "processing": ["completed"],
-    #         "completed": ["delivered"],
-    #         "delivered": [],
-    #         "cancelled_by_customer": [],
-    #         "cancelled_by_cooker": [],
-    #     }
-
-    #     if new_status not in transitions[current_status]:
-    #         raise serializers.ValidationError(
-    #             f"Cannot transition from {current_status} to {new_status}."
-    #         )
 
 
 class DishCountriesGETSerializer(serializers.ModelSerializer):
