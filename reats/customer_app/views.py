@@ -37,7 +37,7 @@ from utils.distance_computer import (
     compute_distance,
     get_closest_cookers_ids_from_customer_search_address,
 )
-from utils.distance_ratio import get_distance_radio
+from utils.distance_ratio import get_distance_ratio
 
 from .models import AddressModel, CustomerModel, OrderModel
 from .serializers import (
@@ -497,7 +497,7 @@ class OrderView(
             "value"
         ]
         order_instance.delivery_distance = delivery_distance
-        order_instance.delivery_fees = delivery_distance * get_distance_radio(
+        order_instance.delivery_fees = delivery_distance * get_distance_ratio(
             delivery_distance
         )
 

@@ -1,4 +1,4 @@
-def get_distance_radio(distance: float) -> float:
+def get_distance_ratio(distance: float) -> float:
     """
     For a given distance, compute the ratio which will be used to compute the delivery feels.
 
