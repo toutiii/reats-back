@@ -21,7 +21,8 @@
       "firstname": "John",
       "lastname": "DOE",
       "phone": "+33649510110",
-      "is_activated": true
+      "is_activated": true,
+      "stripe_id": "cus_RBiuNyquyndC8O"
     }
   },
   {
