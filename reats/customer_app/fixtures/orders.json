@@ -6,7 +6,7 @@
             "address": 2,
             "customer": 1,
             "delivery_distance": 1390.0,
-            "delivery_fees": 1390.0,
+            "delivery_fees": 3.19,
             "status": "pending",
             "created": "2024-05-09T22:52:05.718117+02:00",
             "modified": "2024-05-09T22:52:05.718117+02:00"

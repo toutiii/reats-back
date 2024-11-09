@@ -215,6 +215,25 @@ except ClientError as e:
 
 GOOGLE_API_KEY = response["Parameter"]["Value"]
 
+try:
+    response = ssm_client.get_parameter(
+        Name=os.getenv("AWS_API_KEY_STRIPE_PRIVATE"), WithDecryption=False
+    )
+except ClientError as e:
+    raise e
+
+STRIPE_PRIVATE_API_KEY = response["Parameter"]["Value"]
+
+try:
+    response = ssm_client.get_parameter(
+        Name=os.getenv("AWS_API_KEY_STRIPE_WEBHOOK_ENDPOINT_SIGNATURE"),
+        WithDecryption=False,
+    )
+except ClientError as e:
+    raise e
+
+STRIPE_WEBHOOK_ENDPOINT_SIGNATURE = response["Parameter"]["Value"]
+
 DEFAULT_SEARCH_COUNTRY = "France"
 
 DEFAULT_SEARCH_RADIUS = 2  # in KM
@@ -228,6 +247,8 @@ SIMPLE_JWT = {
 
 propagate = True
 handlers = ["watchtower"]
+SERVICE_FEES_RATE = 0.07
+DEFAULT_CURRENCY = "EUR"
 
 if os.getenv("ENV") == "local":
     propagate = False
@@ -257,6 +278,7 @@ LOGGING = {
         "console": {
             "class": "logging.StreamHandler",
             "formatter": "aws",
+            "level": "DEBUG",
         },
         "watchtower": {
             "class": "watchtower.CloudWatchLogHandler",

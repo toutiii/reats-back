@@ -2,10 +2,11 @@ import json
 import logging
 
 import phonenumbers
+from customer_app.models import CustomerModel
 from django.conf import settings
 from rest_framework import status
 from rest_framework.renderers import JSONRenderer
-from utils.common import get_pre_signed_url
+from utils.common import create_stripe_ephemeral_key, get_pre_signed_url
 
 logger = logging.getLogger("watchtower-logger")
 
@@ -316,6 +317,20 @@ class AddressCustomRendererWithData(JSONRenderer):
 
 
 class OrderCustomRendererWithData(JSONRenderer):
+    def _enrich_response(self, response: dict) -> None:
+        """
+        Order for history records does not have customer in serializer
+        """
+        if "customer" in response:
+            customer: CustomerModel = CustomerModel.objects.get(id=response["customer"])
+            response["customer"] = {
+                "id": customer.id,
+                "stripe_id": customer.stripe_id,
+                "lastname": customer.lastname,
+                "firstname": customer.firstname,
+            }
+            response["ephemeral_key"] = create_stripe_ephemeral_key(customer)
+
     def render(self, data, accepted_media_type=None, renderer_context=None):
         status_code = renderer_context["response"].status_code
         response = {
@@ -349,13 +364,16 @@ class OrderCustomRendererWithData(JSONRenderer):
                     "status_code": status.HTTP_200_OK,
                     "data": data if data else [],
                 }
+                for response_item in response["data"]:
+                    self._enrich_response(response_item)
+
             else:
-                del data["id"]
                 response = {
                     "ok": True,
                     "status_code": status.HTTP_200_OK,
                     "data": data,
                 }
+                self._enrich_response(response["data"])
 
         if status_code == status.HTTP_401_UNAUTHORIZED:
             try:

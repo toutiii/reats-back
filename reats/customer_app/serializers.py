@@ -3,11 +3,12 @@ from datetime import datetime, timedelta
 
 import pytz
 from cooker_app.models import DishModel, DrinkModel
+from django.conf import settings
 from django.db import transaction
 from phonenumbers.phonenumberutil import NumberParseException
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
-from utils.common import format_phone
+from utils.common import compute_order_items_total_amount, format_phone
 
 from .models import AddressModel, CustomerModel, OrderItemModel, OrderModel
 
@@ -106,9 +107,20 @@ class OrderSerializer(ModelSerializer):
             "status",
         )
 
+    def to_representation(self, instance: OrderModel):
+        data = super().to_representation(instance)
+
+        data["sub_total"] = compute_order_items_total_amount(instance)
+        data["service_fees"] = round(data["sub_total"] * settings.SERVICE_FEES_RATE, 2)
+        data["total_amount"] = round(
+            data["sub_total"] + data["service_fees"] + instance.delivery_fees, 2
+        )
+
+        return data
+
     def to_internal_value(self, data):
         # Modify the incoming data before validation
-        data_to_validate: dict = {}
+        data_to_validate = {}
         data_to_validate["customer"] = data.get("customerID")
         data_to_validate["address"] = data.get("addressID")
 
@@ -140,14 +152,14 @@ class OrderSerializer(ModelSerializer):
 
             data_to_validate["scheduled_delivery_date"] = utc_delivery_datetime
 
-        clean_order_items: list[dict] = []
+        clean_order_items = []
         order_items = [
             ast.literal_eval(item)
             for item in self.context["request"].POST.getlist("items")
         ]
 
         for order_item in order_items[0]:
-            temp_data: dict = {}
+            temp_data = {}
             try:
                 temp_data["drink"] = order_item["drinkID"]
                 temp_data["drink_quantity"] = order_item["drinkOrderedQuantity"]
@@ -175,6 +187,17 @@ class OrderSerializer(ModelSerializer):
             for item_data in order_items_data:
                 OrderItemModel.objects.create(order=order, **item_data)
         return order
+
+    def update(self, instance: OrderModel, validated_data: dict):
+        order_items_data = validated_data.pop("items")
+        with transaction.atomic():
+            OrderItemModel.objects.filter(order=instance).delete()
+            for item_data in order_items_data:
+                OrderItemModel.objects.create(order=instance, **item_data)
+            for attr, value in validated_data.items():
+                setattr(instance, attr, value)
+            instance.save()
+        return instance
 
 
 class OrderHistoryGETSerializer(ModelSerializer):

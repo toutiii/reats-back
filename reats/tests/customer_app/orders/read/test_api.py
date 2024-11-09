@@ -104,12 +104,14 @@ def customer_id() -> int:
                     "delivery_in_progress_date": None,
                     "cancelled_date": None,
                     "delivered_date": None,
-                    "delivery_fees": 1390.0,
+                    "delivery_fees": 3.19,
                     "delivery_fees_bonus": None,
                     "delivery_distance": 1390.0,
                     "delivery_initial_distance": None,
                     "delivery_man": None,
                     "paid_date": None,
+                    "stripe_payment_intent_id": None,
+                    "stripe_payment_intent_secret": None,
                 }
             ],
             200,
@@ -162,6 +164,8 @@ def customer_id() -> int:
                     "delivery_initial_distance": None,
                     "delivery_man": None,
                     "paid_date": None,
+                    "stripe_payment_intent_id": None,
+                    "stripe_payment_intent_secret": None,
                 }
             ],
             200,
@@ -230,6 +234,8 @@ def customer_id() -> int:
                     "delivery_initial_distance": None,
                     "delivery_man": None,
                     "paid_date": None,
+                    "stripe_payment_intent_id": None,
+                    "stripe_payment_intent_secret": None,
                 }
             ],
             200,

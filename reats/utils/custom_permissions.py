@@ -45,3 +45,8 @@ class CustomAPIKeyPermission(BasePermission):
             return False
 
         return True
+
+
+class AnonymousPermission(BasePermission):
+    def has_permission(self, request: Request, view) -> bool:
+        return True

@@ -25,6 +25,7 @@ class CustomerModel(ReatsModel):
         default="customers/1/profile_pics/default-profile-pic.jpg",
     )
     is_activated: BooleanField = BooleanField(default=False)
+    stripe_id: CharField = CharField(max_length=100, null=True)
 
     class Meta:
         db_table = "customers"
@@ -126,6 +127,8 @@ class OrderModel(ReatsModel):
     delivery_distance: FloatField = FloatField(null=True)
     delivery_initial_distance: FloatField = FloatField(null=True)
     paid_date: DateTimeField = DateTimeField(null=True)
+    stripe_payment_intent_id: CharField = CharField(max_length=100, null=True)
+    stripe_payment_intent_secret: CharField = CharField(max_length=100, null=True)
 
     def get_state_map(self) -> dict:
         return {

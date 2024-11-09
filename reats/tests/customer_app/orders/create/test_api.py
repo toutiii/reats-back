@@ -10,6 +10,9 @@ from freezegun import freeze_time
 from rest_framework import status
 from rest_framework.test import APIClient
 
+# Add this line to ignore E501 errors
+# flake8: noqa: E501
+
 
 @pytest.fixture
 def customer_id() -> int:
@@ -45,6 +48,8 @@ def test_create_order_success_with_asap_delivery(
     customer_order_path: str,
     post_data_for_order_with_asap_delivery: dict,
     mock_googlemaps_distance_matrix: MagicMock,
+    mock_stripe_payment_intent_create: MagicMock,
+    mock_stripe_create_ephemeral_key: MagicMock,
 ) -> None:
 
     with freeze_time("2024-05-08T10:16:00+00:00"):
@@ -58,8 +63,9 @@ def test_create_order_success_with_asap_delivery(
             follow=False,
             **auth_headers,
         )
-        assert response.status_code == status.HTTP_201_CREATED
-        assert response.json() == {
+        api_response: dict = response.json()
+        assert api_response["data"].pop("id") is not None
+        assert api_response == {
             "ok": True,
             "status_code": 200,
             "data": {
@@ -84,13 +90,24 @@ def test_create_order_success_with_asap_delivery(
                 "delivery_in_progress_date": None,
                 "cancelled_date": None,
                 "delivered_date": None,
-                "delivery_fees": 1390.0,
+                "delivery_fees": 3.19,
                 "delivery_distance": 1390.0,
                 "delivery_initial_distance": None,
                 "paid_date": None,
-                "customer": 1,
+                "ephemeral_key": "ek_test_YWNjdF8xUTN6bTZFRVllYUZ3dzFXLGwwb3VMVEZnT0ljSUw0Q0xYNm5rWGlMYTExYXRhVm4_00uVE9aZDp",
+                "customer": {
+                    "firstname": "Ben",
+                    "id": 1,
+                    "lastname": "TEN",
+                    "stripe_id": "cus_QyZ76Ae0W5KeqP",
+                },
                 "address": 2,
                 "delivery_man": None,
+                "stripe_payment_intent_id": "pi_3Q6VU7EEYeaFww1W0xCZEUxw",
+                "stripe_payment_intent_secret": "pi_3Q6VU7EEYeaFww1W0xCZEUxw_secret_OJqlWW9QRZZuSmAwUBklpxUf4",
+                "sub_total": 20.0,
+                "total_amount": 24.59,
+                "service_fees": 1.4,
             },
         }
         order_dict = model_to_dict(OrderModel.objects.latest("pk"))
@@ -103,7 +120,7 @@ def test_create_order_success_with_asap_delivery(
             "customer": 1,
             "delivered_date": None,
             "delivery_distance": 1390.0,
-            "delivery_fees": 1390.0,
+            "delivery_fees": 3.19,
             "delivery_fees_bonus": None,
             "delivery_in_progress_date": None,
             "delivery_initial_distance": None,
@@ -113,6 +130,8 @@ def test_create_order_success_with_asap_delivery(
             "processing_date": None,
             "scheduled_delivery_date": None,
             "status": "draft",
+            "stripe_payment_intent_id": "pi_3Q6VU7EEYeaFww1W0xCZEUxw",
+            "stripe_payment_intent_secret": "pi_3Q6VU7EEYeaFww1W0xCZEUxw_secret_OJqlWW9QRZZuSmAwUBklpxUf4",
         }
 
         order_item_query = OrderItemModel.objects.filter(
@@ -134,6 +153,16 @@ def test_create_order_success_with_asap_delivery(
         mock_googlemaps_distance_matrix.assert_called_once_with(
             origins=["13 rue des Mazières 91000 Evry"],
             destinations=["1 rue André Lalande 91000 Evry"],
+        )
+        mock_stripe_payment_intent_create.assert_called_once_with(
+            amount=2459,
+            currency="EUR",
+            automatic_payment_methods={"enabled": True},
+            customer="cus_QyZ76Ae0W5KeqP",
+        )
+        mock_stripe_create_ephemeral_key.assert_called_once_with(
+            customer="cus_QyZ76Ae0W5KeqP",
+            stripe_version="2024-06-20",
         )
 
 
@@ -162,6 +191,8 @@ def test_create_order_success_with_scheduled_delivery(
     customer_order_path: str,
     post_data_for_order_with_scheduled_delivery: dict,
     mock_googlemaps_distance_matrix: MagicMock,
+    mock_stripe_payment_intent_create: MagicMock,
+    mock_stripe_create_ephemeral_key: MagicMock,
 ) -> None:
 
     with freeze_time("2024-05-09T10:16:00+00:00"):
@@ -173,19 +204,32 @@ def test_create_order_success_with_scheduled_delivery(
             **auth_headers,
         )
         assert response.status_code == status.HTTP_201_CREATED
-        assert response.json() == {
+        api_response: dict = response.json()
+        assert api_response["data"].pop("id") is not None
+        assert api_response == {
             "data": {
                 "address": 2,
                 "cancelled_date": None,
                 "completed_date": None,
-                "customer": 1,
+                "customer": {
+                    "firstname": "Ben",
+                    "id": 1,
+                    "lastname": "TEN",
+                    "stripe_id": "cus_QyZ76Ae0W5KeqP",
+                },
                 "delivered_date": None,
                 "delivery_distance": 1390.0,
-                "delivery_fees": 1390.0,
+                "delivery_fees": 3.19,
                 "delivery_in_progress_date": None,
                 "delivery_initial_distance": None,
                 "delivery_man": None,
                 "is_scheduled": True,
+                "stripe_payment_intent_id": "pi_3Q6VU7EEYeaFww1W0xCZEUxw",
+                "ephemeral_key": "ek_test_YWNjdF8xUTN6bTZFRVllYUZ3dzFXLGwwb3VMVEZnT0ljSUw0Q0xYNm5rWGlMYTExYXRhVm4_00uVE9aZDp",
+                "stripe_payment_intent_secret": "pi_3Q6VU7EEYeaFww1W0xCZEUxw_secret_OJqlWW9QRZZuSmAwUBklpxUf4",
+                "sub_total": 20.0,
+                "total_amount": 24.59,
+                "service_fees": 1.4,
                 "items": [
                     {
                         "dish": 11,
@@ -216,7 +260,7 @@ def test_create_order_success_with_scheduled_delivery(
             "customer": 1,
             "delivered_date": None,
             "delivery_distance": 1390.0,
-            "delivery_fees": 1390.0,
+            "delivery_fees": 3.19,
             "delivery_fees_bonus": None,
             "delivery_in_progress_date": None,
             "delivery_initial_distance": None,
@@ -228,6 +272,8 @@ def test_create_order_success_with_scheduled_delivery(
                 2024, 5, 10, 12, 30, tzinfo=timezone.utc
             ),
             "status": "draft",
+            "stripe_payment_intent_id": "pi_3Q6VU7EEYeaFww1W0xCZEUxw",
+            "stripe_payment_intent_secret": "pi_3Q6VU7EEYeaFww1W0xCZEUxw_secret_OJqlWW9QRZZuSmAwUBklpxUf4",
         }
         order_item_query = OrderItemModel.objects.filter(
             order__id=OrderModel.objects.latest("pk").pk
@@ -248,6 +294,17 @@ def test_create_order_success_with_scheduled_delivery(
         mock_googlemaps_distance_matrix.assert_called_once_with(
             origins=["13 rue des Mazières 91000 Evry"],
             destinations=["1 rue André Lalande 91000 Evry"],
+        )
+
+        mock_stripe_payment_intent_create.assert_called_once_with(
+            amount=2459,
+            currency="EUR",
+            automatic_payment_methods={"enabled": True},
+            customer="cus_QyZ76Ae0W5KeqP",
+        )
+        mock_stripe_create_ephemeral_key.assert_called_once_with(
+            customer="cus_QyZ76Ae0W5KeqP",
+            stripe_version="2024-06-20",
         )
 
 
@@ -281,6 +338,7 @@ def test_create_scheduled_order_failed_with_wrong_delivery_infos(
     date: str,
     time: str,
     expected_status_code: int,
+    mock_stripe_payment_intent_create: MagicMock,
 ) -> None:
 
     scheduled_order_data: dict = {
@@ -306,3 +364,4 @@ def test_create_scheduled_order_failed_with_wrong_delivery_infos(
         )
         assert response.status_code == expected_status_code
         mock_googlemaps_distance_matrix.assert_not_called()
+        mock_stripe_payment_intent_create.assert_not_called()

@@ -1,3 +1,4 @@
+import json
 import logging
 from typing import Type, Union
 
@@ -18,7 +19,7 @@ from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.mixins import CreateModelMixin, ListModelMixin, UpdateModelMixin
-from rest_framework.parsers import MultiPartParser
+from rest_framework.parsers import JSONParser, MultiPartParser
 from rest_framework.permissions import BasePermission
 from rest_framework.renderers import BaseRenderer
 from rest_framework.response import Response
@@ -26,18 +27,27 @@ from rest_framework.serializers import BaseSerializer
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from utils.common import (
     activate_user,
+    create_payment_intent,
+    create_stripe_customer,
     delete_s3_object,
+    delete_stripe_customer,
     format_phone,
+    get_delivery_fee,
+    is_event_from_stripe,
     is_otp_valid,
     send_otp,
+    update_payment_intent,
     upload_image_to_s3,
 )
-from utils.custom_permissions import CustomAPIKeyPermission, UserPermission
+from utils.custom_permissions import (
+    AnonymousPermission,
+    CustomAPIKeyPermission,
+    UserPermission,
+)
 from utils.distance_computer import (
     compute_distance,
     get_closest_cookers_ids_from_customer_search_address,
 )
-from utils.distance_ratio import get_distance_ratio
 
 from .models import AddressModel, CustomerModel, OrderModel
 from .serializers import (
@@ -101,6 +111,7 @@ class CustomerView(ModelViewSet):
             raise ValidationError("Integrity error occurred during customer creation.")
 
         send_otp(serializer.validated_data.get("phone"))
+        create_stripe_customer(serializer.validated_data, "@customer-app.com")
 
     def partial_update(self, request, *args, **kwargs) -> Response:
         kwargs.pop("pk")  # pk is unexpected in parent's partial_update method
@@ -135,9 +146,9 @@ class CustomerView(ModelViewSet):
         return super().partial_update(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs) -> Response:
-        instance = self.get_object()
+        instance: CustomerModel = self.get_object()
         super().perform_destroy(instance)
-
+        delete_stripe_customer(instance.stripe_id)
         return Response(
             {
                 "ok": True,
@@ -497,17 +508,26 @@ class OrderView(
             "value"
         ]
         order_instance.delivery_distance = delivery_distance
-        order_instance.delivery_fees = delivery_distance * get_distance_ratio(
-            delivery_distance
-        )
+        order_instance.delivery_fees = get_delivery_fee(delivery_distance)
 
         if serializer.validated_data.get("scheduled_delivery_date"):
             order_instance.is_scheduled = True
 
         order_instance.save()
 
+        # Create a payment intent and save the payment intent id in the order instance
+        stripe_response: dict = create_payment_intent(order_instance)
+        order_instance.stripe_payment_intent_id = stripe_response["id"]
+        order_instance.stripe_payment_intent_secret = stripe_response["client_secret"]
+        order_instance.save()
+
+    def perform_update(self, serializer: BaseSerializer) -> None:
+        super().perform_update(serializer)
+        order_instance: OrderModel = serializer.instance  # type: ignore
+        update_payment_intent(order_instance)
+
     def partial_update(self, request, *args, **kwargs):
-        instance: OrderModel = self.get_object()
+        instance = self.get_object()
         new_status = request.data.get("status")
         if new_status:
             try:
@@ -519,10 +539,10 @@ class OrderView(
         return super().partial_update(request, *args, **kwargs)
 
     def get_renderers(self) -> list[BaseRenderer]:
-        if self.request.method in ("PUT", "DELETE"):
+        if self.request.method == "DELETE":
             self.renderer_classes = [CustomRendererWithoutData]
 
-        if self.request.method in ("GET", "POST"):
+        if self.request.method in ("GET", "POST", "PUT"):
             self.renderer_classes = [OrderCustomRendererWithData]
 
         return super().get_renderers()
@@ -587,3 +607,27 @@ class DishCountriesView(ListModelMixin, GenericViewSet):
 
     def list(self, request, *args, **kwargs) -> Response:
         return super().list(request, *args, **kwargs)
+
+
+class StripeWebhookView(GenericViewSet):
+    permission_classes = [AnonymousPermission]
+    parser_classes = [JSONParser]
+
+    def create(self, request, *args, **kwargs) -> Response:
+        # First we need to verify the event signature
+        if not is_event_from_stripe(request):
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            event = json.loads(request.data)
+        except TypeError:
+            event = request.data
+
+        if event["type"] == "payment_intent.succeeded":
+            payment_intent_id = event["data"]["object"]["id"]
+            order_instance: OrderModel = OrderModel.objects.get(
+                stripe_payment_intent_id=payment_intent_id
+            )
+            order_instance.transition_to("pending")
+
+        return Response(status=status.HTTP_200_OK)

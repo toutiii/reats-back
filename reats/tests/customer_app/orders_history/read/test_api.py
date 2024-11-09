@@ -121,6 +121,8 @@ def test_orders_history_list_success(
                 "delivery_fees_bonus": 1.5,
                 "delivery_man": 1,
                 "paid_date": None,
+                "stripe_payment_intent_id": None,
+                "stripe_payment_intent_secret": None,
             },
             {
                 "id": 4,
@@ -179,6 +181,8 @@ def test_orders_history_list_success(
                 "delivery_fees_bonus": 1.3,
                 "delivery_man": 1,
                 "paid_date": None,
+                "stripe_payment_intent_id": None,
+                "stripe_payment_intent_secret": None,
             },
             {
                 "id": 5,
@@ -237,6 +241,8 @@ def test_orders_history_list_success(
                 "delivery_fees_bonus": 1.2,
                 "delivery_man": None,
                 "paid_date": None,
+                "stripe_payment_intent_id": None,
+                "stripe_payment_intent_secret": None,
             },
             {
                 "id": 6,
@@ -295,6 +301,8 @@ def test_orders_history_list_success(
                 "delivery_fees_bonus": 1.1,
                 "delivery_man": None,
                 "paid_date": None,
+                "stripe_payment_intent_id": None,
+                "stripe_payment_intent_secret": None,
             },
         ],
     }

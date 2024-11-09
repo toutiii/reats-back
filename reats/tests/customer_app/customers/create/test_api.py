@@ -1,4 +1,4 @@
-from unittest.mock import ANY, MagicMock
+from unittest.mock import ANY, MagicMock, patch
 
 import pytest
 from customer_app.models import CustomerModel
@@ -33,13 +33,61 @@ def post_data(phone: str) -> dict:
 
 
 @pytest.mark.django_db
+@patch("stripe.Customer.list")
+@pytest.mark.parametrize(
+    "customer_data_returned_by_stripe",
+    [
+        [],
+        [
+            {
+                "address": None,
+                "balance": 0,
+                "created": 1727626679,
+                "currency": None,
+                "default_source": None,
+                "delinquent": False,
+                "description": None,
+                "discount": None,
+                "email": "+33601020304@customer-app.com",
+                "id": "cus_QwIPjeUXejXa55",
+                "invoice_prefix": "8BC7CAC1",
+                "invoice_settings": {
+                    "custom_fields": None,
+                    "default_payment_method": None,
+                    "footer": None,
+                    "rendering_options": None,
+                },
+                "livemode": False,
+                "metadata": {},
+                "name": "John DOE",
+                "object": "customer",
+                "phone": "+33601020304",
+                "preferred_locales": ["fr"],
+                "shipping": None,
+                "tax_exempt": "none",
+                "test_clock": None,
+            }
+        ],
+    ],
+    ids=[
+        "customer not found ins stripe",
+        "customer found in stripe",
+    ],
+)
 def test_create_customer_success(
+    mock_stripe_customer_list: MagicMock,
     customer_api_key_header: dict,
     send_otp_message_success: MagicMock,
+    mock_stripe_customer_create: MagicMock,
     client: APIClient,
     path: str,
     post_data: dict,
+    customer_data_returned_by_stripe: list,
 ) -> None:
+    mock_stripe_customer_list.return_value.data = customer_data_returned_by_stripe
+    mock_stripe_customer_list.return_value.has_more = False
+    mock_stripe_customer_list.return_value.object = "list"
+    mock_stripe_customer_list.return_value.url = "/v1/customers"
     old_count = CustomerModel.objects.count()
     response = client.post(
         path,
@@ -76,6 +124,20 @@ def test_create_customer_success(
             "ReferenceId": ANY,
         },
     )
+    mock_stripe_customer_list.assert_called_once_with(
+        email="+33601020304@customer-app.com",
+    )
+
+    if customer_data_returned_by_stripe:
+        mock_stripe_customer_create.assert_not_called()
+    else:
+        assert CustomerModel.objects.latest("pk").stripe_id == "cus_QwIHcNB1jkYFwv"
+        mock_stripe_customer_create.assert_called_once_with(
+            name="John DOE",
+            phone="+33601020304",
+            preferred_locales=["fr"],
+            email="+33601020304@customer-app.com",
+        )
 
 
 class TestActivateCustomerSuccess:

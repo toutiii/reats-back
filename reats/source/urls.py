@@ -59,6 +59,11 @@ urlpatterns = [
         cooker_app_views.TokenObtainRefreshWithoutPasswordView.as_view(),
         name="token_refresh",
     ),
+    path(
+        "api/v1/stripe/webhook/",
+        customer_app_views.StripeWebhookView.as_view({"post": "create"}),
+        name="stripe_webhook",
+    ),
 ]
 
 if settings.DEBUG:
