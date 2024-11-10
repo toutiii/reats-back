@@ -112,6 +112,9 @@ def customer_id() -> int:
                     "paid_date": None,
                     "stripe_payment_intent_id": None,
                     "stripe_payment_intent_secret": None,
+                    "service_fees": 4.06,
+                    "sub_total": 58.0,
+                    "total_amount": 65.25,
                 }
             ],
             200,
@@ -166,6 +169,9 @@ def customer_id() -> int:
                     "paid_date": None,
                     "stripe_payment_intent_id": None,
                     "stripe_payment_intent_secret": None,
+                    "service_fees": 1.4,
+                    "sub_total": 20.0,
+                    "total_amount": 24.1,
                 }
             ],
             200,
@@ -236,6 +242,9 @@ def customer_id() -> int:
                     "paid_date": None,
                     "stripe_payment_intent_id": None,
                     "stripe_payment_intent_secret": None,
+                    "service_fees": 2.31,
+                    "sub_total": 33.0,
+                    "total_amount": 37.71,
                 }
             ],
             200,

@@ -231,3 +231,10 @@ def mock_stripe_webhook_construct_event_failed() -> Iterator:
     )
     yield patcher.start()
     patcher.stop()
+
+
+@pytest.fixture
+def mock_stripe_create_refund_success() -> Iterator:
+    patcher = patch("stripe.Refund.create", return_value=None)
+    yield patcher.start()
+    patcher.stop()

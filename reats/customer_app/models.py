@@ -221,12 +221,16 @@ class PendingState(OrderState):
 
 class ProcessingState(OrderState):
     def can_transition_to(self, new_state: OrderState):
-        return isinstance(new_state, CompletedState)
+        return isinstance(new_state, CompletedState) or isinstance(
+            new_state, CancelledByCustomerState
+        )
 
 
 class CompletedState(OrderState):
     def can_transition_to(self, new_state: OrderState):
-        return isinstance(new_state, DeliveredState)
+        return isinstance(new_state, DeliveredState) or isinstance(
+            new_state, CancelledByCustomerState
+        )
 
 
 class CancelledByCustomerState(OrderState):

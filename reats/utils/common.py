@@ -331,6 +331,27 @@ def is_event_from_stripe(request) -> bool:
     return is_event_valid
 
 
+def create_stripe_refund(amount: int, payment_intent_id: str) -> None:
+    try:
+        response = stripe.Refund.create(
+            amount=amount,
+            payment_intent=payment_intent_id,
+        )
+    except stripe.StripeError as e:
+        logger.error(f"Failed to create refund for payment intent {payment_intent_id}")
+        logger.error(f"Stripe error: {e}")
+        raise
+    except Exception as e:
+        logger.error(f"Failed to create refund for payment intent {payment_intent_id}")
+        logger.error(f"An unexpected error occurred: {e}")
+        raise
+    else:
+        logger.info(
+            f"Refund for payment intent {payment_intent_id} created successfully"
+        )
+        logger.debug(response)
+
+
 def get_delivery_fee(distance: float) -> float:
     """
     Calculate the delivery fee based on the distance.

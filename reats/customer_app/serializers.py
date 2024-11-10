@@ -78,6 +78,12 @@ class OrderGETSerializer(ModelSerializer):
     def to_representation(self, instance):
         data = super().to_representation(instance)
 
+        data["sub_total"] = compute_order_items_total_amount(instance)
+        data["service_fees"] = round(data["sub_total"] * settings.SERVICE_FEES_RATE, 2)
+        data["total_amount"] = round(
+            data["sub_total"] + data["service_fees"] + instance.delivery_fees, 2
+        )
+
         for item in data["items"]:
             if item["dish"] is None:
                 item.pop("dish")
@@ -203,15 +209,6 @@ class OrderSerializer(ModelSerializer):
 class OrderHistoryGETSerializer(ModelSerializer):
     items = OrderItemGETSerializer(many=True)
     address = AddressGETSerializer()
-    order_amount = serializers.SerializerMethodField()
-
-    def get_order_amount(self, instance):
-        total = 0
-        for item in instance.items.all():
-            total += item.dish.price * item.dish_quantity if item.dish else 0
-            total += item.drink.price * item.drink_quantity if item.drink else 0
-
-        return total
 
     class Meta:
         model = OrderModel
@@ -227,6 +224,12 @@ class OrderHistoryGETSerializer(ModelSerializer):
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
+
+        data["sub_total"] = compute_order_items_total_amount(instance)
+        data["service_fees"] = round(data["sub_total"] * settings.SERVICE_FEES_RATE, 2)
+        data["total_amount"] = round(
+            data["sub_total"] + data["service_fees"] + instance.delivery_fees, 2
+        )
 
         for item in data["items"]:
             if item["dish"] is None:
@@ -246,31 +249,19 @@ class OrderPATCHSerializer(serializers.ModelSerializer):
         model = OrderModel
         fields = (
             "status",
-            "paid_date",
+            "cancelled_date",
             "processing_date",
             "completed_date",
-            "cancelled_date",
             "delivered_date",
         )
 
     def update(self, instance: OrderModel, validated_data: dict):
-        status = validated_data.get("status", instance.status)
-
-        # Apply status-specific updates
-        now = datetime.now()
-        if status == "pending":
-            instance.paid_date = now
-        elif status == "processing":
-            instance.processing_date = now
-        elif status == "completed":
-            instance.completed_date = now
-        elif status in ["cancelled_by_customer", "cancelled_by_cooker"]:
-            instance.cancelled_date = now
-        elif status == "delivered":
-            instance.delivered_date = now
-
-        # Update status and save
+        status = validated_data["status"]
         instance.status = status
+        instance.cancelled_date = validated_data.get("cancelled_date")
+        instance.processing_date = validated_data.get("processing_date")
+        instance.completed_date = validated_data.get("completed_date")
+        instance.delivered_date = validated_data.get("delivered_date")
         instance.save()
 
         return instance

@@ -49,6 +49,9 @@ def test_switch_order_status_from_draft_to_cancelled_by_customer(
     customer_order_path: str,
     post_order_data: dict,
     mock_googlemaps_distance_matrix: MagicMock,
+    mock_stripe_payment_intent_create: MagicMock,
+    mock_stripe_create_ephemeral_key: MagicMock,
+    mock_stripe_create_refund_success: MagicMock,
 ) -> None:
 
     with freeze_time("2024-05-08T10:16:00+00:00"):
@@ -71,24 +74,15 @@ def test_switch_order_status_from_draft_to_cancelled_by_customer(
 
     with freeze_time("2024-05-08T10:18:00+00:00"):
         # Then we switch the order to pending few minutes later
-        update_status_data: dict = {"status": "pending"}
-        update_to_pending_response = client.patch(
-            f"{customer_order_path}{order.id}/",
-            encode_multipart(BOUNDARY, update_status_data),
-            content_type=MULTIPART_CONTENT,
-            follow=False,
-            **auth_headers,
-        )
-        assert update_to_pending_response.status_code == status.HTTP_200_OK
-
-        order.refresh_from_db()
-
-        assert order.status == "pending"
-        assert order.paid_date == datetime(2024, 5, 8, 10, 18, 0, tzinfo=timezone.utc)
+        order.status = "pending"
+        order.save()
 
     with freeze_time("2024-05-08T10:41:00+00:00"):
         # Then we switch the order to cancelled by customer few minutes later
-        update_status_data = {"status": "cancelled_by_customer"}
+        update_status_data = {
+            "status": "cancelled_by_customer",
+            "cancelled_date": "2024-05-08T10:41:00+00:00",
+        }
         update_to_cancelled_by_customer_response = client.patch(
             f"{customer_order_path}{order.id}/",
             encode_multipart(BOUNDARY, update_status_data),
@@ -112,6 +106,20 @@ def test_switch_order_status_from_draft_to_cancelled_by_customer(
         origins=["13 rue des Mazières 91000 Evry"],
         destinations=["1 rue André Lalande 91000 Evry"],
     )
+    mock_stripe_create_refund_success.assert_called_once_with(
+        amount=2319,
+        payment_intent="pi_3Q6VU7EEYeaFww1W0xCZEUxw",
+    )
+    mock_stripe_payment_intent_create.assert_called_once_with(
+        amount=2459,
+        currency="EUR",
+        automatic_payment_methods={"enabled": True},
+        customer="cus_QyZ76Ae0W5KeqP",
+    )
+    mock_stripe_create_ephemeral_key.assert_called_once_with(
+        customer="cus_QyZ76Ae0W5KeqP",
+        stripe_version="2024-06-20",
+    )
 
 
 @pytest.mark.django_db
@@ -121,6 +129,9 @@ def test_switch_order_status_from_draft_to_cancelled_by_cooker(
     customer_order_path: str,
     post_order_data: dict,
     mock_googlemaps_distance_matrix: MagicMock,
+    mock_stripe_payment_intent_create: MagicMock,
+    mock_stripe_create_ephemeral_key: MagicMock,
+    mock_stripe_create_refund_success: MagicMock,
 ) -> None:
 
     with freeze_time("2024-05-08T10:16:00+00:00"):
@@ -143,24 +154,15 @@ def test_switch_order_status_from_draft_to_cancelled_by_cooker(
 
     with freeze_time("2024-05-08T10:18:00+00:00"):
         # Then we switch the order to pending few minutes later
-        update_status_data: dict = {"status": "pending"}
-        update_to_pending_response = client.patch(
-            f"{customer_order_path}{order.id}/",
-            encode_multipart(BOUNDARY, update_status_data),
-            content_type=MULTIPART_CONTENT,
-            follow=False,
-            **auth_headers,
-        )
-        assert update_to_pending_response.status_code == status.HTTP_200_OK
-
-        order.refresh_from_db()
-
-        assert order.status == "pending"
-        assert order.paid_date == datetime(2024, 5, 8, 10, 18, 0, tzinfo=timezone.utc)
+        order.status = "pending"
+        order.save()
 
     with freeze_time("2024-05-08T10:41:00+00:00"):
         # Then we switch the order to cancelled by cooker few minutes later
-        update_status_data = {"status": "cancelled_by_cooker"}
+        update_status_data = {
+            "status": "cancelled_by_cooker",
+            "cancelled_date": "2024-05-08T10:41:00+00:00",
+        }
         update_to_cancelled_by_cooker_response = client.patch(
             f"{customer_order_path}{order.id}/",
             encode_multipart(BOUNDARY, update_status_data),
@@ -181,6 +183,17 @@ def test_switch_order_status_from_draft_to_cancelled_by_cooker(
         origins=["13 rue des Mazières 91000 Evry"],
         destinations=["1 rue André Lalande 91000 Evry"],
     )
+    mock_stripe_create_refund_success.assert_not_called()
+    mock_stripe_payment_intent_create.assert_called_once_with(
+        amount=2459,
+        currency="EUR",
+        automatic_payment_methods={"enabled": True},
+        customer="cus_QyZ76Ae0W5KeqP",
+    )
+    mock_stripe_create_ephemeral_key.assert_called_once_with(
+        customer="cus_QyZ76Ae0W5KeqP",
+        stripe_version="2024-06-20",
+    )
 
 
 @pytest.mark.django_db
@@ -190,6 +203,9 @@ def test_switch_order_status_from_draft_to_delivered(
     customer_order_path: str,
     post_order_data: dict,
     mock_googlemaps_distance_matrix: MagicMock,
+    mock_stripe_payment_intent_create: MagicMock,
+    mock_stripe_create_ephemeral_key: MagicMock,
+    mock_stripe_create_refund_success: MagicMock,
 ) -> None:
 
     with freeze_time("2024-05-08T10:16:00+00:00"):
@@ -212,24 +228,15 @@ def test_switch_order_status_from_draft_to_delivered(
 
     with freeze_time("2024-05-08T10:18:00+00:00"):
         # Then we switch the order to pending few minutes later
-        update_status_data: dict = {"status": "pending"}
-        update_to_pending_response = client.patch(
-            f"{customer_order_path}{order.id}/",
-            encode_multipart(BOUNDARY, update_status_data),
-            content_type=MULTIPART_CONTENT,
-            follow=False,
-            **auth_headers,
-        )
-        assert update_to_pending_response.status_code == status.HTTP_200_OK
-
-        order.refresh_from_db()
-
-        assert order.status == "pending"
-        assert order.paid_date == datetime(2024, 5, 8, 10, 18, 0, tzinfo=timezone.utc)
+        order.status = "pending"
+        order.save()
 
     with freeze_time("2024-05-08T10:30:00+00:00"):
         # Then we switch the order to processing few minutes later
-        update_status_data = {"status": "processing"}
+        update_status_data = {
+            "status": "processing",
+            "processing_date": "2024-05-08T10:30:00+00:00",
+        }
         update_to_processing_response = client.patch(
             f"{customer_order_path}{order.id}/",
             encode_multipart(BOUNDARY, update_status_data),
@@ -248,7 +255,10 @@ def test_switch_order_status_from_draft_to_delivered(
 
     with freeze_time("2024-05-08T10:32:00+00:00"):
         # Then we switch the order to completed few minutes later
-        update_status_data = {"status": "completed"}
+        update_status_data = {
+            "status": "completed",
+            "completed_date": "2024-05-08T10:32:00+00:00",
+        }
         update_to_completed_response = client.patch(
             f"{customer_order_path}{order.id}/",
             encode_multipart(BOUNDARY, update_status_data),
@@ -267,7 +277,10 @@ def test_switch_order_status_from_draft_to_delivered(
 
     with freeze_time("2024-05-08T10:35:00+00:00"):
         # Then we switch the order to delivered few minutes later
-        update_status_data = {"status": "delivered"}
+        update_status_data = {
+            "status": "delivered",
+            "delivered_date": "2024-05-08T10:35:00+00:00",
+        }
         update_to_delivered_response = client.patch(
             f"{customer_order_path}{order.id}/",
             encode_multipart(BOUNDARY, update_status_data),
@@ -287,6 +300,17 @@ def test_switch_order_status_from_draft_to_delivered(
     mock_googlemaps_distance_matrix.assert_called_once_with(
         origins=["13 rue des Mazières 91000 Evry"],
         destinations=["1 rue André Lalande 91000 Evry"],
+    )
+    mock_stripe_create_refund_success.assert_not_called()
+    mock_stripe_payment_intent_create.assert_called_once_with(
+        amount=2459,
+        currency="EUR",
+        automatic_payment_methods={"enabled": True},
+        customer="cus_QyZ76Ae0W5KeqP",
+    )
+    mock_stripe_create_ephemeral_key.assert_called_once_with(
+        customer="cus_QyZ76Ae0W5KeqP",
+        stripe_version="2024-06-20",
     )
 
 
@@ -445,7 +469,6 @@ def test_switch_order_status_from_processing_to_non_allowed_status(
     non_allowed_statuses = [
         "draft",
         "pending",
-        "cancelled_by_customer",
         "cancelled_by_cooker",
     ]
 
@@ -532,7 +555,6 @@ def test_switch_order_status_from_completed_to_non_allowed_status(
         "draft",
         "pending",
         "processing",
-        "cancelled_by_customer",
         "cancelled_by_cooker",
     ]
 
@@ -661,6 +683,9 @@ def test_switch_order_status_from_cancelled_by_customer_to_non_allowed_status(
     customer_order_path: str,
     post_order_data: dict,
     mock_googlemaps_distance_matrix: MagicMock,
+    mock_stripe_payment_intent_create: MagicMock,
+    mock_stripe_create_ephemeral_key: MagicMock,
+    mock_stripe_create_refund_success: MagicMock,
 ) -> None:
     with freeze_time("2024-05-08T10:16:00+00:00"):
         # Create a draft order
@@ -692,7 +717,10 @@ def test_switch_order_status_from_cancelled_by_customer_to_non_allowed_status(
 
     # Transition from pending to cancelled by customer
     with freeze_time("2024-05-08T11:10:00+00:00"):
-        update_status_data = {"status": "cancelled_by_customer"}
+        update_status_data = {
+            "status": "cancelled_by_customer",
+            "cancelled_date": "2024-05-08T11:10:00+00:00",
+        }
         response = client.patch(
             f"{customer_order_path}{order.id}/",
             encode_multipart(BOUNDARY, update_status_data),
@@ -727,6 +755,20 @@ def test_switch_order_status_from_cancelled_by_customer_to_non_allowed_status(
                 origins=["13 rue des Mazières 91000 Evry"],
                 destinations=["1 rue André Lalande 91000 Evry"],
             )
+    mock_stripe_create_refund_success.assert_called_once_with(
+        amount=2319,
+        payment_intent="pi_3Q6VU7EEYeaFww1W0xCZEUxw",
+    )
+    mock_stripe_payment_intent_create.assert_called_once_with(
+        amount=2459,
+        currency="EUR",
+        automatic_payment_methods={"enabled": True},
+        customer="cus_QyZ76Ae0W5KeqP",
+    )
+    mock_stripe_create_ephemeral_key.assert_called_once_with(
+        customer="cus_QyZ76Ae0W5KeqP",
+        stripe_version="2024-06-20",
+    )
 
 
 @pytest.mark.django_db
@@ -1274,3 +1316,405 @@ def test_update_order_after_successful_stripe_payment_but_event_failed_to_be_ver
             stripe_version="2024-06-20",
         )
         mock_stripe_webhook_construct_event_failed.assert_called_once()
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "post_order_data, expected_cancel_response_status_code, cancel_freeze_time",
+    [
+        (
+            {
+                "addressID": 1,
+                "customerID": 2,
+                "items": json.dumps(
+                    [
+                        {"dishID": "11", "dishOrderedQuantity": 1},
+                        {"drinkID": "2", "drinkOrderedQuantity": 3},
+                    ]
+                ),
+            },
+            status.HTTP_200_OK,
+            "2024-11-10T08:45:00+00:00",
+        ),
+        (
+            {
+                "addressID": 1,
+                "customerID": 2,
+                "items": json.dumps(
+                    [
+                        {"dishID": "11", "dishOrderedQuantity": 1},
+                        {"drinkID": "2", "drinkOrderedQuantity": 3},
+                    ]
+                ),
+                "date": "11/15/2024",
+                "time": "14:30:00",
+            },
+            status.HTTP_200_OK,
+            "2024-11-10T09:25:00+00:00",
+        ),
+    ],
+    ids=[
+        "order with asap delivery is cancelled soon enough by customer",
+        "order with scheduled delivery is cancelled soon enough by customer",
+    ],
+)
+def test_cancel_order_when_initiated_by_customer_and_order_is_still_pending(
+    auth_headers: dict,
+    cancel_freeze_time: str,
+    client: APIClient,
+    customer_order_path: str,
+    expected_cancel_response_status_code: int,
+    post_order_data: dict,
+    stripe_payment_intent_success_webhook_data: dict,
+    mock_googlemaps_distance_matrix: MagicMock,
+    mock_stripe_payment_intent_create: MagicMock,
+    mock_stripe_create_ephemeral_key: MagicMock,
+    mock_stripe_webhook_construct_event_success: MagicMock,
+    mock_stripe_create_refund_success: MagicMock,
+):
+    with freeze_time("2024-11-10T08:16:00+00:00"):
+        response = client.post(
+            customer_order_path,
+            encode_multipart(
+                BOUNDARY,
+                post_order_data,
+            ),
+            content_type=MULTIPART_CONTENT,
+            follow=False,
+            **auth_headers,
+        )
+        assert response.status_code == status.HTTP_201_CREATED
+        order_id = response.json()["data"].pop("id")
+        order: OrderModel = OrderModel.objects.get(id=order_id)
+
+        assert order.status == "draft"
+
+        # Then we post the payment intent success webhook
+        stripe_payment_intent_success_webhook_data[
+            "created"
+        ] = datetime.now().timestamp()
+        webhook_response = client.post(
+            "/api/v1/stripe/webhook/",
+            json.dumps(stripe_payment_intent_success_webhook_data),
+            follow=False,
+        )
+
+        assert webhook_response.status_code == status.HTTP_200_OK
+
+        # Checking if the order has been updated to pending status
+        order.refresh_from_db()
+
+        assert order.status == "pending"
+
+        with freeze_time(cancel_freeze_time):
+            # Now we cancel the order right after it has been paid
+            cancel_response = client.patch(
+                f"{customer_order_path}{order_id}/",
+                encode_multipart(
+                    BOUNDARY,
+                    {
+                        "status": "cancelled_by_customer",
+                        "cancelled_date": cancel_freeze_time,
+                    },
+                ),
+                content_type=MULTIPART_CONTENT,
+                follow=False,
+                **auth_headers,
+            )
+
+            assert cancel_response.status_code == expected_cancel_response_status_code
+            order.refresh_from_db()
+            assert order.status == "cancelled_by_customer"
+            assert order.cancelled_date == datetime.fromisoformat(cancel_freeze_time)
+
+        mock_googlemaps_distance_matrix.assert_called_once_with(
+            origins=["1 rue rené cassin résidence neptune 91100 Corbeil-Essonnes"],
+            destinations=["1 rue André Lalande 91000 Evry"],
+        )
+        mock_stripe_payment_intent_create.assert_called_once_with(
+            amount=2459,
+            currency="EUR",
+            automatic_payment_methods={"enabled": True},
+            customer="cus_RBiuNyquyndC8O",
+        )
+        mock_stripe_create_ephemeral_key.assert_called_once_with(
+            customer="cus_RBiuNyquyndC8O",
+            stripe_version="2024-06-20",
+        )
+        mock_stripe_webhook_construct_event_success.assert_called_once()
+        mock_stripe_create_refund_success.assert_called_once_with(
+            amount=2319,
+            payment_intent="pi_3Q6VU7EEYeaFww1W0xCZEUxw",
+        )
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "post_order_data, expected_cancel_response_status_code, cancel_freeze_time",
+    [
+        (
+            {
+                "addressID": 1,
+                "customerID": 2,
+                "items": json.dumps(
+                    [
+                        {"dishID": "11", "dishOrderedQuantity": 1},
+                        {"drinkID": "2", "drinkOrderedQuantity": 3},
+                    ]
+                ),
+            },
+            status.HTTP_200_OK,
+            "2024-11-10T08:45:00+00:00",
+        ),
+        (
+            {
+                "addressID": 1,
+                "customerID": 2,
+                "items": json.dumps(
+                    [
+                        {"dishID": "11", "dishOrderedQuantity": 1},
+                        {"drinkID": "2", "drinkOrderedQuantity": 3},
+                    ]
+                ),
+                "date": "11/15/2024",
+                "time": "14:30:00",
+            },
+            status.HTTP_200_OK,
+            "2024-11-10T09:25:00+00:00",
+        ),
+    ],
+    ids=[
+        "order with asap delivery is cancelled but order is in processing state",
+        "order with scheduled delivery is cancelled but order is in processing state",
+    ],
+)
+def test_cancel_order_when_initiated_by_customer_but_order_is_in_processing_state(
+    auth_headers: dict,
+    cancel_freeze_time: str,
+    client: APIClient,
+    customer_order_path: str,
+    expected_cancel_response_status_code: int,
+    post_order_data: dict,
+    stripe_payment_intent_success_webhook_data: dict,
+    mock_googlemaps_distance_matrix: MagicMock,
+    mock_stripe_payment_intent_create: MagicMock,
+    mock_stripe_create_ephemeral_key: MagicMock,
+    mock_stripe_webhook_construct_event_success: MagicMock,
+    mock_stripe_create_refund_success: MagicMock,
+):
+    with freeze_time("2024-11-10T08:16:00+00:00"):
+        response = client.post(
+            customer_order_path,
+            encode_multipart(
+                BOUNDARY,
+                post_order_data,
+            ),
+            content_type=MULTIPART_CONTENT,
+            follow=False,
+            **auth_headers,
+        )
+        assert response.status_code == status.HTTP_201_CREATED
+        order_id = response.json()["data"].pop("id")
+        order: OrderModel = OrderModel.objects.get(id=order_id)
+
+        assert order.status == "draft"
+
+        # Then we post the payment intent success webhook
+        stripe_payment_intent_success_webhook_data[
+            "created"
+        ] = datetime.now().timestamp()
+        webhook_response = client.post(
+            "/api/v1/stripe/webhook/",
+            json.dumps(stripe_payment_intent_success_webhook_data),
+            follow=False,
+        )
+
+        assert webhook_response.status_code == status.HTTP_200_OK
+
+        # Checking if the order has been updated to pending status
+        order.refresh_from_db()
+
+        assert order.status == "pending"
+
+        # Manual transition from pending to processing
+        order.status = "processing"
+        order.save()
+
+        assert order.status == "processing"
+
+        with freeze_time(cancel_freeze_time):
+            # Now we cancel the order right after it has been paid
+            cancel_response = client.patch(
+                f"{customer_order_path}{order_id}/",
+                encode_multipart(
+                    BOUNDARY,
+                    {
+                        "status": "cancelled_by_customer",
+                        "cancelled_date": cancel_freeze_time,
+                    },
+                ),
+                content_type=MULTIPART_CONTENT,
+                follow=False,
+                **auth_headers,
+            )
+
+            assert cancel_response.status_code == expected_cancel_response_status_code
+            order.refresh_from_db()
+            assert order.status == "cancelled_by_customer"
+            assert order.cancelled_date == datetime.fromisoformat(cancel_freeze_time)
+
+        mock_googlemaps_distance_matrix.assert_called_once_with(
+            origins=["1 rue rené cassin résidence neptune 91100 Corbeil-Essonnes"],
+            destinations=["1 rue André Lalande 91000 Evry"],
+        )
+        mock_stripe_payment_intent_create.assert_called_once_with(
+            amount=2459,
+            currency="EUR",
+            automatic_payment_methods={"enabled": True},
+            customer="cus_RBiuNyquyndC8O",
+        )
+        mock_stripe_create_ephemeral_key.assert_called_once_with(
+            customer="cus_RBiuNyquyndC8O",
+            stripe_version="2024-06-20",
+        )
+        mock_stripe_webhook_construct_event_success.assert_called_once()
+        mock_stripe_create_refund_success.assert_not_called()
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "post_order_data, expected_cancel_response_status_code, cancel_freeze_time",
+    [
+        (
+            {
+                "addressID": 1,
+                "customerID": 2,
+                "items": json.dumps(
+                    [
+                        {"dishID": "11", "dishOrderedQuantity": 1},
+                        {"drinkID": "2", "drinkOrderedQuantity": 3},
+                    ]
+                ),
+            },
+            status.HTTP_200_OK,
+            "2024-11-10T08:45:00+00:00",
+        ),
+        (
+            {
+                "addressID": 1,
+                "customerID": 2,
+                "items": json.dumps(
+                    [
+                        {"dishID": "11", "dishOrderedQuantity": 1},
+                        {"drinkID": "2", "drinkOrderedQuantity": 3},
+                    ]
+                ),
+                "date": "11/15/2024",
+                "time": "14:30:00",
+            },
+            status.HTTP_200_OK,
+            "2024-11-10T09:25:00+00:00",
+        ),
+    ],
+    ids=[
+        "order with asap delivery is cancelled but order is in completed state",
+        "order with scheduled delivery is cancelled but order is in completed state",
+    ],
+)
+def test_cancel_order_when_initiated_by_customer_but_order_is_in_completed_state(
+    auth_headers: dict,
+    cancel_freeze_time: str,
+    client: APIClient,
+    customer_order_path: str,
+    expected_cancel_response_status_code: int,
+    post_order_data: dict,
+    stripe_payment_intent_success_webhook_data: dict,
+    mock_googlemaps_distance_matrix: MagicMock,
+    mock_stripe_payment_intent_create: MagicMock,
+    mock_stripe_create_ephemeral_key: MagicMock,
+    mock_stripe_webhook_construct_event_success: MagicMock,
+    mock_stripe_create_refund_success: MagicMock,
+):
+    with freeze_time("2024-11-10T08:16:00+00:00"):
+        response = client.post(
+            customer_order_path,
+            encode_multipart(
+                BOUNDARY,
+                post_order_data,
+            ),
+            content_type=MULTIPART_CONTENT,
+            follow=False,
+            **auth_headers,
+        )
+        assert response.status_code == status.HTTP_201_CREATED
+        order_id = response.json()["data"].pop("id")
+        order: OrderModel = OrderModel.objects.get(id=order_id)
+
+        assert order.status == "draft"
+
+        # Then we post the payment intent success webhook
+        stripe_payment_intent_success_webhook_data[
+            "created"
+        ] = datetime.now().timestamp()
+        webhook_response = client.post(
+            "/api/v1/stripe/webhook/",
+            json.dumps(stripe_payment_intent_success_webhook_data),
+            follow=False,
+        )
+
+        assert webhook_response.status_code == status.HTTP_200_OK
+
+        # Checking if the order has been updated to pending status
+        order.refresh_from_db()
+
+        assert order.status == "pending"
+
+        # Manual transition from pending to processing
+        order.status = "processing"
+        order.save()
+
+        assert order.status == "processing"
+
+        # Then we switch the order to completed
+        order.status = "completed"
+        order.save()
+
+        assert order.status == "completed"
+
+        with freeze_time(cancel_freeze_time):
+            # Now we cancel the order right after it has been paid
+            cancel_response = client.patch(
+                f"{customer_order_path}{order_id}/",
+                encode_multipart(
+                    BOUNDARY,
+                    {
+                        "status": "cancelled_by_customer",
+                        "cancelled_date": cancel_freeze_time,
+                    },
+                ),
+                content_type=MULTIPART_CONTENT,
+                follow=False,
+                **auth_headers,
+            )
+
+            assert cancel_response.status_code == expected_cancel_response_status_code
+            order.refresh_from_db()
+            assert order.status == "cancelled_by_customer"
+            assert order.cancelled_date == datetime.fromisoformat(cancel_freeze_time)
+
+        mock_googlemaps_distance_matrix.assert_called_once_with(
+            origins=["1 rue rené cassin résidence neptune 91100 Corbeil-Essonnes"],
+            destinations=["1 rue André Lalande 91000 Evry"],
+        )
+        mock_stripe_payment_intent_create.assert_called_once_with(
+            amount=2459,
+            currency="EUR",
+            automatic_payment_methods={"enabled": True},
+            customer="cus_RBiuNyquyndC8O",
+        )
+        mock_stripe_create_ephemeral_key.assert_called_once_with(
+            customer="cus_RBiuNyquyndC8O",
+            stripe_version="2024-06-20",
+        )
+        mock_stripe_webhook_construct_event_success.assert_called_once()
+        mock_stripe_create_refund_success.assert_not_called()

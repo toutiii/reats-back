@@ -30,7 +30,7 @@ def mock_googlemaps_distance_matrix() -> Iterator:
                             "status": "OK",
                         },
                         {
-                            "distance": {"text": "22.0 km", "value": 21955},
+                            "distance": {"text": "12.0 km", "value": 11955},
                             "duration": {"text": "24 mins", "value": 1417},
                             "status": "OK",
                         },

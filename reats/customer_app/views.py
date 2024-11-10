@@ -1,5 +1,7 @@
 import json
 import logging
+from datetime import datetime, timezone
+from decimal import Decimal
 from typing import Type, Union
 
 from cooker_app.models import CookerModel, DishModel, DrinkModel
@@ -27,8 +29,10 @@ from rest_framework.serializers import BaseSerializer
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from utils.common import (
     activate_user,
+    compute_order_items_total_amount,
     create_payment_intent,
     create_stripe_customer,
+    create_stripe_refund,
     delete_s3_object,
     delete_stripe_customer,
     format_phone,
@@ -524,11 +528,26 @@ class OrderView(
     def perform_update(self, serializer: BaseSerializer) -> None:
         super().perform_update(serializer)
         order_instance: OrderModel = serializer.instance  # type: ignore
-        update_payment_intent(order_instance)
+        current_order_instance: OrderModel = OrderModel.objects.get(
+            pk=order_instance.pk
+        )
+
+        if current_order_instance.status == "draft":
+            # We can update a payment intent only if it has not been paid yet.
+            update_payment_intent(order_instance)
 
     def partial_update(self, request, *args, **kwargs):
-        instance = self.get_object()
+        instance: OrderModel = self.get_object()
         new_status = request.data.get("status")
+
+        if new_status == "cancelled_by_customer" and instance.status == "pending":
+            amount_to_refund_in_cents = Decimal(
+                str(compute_order_items_total_amount(instance) + instance.delivery_fees)
+            ) * Decimal("100")
+            create_stripe_refund(
+                int(amount_to_refund_in_cents), instance.stripe_payment_intent_id
+            )
+
         if new_status:
             try:
                 instance.transition_to(new_status)
@@ -614,7 +633,6 @@ class StripeWebhookView(GenericViewSet):
     parser_classes = [JSONParser]
 
     def create(self, request, *args, **kwargs) -> Response:
-        # First we need to verify the event signature
         if not is_event_from_stripe(request):
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
@@ -627,6 +645,10 @@ class StripeWebhookView(GenericViewSet):
             payment_intent_id = event["data"]["object"]["id"]
             order_instance: OrderModel = OrderModel.objects.get(
                 stripe_payment_intent_id=payment_intent_id
+            )
+
+            order_instance.paid_date = datetime.fromtimestamp(
+                event["created"], timezone.utc
             )
             order_instance.transition_to("pending")
 
