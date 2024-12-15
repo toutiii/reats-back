@@ -25,13 +25,20 @@ def address_id() -> int:
 
 
 @pytest.fixture
+def cooker_id() -> int:
+    return 1
+
+
+@pytest.fixture
 def post_data_for_order_with_asap_delivery(
     address_id: int,
     customer_id: int,
+    cooker_id: int,
 ) -> dict:
     return {
         "addressID": address_id,
         "customerID": customer_id,
+        "cookerID": cooker_id,
         "items": json.dumps(
             [
                 {"dishID": "11", "dishOrderedQuantity": 1},
@@ -101,6 +108,11 @@ def test_create_order_success_with_asap_delivery(
                     "lastname": "TEN",
                     "stripe_id": "cus_QyZ76Ae0W5KeqP",
                 },
+                "cooker": {
+                    "firstname": "test",
+                    "id": 1,
+                    "lastname": "test",
+                },
                 "address": 2,
                 "delivery_man": None,
                 "stripe_payment_intent_id": "pi_3Q6VU7EEYeaFww1W0xCZEUxw",
@@ -118,6 +130,7 @@ def test_create_order_success_with_asap_delivery(
             "cancelled_date": None,
             "completed_date": None,
             "customer": 1,
+            "cooker": 1,
             "delivered_date": None,
             "delivery_distance": 1390.0,
             "delivery_fees": 3.19,
@@ -168,11 +181,14 @@ def test_create_order_success_with_asap_delivery(
 
 @pytest.fixture
 def post_data_for_order_with_scheduled_delivery(
-    address_id: int, customer_id: int
+    address_id: int,
+    customer_id: int,
+    cooker_id: int,
 ) -> dict:
     return {
         "addressID": address_id,
         "customerID": customer_id,
+        "cookerID": cooker_id,
         "date": "5/10/2024",
         "time": "14:30:00",
         "items": json.dumps(
@@ -217,6 +233,11 @@ def test_create_order_success_with_scheduled_delivery(
                     "lastname": "TEN",
                     "stripe_id": "cus_QyZ76Ae0W5KeqP",
                 },
+                "cooker": {
+                    "firstname": "test",
+                    "id": 1,
+                    "lastname": "test",
+                },
                 "delivered_date": None,
                 "delivery_distance": 1390.0,
                 "delivery_fees": 3.19,
@@ -258,6 +279,7 @@ def test_create_order_success_with_scheduled_delivery(
             "cancelled_date": None,
             "completed_date": None,
             "customer": 1,
+            "cooker": 1,
             "delivered_date": None,
             "delivery_distance": 1390.0,
             "delivery_fees": 3.19,

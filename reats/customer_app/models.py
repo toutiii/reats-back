@@ -1,3 +1,4 @@
+from cooker_app.models import CookerModel
 from django.core.validators import MinLengthValidator
 from django.db.models import (
     CASCADE,
@@ -10,6 +11,7 @@ from django.db.models import (
     IntegerField,
     Manager,
 )
+from utils.enums import OrderStatusEnum
 from utils.models import ReatsModel
 
 
@@ -61,37 +63,12 @@ class OrderModel(ReatsModel):
 
     objects: Manager = Manager()  # For linting purposes
 
-    STATUSES = [
-        (
-            "draft",
-            "draft",
-        ),  # Intial state for an order, a draft order has not been paid yet
-        (
-            "pending",
-            "pending",
-        ),  # Order has been paid, waiting for the cooker acceptance or rejection
-        (
-            "processing",
-            "processing",
-        ),  # State when the order has been accepted by the cooker
-        (
-            "completed",
-            "completed",
-        ),  # State when the order is ready for delivery
-        (
-            "cancelled_by_customer",
-            "cancelled_by_customer",
-        ),  # State when the order has been cancelled by the customer, this is a final state.
-        (
-            "cancelled_by_cooker",
-            "cancelled_by_cooker",
-        ),  # State when the order has been cancelled by the cooker, this is a final state.
-        (
-            "delivered",
-            "delivered",
-        ),  # State when the order has been delivered, this is a final state.
-    ]
     id: AutoField = AutoField(primary_key=True)
+    cooker: ForeignKey = ForeignKey(
+        CookerModel,
+        on_delete=CASCADE,
+        related_name="orders",
+    )
     customer: ForeignKey = ForeignKey(
         CustomerModel,
         on_delete=CASCADE,
@@ -113,7 +90,7 @@ class OrderModel(ReatsModel):
 
     status: CharField = CharField(
         max_length=30,
-        choices=STATUSES,
+        choices=OrderStatusEnum.choices(),
         default="draft",
     )
     processing_date: DateTimeField = DateTimeField(null=True)

@@ -2,6 +2,7 @@ import json
 import logging
 
 import phonenumbers
+from cooker_app.models import CookerModel
 from customer_app.models import CustomerModel
 from django.conf import settings
 from rest_framework import status
@@ -331,13 +332,20 @@ class OrderCustomRendererWithData(JSONRenderer):
             }
             response["ephemeral_key"] = create_stripe_ephemeral_key(customer)
 
+        if "cooker" in response:
+            cooker: CookerModel = CookerModel.objects.get(id=response["cooker"])
+            response["cooker"] = {
+                "id": cooker.id,
+                "firstname": cooker.firstname,
+                "lastname": cooker.lastname,
+            }
+
     def render(self, data, accepted_media_type=None, renderer_context=None):
         status_code = renderer_context["response"].status_code
         response = {
             "ok": True,
             "status_code": status_code,
         }
-
         if not str(status_code).startswith("2"):
             response["ok"] = False
 
@@ -385,59 +393,6 @@ class OrderCustomRendererWithData(JSONRenderer):
         return super().render(response)
 
 
-class OrderHistoryCustomRendererWithData(JSONRenderer):
-    def render(self, data, accepted_media_type=None, renderer_context=None):
-        status_code = renderer_context["response"].status_code
-
-        response = {
-            "ok": True,
-            "status_code": status_code,
-        }
-
-        if status_code == status.HTTP_401_UNAUTHORIZED:
-            try:
-                response["error_code"] = data["detail"].code
-            except KeyError:
-                pass
-
-        if not str(status_code).startswith("2"):
-            response["ok"] = False
-
-        if status_code == status.HTTP_200_OK:
-            data = json.loads(json.dumps(data))
-
-            for order_item in data:
-                for item in order_item["items"]:
-                    try:
-                        item["dish"]["photo"] = get_pre_signed_url(
-                            item["dish"]["photo"]
-                        )
-                    except KeyError as err:
-                        logger.error(err)
-
-                    try:
-                        item["drink"]["photo"] = get_pre_signed_url(
-                            item["drink"]["photo"]
-                        )
-                    except KeyError as err:
-                        logger.error(err)
-
-            if data:
-                response = {
-                    "ok": True,
-                    "status_code": status.HTTP_200_OK,
-                    "data": data,
-                }
-            else:
-                response = {
-                    "ok": False,
-                    "status_code": status.HTTP_404_NOT_FOUND,
-                    "data": [],
-                }
-        logger.info(response)
-        return super().render(response)
-
-
 class DeliveryStatsCustomRendererWithData(JSONRenderer):
     def render(self, data, accepted_media_type=None, renderer_context=None):
         status_code = renderer_context["response"].status_code
@@ -469,5 +424,27 @@ class DeliveryStatsCustomRendererWithData(JSONRenderer):
                     "status_code": status.HTTP_404_NOT_FOUND,
                     "data": [],
                 }
+        logger.info(response)
+        return super().render(response)
+
+
+class CustomJSONRendererWithData(JSONRenderer):
+    def render(self, data, accepted_media_type=None, renderer_context=None):
+        logger.info(data)
+        status_code = renderer_context["response"].status_code
+
+        if status_code == status.HTTP_200_OK:
+            response = data
+
+        if status_code == status.HTTP_401_UNAUTHORIZED:
+            response = {
+                "ok": False,
+                "status_code": status_code,
+            }
+            try:
+                response["error_code"] = data["detail"].code
+            except KeyError:
+                pass
+
         logger.info(response)
         return super().render(response)

@@ -129,6 +129,7 @@ class OrderSerializer(ModelSerializer):
         data_to_validate = {}
         data_to_validate["customer"] = data.get("customerID")
         data_to_validate["address"] = data.get("addressID")
+        data_to_validate["cooker"] = data.get("cookerID")
 
         # Dealing with delivery datetime
         if data.get("date") and data.get("time"):
@@ -204,42 +205,6 @@ class OrderSerializer(ModelSerializer):
                 setattr(instance, attr, value)
             instance.save()
         return instance
-
-
-class OrderHistoryGETSerializer(ModelSerializer):
-    items = OrderItemGETSerializer(many=True)
-    address = AddressGETSerializer()
-
-    class Meta:
-        model = OrderModel
-        exclude = (
-            "customer",
-            "processing_date",
-            "completed_date",
-            "delivery_in_progress_date",
-            "delivery_distance",
-            "delivery_initial_distance",
-        )
-        many = True
-
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-
-        data["sub_total"] = compute_order_items_total_amount(instance)
-        data["service_fees"] = round(data["sub_total"] * settings.SERVICE_FEES_RATE, 2)
-        data["total_amount"] = round(
-            data["sub_total"] + data["service_fees"] + instance.delivery_fees, 2
-        )
-
-        for item in data["items"]:
-            if item["dish"] is None:
-                item.pop("dish")
-                item.pop("dish_quantity")
-            if item["drink"] is None:
-                item.pop("drink")
-                item.pop("drink_quantity")
-
-        return data
 
 
 class OrderPATCHSerializer(serializers.ModelSerializer):

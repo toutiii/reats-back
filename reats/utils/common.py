@@ -2,6 +2,7 @@ import hashlib
 import logging
 import os
 import time
+from datetime import datetime, timedelta, timezone
 from typing import Type, Union
 
 import boto3
@@ -21,6 +22,36 @@ session = boto3.session.Session(region_name=os.getenv("AWS_REGION"))
 s3 = session.client("s3", config=boto3.session.Config(signature_version="s3v4"))
 pinpoint_client = boto3.client("pinpoint", region_name=os.getenv("AWS_REGION"))
 stripe.api_key = settings.STRIPE_PRIVATE_API_KEY
+
+
+def compute_start_date(timeframe: str) -> datetime:
+    """
+    Compute the starting date based on the given timeframe.
+
+    Args:
+        timeframe (str): Can be "week", "month", or "year".
+
+    Returns:
+        datetime: The computed start date at midnight in UTC.
+    """
+    now = datetime.now(timezone.utc)
+
+    if timeframe == "week":
+        # Calculate the most recent Monday
+        days_to_subtract = now.weekday()
+        start_date = now - timedelta(days=days_to_subtract)
+
+    elif timeframe == "month":
+        # Set the date to the first day of the current month
+        start_date = now.replace(day=1)
+
+    elif timeframe == "year":
+        # Set the date to the first day of the current year
+        start_date = now.replace(month=1, day=1)
+
+    # Set the time to midnight
+    start_date = start_date.replace(hour=0, minute=0, second=0, microsecond=0)
+    return start_date
 
 
 def upload_image_to_s3(image: InMemoryUploadedFile, image_path: str) -> None:

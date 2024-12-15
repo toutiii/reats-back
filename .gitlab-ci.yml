@@ -1,5 +1,16 @@
+default:
+  cache:
+    paths:
+      - .docker_cache/
+
 build-docker-image:
   script:
+    - echo "Logging into Docker Hub..."
+    - if [ -z "$DOCKER_USERNAME" ] || [ -z "$DOCKER_PASSWORD" ]; then
+        echo "DOCKER_USERNAME or DOCKER_PASSWORD is not set";
+        exit 1;
+      fi
+    - echo "$DOCKER_PASSWORD" | docker login --username "$DOCKER_USERNAME" --password-stdin
     - echo "Building docker image..."
     - sudo docker compose -f reats/config/docker-compose.yaml up --build -d
   rules:

@@ -25,20 +25,26 @@ def address_id() -> int:
 
 
 @pytest.fixture
+def cooker_id() -> int:
+    return 1
+
+
+@pytest.fixture
 def post_order_data(
     address_id: int,
     customer_id: int,
+    cooker_id: int,
 ) -> dict:
     return {
         "addressID": address_id,
         "customerID": customer_id,
+        "cookerID": cooker_id,
         "items": json.dumps(
             [
                 {"dishID": "11", "dishOrderedQuantity": 1},
                 {"drinkID": "2", "drinkOrderedQuantity": 3},
             ]
         ),
-        "deliveryPlanning": "asap",
     }
 
 
@@ -850,10 +856,12 @@ def test_switch_order_status_from_cancelled_by_cooker_to_non_allowed_status(
 def post_data_for_order_with_asap_delivery(
     address_id: int,
     customer_id: int,
+    cooker_id: int,
 ) -> dict:
     return {
         "addressID": address_id,
         "customerID": customer_id,
+        "cookerID": cooker_id,
         "items": json.dumps(
             [
                 {"dishID": "11", "dishOrderedQuantity": 1},
@@ -867,10 +875,12 @@ def post_data_for_order_with_asap_delivery(
 def post_data_for_order_update(
     address_id: int,
     customer_id: int,
+    cooker_id: int,
 ) -> dict:
     return {
         "addressID": address_id,
         "customerID": customer_id,
+        "cookerID": cooker_id,
         "items": json.dumps(
             [
                 {"dishID": "5", "dishOrderedQuantity": 2},
@@ -945,6 +955,11 @@ def test_update_order_success_with_asap_delivery(
                     "lastname": "TEN",
                     "stripe_id": "cus_QyZ76Ae0W5KeqP",
                 },
+                "cooker": {
+                    "firstname": "test",
+                    "id": 1,
+                    "lastname": "test",
+                },
                 "address": 2,
                 "delivery_man": None,
                 "stripe_payment_intent_id": "pi_3Q6VU7EEYeaFww1W0xCZEUxw",
@@ -964,6 +979,7 @@ def test_update_order_success_with_asap_delivery(
             "cancelled_date": None,
             "completed_date": None,
             "customer": 1,
+            "cooker": 1,
             "delivered_date": None,
             "delivery_distance": 1390.0,
             "delivery_fees": 3.19,
@@ -1006,6 +1022,11 @@ def test_update_order_success_with_asap_delivery(
                     "id": 1,
                     "lastname": "TEN",
                     "stripe_id": "cus_QyZ76Ae0W5KeqP",
+                },
+                "cooker": {
+                    "firstname": "test",
+                    "id": 1,
+                    "lastname": "test",
                 },
                 "delivered_date": None,
                 "delivery_distance": 1390.0,
@@ -1059,6 +1080,7 @@ def test_update_order_success_with_asap_delivery(
         assert updated_order_dict == {
             "customer": 1,
             "address": 2,
+            "cooker": 1,
             "delivery_man": None,
             "scheduled_delivery_date": None,
             "is_scheduled": False,
@@ -1173,6 +1195,11 @@ def test_update_order_after_successful_stripe_payment(
                     "lastname": "TEN",
                     "stripe_id": "cus_QyZ76Ae0W5KeqP",
                 },
+                "cooker": {
+                    "firstname": "test",
+                    "id": 1,
+                    "lastname": "test",
+                },
                 "address": 2,
                 "delivery_man": None,
                 "stripe_payment_intent_id": "pi_3Q6VU7EEYeaFww1W0xCZEUxw",
@@ -1276,6 +1303,11 @@ def test_update_order_after_successful_stripe_payment_but_event_failed_to_be_ver
                     "lastname": "TEN",
                     "stripe_id": "cus_QyZ76Ae0W5KeqP",
                 },
+                "cooker": {
+                    "firstname": "test",
+                    "id": 1,
+                    "lastname": "test",
+                },
                 "address": 2,
                 "delivery_man": None,
                 "stripe_payment_intent_id": "pi_3Q6VU7EEYeaFww1W0xCZEUxw",
@@ -1326,6 +1358,7 @@ def test_update_order_after_successful_stripe_payment_but_event_failed_to_be_ver
             {
                 "addressID": 1,
                 "customerID": 2,
+                "cookerID": 1,
                 "items": json.dumps(
                     [
                         {"dishID": "11", "dishOrderedQuantity": 1},
@@ -1340,6 +1373,7 @@ def test_update_order_after_successful_stripe_payment_but_event_failed_to_be_ver
             {
                 "addressID": 1,
                 "customerID": 2,
+                "cookerID": 1,
                 "items": json.dumps(
                     [
                         {"dishID": "11", "dishOrderedQuantity": 1},
@@ -1456,6 +1490,7 @@ def test_cancel_order_when_initiated_by_customer_and_order_is_still_pending(
             {
                 "addressID": 1,
                 "customerID": 2,
+                "cookerID": 1,
                 "items": json.dumps(
                     [
                         {"dishID": "11", "dishOrderedQuantity": 1},
@@ -1470,6 +1505,7 @@ def test_cancel_order_when_initiated_by_customer_and_order_is_still_pending(
             {
                 "addressID": 1,
                 "customerID": 2,
+                "cookerID": 1,
                 "items": json.dumps(
                     [
                         {"dishID": "11", "dishOrderedQuantity": 1},
@@ -1589,6 +1625,7 @@ def test_cancel_order_when_initiated_by_customer_but_order_is_in_processing_stat
             {
                 "addressID": 1,
                 "customerID": 2,
+                "cookerID": 1,
                 "items": json.dumps(
                     [
                         {"dishID": "11", "dishOrderedQuantity": 1},
@@ -1603,6 +1640,7 @@ def test_cancel_order_when_initiated_by_customer_but_order_is_in_processing_stat
             {
                 "addressID": 1,
                 "customerID": 2,
+                "cookerID": 1,
                 "items": json.dumps(
                     [
                         {"dishID": "11", "dishOrderedQuantity": 1},

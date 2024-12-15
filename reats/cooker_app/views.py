@@ -1,21 +1,26 @@
 import json
 import logging
+from datetime import datetime
 from typing import Type, Union
 
 from custom_renderers.renderers import (
     CookerCustomRendererWithData,
+    CustomJSONRendererWithData,
     CustomRendererWithData,
     CustomRendererWithoutData,
 )
+from customer_app.models import OrderModel
 from django.db import IntegrityError
+from django.db.models import Count
 from phonenumbers.phonenumberutil import NumberParseException
-from rest_framework import status, viewsets
+from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import BasePermission
 from rest_framework.renderers import BaseRenderer
 from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
+from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from rest_framework_simplejwt.views import TokenViewBase
 from utils.common import (
     activate_user,
@@ -26,6 +31,7 @@ from utils.common import (
     upload_image_to_s3,
 )
 from utils.custom_permissions import CustomAPIKeyPermission, UserPermission
+from utils.enums import OrderStatusEnum
 
 from .models import CookerModel, DishModel, DrinkModel
 from .serializers import (
@@ -44,7 +50,7 @@ from .serializers import (
 logger = logging.getLogger("watchtower-logger")
 
 
-class CookerView(viewsets.ModelViewSet):
+class CookerView(ModelViewSet):
     parser_classes = [MultiPartParser]
     queryset = CookerModel.objects.all()
 
@@ -202,7 +208,55 @@ class CookerView(viewsets.ModelViewSet):
         return Response(status=status.HTTP_200_OK)
 
 
-class DishView(viewsets.ModelViewSet):
+class DashboardView(GenericViewSet):
+    permission_classes = [UserPermission]
+    renderer_classes = [CustomJSONRendererWithData]
+
+    def list(self, request) -> Response:
+        start_date_str: Union[str, None] = request.query_params.get("start_date")
+        end_date_str: Union[str, None] = request.query_params.get("end_date")
+
+        if start_date_str is None or end_date_str is None:
+            return Response(
+                {
+                    "ok": False,
+                    "status_code": status.HTTP_400_BAD_REQUEST,
+                }
+            )
+
+        try:
+            start_date = datetime.fromisoformat(start_date_str.replace("Z", "+00:00"))
+            end_date = datetime.fromisoformat(end_date_str.replace("Z", "+00:00"))
+        except ValueError:
+            return Response(
+                {
+                    "ok": False,
+                    "status_code": status.HTTP_400_BAD_REQUEST,
+                    "error": "Invalid date format. ISO 8601 format is expected. Ex: 2024-01-01T00:00:00Z",
+                }
+            )
+
+        orders = (
+            OrderModel.objects.filter(created__gte=start_date)
+            .filter(created__lte=end_date)
+            .filter(cooker=request.user.pk)
+            .exclude(status__in=[OrderStatusEnum.DRAFT])
+            .values("status")  # Group by 'status'
+            .annotate(count=Count("id"))  # Count the number of orders for each status
+            .values_list("status", "count")  # Return as a list of tuples
+        )
+        orders_dict = {status: count for status, count in orders}
+
+        return Response(
+            {
+                "ok": True,
+                "status_code": status.HTTP_200_OK,
+                "data": orders_dict,
+            }
+        )
+
+
+class DishView(ModelViewSet):
     parser_classes = [MultiPartParser]
     queryset = DishModel.objects.all()
 
@@ -308,7 +362,7 @@ class DishView(viewsets.ModelViewSet):
         )
 
 
-class DrinkView(viewsets.ModelViewSet):
+class DrinkView(ModelViewSet):
     parser_classes = [MultiPartParser]
     queryset = DrinkModel.objects.all()
 

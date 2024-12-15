@@ -5,10 +5,10 @@ from custom_renderers.renderers import (
     CustomRendererWithoutData,
     DeliverCustomRendererWithData,
     DeliveryStatsCustomRendererWithData,
-    OrderHistoryCustomRendererWithData,
+    OrderCustomRendererWithData,
 )
 from customer_app.models import OrderModel
-from customer_app.serializers import OrderHistoryGETSerializer
+from customer_app.serializers import OrderGETSerializer
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import IntegrityError
 from phonenumbers.phonenumberutil import NumberParseException
@@ -293,8 +293,8 @@ class DeliveryHistoryView(ListModelMixin, GenericViewSet):
     permission_classes = [UserPermission]
     queryset = OrderModel.objects.all().filter(status="delivered")
     parser_classes = [MultiPartParser]
-    renderer_classes = [OrderHistoryCustomRendererWithData]
-    serializer_class = OrderHistoryGETSerializer
+    renderer_classes = [OrderCustomRendererWithData]
+    serializer_class = OrderGETSerializer
 
     def list(self, request, *args, **kwargs) -> Response:
         self.queryset = self.queryset.filter(customer__id=request.user.pk)

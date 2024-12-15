@@ -8,6 +8,11 @@ from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
 router.register(r"cookers", cooker_app_views.CookerView, basename="cookers")
+router.register(
+    r"cookers-dashboard",
+    cooker_app_views.DashboardView,
+    basename="cookers-dashboard",
+)
 router.register(r"dishes", cooker_app_views.DishView, basename="dishes")
 router.register(r"drinks", cooker_app_views.DrinkView, basename="drinks")
 router.register(r"customers", customer_app_views.CustomerView, basename="customers")

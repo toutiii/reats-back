@@ -12,7 +12,6 @@ from custom_renderers.renderers import (
     CustomRendererWithoutData,
     DishesCountriesCustomRendererWithData,
     OrderCustomRendererWithData,
-    OrderHistoryCustomRendererWithData,
 )
 from django.conf import settings
 from django.db import IntegrityError
@@ -63,7 +62,6 @@ from .serializers import (
     DishGETSerializer,
     DrinkGETSerializer,
     OrderGETSerializer,
-    OrderHistoryGETSerializer,
     OrderPATCHSerializer,
     OrderSerializer,
 )
@@ -605,8 +603,8 @@ class HistoryOrderView(ListModelMixin, GenericViewSet):
         ]
     )
     parser_classes = [MultiPartParser]
-    renderer_classes = [OrderHistoryCustomRendererWithData]
-    serializer_class = OrderHistoryGETSerializer
+    renderer_classes = [OrderCustomRendererWithData]
+    serializer_class = OrderGETSerializer
 
     def list(self, request, *args, **kwargs) -> Response:
         self.queryset = self.queryset.filter(customer__id=request.user.pk)
