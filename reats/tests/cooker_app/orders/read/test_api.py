@@ -7,7 +7,7 @@ from rest_framework.test import APIClient
 
 
 @pytest.fixture
-def customer_id() -> int:
+def cooker_id() -> int:
     return 1
 
 
@@ -408,20 +408,20 @@ def customer_id() -> int:
 def test_orders_list_success(
     auth_headers: dict,
     client: APIClient,
-    customer_id: int,
-    customer_order_path: str,
+    cooker_id: int,
+    cookers_order_path: str,
     status_query_parameter: dict,
     expected_data: list[dict],
     expected_status_code: int,
     ok_value: bool,
 ) -> None:
 
-    # we check that the customer has some orders
-    assert OrderModel.objects.filter(customer__id=customer_id).count() > 0
+    # we check that the cooker has some orders
+    assert OrderModel.objects.filter(cooker__id=cooker_id).count() > 0
 
-    # Then we list customer orders
+    # Then we list cooker orders
     response = client.get(
-        customer_order_path,
+        cookers_order_path,
         follow=False,
         **auth_headers,
         data=status_query_parameter,

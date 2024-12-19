@@ -51,6 +51,7 @@ from utils.distance_computer import (
     compute_distance,
     get_closest_cookers_ids_from_customer_search_address,
 )
+from utils.enums import OrderStatusEnum
 
 from .models import AddressModel, CustomerModel, OrderModel
 from .serializers import (
@@ -580,26 +581,27 @@ class OrderView(
         self.queryset = self.queryset.filter(customer__id=request.user.pk)
         request_status: Union[str, None] = self.request.query_params.get("status")
 
-        if request_status is not None:
-            self.queryset = self.queryset.filter(status=request_status)
         if request_status is None or request_status not in [
-            "pending",
-            "processing",
-            "completed",
+            OrderStatusEnum.PENDING,
+            OrderStatusEnum.PROCESSING,
+            OrderStatusEnum.COMPLETED,
         ]:
             logger.error(f"Invalid status {request_status}")
             self.queryset = OrderModel.objects.none()
 
+        if request_status is not None:
+            self.queryset = self.queryset.filter(status=request_status)
+
         return super().list(request, *args, **kwargs)
 
 
-class HistoryOrderView(ListModelMixin, GenericViewSet):
+class CustomerOrderHistoryView(ListModelMixin, GenericViewSet):
     permission_classes = [UserPermission]
     queryset = OrderModel.objects.all().filter(
         status__in=[
-            "delivered",
-            "cancelled_by_customer",
-            "cancelled_by_cooker",
+            OrderStatusEnum.DELIVERED,
+            OrderStatusEnum.CANCELLED_BY_CUSTOMER,
+            OrderStatusEnum.CANCELLED_BY_COOKER,
         ]
     )
     parser_classes = [MultiPartParser]

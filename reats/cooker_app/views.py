@@ -1,6 +1,7 @@
 import json
 import logging
 from datetime import datetime
+from decimal import Decimal
 from typing import Type, Union
 
 from custom_renderers.renderers import (
@@ -8,13 +9,16 @@ from custom_renderers.renderers import (
     CustomJSONRendererWithData,
     CustomRendererWithData,
     CustomRendererWithoutData,
+    OrderCustomRendererWithData,
 )
 from customer_app.models import OrderModel
+from customer_app.serializers import OrderGETSerializer, OrderPATCHSerializer
 from django.db import IntegrityError
 from django.db.models import Count
 from phonenumbers.phonenumberutil import NumberParseException
 from rest_framework import status
 from rest_framework.decorators import action
+from rest_framework.mixins import ListModelMixin, UpdateModelMixin
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import BasePermission
 from rest_framework.renderers import BaseRenderer
@@ -24,6 +28,8 @@ from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from rest_framework_simplejwt.views import TokenViewBase
 from utils.common import (
     activate_user,
+    compute_order_items_total_amount,
+    create_stripe_refund,
     delete_s3_object,
     format_phone,
     is_otp_valid,
@@ -467,3 +473,91 @@ class TokenObtainPairWithoutPasswordView(TokenViewBase):
 class TokenObtainRefreshWithoutPasswordView(TokenViewBase):
     serializer_class = TokenObtainRefreshWithoutPasswordSerializer
     renderer_classes = [CustomRendererWithoutData]
+
+
+class CookerOrderView(
+    ListModelMixin,
+    UpdateModelMixin,
+    GenericViewSet,
+):
+    permission_classes = [UserPermission]
+    queryset = OrderModel.objects.all()
+    parser_classes = [MultiPartParser]
+
+    def partial_update(self, request, *args, **kwargs):
+        instance: OrderModel = self.get_object()
+        new_status = request.data.get("status")
+
+        if (
+            new_status == OrderStatusEnum.CANCELLED_BY_COOKER
+            and instance.status == OrderStatusEnum.PENDING
+        ):
+            amount_to_refund_in_cents = Decimal(
+                str(compute_order_items_total_amount(instance) + instance.delivery_fees)
+            ) * Decimal("100")
+            create_stripe_refund(
+                int(amount_to_refund_in_cents), instance.stripe_payment_intent_id
+            )
+
+        if new_status:
+            try:
+                instance.transition_to(new_status)
+            except ValueError as e:
+                logger.error(e)
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return super().partial_update(request, *args, **kwargs)
+
+    def get_renderers(self) -> list[BaseRenderer]:
+        if self.request.method == "PATCH":
+            self.renderer_classes = [CustomRendererWithoutData]
+
+        if self.request.method == "GET":
+            self.renderer_classes = [OrderCustomRendererWithData]
+
+        return super().get_renderers()
+
+    def get_serializer_class(self) -> type[BaseSerializer]:
+        if self.request.method == "GET":
+            self.serializer_class = OrderGETSerializer
+
+        elif self.request.method == "PATCH":
+            self.serializer_class = OrderPATCHSerializer
+
+        return super().get_serializer_class()
+
+    def list(self, request, *args, **kwargs) -> Response:
+        self.queryset = self.queryset.filter(customer__id=request.user.pk)
+        request_status: Union[str, None] = self.request.query_params.get("status")
+
+        if request_status is None or request_status not in [
+            OrderStatusEnum.PENDING,
+            OrderStatusEnum.PROCESSING,
+            OrderStatusEnum.COMPLETED,
+        ]:
+            logger.error(f"Invalid status {request_status}")
+            self.queryset = OrderModel.objects.none()
+
+        if request_status is not None:
+            self.queryset = self.queryset.filter(status=request_status)
+
+        return super().list(request, *args, **kwargs)
+
+
+class CookerOrderHistoryView(ListModelMixin, GenericViewSet):
+    permission_classes = [UserPermission]
+    queryset = OrderModel.objects.all().filter(
+        status__in=[
+            OrderStatusEnum.DELIVERED,
+            OrderStatusEnum.CANCELLED_BY_CUSTOMER,
+            OrderStatusEnum.CANCELLED_BY_COOKER,
+        ]
+    )
+    parser_classes = [MultiPartParser]
+    renderer_classes = [OrderCustomRendererWithData]
+    serializer_class = OrderGETSerializer
+
+    def list(self, request, *args, **kwargs) -> Response:
+        self.queryset = self.queryset.filter(customer__id=request.user.pk)
+
+        return super().list(request, *args, **kwargs)

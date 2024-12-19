@@ -17,3 +17,9 @@ class OrderStatusEnum(str, Enum):
     @classmethod
     def choices(cls):
         return [(key.value.lower(), key.name.lower()) for key in cls]
+
+
+class TimeFrameEnum(str, Enum):
+    WEEK = "week"
+    MONTH = "month"
+    YEAR = "year"

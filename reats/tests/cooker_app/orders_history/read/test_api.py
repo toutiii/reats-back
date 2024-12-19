@@ -6,7 +6,7 @@ from rest_framework.test import APIClient
 
 
 @pytest.fixture
-def customer_id() -> int:
+def cooker_id() -> int:
     return 1
 
 
@@ -491,17 +491,17 @@ def expected_data() -> list[dict]:
 def test_orders_history_list_success(
     auth_headers: dict,
     client: APIClient,
-    customer_id: int,
-    customer_order_history_path: str,
+    cooker_id: int,
+    cookers_order_history_path: str,
     expected_data: list[dict],
 ) -> None:
 
     # we check that the customer has some orders
-    assert OrderModel.objects.filter(customer__id=customer_id).count() > 0
+    assert OrderModel.objects.filter(customer__id=cooker_id).count() > 0
 
     # Then we list customer orders history
     response = client.get(
-        customer_order_history_path,
+        cookers_order_history_path,
         follow=False,
         **auth_headers,
     )

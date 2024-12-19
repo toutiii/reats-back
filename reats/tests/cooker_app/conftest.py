@@ -17,6 +17,16 @@ def dashboard_path() -> str:
     return "/api/v1/cookers-dashboard/"
 
 
+@pytest.fixture(scope="session")
+def cookers_order_path() -> str:
+    return "/api/v1/cookers-orders/"
+
+
+@pytest.fixture(scope="session")
+def cookers_order_history_path() -> str:
+    return "/api/v1/cookers-orders-history/"
+
+
 @pytest.fixture
 def create_orders(custom_counts: dict):
     """

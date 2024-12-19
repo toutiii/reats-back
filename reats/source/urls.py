@@ -13,6 +13,16 @@ router.register(
     cooker_app_views.DashboardView,
     basename="cookers-dashboard",
 )
+router.register(
+    r"cookers-orders",
+    cooker_app_views.CookerOrderView,
+    basename="cookers-orders",
+)
+router.register(
+    r"cookers-orders-history",
+    cooker_app_views.CookerOrderHistoryView,
+    basename="cookers-orders-history",
+)
 router.register(r"dishes", cooker_app_views.DishView, basename="dishes")
 router.register(r"drinks", cooker_app_views.DrinkView, basename="drinks")
 router.register(r"customers", customer_app_views.CustomerView, basename="customers")
@@ -33,7 +43,7 @@ router.register(
 )
 router.register(
     r"customers-orders-history",
-    customer_app_views.HistoryOrderView,
+    customer_app_views.CustomerOrderHistoryView,
     basename="orders-history",
 )
 router.register(
