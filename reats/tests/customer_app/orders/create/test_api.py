@@ -9,6 +9,7 @@ from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from freezegun import freeze_time
 from rest_framework import status
 from rest_framework.test import APIClient
+from utils.enums import OrderStatusEnum
 
 # Add this line to ignore E501 errors
 # flake8: noqa: E501
@@ -142,7 +143,7 @@ def test_create_order_success_with_asap_delivery(
             "is_scheduled": False,
             "processing_date": None,
             "scheduled_delivery_date": None,
-            "status": "draft",
+            "status": OrderStatusEnum.DRAFT,
             "stripe_payment_intent_id": "pi_3Q6VU7EEYeaFww1W0xCZEUxw",
             "stripe_payment_intent_secret": "pi_3Q6VU7EEYeaFww1W0xCZEUxw_secret_OJqlWW9QRZZuSmAwUBklpxUf4",
         }
@@ -293,7 +294,7 @@ def test_create_order_success_with_scheduled_delivery(
             "scheduled_delivery_date": datetime(
                 2024, 5, 10, 12, 30, tzinfo=timezone.utc
             ),
-            "status": "draft",
+            "status": OrderStatusEnum.DRAFT,
             "stripe_payment_intent_id": "pi_3Q6VU7EEYeaFww1W0xCZEUxw",
             "stripe_payment_intent_secret": "pi_3Q6VU7EEYeaFww1W0xCZEUxw_secret_OJqlWW9QRZZuSmAwUBklpxUf4",
         }

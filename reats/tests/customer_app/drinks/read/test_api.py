@@ -1,5 +1,6 @@
 import pytest
 from cooker_app.models import DrinkModel
+from deepdiff import DeepDiff
 from rest_framework import status
 from rest_framework.test import APIClient
 
@@ -9,6 +10,39 @@ class TestListDrinksForCustomerSuccess:
     def cooker_id(self) -> int:
         return 1
 
+    @pytest.fixture
+    def expected_data(self) -> list[dict]:
+        return [
+            {
+                "capacity": "1",
+                "cooker": "1",
+                "country": "Sénégal",
+                "description": "Bissap maison",
+                "id": "1",
+                "is_enabled": True,
+                "name": "Bissap",
+                "photo": "https://some-url.com",
+                "price": "3.5",
+                "unit": "liter",
+                "is_suitable_for_quick_delivery": False,
+                "is_suitable_for_scheduled_delivery": False,
+            },
+            {
+                "capacity": "75",
+                "cooker": "1",
+                "country": "Cameroun",
+                "description": "Gingembre maison",
+                "id": "2",
+                "is_enabled": True,
+                "name": "Gingembre",
+                "photo": "https://some-url.com",
+                "price": "5.0",
+                "unit": "centiliters",
+                "is_suitable_for_quick_delivery": False,
+                "is_suitable_for_scheduled_delivery": False,
+            },
+        ]
+
     @pytest.mark.django_db
     def test_response(
         self,
@@ -16,6 +50,7 @@ class TestListDrinksForCustomerSuccess:
         client: APIClient,
         cooker_id: int,
         customer_drink_path: str,
+        expected_data: list[dict],
     ) -> None:
 
         # we check that the cooker has some drinks
@@ -33,40 +68,10 @@ class TestListDrinksForCustomerSuccess:
             **auth_headers,
         )
         assert response.status_code == status.HTTP_200_OK
-        assert response.json() == {
-            "data": [
-                {
-                    "capacity": "1",
-                    "cooker": "1",
-                    "country": "Sénégal",
-                    "description": "Bissap maison",
-                    "id": "1",
-                    "is_enabled": True,
-                    "name": "Bissap",
-                    "photo": "https://some-url.com",
-                    "price": "3.5",
-                    "unit": "liter",
-                    "is_suitable_for_quick_delivery": False,
-                    "is_suitable_for_scheduled_delivery": False,
-                },
-                {
-                    "capacity": "75",
-                    "cooker": "1",
-                    "country": "Cameroun",
-                    "description": "Gingembre maison",
-                    "id": "2",
-                    "is_enabled": True,
-                    "name": "Gingembre",
-                    "photo": "https://some-url.com",
-                    "price": "5.0",
-                    "unit": "centiliters",
-                    "is_suitable_for_quick_delivery": False,
-                    "is_suitable_for_scheduled_delivery": False,
-                },
-            ],
-            "ok": True,
-            "status_code": 200,
-        }
+        assert response.json().get("ok") is True
+        assert response.json().get("status_code") == status.HTTP_200_OK
+        diff = DeepDiff(response.json().get("data"), expected_data, ignore_order=True)
+        assert not diff
 
 
 class TestListDrinksForCustomeFailedWithUnknownCookerId:

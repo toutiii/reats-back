@@ -531,7 +531,7 @@ class OrderView(
             pk=order_instance.pk
         )
 
-        if current_order_instance.status == "draft":
+        if current_order_instance.status == OrderStatusEnum.DRAFT:
             # We can update a payment intent only if it has not been paid yet.
             update_payment_intent(order_instance)
 
@@ -539,13 +539,17 @@ class OrderView(
         instance: OrderModel = self.get_object()
         new_status = request.data.get("status")
 
-        if new_status == "cancelled_by_customer" and instance.status == "pending":
-            amount_to_refund_in_cents = Decimal(
-                str(compute_order_items_total_amount(instance) + instance.delivery_fees)
-            ) * Decimal("100")
-            create_stripe_refund(
-                int(amount_to_refund_in_cents), instance.stripe_payment_intent_id
-            )
+        if new_status == OrderStatusEnum.CANCELLED_BY_CUSTOMER:
+            if instance.status == OrderStatusEnum.PENDING:
+                amount_to_refund_in_cents = Decimal(
+                    str(
+                        compute_order_items_total_amount(instance)
+                        + instance.delivery_fees
+                    )
+                ) * Decimal("100")
+                create_stripe_refund(
+                    int(amount_to_refund_in_cents), instance.stripe_payment_intent_id
+                )
 
         if new_status:
             try:
@@ -553,6 +557,12 @@ class OrderView(
             except ValueError as e:
                 logger.error(e)
                 return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            except Exception as e:
+                logger.error(e)
+                return Response(
+                    {"error": "An error occurred"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
 
         return super().partial_update(request, *args, **kwargs)
 
@@ -590,7 +600,9 @@ class OrderView(
             self.queryset = OrderModel.objects.none()
 
         if request_status is not None:
-            self.queryset = self.queryset.filter(status=request_status)
+            self.queryset = self.queryset.filter(status=request_status).order_by(
+                "-modified"
+            )
 
         return super().list(request, *args, **kwargs)
 
@@ -609,7 +621,9 @@ class CustomerOrderHistoryView(ListModelMixin, GenericViewSet):
     serializer_class = OrderGETSerializer
 
     def list(self, request, *args, **kwargs) -> Response:
-        self.queryset = self.queryset.filter(customer__id=request.user.pk)
+        self.queryset = self.queryset.filter(customer__id=request.user.pk).order_by(
+            "-modified"
+        )
 
         return super().list(request, *args, **kwargs)
 
@@ -650,6 +664,6 @@ class StripeWebhookView(GenericViewSet):
             order_instance.paid_date = datetime.fromtimestamp(
                 event["created"], timezone.utc
             )
-            order_instance.transition_to("pending")
+            order_instance.transition_to(OrderStatusEnum.PENDING)
 
         return Response(status=status.HTTP_200_OK)

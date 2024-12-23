@@ -4,6 +4,7 @@ from deepdiff import DeepDiff
 from freezegun import freeze_time
 from rest_framework import status
 from rest_framework.test import APIClient
+from utils.enums import OrderStatusEnum
 
 
 @pytest.fixture
@@ -16,7 +17,7 @@ def cooker_id() -> int:
     "status_query_parameter,expected_data,expected_status_code,ok_value",
     [
         (
-            {"status": "pending"},
+            {"status": OrderStatusEnum.PENDING},
             [
                 {
                     "id": 1,
@@ -99,7 +100,7 @@ def cooker_id() -> int:
                     "created": "2024-05-09T20:52:05.718117Z",
                     "scheduled_delivery_date": None,
                     "is_scheduled": False,
-                    "status": "pending",
+                    "status": OrderStatusEnum.PENDING,
                     "processing_date": None,
                     "completed_date": None,
                     "delivery_in_progress_date": None,
@@ -133,7 +134,7 @@ def cooker_id() -> int:
                     "created": "2024-12-11T20:53:05.718117Z",
                     "scheduled_delivery_date": "2024-12-17T16:30:00Z",
                     "is_scheduled": False,
-                    "status": "pending",
+                    "status": OrderStatusEnum.PENDING,
                     "processing_date": None,
                     "completed_date": None,
                     "delivery_in_progress_date": None,
@@ -167,7 +168,7 @@ def cooker_id() -> int:
                     "created": "2024-12-11T20:53:05.718117Z",
                     "scheduled_delivery_date": "2024-12-17T16:30:00Z",
                     "is_scheduled": False,
-                    "status": "pending",
+                    "status": OrderStatusEnum.PENDING,
                     "processing_date": None,
                     "completed_date": None,
                     "delivery_in_progress_date": None,
@@ -191,7 +192,7 @@ def cooker_id() -> int:
             True,
         ),
         (
-            {"status": "processing"},
+            {"status": OrderStatusEnum.PROCESSING},
             [
                 {
                     "id": 13,
@@ -208,7 +209,7 @@ def cooker_id() -> int:
                     "created": "2024-12-11T20:53:05.718117Z",
                     "scheduled_delivery_date": "2024-12-17T16:30:00Z",
                     "is_scheduled": False,
-                    "status": "processing",
+                    "status": OrderStatusEnum.PROCESSING,
                     "processing_date": None,
                     "completed_date": None,
                     "delivery_in_progress_date": None,
@@ -259,7 +260,7 @@ def cooker_id() -> int:
                     "created": "2024-05-11T20:54:05.718117Z",
                     "scheduled_delivery_date": "2024-05-20T16:30:00Z",
                     "is_scheduled": False,
-                    "status": "processing",
+                    "status": OrderStatusEnum.PROCESSING,
                     "processing_date": None,
                     "completed_date": None,
                     "delivery_in_progress_date": None,
@@ -283,7 +284,7 @@ def cooker_id() -> int:
             True,
         ),
         (
-            {"status": "completed"},
+            {"status": OrderStatusEnum.COMPLETED},
             [
                 {
                     "id": 8,
@@ -333,7 +334,7 @@ def cooker_id() -> int:
                     "created": "2024-05-11T20:53:05.718117Z",
                     "scheduled_delivery_date": "2024-05-17T16:30:00Z",
                     "is_scheduled": False,
-                    "status": "completed",
+                    "status": OrderStatusEnum.COMPLETED,
                     "processing_date": None,
                     "completed_date": None,
                     "delivery_in_progress_date": None,
@@ -367,7 +368,7 @@ def cooker_id() -> int:
                     "created": "2024-12-11T20:53:05.718117Z",
                     "scheduled_delivery_date": "2024-12-17T16:30:00Z",
                     "is_scheduled": False,
-                    "status": "completed",
+                    "status": OrderStatusEnum.COMPLETED,
                     "processing_date": None,
                     "completed_date": None,
                     "delivery_in_progress_date": None,

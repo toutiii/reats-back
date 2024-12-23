@@ -2,6 +2,7 @@ import pytest
 from customer_app.models import OrderModel
 from rest_framework import status
 from rest_framework.test import APIClient
+from utils.enums import OrderStatusEnum
 
 
 @pytest.fixture
@@ -19,7 +20,7 @@ def test_delivery_orders_history_list_success(
 
     # we check that the delivery man has some orders
     assert (
-        OrderModel.objects.filter(status="delivered")
+        OrderModel.objects.filter(status=OrderStatusEnum.DELIVERED)
         .filter(delivery_man__id=deliver_id)
         .count()
         > 0
@@ -117,7 +118,7 @@ def test_delivery_orders_history_list_success(
                 "created": "2024-03-02T20:53:05.718117Z",
                 "scheduled_delivery_date": "2024-03-10T16:30:00Z",
                 "is_scheduled": False,
-                "status": "delivered",
+                "status": OrderStatusEnum.DELIVERED,
                 "processing_date": "2024-03-02T21:15:05.718117Z",
                 "completed_date": "2024-03-02T21:25:05.718117Z",
                 "delivery_in_progress_date": "2024-03-02T21:33:05.718117Z",
@@ -184,7 +185,7 @@ def test_delivery_orders_history_list_success(
                 "created": "2024-04-02T20:53:05.718117Z",
                 "scheduled_delivery_date": "2024-04-10T16:30:00Z",
                 "is_scheduled": False,
-                "status": "delivered",
+                "status": OrderStatusEnum.DELIVERED,
                 "processing_date": "2024-03-02T21:15:05.718117Z",
                 "completed_date": "2024-03-02T21:25:05.718117Z",
                 "delivery_in_progress_date": "2024-03-02T21:33:05.718117Z",
@@ -218,7 +219,7 @@ def test_delivery_orders_history_list_success(
                 "created": "2024-12-11T20:53:05.718117Z",
                 "scheduled_delivery_date": "2024-12-17T16:30:00Z",
                 "is_scheduled": False,
-                "status": "delivered",
+                "status": OrderStatusEnum.DELIVERED,
                 "processing_date": None,
                 "completed_date": None,
                 "delivery_in_progress_date": None,
@@ -252,7 +253,7 @@ def test_delivery_orders_history_list_success(
                 "created": "2024-12-11T20:53:05.718117Z",
                 "scheduled_delivery_date": "2024-12-17T16:30:00Z",
                 "is_scheduled": False,
-                "status": "delivered",
+                "status": OrderStatusEnum.DELIVERED,
                 "processing_date": None,
                 "completed_date": None,
                 "delivery_in_progress_date": None,
@@ -286,7 +287,7 @@ def test_delivery_orders_history_list_success(
                 "created": "2024-12-11T20:53:05.718117Z",
                 "scheduled_delivery_date": "2024-12-17T16:30:00Z",
                 "is_scheduled": False,
-                "status": "delivered",
+                "status": OrderStatusEnum.DELIVERED,
                 "processing_date": None,
                 "completed_date": None,
                 "delivery_in_progress_date": None,
@@ -375,7 +376,7 @@ def test_get_latest_deliveries(
                 "created": "2024-04-02T20:53:05.718117Z",
                 "scheduled_delivery_date": "2024-04-10T16:30:00Z",
                 "is_scheduled": False,
-                "status": "delivered",
+                "status": OrderStatusEnum.DELIVERED,
                 "processing_date": "2024-03-02T21:15:05.718117Z",
                 "completed_date": "2024-03-02T21:25:05.718117Z",
                 "delivery_in_progress_date": "2024-03-02T21:33:05.718117Z",
@@ -409,7 +410,7 @@ def test_get_latest_deliveries(
                 "created": "2024-12-11T20:53:05.718117Z",
                 "scheduled_delivery_date": "2024-12-17T16:30:00Z",
                 "is_scheduled": False,
-                "status": "delivered",
+                "status": OrderStatusEnum.DELIVERED,
                 "processing_date": None,
                 "completed_date": None,
                 "delivery_in_progress_date": None,
@@ -443,7 +444,7 @@ def test_get_latest_deliveries(
                 "created": "2024-12-11T20:53:05.718117Z",
                 "scheduled_delivery_date": "2024-12-17T16:30:00Z",
                 "is_scheduled": False,
-                "status": "delivered",
+                "status": OrderStatusEnum.DELIVERED,
                 "processing_date": None,
                 "completed_date": None,
                 "delivery_in_progress_date": None,
@@ -477,7 +478,7 @@ def test_get_latest_deliveries(
                 "created": "2024-12-11T20:53:05.718117Z",
                 "scheduled_delivery_date": "2024-12-17T16:30:00Z",
                 "is_scheduled": False,
-                "status": "delivered",
+                "status": OrderStatusEnum.DELIVERED,
                 "processing_date": None,
                 "completed_date": None,
                 "delivery_in_progress_date": None,

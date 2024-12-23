@@ -488,15 +488,12 @@ class CookerOrderView(
         instance: OrderModel = self.get_object()
         new_status = request.data.get("status")
 
-        if (
-            new_status == OrderStatusEnum.CANCELLED_BY_COOKER
-            and instance.status == OrderStatusEnum.PENDING
-        ):
-            amount_to_refund_in_cents = Decimal(
-                str(compute_order_items_total_amount(instance) + instance.delivery_fees)
-            ) * Decimal("100")
-            create_stripe_refund(
-                int(amount_to_refund_in_cents), instance.stripe_payment_intent_id
+        if new_status == OrderStatusEnum.PENDING:
+            error_message = f"Cookers orders are supposed to be in the {OrderStatusEnum.PENDING.value} state"
+            logger.error(error_message)
+            return Response(
+                {"error": error_message},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         if new_status:
@@ -505,6 +502,20 @@ class CookerOrderView(
             except ValueError as e:
                 logger.error(e)
                 return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            except Exception as e:
+                logger.error(e)
+                return Response(
+                    {"error": "An error occurred"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+
+        if new_status == OrderStatusEnum.CANCELLED_BY_COOKER:
+            amount_to_refund_in_cents = Decimal(
+                str(compute_order_items_total_amount(instance) + instance.delivery_fees)
+            ) * Decimal("100")
+            create_stripe_refund(
+                int(amount_to_refund_in_cents), instance.stripe_payment_intent_id
+            )
 
         return super().partial_update(request, *args, **kwargs)
 
@@ -539,7 +550,9 @@ class CookerOrderView(
             self.queryset = OrderModel.objects.none()
 
         if request_status is not None:
-            self.queryset = self.queryset.filter(status=request_status)
+            self.queryset = self.queryset.filter(status=request_status).order_by(
+                "-modified"
+            )
 
         return super().list(request, *args, **kwargs)
 
@@ -558,6 +571,8 @@ class CookerOrderHistoryView(ListModelMixin, GenericViewSet):
     serializer_class = OrderGETSerializer
 
     def list(self, request, *args, **kwargs) -> Response:
-        self.queryset = self.queryset.filter(customer__id=request.user.pk)
+        self.queryset = self.queryset.filter(cooker__id=request.user.pk).order_by(
+            "-modified"
+        )
 
         return super().list(request, *args, **kwargs)

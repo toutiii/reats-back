@@ -57,11 +57,6 @@ def customer_starter_path() -> str:
 
 
 @pytest.fixture(scope="session")
-def customer_order_path() -> str:
-    return "/api/v1/customers-orders/"
-
-
-@pytest.fixture(scope="session")
 def customer_order_history_path() -> str:
     return "/api/v1/customers-orders-history/"
 

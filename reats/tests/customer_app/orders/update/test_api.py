@@ -1,6 +1,6 @@
 import json
 from datetime import datetime, timezone
-from unittest.mock import MagicMock, call
+from unittest.mock import MagicMock, call, patch
 
 import pytest
 from customer_app.models import OrderItemModel, OrderModel
@@ -9,6 +9,7 @@ from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from freezegun import freeze_time
 from rest_framework import status
 from rest_framework.test import APIClient
+from utils.enums import OrderStatusEnum
 
 # Add this line to ignore E501 errors
 # flake8: noqa: E501
@@ -76,18 +77,17 @@ def test_switch_order_status_from_draft_to_cancelled_by_customer(
 
         order: OrderModel = OrderModel.objects.latest("pk")
 
-        assert order.status == "draft"
+        assert order.status == OrderStatusEnum.DRAFT.value
 
     with freeze_time("2024-05-08T10:18:00+00:00"):
         # Then we switch the order to pending few minutes later
-        order.status = "pending"
+        order.status = OrderStatusEnum.PENDING.value
         order.save()
 
     with freeze_time("2024-05-08T10:41:00+00:00"):
         # Then we switch the order to cancelled by customer few minutes later
         update_status_data = {
-            "status": "cancelled_by_customer",
-            "cancelled_date": "2024-05-08T10:41:00+00:00",
+            "status": OrderStatusEnum.CANCELLED_BY_CUSTOMER.value,
         }
         update_to_cancelled_by_customer_response = client.patch(
             f"{customer_order_path}{order.id}/",
@@ -102,7 +102,7 @@ def test_switch_order_status_from_draft_to_cancelled_by_customer(
 
         order.refresh_from_db()
 
-        assert order.status == "cancelled_by_customer"
+        assert order.status == OrderStatusEnum.CANCELLED_BY_CUSTOMER.value
         assert order.cancelled_date == datetime(
             2024, 5, 8, 10, 41, 0, tzinfo=timezone.utc
         )
@@ -156,18 +156,17 @@ def test_switch_order_status_from_draft_to_cancelled_by_cooker(
 
         order: OrderModel = OrderModel.objects.latest("pk")
 
-        assert order.status == "draft"
+        assert order.status == OrderStatusEnum.DRAFT.value
 
     with freeze_time("2024-05-08T10:18:00+00:00"):
         # Then we switch the order to pending few minutes later
-        order.status = "pending"
+        order.status = OrderStatusEnum.PENDING.value
         order.save()
 
     with freeze_time("2024-05-08T10:41:00+00:00"):
         # Then we switch the order to cancelled by cooker few minutes later
         update_status_data = {
-            "status": "cancelled_by_cooker",
-            "cancelled_date": "2024-05-08T10:41:00+00:00",
+            "status": OrderStatusEnum.CANCELLED_BY_COOKER.value,
         }
         update_to_cancelled_by_cooker_response = client.patch(
             f"{customer_order_path}{order.id}/",
@@ -180,7 +179,7 @@ def test_switch_order_status_from_draft_to_cancelled_by_cooker(
 
         order.refresh_from_db()
 
-        assert order.status == "cancelled_by_cooker"
+        assert order.status == OrderStatusEnum.CANCELLED_BY_COOKER.value
         assert order.cancelled_date == datetime(
             2024, 5, 8, 10, 41, 0, tzinfo=timezone.utc
         )
@@ -230,18 +229,17 @@ def test_switch_order_status_from_draft_to_delivered(
 
         order: OrderModel = OrderModel.objects.latest("pk")
 
-        assert order.status == "draft"
+        assert order.status == OrderStatusEnum.DRAFT.value
 
     with freeze_time("2024-05-08T10:18:00+00:00"):
         # Then we switch the order to pending few minutes later
-        order.status = "pending"
+        order.status = OrderStatusEnum.PENDING.value
         order.save()
 
     with freeze_time("2024-05-08T10:30:00+00:00"):
         # Then we switch the order to processing few minutes later
         update_status_data = {
-            "status": "processing",
-            "processing_date": "2024-05-08T10:30:00+00:00",
+            "status": OrderStatusEnum.PROCESSING.value,
         }
         update_to_processing_response = client.patch(
             f"{customer_order_path}{order.id}/",
@@ -254,7 +252,7 @@ def test_switch_order_status_from_draft_to_delivered(
 
         order.refresh_from_db()
 
-        assert order.status == "processing"
+        assert order.status == OrderStatusEnum.PROCESSING.value
         assert order.processing_date == datetime(
             2024, 5, 8, 10, 30, 0, tzinfo=timezone.utc
         )
@@ -262,8 +260,7 @@ def test_switch_order_status_from_draft_to_delivered(
     with freeze_time("2024-05-08T10:32:00+00:00"):
         # Then we switch the order to completed few minutes later
         update_status_data = {
-            "status": "completed",
-            "completed_date": "2024-05-08T10:32:00+00:00",
+            "status": OrderStatusEnum.COMPLETED.value,
         }
         update_to_completed_response = client.patch(
             f"{customer_order_path}{order.id}/",
@@ -276,7 +273,7 @@ def test_switch_order_status_from_draft_to_delivered(
 
         order.refresh_from_db()
 
-        assert order.status == "completed"
+        assert order.status == OrderStatusEnum.COMPLETED.value
         assert order.completed_date == datetime(
             2024, 5, 8, 10, 32, 0, tzinfo=timezone.utc
         )
@@ -284,8 +281,7 @@ def test_switch_order_status_from_draft_to_delivered(
     with freeze_time("2024-05-08T10:35:00+00:00"):
         # Then we switch the order to delivered few minutes later
         update_status_data = {
-            "status": "delivered",
-            "delivered_date": "2024-05-08T10:35:00+00:00",
+            "status": OrderStatusEnum.DELIVERED.value,
         }
         update_to_delivered_response = client.patch(
             f"{customer_order_path}{order.id}/",
@@ -298,7 +294,7 @@ def test_switch_order_status_from_draft_to_delivered(
 
         order.refresh_from_db()
 
-        assert order.status == "delivered"
+        assert order.status == OrderStatusEnum.DELIVERED.value
         assert order.delivered_date == datetime(
             2024, 5, 8, 10, 35, 0, tzinfo=timezone.utc
         )
@@ -344,11 +340,11 @@ def test_switch_order_status_from_draft_to_non_allowed_status(
         order = OrderModel.objects.latest("pk")
 
     non_allowed_statuses = [
-        "processing",
-        "completed",
-        "delivered",
-        "cancelled_by_customer",
-        "cancelled_by_cooker",
+        OrderStatusEnum.PROCESSING.value,
+        OrderStatusEnum.COMPLETED.value,
+        OrderStatusEnum.DELIVERED.value,
+        OrderStatusEnum.CANCELLED_BY_CUSTOMER.value,
+        OrderStatusEnum.CANCELLED_BY_COOKER.value,
     ]
 
     for order_status in non_allowed_statuses:
@@ -393,7 +389,7 @@ def test_switch_order_status_from_pending_to_non_allowed_status(
 
     # Transition from draft to pending
     with freeze_time("2024-05-08T10:18:00+00:00"):
-        update_status_data = {"status": "pending"}
+        update_status_data = {"status": OrderStatusEnum.PENDING.value}
         response = client.patch(
             f"{customer_order_path}{order.id}/",
             encode_multipart(BOUNDARY, update_status_data),
@@ -404,7 +400,11 @@ def test_switch_order_status_from_pending_to_non_allowed_status(
         assert response.status_code == status.HTTP_200_OK
         order.refresh_from_db()
 
-    non_allowed_statuses = ["draft", "delivered"]
+    non_allowed_statuses = [
+        OrderStatusEnum.DRAFT.value,
+        OrderStatusEnum.COMPLETED.value,
+        OrderStatusEnum.DELIVERED.value,
+    ]
 
     for order_status in non_allowed_statuses:
         with freeze_time("2024-05-08T10:41:00+00:00"):
@@ -448,7 +448,7 @@ def test_switch_order_status_from_processing_to_non_allowed_status(
 
     # Transition from draft to pending
     with freeze_time("2024-05-08T10:18:00+00:00"):
-        update_status_data = {"status": "pending"}
+        update_status_data = {"status": OrderStatusEnum.PENDING.value}
         response = client.patch(
             f"{customer_order_path}{order.id}/",
             encode_multipart(BOUNDARY, update_status_data),
@@ -461,7 +461,7 @@ def test_switch_order_status_from_processing_to_non_allowed_status(
 
     # Transition from pending to processing
     with freeze_time("2024-05-08T10:41:00+00:00"):
-        update_status_data = {"status": "processing"}
+        update_status_data = {"status": OrderStatusEnum.PROCESSING.value}
         response = client.patch(
             f"{customer_order_path}{order.id}/",
             encode_multipart(BOUNDARY, update_status_data),
@@ -473,9 +473,9 @@ def test_switch_order_status_from_processing_to_non_allowed_status(
         order.refresh_from_db()
 
     non_allowed_statuses = [
-        "draft",
-        "pending",
-        "cancelled_by_cooker",
+        OrderStatusEnum.DRAFT.value,
+        OrderStatusEnum.PENDING.value,
+        OrderStatusEnum.DELIVERED.value,
     ]
 
     for order_status in non_allowed_statuses:
@@ -520,7 +520,7 @@ def test_switch_order_status_from_completed_to_non_allowed_status(
 
     # Transition from draft to pending
     with freeze_time("2024-05-08T10:18:00+00:00"):
-        update_status_data = {"status": "pending"}
+        update_status_data = {"status": OrderStatusEnum.PENDING.value}
         response = client.patch(
             f"{customer_order_path}{order.id}/",
             encode_multipart(BOUNDARY, update_status_data),
@@ -533,7 +533,7 @@ def test_switch_order_status_from_completed_to_non_allowed_status(
 
     # Transition from pending to processing
     with freeze_time("2024-05-08T10:41:00+00:00"):
-        update_status_data = {"status": "processing"}
+        update_status_data = {"status": OrderStatusEnum.PROCESSING.value}
         response = client.patch(
             f"{customer_order_path}{order.id}/",
             encode_multipart(BOUNDARY, update_status_data),
@@ -546,7 +546,7 @@ def test_switch_order_status_from_completed_to_non_allowed_status(
 
     # Transition from processing to completed
     with freeze_time("2024-05-08T10:55:00+00:00"):
-        update_status_data = {"status": "completed"}
+        update_status_data = {"status": OrderStatusEnum.COMPLETED.value}
         response = client.patch(
             f"{customer_order_path}{order.id}/",
             encode_multipart(BOUNDARY, update_status_data),
@@ -558,10 +558,10 @@ def test_switch_order_status_from_completed_to_non_allowed_status(
         order.refresh_from_db()
 
     non_allowed_statuses = [
-        "draft",
-        "pending",
-        "processing",
-        "cancelled_by_cooker",
+        OrderStatusEnum.DRAFT.value,
+        OrderStatusEnum.PENDING.value,
+        OrderStatusEnum.PROCESSING.value,
+        OrderStatusEnum.CANCELLED_BY_COOKER.value,
     ]
 
     for order_status in non_allowed_statuses:
@@ -606,7 +606,7 @@ def test_switch_order_status_from_delivered_to_non_allowed_status(
 
     # Transition from draft to pending
     with freeze_time("2024-05-08T10:18:00+00:00"):
-        update_status_data = {"status": "pending"}
+        update_status_data = {"status": OrderStatusEnum.PENDING.value}
         response = client.patch(
             f"{customer_order_path}{order.id}/",
             encode_multipart(BOUNDARY, update_status_data),
@@ -619,7 +619,7 @@ def test_switch_order_status_from_delivered_to_non_allowed_status(
 
     # Transition from pending to processing
     with freeze_time("2024-05-08T10:41:00+00:00"):
-        update_status_data = {"status": "processing"}
+        update_status_data = {"status": OrderStatusEnum.PROCESSING.value}
         response = client.patch(
             f"{customer_order_path}{order.id}/",
             encode_multipart(BOUNDARY, update_status_data),
@@ -632,7 +632,7 @@ def test_switch_order_status_from_delivered_to_non_allowed_status(
 
     # Transition from processing to completed
     with freeze_time("2024-05-08T10:55:00+00:00"):
-        update_status_data = {"status": "completed"}
+        update_status_data = {"status": OrderStatusEnum.COMPLETED.value}
         response = client.patch(
             f"{customer_order_path}{order.id}/",
             encode_multipart(BOUNDARY, update_status_data),
@@ -645,7 +645,7 @@ def test_switch_order_status_from_delivered_to_non_allowed_status(
 
     # Transition from completed to delivered
     with freeze_time("2024-05-08T11:10:00+00:00"):
-        update_status_data = {"status": "delivered"}
+        update_status_data = {"status": OrderStatusEnum.DELIVERED.value}
         response = client.patch(
             f"{customer_order_path}{order.id}/",
             encode_multipart(BOUNDARY, update_status_data),
@@ -657,12 +657,12 @@ def test_switch_order_status_from_delivered_to_non_allowed_status(
         order.refresh_from_db()
 
     non_allowed_statuses = [
-        "draft",
-        "pending",
-        "processing",
-        "completed",
-        "cancelled_by_customer",
-        "cancelled_by_cooker",
+        OrderStatusEnum.DRAFT.value,
+        OrderStatusEnum.PENDING.value,
+        OrderStatusEnum.PROCESSING.value,
+        OrderStatusEnum.COMPLETED.value,
+        OrderStatusEnum.CANCELLED_BY_CUSTOMER.value,
+        OrderStatusEnum.CANCELLED_BY_COOKER.value,
     ]
 
     for order_status in non_allowed_statuses:
@@ -710,7 +710,7 @@ def test_switch_order_status_from_cancelled_by_customer_to_non_allowed_status(
 
     # Transition from draft to pending
     with freeze_time("2024-05-08T10:18:00+00:00"):
-        update_status_data = {"status": "pending"}
+        update_status_data = {"status": OrderStatusEnum.PENDING.value}
         response = client.patch(
             f"{customer_order_path}{order.id}/",
             encode_multipart(BOUNDARY, update_status_data),
@@ -724,8 +724,7 @@ def test_switch_order_status_from_cancelled_by_customer_to_non_allowed_status(
     # Transition from pending to cancelled by customer
     with freeze_time("2024-05-08T11:10:00+00:00"):
         update_status_data = {
-            "status": "cancelled_by_customer",
-            "cancelled_date": "2024-05-08T11:10:00+00:00",
+            "status": OrderStatusEnum.CANCELLED_BY_CUSTOMER.value,
         }
         response = client.patch(
             f"{customer_order_path}{order.id}/",
@@ -738,12 +737,12 @@ def test_switch_order_status_from_cancelled_by_customer_to_non_allowed_status(
         order.refresh_from_db()
 
     non_allowed_statuses = [
-        "draft",
-        "pending",
-        "processing",
-        "completed",
-        "delivered",
-        "cancelled_by_cooker",
+        OrderStatusEnum.DRAFT.value,
+        OrderStatusEnum.PENDING.value,
+        OrderStatusEnum.PROCESSING.value,
+        OrderStatusEnum.COMPLETED.value,
+        OrderStatusEnum.DELIVERED.value,
+        OrderStatusEnum.CANCELLED_BY_COOKER.value,
     ]
 
     for order_status in non_allowed_statuses:
@@ -802,7 +801,7 @@ def test_switch_order_status_from_cancelled_by_cooker_to_non_allowed_status(
 
     # Transition from draft to pending
     with freeze_time("2024-05-08T10:18:00+00:00"):
-        update_status_data = {"status": "pending"}
+        update_status_data = {"status": OrderStatusEnum.PENDING.value}
         response = client.patch(
             f"{customer_order_path}{order.id}/",
             encode_multipart(BOUNDARY, update_status_data),
@@ -815,7 +814,7 @@ def test_switch_order_status_from_cancelled_by_cooker_to_non_allowed_status(
 
     # Transition from pending to cancelled by cooker
     with freeze_time("2024-05-08T11:10:00+00:00"):
-        update_status_data = {"status": "cancelled_by_cooker"}
+        update_status_data = {"status": OrderStatusEnum.CANCELLED_BY_COOKER.value}
         response = client.patch(
             f"{customer_order_path}{order.id}/",
             encode_multipart(BOUNDARY, update_status_data),
@@ -827,12 +826,12 @@ def test_switch_order_status_from_cancelled_by_cooker_to_non_allowed_status(
         order.refresh_from_db()
 
     non_allowed_statuses = [
-        "draft",
-        "pending",
-        "processing",
-        "completed",
-        "delivered",
-        "cancelled_by_customer",
+        OrderStatusEnum.DRAFT.value,
+        OrderStatusEnum.PENDING.value,
+        OrderStatusEnum.PROCESSING.value,
+        OrderStatusEnum.COMPLETED.value,
+        OrderStatusEnum.DELIVERED.value,
+        OrderStatusEnum.CANCELLED_BY_CUSTOMER.value,
     ]
 
     for order_status in non_allowed_statuses:
@@ -850,25 +849,6 @@ def test_switch_order_status_from_cancelled_by_cooker_to_non_allowed_status(
                 origins=["13 rue des Mazières 91000 Evry"],
                 destinations=["1 rue André Lalande 91000 Evry"],
             )
-
-
-@pytest.fixture
-def post_data_for_order_with_asap_delivery(
-    address_id: int,
-    customer_id: int,
-    cooker_id: int,
-) -> dict:
-    return {
-        "addressID": address_id,
-        "customerID": customer_id,
-        "cookerID": cooker_id,
-        "items": json.dumps(
-            [
-                {"dishID": "11", "dishOrderedQuantity": 1},
-                {"drinkID": "2", "drinkOrderedQuantity": 3},
-            ]
-        ),
-    }
 
 
 @pytest.fixture
@@ -991,7 +971,7 @@ def test_update_order_success_with_asap_delivery(
             "is_scheduled": False,
             "processing_date": None,
             "scheduled_delivery_date": None,
-            "status": "draft",
+            "status": OrderStatusEnum.DRAFT.value,
             "stripe_payment_intent_id": "pi_3Q6VU7EEYeaFww1W0xCZEUxw",
             "stripe_payment_intent_secret": "pi_3Q6VU7EEYeaFww1W0xCZEUxw_secret_OJqlWW9QRZZuSmAwUBklpxUf4",
         }
@@ -1084,7 +1064,7 @@ def test_update_order_success_with_asap_delivery(
             "delivery_man": None,
             "scheduled_delivery_date": None,
             "is_scheduled": False,
-            "status": "draft",
+            "status": OrderStatusEnum.DRAFT.value,
             "processing_date": None,
             "completed_date": None,
             "delivery_in_progress_date": None,
@@ -1223,7 +1203,7 @@ def test_update_order_after_successful_stripe_payment(
         # Checking if the order has been updated to pending status
         order: OrderModel = OrderModel.objects.get(id=order_id)
 
-        assert order.status == "pending"
+        assert order.status == OrderStatusEnum.PENDING.value
 
         mock_googlemaps_distance_matrix.assert_called_once_with(
             origins=["13 rue des Mazières 91000 Evry"],
@@ -1331,7 +1311,7 @@ def test_update_order_after_successful_stripe_payment_but_event_failed_to_be_ver
         # The order is supposed to stay in draft status
         order: OrderModel = OrderModel.objects.get(id=order_id)
 
-        assert order.status == "draft"
+        assert order.status == OrderStatusEnum.DRAFT.value
 
         mock_googlemaps_distance_matrix.assert_called_once_with(
             origins=["13 rue des Mazières 91000 Evry"],
@@ -1421,7 +1401,7 @@ def test_cancel_order_when_initiated_by_customer_and_order_is_still_pending(
         order_id = response.json()["data"].pop("id")
         order: OrderModel = OrderModel.objects.get(id=order_id)
 
-        assert order.status == "draft"
+        assert order.status == OrderStatusEnum.DRAFT.value
 
         # Then we post the payment intent success webhook
         stripe_payment_intent_success_webhook_data[
@@ -1438,7 +1418,7 @@ def test_cancel_order_when_initiated_by_customer_and_order_is_still_pending(
         # Checking if the order has been updated to pending status
         order.refresh_from_db()
 
-        assert order.status == "pending"
+        assert order.status == OrderStatusEnum.PENDING.value
 
         with freeze_time(cancel_freeze_time):
             # Now we cancel the order right after it has been paid
@@ -1447,8 +1427,7 @@ def test_cancel_order_when_initiated_by_customer_and_order_is_still_pending(
                 encode_multipart(
                     BOUNDARY,
                     {
-                        "status": "cancelled_by_customer",
-                        "cancelled_date": cancel_freeze_time,
+                        "status": OrderStatusEnum.CANCELLED_BY_CUSTOMER.value,
                     },
                 ),
                 content_type=MULTIPART_CONTENT,
@@ -1458,7 +1437,7 @@ def test_cancel_order_when_initiated_by_customer_and_order_is_still_pending(
 
             assert cancel_response.status_code == expected_cancel_response_status_code
             order.refresh_from_db()
-            assert order.status == "cancelled_by_customer"
+            assert order.status == OrderStatusEnum.CANCELLED_BY_CUSTOMER.value
             assert order.cancelled_date == datetime.fromisoformat(cancel_freeze_time)
 
         mock_googlemaps_distance_matrix.assert_called_once_with(
@@ -1553,7 +1532,7 @@ def test_cancel_order_when_initiated_by_customer_but_order_is_in_processing_stat
         order_id = response.json()["data"].pop("id")
         order: OrderModel = OrderModel.objects.get(id=order_id)
 
-        assert order.status == "draft"
+        assert order.status == OrderStatusEnum.DRAFT.value
 
         # Then we post the payment intent success webhook
         stripe_payment_intent_success_webhook_data[
@@ -1570,13 +1549,13 @@ def test_cancel_order_when_initiated_by_customer_but_order_is_in_processing_stat
         # Checking if the order has been updated to pending status
         order.refresh_from_db()
 
-        assert order.status == "pending"
+        assert order.status == OrderStatusEnum.PENDING.value
 
         # Manual transition from pending to processing
-        order.status = "processing"
+        order.status = OrderStatusEnum.PROCESSING.value
         order.save()
 
-        assert order.status == "processing"
+        assert order.status == OrderStatusEnum.PROCESSING.value
 
         with freeze_time(cancel_freeze_time):
             # Now we cancel the order right after it has been paid
@@ -1585,8 +1564,7 @@ def test_cancel_order_when_initiated_by_customer_but_order_is_in_processing_stat
                 encode_multipart(
                     BOUNDARY,
                     {
-                        "status": "cancelled_by_customer",
-                        "cancelled_date": cancel_freeze_time,
+                        "status": OrderStatusEnum.CANCELLED_BY_CUSTOMER.value,
                     },
                 ),
                 content_type=MULTIPART_CONTENT,
@@ -1596,7 +1574,7 @@ def test_cancel_order_when_initiated_by_customer_but_order_is_in_processing_stat
 
             assert cancel_response.status_code == expected_cancel_response_status_code
             order.refresh_from_db()
-            assert order.status == "cancelled_by_customer"
+            assert order.status == OrderStatusEnum.CANCELLED_BY_CUSTOMER.value
             assert order.cancelled_date == datetime.fromisoformat(cancel_freeze_time)
 
         mock_googlemaps_distance_matrix.assert_called_once_with(
@@ -1688,7 +1666,7 @@ def test_cancel_order_when_initiated_by_customer_but_order_is_in_completed_state
         order_id = response.json()["data"].pop("id")
         order: OrderModel = OrderModel.objects.get(id=order_id)
 
-        assert order.status == "draft"
+        assert order.status == OrderStatusEnum.DRAFT.value
 
         # Then we post the payment intent success webhook
         stripe_payment_intent_success_webhook_data[
@@ -1705,19 +1683,19 @@ def test_cancel_order_when_initiated_by_customer_but_order_is_in_completed_state
         # Checking if the order has been updated to pending status
         order.refresh_from_db()
 
-        assert order.status == "pending"
+        assert order.status == OrderStatusEnum.PENDING.value
 
         # Manual transition from pending to processing
-        order.status = "processing"
+        order.status = OrderStatusEnum.PROCESSING.value
         order.save()
 
-        assert order.status == "processing"
+        assert order.status == OrderStatusEnum.PROCESSING.value
 
         # Then we switch the order to completed
-        order.status = "completed"
+        order.status = OrderStatusEnum.COMPLETED.value
         order.save()
 
-        assert order.status == "completed"
+        assert order.status == OrderStatusEnum.COMPLETED.value
 
         with freeze_time(cancel_freeze_time):
             # Now we cancel the order right after it has been paid
@@ -1726,8 +1704,7 @@ def test_cancel_order_when_initiated_by_customer_but_order_is_in_completed_state
                 encode_multipart(
                     BOUNDARY,
                     {
-                        "status": "cancelled_by_customer",
-                        "cancelled_date": cancel_freeze_time,
+                        "status": OrderStatusEnum.CANCELLED_BY_CUSTOMER.value,
                     },
                 ),
                 content_type=MULTIPART_CONTENT,
@@ -1737,7 +1714,7 @@ def test_cancel_order_when_initiated_by_customer_but_order_is_in_completed_state
 
             assert cancel_response.status_code == expected_cancel_response_status_code
             order.refresh_from_db()
-            assert order.status == "cancelled_by_customer"
+            assert order.status == OrderStatusEnum.CANCELLED_BY_CUSTOMER.value
             assert order.cancelled_date == datetime.fromisoformat(cancel_freeze_time)
 
         mock_googlemaps_distance_matrix.assert_called_once_with(
@@ -1756,3 +1733,60 @@ def test_cancel_order_when_initiated_by_customer_but_order_is_in_completed_state
         )
         mock_stripe_webhook_construct_event_success.assert_called_once()
         mock_stripe_create_refund_success.assert_not_called()
+
+
+@pytest.mark.django_db
+def test_update_order_but_unexpected_exception_raises_on_customer_app(
+    auth_headers: dict,
+    client: APIClient,
+    mock_transition_to: MagicMock,
+    customer_order_path: str,
+    post_data_for_order_with_asap_delivery: dict,
+    mock_googlemaps_distance_matrix: MagicMock,
+    mock_stripe_payment_intent_create: MagicMock,
+    mock_stripe_payment_intent_update: MagicMock,
+    mock_stripe_create_ephemeral_key: MagicMock,
+    mock_stripe_webhook_construct_event_success: MagicMock,
+    mock_stripe_webhook_construct_event_failed: MagicMock,
+) -> None:
+
+    with freeze_time("2024-05-08T10:16:00+00:00"):
+        response = client.post(
+            customer_order_path,
+            encode_multipart(
+                BOUNDARY,
+                post_data_for_order_with_asap_delivery,
+            ),
+            content_type=MULTIPART_CONTENT,
+            follow=False,
+            **auth_headers,
+        )
+        assert response.status_code == status.HTTP_201_CREATED
+        order_id = response.json()["data"].pop("id")
+        order: OrderModel = OrderModel.objects.get(id=order_id)
+
+        assert order.status == OrderStatusEnum.DRAFT.value
+
+        # Now we try to set the order to PENDING status but
+        # an unexpected exception is raised
+        update_response = client.patch(
+            f"{customer_order_path}{order_id}/",
+            encode_multipart(
+                BOUNDARY,
+                {
+                    "status": OrderStatusEnum.PENDING.value,
+                },
+            ),
+            content_type=MULTIPART_CONTENT,
+            follow=False,
+            **auth_headers,
+        )
+        assert update_response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+
+        mock_googlemaps_distance_matrix.assert_called_once()
+        mock_stripe_payment_intent_create.assert_called_once()
+        mock_stripe_create_ephemeral_key.assert_called_once()
+        mock_stripe_webhook_construct_event_success.assert_not_called()
+        mock_stripe_webhook_construct_event_failed.assert_not_called()
+        mock_stripe_payment_intent_update.assert_not_called()
+        mock_transition_to.assert_called_once()

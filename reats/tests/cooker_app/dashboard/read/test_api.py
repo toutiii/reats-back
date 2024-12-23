@@ -38,12 +38,12 @@ def test_get_dashboard_data_when_cooker_has_orders(
         "ok": True,
         "status_code": 200,
         "data": {
-            "cancelled_by_cooker": 3,
-            "cancelled_by_customer": 1,
-            "completed": 5,
-            "pending": 5,
-            "delivered": 4,
-            "processing": 3,
+            OrderStatusEnum.CANCELLED_BY_COOKER: 3,
+            OrderStatusEnum.CANCELLED_BY_CUSTOMER: 1,
+            OrderStatusEnum.COMPLETED: 5,
+            OrderStatusEnum.PENDING: 5,
+            OrderStatusEnum.DELIVERED: 4,
+            OrderStatusEnum.PROCESSING: 3,
         },
     }
 

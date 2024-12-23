@@ -31,6 +31,7 @@ from utils.common import (
     upload_image_to_s3,
 )
 from utils.custom_permissions import CustomAPIKeyPermission, UserPermission
+from utils.enums import OrderStatusEnum
 
 from .models import DeliverModel
 from .serializers import DeliverGETSerializer, DeliverSerializer
@@ -222,7 +223,7 @@ class DeliverView(ModelViewSet):
 
 class DeliveryOrderStatsView(GenericViewSet, ListModelMixin):
     permission_classes = [UserPermission]
-    queryset = OrderModel.objects.all().filter(status="delivered")
+    queryset = OrderModel.objects.all().filter(status=OrderStatusEnum.DELIVERED)
     parser_classes = [MultiPartParser]
     renderer_classes = [DeliveryStatsCustomRendererWithData]
 
@@ -291,7 +292,7 @@ class DeliveryOrderStatsView(GenericViewSet, ListModelMixin):
 
 class DeliveryHistoryView(ListModelMixin, GenericViewSet):
     permission_classes = [UserPermission]
-    queryset = OrderModel.objects.all().filter(status="delivered")
+    queryset = OrderModel.objects.all().filter(status=OrderStatusEnum.DELIVERED)
     parser_classes = [MultiPartParser]
     renderer_classes = [OrderCustomRendererWithData]
     serializer_class = OrderGETSerializer

@@ -1,5 +1,5 @@
 import ast
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import pytz
 from cooker_app.models import DishModel, DrinkModel
@@ -9,6 +9,7 @@ from phonenumbers.phonenumberutil import NumberParseException
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
 from utils.common import compute_order_items_total_amount, format_phone
+from utils.enums import OrderStatusEnum
 
 from .models import AddressModel, CustomerModel, OrderItemModel, OrderModel
 
@@ -212,21 +213,27 @@ class OrderPATCHSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = OrderModel
-        fields = (
-            "status",
-            "cancelled_date",
-            "processing_date",
-            "completed_date",
-            "delivered_date",
-        )
+        fields = ("status",)
 
     def update(self, instance: OrderModel, validated_data: dict):
         status = validated_data["status"]
         instance.status = status
-        instance.cancelled_date = validated_data.get("cancelled_date")
-        instance.processing_date = validated_data.get("processing_date")
-        instance.completed_date = validated_data.get("completed_date")
-        instance.delivered_date = validated_data.get("delivered_date")
+
+        if status in (
+            OrderStatusEnum.CANCELLED_BY_COOKER,
+            OrderStatusEnum.CANCELLED_BY_CUSTOMER,
+        ):
+            instance.cancelled_date = datetime.now(timezone.utc)
+
+        if status == OrderStatusEnum.PROCESSING:
+            instance.processing_date = datetime.now(timezone.utc)
+
+        if status == OrderStatusEnum.COMPLETED:
+            instance.completed_date = datetime.now(timezone.utc)
+
+        if status == OrderStatusEnum.DELIVERED:
+            instance.delivered_date = datetime.now(timezone.utc)
+
         instance.save()
 
         return instance

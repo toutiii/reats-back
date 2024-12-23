@@ -91,7 +91,7 @@ class OrderModel(ReatsModel):
     status: CharField = CharField(
         max_length=30,
         choices=OrderStatusEnum.choices(),
-        default="draft",
+        default=OrderStatusEnum.DRAFT,
     )
     processing_date: DateTimeField = DateTimeField(null=True)
     completed_date: DateTimeField = DateTimeField(null=True)
@@ -109,24 +109,24 @@ class OrderModel(ReatsModel):
 
     def get_state_map(self) -> dict:
         return {
-            "draft": DraftState(),
-            "pending": PendingState(),
-            "processing": ProcessingState(),
-            "completed": CompletedState(),
-            "cancelled_by_customer": CancelledByCustomerState(),
-            "cancelled_by_cooker": CancelledByCookerState(),
-            "delivered": DeliveredState(),
+            OrderStatusEnum.DRAFT: DraftState(),
+            OrderStatusEnum.PENDING: PendingState(),
+            OrderStatusEnum.PROCESSING: ProcessingState(),
+            OrderStatusEnum.COMPLETED: CompletedState(),
+            OrderStatusEnum.CANCELLED_BY_CUSTOMER: CancelledByCustomerState(),
+            OrderStatusEnum.CANCELLED_BY_COOKER: CancelledByCookerState(),
+            OrderStatusEnum.DELIVERED: DeliveredState(),
         }
 
     def get_reverse_state_map(self) -> dict:
         return {
-            "DraftState": "draft",
-            "PendingState": "pending",
-            "ProcessingState": "processing",
-            "CompletedState": "completed",
-            "CancelledByCustomerState": "cancelled_by_customer",
-            "CancelledByCookerState": "cancelled_by_cooker",
-            "DeliveredState": "delivered",
+            "DraftState": OrderStatusEnum.DRAFT,
+            "PendingState": OrderStatusEnum.PENDING,
+            "ProcessingState": OrderStatusEnum.PROCESSING,
+            "CompletedState": OrderStatusEnum.COMPLETED,
+            "CancelledByCustomerState": OrderStatusEnum.CANCELLED_BY_CUSTOMER,
+            "CancelledByCookerState": OrderStatusEnum.CANCELLED_BY_COOKER,
+            "DeliveredState": OrderStatusEnum.DELIVERED,
         }
 
     def get_state(self):
@@ -198,8 +198,10 @@ class PendingState(OrderState):
 
 class ProcessingState(OrderState):
     def can_transition_to(self, new_state: OrderState):
-        return isinstance(new_state, CompletedState) or isinstance(
-            new_state, CancelledByCustomerState
+        return (
+            isinstance(new_state, CompletedState)
+            or isinstance(new_state, CancelledByCustomerState)
+            or isinstance(new_state, CancelledByCookerState)
         )
 
 
