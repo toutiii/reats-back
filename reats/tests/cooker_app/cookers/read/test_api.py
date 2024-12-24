@@ -45,7 +45,7 @@ def test_get_existing_cooker_data(
                     "is_online": True,
                     "lastname": "test",
                     "max_order_number": "10",
-                    "phone": "0600000001",
+                    "phone": "0766964170",
                     "photo": "https://some-url.com",
                     "siret": "00000000000001",
                 },

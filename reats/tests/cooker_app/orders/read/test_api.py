@@ -406,7 +406,7 @@ def cooker_id() -> int:
     ],
 )
 @freeze_time("2024-12-11T02:53:05.718117Z")
-def test_orders_list_success(
+def test_orders_list_success_with_no_filters(
     auth_headers: dict,
     client: APIClient,
     cooker_id: int,

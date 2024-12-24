@@ -571,8 +571,31 @@ class CookerOrderHistoryView(ListModelMixin, GenericViewSet):
     serializer_class = OrderGETSerializer
 
     def list(self, request, *args, **kwargs) -> Response:
+        order_status: Union[str, None] = self.request.query_params.get("status")
+        start_date: Union[str, None] = self.request.query_params.get("start_date")
+        end_date: Union[str, None] = self.request.query_params.get("end_date")
         self.queryset = self.queryset.filter(cooker__id=request.user.pk).order_by(
             "-modified"
         )
+
+        if start_date and end_date:
+            start_date_object = datetime.fromisoformat(
+                start_date.replace("Z", "+00:00")
+            )
+            end_date_object = datetime.fromisoformat(end_date.replace("Z", "+00:00"))
+            if start_date_object > end_date_object:
+                return Response(
+                    {
+                        "ok": False,
+                        "status_code": status.HTTP_400_BAD_REQUEST,
+                        "error": "Start date cannot be greater than end date",
+                    }
+                )
+            self.queryset = self.queryset.filter(
+                created__gte=start_date_object,
+                created__lte=end_date_object,
+            )
+        if order_status:
+            self.queryset = self.queryset.filter(status=order_status)
 
         return super().list(request, *args, **kwargs)

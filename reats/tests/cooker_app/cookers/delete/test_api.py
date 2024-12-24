@@ -11,7 +11,7 @@ from rest_framework.test import APIClient
 class TestCookerDeleteSuccess:
     @pytest.fixture(scope="class")
     def data(self) -> dict:
-        return {"phone": "+33600000001"}
+        return {"phone": "+33766964170"}
 
     def test_response(
         self,
@@ -48,7 +48,7 @@ class TestCookerDeleteSuccess:
 class TestCookerDeleteFailedWithExpiredToken:
     @pytest.fixture(scope="class")
     def data(self) -> dict:
-        return {"phone": "+33600000001"}
+        return {"phone": "+33766964170"}
 
     def test_response(
         self,

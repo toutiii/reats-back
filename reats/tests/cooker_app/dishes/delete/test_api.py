@@ -43,7 +43,7 @@ class TestDishDeleteSuccess:
 class TestDishDeleteFailedWithExpiredToken:
     @pytest.fixture(scope="class")
     def data(self) -> dict:
-        return {"phone": "+33600000001"}
+        return {"phone": "+33766964170"}
 
     def test_response(
         self,
