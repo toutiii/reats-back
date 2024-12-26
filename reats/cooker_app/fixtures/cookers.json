@@ -13,7 +13,8 @@
       "street_name": "rue André Lalande",
       "street_number": "1",
       "town": "Evry",
-      "is_online": true
+      "is_online": true,
+      "is_activated": true
     }
   },
   {
