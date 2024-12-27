@@ -12,7 +12,7 @@ from custom_renderers.renderers import (
     OrderCustomRendererWithData,
 )
 from customer_app.models import OrderModel
-from customer_app.serializers import OrderGETSerializer, OrderPATCHSerializer
+from customer_app.serializers import OrderPATCHSerializer
 from django.db import IntegrityError
 from django.db.models import Count
 from phonenumbers.phonenumberutil import NumberParseException
@@ -42,6 +42,7 @@ from utils.enums import OrderStatusEnum
 from .models import CookerModel, DishModel, DrinkModel
 from .serializers import (
     CookerGETSerializer,
+    CookerOrderGETSerializer,
     CookerSerializer,
     DishGETSerializer,
     DishPATCHSerializer,
@@ -336,7 +337,11 @@ class DishView(ModelViewSet):
     def list(self, request, *args, **kwargs) -> Response:
         request_name: Union[str, None] = self.request.query_params.get("name")
         request_category: Union[str, None] = self.request.query_params.get("category")
-        request_status: Union[str, None] = self.request.query_params.get("is_enabled")
+        request_status: Union[str, None] = self.request.query_params.get(
+            "is_enabled", "true"
+        )
+
+        self.queryset = self.queryset.filter(cooker__id=request.user.pk)
 
         if request_name is not None:
             self.queryset = self.queryset.filter(name__icontains=request_name)
@@ -349,10 +354,10 @@ class DishView(ModelViewSet):
         if request_status is not None:
             self.queryset = self.queryset.filter(is_enabled=json.loads(request_status))
 
-        self.queryset = self.queryset.filter(cooker__id=request.user.pk)
-
         if request_name is None and request_category is None and request_status is None:
-            self.queryset = DishModel.objects.none()
+            self.queryset = DishModel.objects.all()
+
+        self.queryset = self.queryset.order_by("name")
 
         return super().list(request, *args, **kwargs)
 
@@ -437,7 +442,11 @@ class DrinkView(ModelViewSet):
 
     def list(self, request, *args, **kwargs) -> Response:
         request_name: Union[str, None] = self.request.query_params.get("name")
-        request_status: Union[str, None] = self.request.query_params.get("is_enabled")
+        request_status: Union[str, None] = self.request.query_params.get(
+            "is_enabled", "true"
+        )
+
+        self.queryset = self.queryset.filter(cooker__id=request.user.pk)
 
         if request_name is not None:
             self.queryset = self.queryset.filter(name__icontains=request_name)
@@ -446,9 +455,9 @@ class DrinkView(ModelViewSet):
             self.queryset = self.queryset.filter(is_enabled=json.loads(request_status))
 
         if request_name is None and request_status is None:
-            self.queryset = DrinkModel.objects.none()
+            self.queryset = DrinkModel.objects.all()
 
-        self.queryset = self.queryset.filter(cooker__id=request.user.pk)
+        self.queryset = self.queryset.order_by("name")
 
         return super().list(request, *args, **kwargs)
 
@@ -530,7 +539,7 @@ class CookerOrderView(
 
     def get_serializer_class(self) -> type[BaseSerializer]:
         if self.request.method == "GET":
-            self.serializer_class = OrderGETSerializer
+            self.serializer_class = CookerOrderGETSerializer
 
         elif self.request.method == "PATCH":
             self.serializer_class = OrderPATCHSerializer
@@ -568,7 +577,7 @@ class CookerOrderHistoryView(ListModelMixin, GenericViewSet):
     )
     parser_classes = [MultiPartParser]
     renderer_classes = [OrderCustomRendererWithData]
-    serializer_class = OrderGETSerializer
+    serializer_class = CookerOrderGETSerializer
 
     def list(self, request, *args, **kwargs) -> Response:
         order_status: Union[str, None] = self.request.query_params.get("status")

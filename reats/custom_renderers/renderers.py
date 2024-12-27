@@ -8,6 +8,7 @@ from django.conf import settings
 from rest_framework import status
 from rest_framework.renderers import JSONRenderer
 from utils.common import create_stripe_ephemeral_key, get_pre_signed_url
+from utils.enums import OrderStatusEnum
 
 logger = logging.getLogger("watchtower-logger")
 
@@ -323,13 +324,23 @@ class OrderCustomRendererWithData(JSONRenderer):
         Order for history records does not have customer in serializer
         """
         if "customer" in response:
-            customer: CustomerModel = CustomerModel.objects.get(id=response["customer"])
+            try:
+                customer: CustomerModel = CustomerModel.objects.get(
+                    id=response["customer"]["id"]
+                )
+            except TypeError as err:
+                logger.error(err)
+                customer = CustomerModel.objects.get(id=response["customer"])
             response["customer"] = {
                 "id": customer.id,
                 "stripe_id": customer.stripe_id,
                 "lastname": customer.lastname,
                 "firstname": customer.firstname,
             }
+
+        order_status = response.get("status")
+
+        if order_status is None or order_status == OrderStatusEnum.DRAFT:
             response["ephemeral_key"] = create_stripe_ephemeral_key(customer)
 
         if "cooker" in response:

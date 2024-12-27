@@ -57,7 +57,6 @@ def test_update_order_from_pending_to_cancelled_by_cooker_status(
     post_order_data: dict,
     mock_googlemaps_distance_matrix: MagicMock,
     mock_stripe_payment_intent_create: MagicMock,
-    mock_stripe_create_ephemeral_key: MagicMock,
     mock_stripe_create_refund_success: MagicMock,
 ) -> None:
 
@@ -121,10 +120,6 @@ def test_update_order_from_pending_to_cancelled_by_cooker_status(
         automatic_payment_methods={"enabled": True},
         customer="cus_QyZ76Ae0W5KeqP",
     )
-    mock_stripe_create_ephemeral_key.assert_called_once_with(
-        customer="cus_QyZ76Ae0W5KeqP",
-        stripe_version="2024-06-20",
-    )
 
 
 @pytest.mark.django_db
@@ -136,7 +131,6 @@ def test_update_order_from_processing_to_cancelled_by_cooker_status(
     post_order_data: dict,
     mock_googlemaps_distance_matrix: MagicMock,
     mock_stripe_payment_intent_create: MagicMock,
-    mock_stripe_create_ephemeral_key: MagicMock,
     mock_stripe_create_refund_success: MagicMock,
 ) -> None:
 
@@ -234,10 +228,6 @@ def test_update_order_from_processing_to_cancelled_by_cooker_status(
         automatic_payment_methods={"enabled": True},
         customer="cus_QyZ76Ae0W5KeqP",
     )
-    mock_stripe_create_ephemeral_key.assert_called_once_with(
-        customer="cus_QyZ76Ae0W5KeqP",
-        stripe_version="2024-06-20",
-    )
 
 
 @pytest.mark.django_db
@@ -249,7 +239,6 @@ def test_update_order_from_pending_to_processing_state(
     post_order_data: dict,
     mock_googlemaps_distance_matrix: MagicMock,
     mock_stripe_payment_intent_create: MagicMock,
-    mock_stripe_create_ephemeral_key: MagicMock,
     mock_stripe_create_refund_success: MagicMock,
 ) -> None:
 
@@ -306,7 +295,6 @@ def test_update_order_from_pending_to_processing_state(
     )
     mock_googlemaps_distance_matrix.assert_called_once()
     mock_stripe_payment_intent_create.assert_called_once()
-    mock_stripe_create_ephemeral_key.assert_called_once()
     mock_stripe_create_refund_success.assert_not_called()
 
 
@@ -319,7 +307,6 @@ def test_update_order_from_pending_to_completed_state(
     post_order_data: dict,
     mock_googlemaps_distance_matrix: MagicMock,
     mock_stripe_payment_intent_create: MagicMock,
-    mock_stripe_create_ephemeral_key: MagicMock,
     mock_stripe_create_refund_success: MagicMock,
 ) -> None:
 
@@ -376,7 +363,6 @@ def test_update_order_from_pending_to_completed_state(
     )
     mock_googlemaps_distance_matrix.assert_called_once()
     mock_stripe_payment_intent_create.assert_called_once()
-    mock_stripe_create_ephemeral_key.assert_called_once()
     mock_stripe_create_refund_success.assert_not_called()
 
     with freeze_time("2024-05-08T10:20:00+00:00"):
@@ -429,7 +415,6 @@ def test_update_order_but_unexpected_exception_raises_on_cooker_app(
     mock_googlemaps_distance_matrix: MagicMock,
     mock_stripe_payment_intent_create: MagicMock,
     mock_stripe_payment_intent_update: MagicMock,
-    mock_stripe_create_ephemeral_key: MagicMock,
     mock_stripe_webhook_construct_event_success: MagicMock,
     mock_stripe_webhook_construct_event_failed: MagicMock,
     new_status: OrderStatusEnum,
@@ -474,7 +459,6 @@ def test_update_order_but_unexpected_exception_raises_on_cooker_app(
 
         mock_googlemaps_distance_matrix.assert_called_once()
         mock_stripe_payment_intent_create.assert_called_once()
-        mock_stripe_create_ephemeral_key.assert_called_once()
         mock_stripe_webhook_construct_event_success.assert_not_called()
         mock_stripe_webhook_construct_event_failed.assert_not_called()
         mock_stripe_payment_intent_update.assert_not_called()

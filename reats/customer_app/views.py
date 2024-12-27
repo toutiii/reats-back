@@ -333,9 +333,6 @@ class DishView(ListModelMixin, GenericViewSet):
         if request_country is not None:
             self.queryset = self.queryset.filter(country=request_country)
 
-        if request_cooker_id is not None and request_cooker_id.isnumeric():
-            self.queryset = self.queryset.filter(cooker__id=request_cooker_id)
-
         if request_sort is not None:
             if request_sort == "new":
                 self.queryset = self.queryset.order_by("created")
@@ -379,11 +376,15 @@ class DishView(ListModelMixin, GenericViewSet):
                 logger.error(f"Invalid delivery mode {request_delivery_mode}")
                 self.queryset = DishModel.objects.none()
 
-        self.queryset = (
-            self.queryset.filter(cooker__id__in=closest_cookers_ids)
-            .filter(cooker__is_online=True)
-            .filter(is_enabled=True)
-        )
+        if request_cooker_id is not None and request_cooker_id.isnumeric():
+            self.queryset = self.queryset.filter(cooker__id=request_cooker_id)
+
+        if not request_cooker_id and closest_cookers_ids:
+            self.queryset = (
+                self.queryset.filter(cooker__id__in=closest_cookers_ids)
+                .filter(cooker__is_online=True)
+                .filter(is_enabled=True)
+            )
 
         if (
             request_sort is None

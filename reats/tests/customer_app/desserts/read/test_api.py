@@ -1,5 +1,6 @@
 import pytest
 from cooker_app.models import DishModel
+from deepdiff import DeepDiff
 from rest_framework import status
 from rest_framework.test import APIClient
 
@@ -9,34 +10,9 @@ class TestListDessertsForCustomerSuccess:
     def cooker_id(self) -> int:
         return 1
 
-    @pytest.mark.django_db
-    def test_response(
-        self,
-        auth_headers: dict,
-        client: APIClient,
-        cooker_id: int,
-        customer_dessert_path: str,
-    ) -> None:
-
-        # we check that the cooker has some desserts
-        assert (
-            DishModel.objects.filter(category="dessert")
-            .filter(cooker__id=cooker_id)
-            .filter(is_enabled=True)
-            .count()
-            > 0
-        )
-
-        # Then we list the desserts
-        response = client.get(
-            f"{customer_dessert_path}?cooker_id={cooker_id}",
-            follow=False,
-            **auth_headers,
-        )
-        assert response.status_code == status.HTTP_200_OK
-        assert response.json().get("ok") is True
-        assert response.json().get("status_code") == status.HTTP_200_OK
-        assert sorted(response.json().get("data"), key=lambda x: x["id"]) == [
+    @pytest.fixture
+    def expected_data(self) -> list[dict]:
+        return [
             {
                 "id": "11",
                 "category": "dessert",
@@ -103,6 +79,39 @@ class TestListDessertsForCustomerSuccess:
                 "is_suitable_for_scheduled_delivery": False,
             },
         ]
+
+    @pytest.mark.django_db
+    def test_response(
+        self,
+        auth_headers: dict,
+        client: APIClient,
+        cooker_id: int,
+        customer_dessert_path: str,
+        expected_data: list[dict],
+    ) -> None:
+
+        # we check that the cooker has some desserts
+        assert (
+            DishModel.objects.filter(category="dessert")
+            .filter(cooker__id=cooker_id)
+            .filter(is_enabled=True)
+            .count()
+            > 0
+        )
+
+        # Then we list the desserts
+        response = client.get(
+            f"{customer_dessert_path}?cooker_id={cooker_id}",
+            follow=False,
+            **auth_headers,
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json().get("ok") is True
+        assert response.json().get("status_code") == status.HTTP_200_OK
+
+        diff = DeepDiff(response.json().get("data"), expected_data, ignore_order=True)
+
+        assert not diff
 
 
 class TestListDessertsForCustomeFailedWithUnknownCookerId:

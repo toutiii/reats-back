@@ -1,7 +1,9 @@
 from typing import Any, Dict, Union
 
-from customer_app.models import CustomerModel
+from customer_app.models import AddressModel, CustomerModel, OrderModel
+from customer_app.serializers import OrderItemGETSerializer
 from delivery_app.models import DeliverModel
+from django.conf import settings
 from phonenumbers.phonenumberutil import NumberParseException
 from rest_framework import serializers, status
 from rest_framework.exceptions import ValidationError
@@ -10,7 +12,7 @@ from rest_framework_simplejwt.serializers import (
     TokenObtainPairSerializer,
     TokenRefreshSerializer,
 )
-from utils.common import format_phone
+from utils.common import compute_order_items_total_amount, format_phone
 
 from .models import CookerModel, DishModel, DrinkModel
 
@@ -151,3 +153,57 @@ class TokenObtainRefreshWithoutPasswordSerializer(TokenRefreshSerializer):
 
     def validate(self, attrs: Dict[str, Any]) -> Dict[str, str]:
         return super().validate(attrs)
+
+
+class CookerAddressSerializer(ModelSerializer):
+    class Meta:
+        model = AddressModel
+        fields = (
+            "id",
+            "postal_code",
+            "town",
+        )
+
+
+class CookerOrderCustomerGETSerializer(ModelSerializer):
+    class Meta:
+        model = CustomerModel
+        fields = (
+            "id",
+            "firstname",
+            "lastname",
+        )
+
+
+class CookerOrderGETSerializer(ModelSerializer):
+    address = CookerAddressSerializer()
+    items = OrderItemGETSerializer(many=True)
+    customer = CookerOrderCustomerGETSerializer()
+
+    class Meta:
+        model = OrderModel
+        exclude = (
+            "modified",
+            "stripe_payment_intent_id",
+            "stripe_payment_intent_secret",
+        )
+        many = True
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+
+        data["sub_total"] = compute_order_items_total_amount(instance)
+        data["service_fees"] = round(data["sub_total"] * settings.SERVICE_FEES_RATE, 2)
+        data["total_amount"] = round(
+            data["sub_total"] + data["service_fees"] + instance.delivery_fees, 2
+        )
+
+        for item in data["items"]:
+            if item["dish"] is None:
+                item.pop("dish")
+                item.pop("dish_quantity")
+            if item["drink"] is None:
+                item.pop("drink")
+                item.pop("drink_quantity")
+
+        return data

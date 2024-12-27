@@ -1,6 +1,7 @@
 from unittest.mock import MagicMock
 
 import pytest
+from deepdiff import DeepDiff
 from rest_framework import status
 from rest_framework.test import APIClient
 
@@ -82,6 +83,133 @@ class TestListDishesForCustomerNoResultsWithQueryParameterGivenByUser:
     ],
 )
 class TestListDishesForCustomerSuccessWithQueryParameterGivenByUser:
+    @pytest.fixture
+    def expected_data_when_name_in_query_parameter(self) -> list[dict]:
+        return [
+            {
+                "id": "5",
+                "category": "dish",
+                "country": "Cameroun",
+                "description": "Test",
+                "name": "Poulet braisé",
+                "price": "11.0",
+                "photo": "https://some-url.com",
+                "is_enabled": True,
+                "cooker": "1",
+                "is_suitable_for_quick_delivery": False,
+                "is_suitable_for_scheduled_delivery": True,
+            },
+            {
+                "id": "6",
+                "category": "dish",
+                "country": "Cameroun",
+                "description": "Test",
+                "name": "Poulet DG",
+                "price": "11.0",
+                "photo": "https://some-url.com",
+                "is_enabled": True,
+                "cooker": "1",
+                "is_suitable_for_quick_delivery": False,
+                "is_suitable_for_scheduled_delivery": False,
+            },
+        ]
+
+    @pytest.fixture
+    def expected_data(self) -> list[dict]:
+        return [
+            {
+                "category": "dish",
+                "cooker": "4",
+                "country": "Congo",
+                "description": "Test",
+                "id": "2",
+                "is_enabled": True,
+                "is_suitable_for_quick_delivery": False,
+                "is_suitable_for_scheduled_delivery": False,
+                "name": "Gombo porc riz",
+                "photo": "https://some-url.com",
+                "price": "13.0",
+            },
+            {
+                "category": "dish",
+                "cooker": "4",
+                "country": "Cameroun",
+                "description": "Test",
+                "id": "3",
+                "is_enabled": True,
+                "is_suitable_for_quick_delivery": True,
+                "is_suitable_for_scheduled_delivery": False,
+                "name": "Eru fufu",
+                "photo": "https://some-url.com",
+                "price": "15.0",
+            },
+            {
+                "id": "4",
+                "category": "dish",
+                "country": "Benin",
+                "description": "Test",
+                "name": "Okok manioc",
+                "price": "15.0",
+                "photo": "https://some-url.com",
+                "is_enabled": True,
+                "cooker": "1",
+                "is_suitable_for_quick_delivery": False,
+                "is_suitable_for_scheduled_delivery": False,
+            },
+            {
+                "id": "5",
+                "category": "dish",
+                "country": "Cameroun",
+                "description": "Test",
+                "name": "Poulet braisé",
+                "price": "11.0",
+                "photo": "https://some-url.com",
+                "is_enabled": True,
+                "cooker": "1",
+                "is_suitable_for_quick_delivery": False,
+                "is_suitable_for_scheduled_delivery": True,
+            },
+            {
+                "id": "6",
+                "category": "dish",
+                "country": "Cameroun",
+                "description": "Test",
+                "name": "Poulet DG",
+                "price": "11.0",
+                "photo": "https://some-url.com",
+                "is_enabled": True,
+                "cooker": "1",
+                "is_suitable_for_quick_delivery": False,
+                "is_suitable_for_scheduled_delivery": False,
+            },
+            {
+                "id": "7",
+                "category": "dish",
+                "country": "Nigeria",
+                "description": "Test",
+                "name": "Koki patate douce",
+                "price": "11.0",
+                "photo": "https://some-url.com",
+                "is_enabled": True,
+                "cooker": "1",
+                "is_suitable_for_quick_delivery": False,
+                "is_suitable_for_scheduled_delivery": False,
+            },
+            {
+                "id": "8",
+                "category": "dish",
+                "country": "Cameroun",
+                "description": "Test",
+                "name": "Ndolé Riz",
+                "price": "11.0",
+                "photo": "https://some-url.com",
+                "is_enabled": True,
+                "cooker": "1",
+                "is_suitable_for_quick_delivery": False,
+                "is_suitable_for_scheduled_delivery": False,
+            },
+        ]
+
     @pytest.mark.django_db
     def test_response(
         self,
@@ -90,6 +218,8 @@ class TestListDishesForCustomerSuccessWithQueryParameterGivenByUser:
         customer_dish_path: str,
         query_parameter: dict,
         mock_googlemaps_distance_matrix: MagicMock,
+        expected_data: list[dict],
+        expected_data_when_name_in_query_parameter: list[dict],
     ) -> None:
 
         response = client.get(
@@ -105,128 +235,19 @@ class TestListDishesForCustomerSuccessWithQueryParameterGivenByUser:
         assert response.json().get("status_code") == 200
 
         if "name" in query_parameter and "country" in query_parameter:
-            assert sorted(response.json().get("data"), key=lambda x: x["id"]) == [
-                {
-                    "id": "5",
-                    "category": "dish",
-                    "country": "Cameroun",
-                    "description": "Test",
-                    "name": "Poulet braisé",
-                    "price": "11.0",
-                    "photo": "https://some-url.com",
-                    "is_enabled": True,
-                    "cooker": "1",
-                    "is_suitable_for_quick_delivery": False,
-                    "is_suitable_for_scheduled_delivery": True,
-                },
-                {
-                    "id": "6",
-                    "category": "dish",
-                    "country": "Cameroun",
-                    "description": "Test",
-                    "name": "Poulet DG",
-                    "price": "11.0",
-                    "photo": "https://some-url.com",
-                    "is_enabled": True,
-                    "cooker": "1",
-                    "is_suitable_for_quick_delivery": False,
-                    "is_suitable_for_scheduled_delivery": False,
-                },
-            ]
+            diff = DeepDiff(
+                response.json().get("data"),
+                expected_data_when_name_in_query_parameter,
+                ignore_order=True,
+            )
         else:
-            assert sorted(response.json().get("data"), key=lambda x: x["id"]) == [
-                {
-                    "category": "dish",
-                    "cooker": "4",
-                    "country": "Congo",
-                    "description": "Test",
-                    "id": "2",
-                    "is_enabled": True,
-                    "is_suitable_for_quick_delivery": False,
-                    "is_suitable_for_scheduled_delivery": False,
-                    "name": "Gombo porc riz",
-                    "photo": "https://some-url.com",
-                    "price": "13.0",
-                },
-                {
-                    "category": "dish",
-                    "cooker": "4",
-                    "country": "Cameroun",
-                    "description": "Test",
-                    "id": "3",
-                    "is_enabled": True,
-                    "is_suitable_for_quick_delivery": True,
-                    "is_suitable_for_scheduled_delivery": False,
-                    "name": "Eru fufu",
-                    "photo": "https://some-url.com",
-                    "price": "15.0",
-                },
-                {
-                    "id": "4",
-                    "category": "dish",
-                    "country": "Benin",
-                    "description": "Test",
-                    "name": "Okok manioc",
-                    "price": "15.0",
-                    "photo": "https://some-url.com",
-                    "is_enabled": True,
-                    "cooker": "1",
-                    "is_suitable_for_quick_delivery": False,
-                    "is_suitable_for_scheduled_delivery": False,
-                },
-                {
-                    "id": "5",
-                    "category": "dish",
-                    "country": "Cameroun",
-                    "description": "Test",
-                    "name": "Poulet braisé",
-                    "price": "11.0",
-                    "photo": "https://some-url.com",
-                    "is_enabled": True,
-                    "cooker": "1",
-                    "is_suitable_for_quick_delivery": False,
-                    "is_suitable_for_scheduled_delivery": True,
-                },
-                {
-                    "id": "6",
-                    "category": "dish",
-                    "country": "Cameroun",
-                    "description": "Test",
-                    "name": "Poulet DG",
-                    "price": "11.0",
-                    "photo": "https://some-url.com",
-                    "is_enabled": True,
-                    "cooker": "1",
-                    "is_suitable_for_quick_delivery": False,
-                    "is_suitable_for_scheduled_delivery": False,
-                },
-                {
-                    "id": "7",
-                    "category": "dish",
-                    "country": "Nigeria",
-                    "description": "Test",
-                    "name": "Koki patate douce",
-                    "price": "11.0",
-                    "photo": "https://some-url.com",
-                    "is_enabled": True,
-                    "cooker": "1",
-                    "is_suitable_for_quick_delivery": False,
-                    "is_suitable_for_scheduled_delivery": False,
-                },
-                {
-                    "id": "8",
-                    "category": "dish",
-                    "country": "Cameroun",
-                    "description": "Test",
-                    "name": "Ndolé Riz",
-                    "price": "11.0",
-                    "photo": "https://some-url.com",
-                    "is_enabled": True,
-                    "cooker": "1",
-                    "is_suitable_for_quick_delivery": False,
-                    "is_suitable_for_scheduled_delivery": False,
-                },
-            ]
+            diff = DeepDiff(
+                response.json().get("data"),
+                expected_data,
+                ignore_order=True,
+            )
+
+        assert not diff
 
 
 class TestListDishesForCustomerWithMissingSearchAddressId:

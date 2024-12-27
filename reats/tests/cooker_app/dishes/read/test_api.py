@@ -1,12 +1,20 @@
 import pytest
+from cooker_app.models import DishModel
 from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from freezegun import freeze_time
 from rest_framework import status
 from rest_framework.test import APIClient
 
 
+@pytest.fixture
+def cooker_id() -> int:
+    return 1
+
+
 @pytest.mark.django_db
-def test_empty_query_params(auth_headers: dict, client: APIClient, path: str) -> None:
+def test_empty_query_params(
+    auth_headers: dict, client: APIClient, path: str, cooker_id: int
+) -> None:
     response = client.get(
         path,
         follow=False,
@@ -14,8 +22,12 @@ def test_empty_query_params(auth_headers: dict, client: APIClient, path: str) ->
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json().get("data") is None
-    assert response.json() == {"ok": True, "status_code": status.HTTP_404_NOT_FOUND}
+    assert response.json().get("ok") is True
+    assert response.json().get("status_code") == status.HTTP_200_OK
+    assert (
+        len(response.json().get("data"))
+        == DishModel.objects.filter(is_enabled=True).filter(cooker_id=cooker_id).count()
+    )
 
 
 @pytest.mark.django_db
