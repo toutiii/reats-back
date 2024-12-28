@@ -45,6 +45,7 @@ class CookerCustomRendererWithData(JSONRenderer):
                             ).replace(" ", ""),
                             "max_order_number": str(data["max_order_number"]),
                             "is_online": data["is_online"],
+                            "acceptance_rate": data["acceptance_rate"],
                         },
                     },
                     "address_section": {
@@ -349,6 +350,7 @@ class OrderCustomRendererWithData(JSONRenderer):
                 "id": cooker.id,
                 "firstname": cooker.firstname,
                 "lastname": cooker.lastname,
+                "acceptance_rate": cooker.acceptance_rate,
             }
 
     def render(self, data, accepted_media_type=None, renderer_context=None):

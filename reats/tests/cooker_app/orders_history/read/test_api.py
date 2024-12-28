@@ -47,6 +47,7 @@ def expected_data() -> list[dict]:
                 "id": 1,
                 "firstname": "test",
                 "lastname": "test",
+                "acceptance_rate": 100.0,
             },
             "delivery_man": None,
             "sub_total": 0,
@@ -85,6 +86,7 @@ def expected_data() -> list[dict]:
                 "id": 1,
                 "firstname": "test",
                 "lastname": "test",
+                "acceptance_rate": 100.0,
             },
             "delivery_man": None,
             "sub_total": 0,
@@ -123,6 +125,7 @@ def expected_data() -> list[dict]:
                 "id": 1,
                 "firstname": "test",
                 "lastname": "test",
+                "acceptance_rate": 100.0,
             },
             "delivery_man": None,
             "sub_total": 0,
@@ -161,6 +164,7 @@ def expected_data() -> list[dict]:
                 "id": 1,
                 "firstname": "test",
                 "lastname": "test",
+                "acceptance_rate": 100.0,
             },
             "delivery_man": None,
             "sub_total": 0,
@@ -199,6 +203,7 @@ def expected_data() -> list[dict]:
                 "id": 1,
                 "firstname": "test",
                 "lastname": "test",
+                "acceptance_rate": 100.0,
             },
             "delivery_man": None,
             "sub_total": 0,
@@ -344,7 +349,11 @@ def test_orders_list_success_with_dates_filter_when_no_orders_exist(
             [
                 {
                     "id": 12,
-                    "address": {"id": 3, "postal_code": "91540", "town": "Mennecy"},
+                    "address": {
+                        "id": 3,
+                        "postal_code": "91540",
+                        "town": "Mennecy",
+                    },
                     "items": [],
                     "customer": {
                         "id": 1,
@@ -366,7 +375,12 @@ def test_orders_list_success_with_dates_filter_when_no_orders_exist(
                     "delivery_distance": None,
                     "delivery_initial_distance": None,
                     "paid_date": None,
-                    "cooker": {"id": 1, "firstname": "test", "lastname": "test"},
+                    "cooker": {
+                        "id": 1,
+                        "firstname": "test",
+                        "lastname": "test",
+                        "acceptance_rate": 100.0,
+                    },
                     "delivery_man": None,
                     "sub_total": 0,
                     "service_fees": 0.0,
@@ -381,7 +395,11 @@ def test_orders_list_success_with_dates_filter_when_no_orders_exist(
             [
                 {
                     "id": 17,
-                    "address": {"id": 3, "postal_code": "91540", "town": "Mennecy"},
+                    "address": {
+                        "id": 3,
+                        "postal_code": "91540",
+                        "town": "Mennecy",
+                    },
                     "items": [],
                     "customer": {
                         "id": 1,
@@ -403,7 +421,12 @@ def test_orders_list_success_with_dates_filter_when_no_orders_exist(
                     "delivery_distance": None,
                     "delivery_initial_distance": None,
                     "paid_date": None,
-                    "cooker": {"id": 1, "firstname": "test", "lastname": "test"},
+                    "cooker": {
+                        "id": 1,
+                        "firstname": "test",
+                        "lastname": "test",
+                        "acceptance_rate": 100.0,
+                    },
                     "delivery_man": None,
                     "sub_total": 0,
                     "service_fees": 0.0,
@@ -418,7 +441,11 @@ def test_orders_list_success_with_dates_filter_when_no_orders_exist(
             [
                 {
                     "id": 14,
-                    "address": {"id": 3, "postal_code": "91540", "town": "Mennecy"},
+                    "address": {
+                        "id": 3,
+                        "postal_code": "91540",
+                        "town": "Mennecy",
+                    },
                     "items": [],
                     "customer": {
                         "id": 1,
@@ -440,7 +467,12 @@ def test_orders_list_success_with_dates_filter_when_no_orders_exist(
                     "delivery_distance": None,
                     "delivery_initial_distance": None,
                     "paid_date": None,
-                    "cooker": {"id": 1, "firstname": "test", "lastname": "test"},
+                    "cooker": {
+                        "id": 1,
+                        "firstname": "test",
+                        "lastname": "test",
+                        "acceptance_rate": 100.0,
+                    },
                     "delivery_man": None,
                     "sub_total": 0,
                     "service_fees": 0.0,
@@ -448,7 +480,11 @@ def test_orders_list_success_with_dates_filter_when_no_orders_exist(
                 },
                 {
                     "id": 15,
-                    "address": {"id": 3, "postal_code": "91540", "town": "Mennecy"},
+                    "address": {
+                        "id": 3,
+                        "postal_code": "91540",
+                        "town": "Mennecy",
+                    },
                     "items": [],
                     "customer": {
                         "id": 1,
@@ -470,7 +506,12 @@ def test_orders_list_success_with_dates_filter_when_no_orders_exist(
                     "delivery_distance": None,
                     "delivery_initial_distance": None,
                     "paid_date": None,
-                    "cooker": {"id": 1, "firstname": "test", "lastname": "test"},
+                    "cooker": {
+                        "id": 1,
+                        "firstname": "test",
+                        "lastname": "test",
+                        "acceptance_rate": 100.0,
+                    },
                     "delivery_man": None,
                     "sub_total": 0,
                     "service_fees": 0.0,
@@ -478,7 +519,11 @@ def test_orders_list_success_with_dates_filter_when_no_orders_exist(
                 },
                 {
                     "id": 16,
-                    "address": {"id": 3, "postal_code": "91540", "town": "Mennecy"},
+                    "address": {
+                        "id": 3,
+                        "postal_code": "91540",
+                        "town": "Mennecy",
+                    },
                     "items": [],
                     "customer": {
                         "id": 1,
@@ -500,7 +545,12 @@ def test_orders_list_success_with_dates_filter_when_no_orders_exist(
                     "delivery_distance": None,
                     "delivery_initial_distance": None,
                     "paid_date": None,
-                    "cooker": {"id": 1, "firstname": "test", "lastname": "test"},
+                    "cooker": {
+                        "id": 1,
+                        "firstname": "test",
+                        "lastname": "test",
+                        "acceptance_rate": 100.0,
+                    },
                     "delivery_man": None,
                     "sub_total": 0,
                     "service_fees": 0.0,

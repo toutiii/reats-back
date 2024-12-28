@@ -34,6 +34,7 @@ from utils.common import (
     format_phone,
     is_otp_valid,
     send_otp,
+    update_cooker_acceptance_rate,
     upload_image_to_s3,
 )
 from utils.custom_permissions import CustomAPIKeyPermission, UserPermission
@@ -498,7 +499,7 @@ class CookerOrderView(
         new_status = request.data.get("status")
 
         if new_status == OrderStatusEnum.PENDING:
-            error_message = f"Cookers orders are supposed to be in the {OrderStatusEnum.PENDING.value} state"
+            error_message = f"Cookers orders are not supposed to be in the {OrderStatusEnum.PENDING.value} state"
             logger.error(error_message)
             return Response(
                 {"error": error_message},
@@ -525,6 +526,8 @@ class CookerOrderView(
             create_stripe_refund(
                 int(amount_to_refund_in_cents), instance.stripe_payment_intent_id
             )
+
+        update_cooker_acceptance_rate(instance, new_status)
 
         return super().partial_update(request, *args, **kwargs)
 

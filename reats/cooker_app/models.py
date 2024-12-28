@@ -4,6 +4,7 @@ from django.db.models import (
     AutoField,
     BooleanField,
     CharField,
+    DateTimeField,
     FloatField,
     ForeignKey,
     IntegerField,
@@ -41,6 +42,8 @@ class CookerModel(ReatsModel):
     max_order_number: IntegerField = IntegerField(default=10)
     is_online: BooleanField = BooleanField(default=False)
     is_activated: BooleanField = BooleanField(default=False)
+    acceptance_rate: FloatField = FloatField(default=100.0)
+    last_acceptance_rate_update_date: DateTimeField = DateTimeField(null=True)
 
     @property
     def full_address(self) -> str:

@@ -16,6 +16,7 @@ from delivery_app.models import DeliverModel
 from django.conf import settings
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from phonenumbers.phonenumberutil import NumberParseException
+from utils.enums import OrderStatusEnum
 
 logger = logging.getLogger("watchtower-logger")
 session = boto3.session.Session(region_name=os.getenv("AWS_REGION"))
@@ -399,3 +400,39 @@ def get_delivery_fee(distance: float) -> float:
     # Calculate the delivery fee
     delivery_fee = base_fee + (distance_km * per_km_rate)
     return round(delivery_fee, 2)
+
+
+def update_cooker_acceptance_rate(
+    instance: OrderModel,
+    new_status: str,
+) -> None:
+    """
+    Update the cookers's acceptance rate based on the new status.
+
+    Basically, only PROCESSING and CANCELLED_BY_COOKER statuses are taken into account.
+
+    :param instance: The cooker instance
+    :param new_status: The new status
+    """
+
+    if new_status == OrderStatusEnum.CANCELLED_BY_COOKER:
+        new_value = (
+            instance.cooker.acceptance_rate - settings.ACCEPTANCE_RATE_DECREASE_VALUE
+        )
+    elif new_status == OrderStatusEnum.DELIVERED:
+        new_value = (
+            instance.cooker.acceptance_rate + settings.ACCEPTANCE_RATE_INCREASE_VALUE
+        )
+    else:
+        logger.info(f"Status {new_status} is not taken into account")
+        return
+
+    if new_value <= 0:
+        new_value = 0
+
+    if new_value >= 100:
+        new_value = 100
+
+    instance.cooker.acceptance_rate = new_value
+    instance.cooker.last_acceptance_rate_update_date = datetime.now(timezone.utc)
+    instance.cooker.save()

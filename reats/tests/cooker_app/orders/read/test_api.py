@@ -21,7 +21,11 @@ def cooker_id() -> int:
             [
                 {
                     "id": 9,
-                    "address": {"id": 3, "postal_code": "91540", "town": "Mennecy"},
+                    "address": {
+                        "id": 3,
+                        "postal_code": "91540",
+                        "town": "Mennecy",
+                    },
                     "items": [],
                     "customer": {
                         "id": 1,
@@ -43,7 +47,12 @@ def cooker_id() -> int:
                     "delivery_distance": None,
                     "delivery_initial_distance": None,
                     "paid_date": None,
-                    "cooker": {"id": 1, "firstname": "test", "lastname": "test"},
+                    "cooker": {
+                        "id": 1,
+                        "firstname": "test",
+                        "lastname": "test",
+                        "acceptance_rate": 100.0,
+                    },
                     "delivery_man": None,
                     "sub_total": 0,
                     "service_fees": 0.0,
@@ -51,7 +60,11 @@ def cooker_id() -> int:
                 },
                 {
                     "id": 10,
-                    "address": {"id": 3, "postal_code": "91540", "town": "Mennecy"},
+                    "address": {
+                        "id": 3,
+                        "postal_code": "91540",
+                        "town": "Mennecy",
+                    },
                     "items": [],
                     "customer": {
                         "id": 1,
@@ -73,7 +86,12 @@ def cooker_id() -> int:
                     "delivery_distance": None,
                     "delivery_initial_distance": None,
                     "paid_date": None,
-                    "cooker": {"id": 1, "firstname": "test", "lastname": "test"},
+                    "cooker": {
+                        "id": 1,
+                        "firstname": "test",
+                        "lastname": "test",
+                        "acceptance_rate": 100.0,
+                    },
                     "delivery_man": None,
                     "sub_total": 0,
                     "service_fees": 0.0,
@@ -81,7 +99,11 @@ def cooker_id() -> int:
                 },
                 {
                     "id": 1,
-                    "address": {"id": 2, "postal_code": "91000", "town": "Evry"},
+                    "address": {
+                        "id": 2,
+                        "postal_code": "91000",
+                        "town": "Evry",
+                    },
                     "items": [
                         {
                             "dish": {
@@ -169,7 +191,12 @@ def cooker_id() -> int:
                     "delivery_distance": 1390.0,
                     "delivery_initial_distance": None,
                     "paid_date": None,
-                    "cooker": {"id": 4, "firstname": "toutii", "lastname": "N"},
+                    "cooker": {
+                        "id": 4,
+                        "firstname": "toutii",
+                        "lastname": "N",
+                        "acceptance_rate": 100.0,
+                    },
                     "delivery_man": None,
                     "sub_total": 58.0,
                     "service_fees": 4.06,
@@ -184,7 +211,11 @@ def cooker_id() -> int:
             [
                 {
                     "id": 13,
-                    "address": {"id": 3, "postal_code": "91540", "town": "Mennecy"},
+                    "address": {
+                        "id": 3,
+                        "postal_code": "91540",
+                        "town": "Mennecy",
+                    },
                     "items": [],
                     "customer": {
                         "id": 1,
@@ -206,7 +237,12 @@ def cooker_id() -> int:
                     "delivery_distance": None,
                     "delivery_initial_distance": None,
                     "paid_date": None,
-                    "cooker": {"id": 1, "firstname": "test", "lastname": "test"},
+                    "cooker": {
+                        "id": 1,
+                        "firstname": "test",
+                        "lastname": "test",
+                        "acceptance_rate": 100.0,
+                    },
                     "delivery_man": None,
                     "sub_total": 0,
                     "service_fees": 0.0,
@@ -214,7 +250,11 @@ def cooker_id() -> int:
                 },
                 {
                     "id": 7,
-                    "address": {"id": 3, "postal_code": "91540", "town": "Mennecy"},
+                    "address": {
+                        "id": 3,
+                        "postal_code": "91540",
+                        "town": "Mennecy",
+                    },
                     "items": [
                         {
                             "dish": {
@@ -253,7 +293,12 @@ def cooker_id() -> int:
                     "delivery_distance": None,
                     "delivery_initial_distance": None,
                     "paid_date": None,
-                    "cooker": {"id": 4, "firstname": "toutii", "lastname": "N"},
+                    "cooker": {
+                        "id": 4,
+                        "firstname": "toutii",
+                        "lastname": "N",
+                        "acceptance_rate": 100.0,
+                    },
                     "delivery_man": None,
                     "sub_total": 20.0,
                     "service_fees": 1.4,
@@ -268,7 +313,11 @@ def cooker_id() -> int:
             [
                 {
                     "id": 11,
-                    "address": {"id": 3, "postal_code": "91540", "town": "Mennecy"},
+                    "address": {
+                        "id": 3,
+                        "postal_code": "91540",
+                        "town": "Mennecy",
+                    },
                     "items": [],
                     "customer": {
                         "id": 1,
@@ -290,7 +339,12 @@ def cooker_id() -> int:
                     "delivery_distance": None,
                     "delivery_initial_distance": None,
                     "paid_date": None,
-                    "cooker": {"id": 1, "firstname": "test", "lastname": "test"},
+                    "cooker": {
+                        "id": 1,
+                        "firstname": "test",
+                        "lastname": "test",
+                        "acceptance_rate": 100.0,
+                    },
                     "delivery_man": None,
                     "sub_total": 0,
                     "service_fees": 0.0,
@@ -298,7 +352,11 @@ def cooker_id() -> int:
                 },
                 {
                     "id": 8,
-                    "address": {"id": 3, "postal_code": "91540", "town": "Mennecy"},
+                    "address": {
+                        "id": 3,
+                        "postal_code": "91540",
+                        "town": "Mennecy",
+                    },
                     "items": [
                         {
                             "dish": {
@@ -353,7 +411,12 @@ def cooker_id() -> int:
                     "delivery_distance": None,
                     "delivery_initial_distance": None,
                     "paid_date": None,
-                    "cooker": {"id": 4, "firstname": "toutii", "lastname": "N"},
+                    "cooker": {
+                        "id": 4,
+                        "firstname": "toutii",
+                        "lastname": "N",
+                        "acceptance_rate": 100.0,
+                    },
                     "delivery_man": None,
                     "sub_total": 33.0,
                     "service_fees": 2.31,
@@ -364,7 +427,9 @@ def cooker_id() -> int:
             True,
         ),
         (
-            {"status": "invalid"},
+            {
+                "status": "invalid",
+            },
             [],
             200,
             True,

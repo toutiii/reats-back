@@ -253,6 +253,9 @@ handlers = ["watchtower"]
 SERVICE_FEES_RATE = 0.07
 DEFAULT_CURRENCY = "EUR"
 
+ACCEPTANCE_RATE_INCREASE_VALUE = 2
+ACCEPTANCE_RATE_DECREASE_VALUE = 10
+
 if os.getenv("ENV") == "local":
     propagate = False
     handlers = ["console"]

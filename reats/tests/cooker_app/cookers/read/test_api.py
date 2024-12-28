@@ -41,6 +41,7 @@ def test_get_existing_cooker_data(
             },
             "personal_infos_section": {
                 "data": {
+                    "acceptance_rate": 100.0,
                     "firstname": "test",
                     "is_online": True,
                     "lastname": "test",
