@@ -1,7 +1,7 @@
 from unittest.mock import ANY, MagicMock
 
 import pytest
-from customer_app.models import CustomerModel
+from core_app.models import CustomerModel
 from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from rest_framework import status
 from rest_framework.test import APIClient

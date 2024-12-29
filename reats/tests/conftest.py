@@ -520,7 +520,7 @@ def customer_order_path() -> str:
 @pytest.fixture
 def mock_transition_to():
     patcher = patch(
-        "customer_app.models.OrderModel.transition_to",
+        "core_app.models.OrderModel.transition_to",
         side_effect=Exception("Raised by unit test"),
     )
     yield patcher.start()

@@ -1,7 +1,7 @@
 from unittest.mock import ANY, MagicMock
 
 import pytest
-from delivery_app.models import DeliverModel
+from core_app.models import DeliverModel
 from django.forms.models import model_to_dict
 from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from rest_framework import status

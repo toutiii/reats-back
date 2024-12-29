@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock
 
 import pytest
-from customer_app.models import CustomerModel
+from core_app.models import CustomerModel
 from django.core.exceptions import ObjectDoesNotExist
 from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from freezegun import freeze_time

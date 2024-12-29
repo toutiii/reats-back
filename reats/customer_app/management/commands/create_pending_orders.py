@@ -3,11 +3,12 @@ import random
 import uuid
 from datetime import datetime, timedelta, timezone
 
-from cooker_app.models import DishModel, DrinkModel
-from customer_app.models import (
+from core_app.models import (
     AddressModel,
     CookerModel,
     CustomerModel,
+    DishModel,
+    DrinkModel,
     OrderItemModel,
     OrderModel,
 )

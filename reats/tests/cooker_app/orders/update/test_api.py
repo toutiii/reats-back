@@ -4,8 +4,7 @@ from decimal import Decimal
 from unittest.mock import MagicMock
 
 import pytest
-from cooker_app.models import CookerModel
-from customer_app.models import OrderModel
+from core_app.models import CookerModel, OrderModel
 from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from freezegun import freeze_time
 from rest_framework import status

@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock
 
 import pytest
-from cooker_app.models import DishModel
+from core_app.models import DishModel
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from rest_framework import status

@@ -10,9 +10,7 @@ import phonenumbers
 import stripe
 import stripe.error
 from botocore.exceptions import ClientError
-from cooker_app.models import CookerModel
-from customer_app.models import CustomerModel, OrderModel
-from delivery_app.models import DeliverModel
+from core_app.models import CookerModel, CustomerModel, DeliverModel, OrderModel
 from django.conf import settings
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from phonenumbers.phonenumberutil import NumberParseException

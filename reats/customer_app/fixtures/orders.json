@@ -1,6 +1,6 @@
 [
     {
-        "model": "customer_app.OrderModel",
+        "model": "core_app.OrderModel",
         "pk": 1,
         "fields": {
             "cooker": 4,
@@ -14,7 +14,7 @@
         }
     },
     {
-        "model": "customer_app.OrderModel",
+        "model": "core_app.OrderModel",
         "pk": 2,
         "fields": {
             "address": 3,
@@ -28,7 +28,7 @@
         }
     },
     {
-        "model": "customer_app.OrderModel",
+        "model": "core_app.OrderModel",
         "pk": 3,
         "fields": {
             "address": 2,
@@ -50,7 +50,7 @@
         }
     },
     {
-        "model": "customer_app.OrderModel",
+        "model": "core_app.OrderModel",
         "pk": 4,
         "fields": {
             "address": 3,
@@ -72,7 +72,7 @@
         }
     },
     {
-        "model": "customer_app.OrderModel",
+        "model": "core_app.OrderModel",
         "pk": 5,
         "fields": {
             "address": 3,
@@ -87,7 +87,7 @@
         }
     },
     {
-        "model": "customer_app.OrderModel",
+        "model": "core_app.OrderModel",
         "pk": 6,
         "fields": {
             "address": 3,
@@ -102,7 +102,7 @@
         }
     },
     {
-        "model": "customer_app.OrderModel",
+        "model": "core_app.OrderModel",
         "pk": 7,
         "fields": {
             "address": 3,
@@ -117,7 +117,7 @@
         }
     },
     {
-        "model": "customer_app.OrderModel",
+        "model": "core_app.OrderModel",
         "pk": 8,
         "fields": {
             "address": 3,
@@ -132,7 +132,7 @@
         }
     },
     {
-        "model": "customer_app.OrderModel",
+        "model": "core_app.OrderModel",
         "pk": 9,
         "fields": {
             "address": 3,
@@ -147,7 +147,7 @@
         }
     },
     {
-        "model": "customer_app.OrderModel",
+        "model": "core_app.OrderModel",
         "pk": 10,
         "fields": {
             "address": 3,
@@ -162,7 +162,7 @@
         }
     },
     {
-        "model": "customer_app.OrderModel",
+        "model": "core_app.OrderModel",
         "pk": 11,
         "fields": {
             "address": 3,
@@ -177,7 +177,7 @@
         }
     },
     {
-        "model": "customer_app.OrderModel",
+        "model": "core_app.OrderModel",
         "pk": 12,
         "fields": {
             "address": 3,
@@ -192,7 +192,7 @@
         }
     },
     {
-        "model": "customer_app.OrderModel",
+        "model": "core_app.OrderModel",
         "pk": 13,
         "fields": {
             "address": 3,
@@ -207,7 +207,7 @@
         }
     },
     {
-        "model": "customer_app.OrderModel",
+        "model": "core_app.OrderModel",
         "pk": 14,
         "fields": {
             "address": 3,
@@ -222,7 +222,7 @@
         }
     },
     {
-        "model": "customer_app.OrderModel",
+        "model": "core_app.OrderModel",
         "pk": 15,
         "fields": {
             "address": 3,
@@ -237,7 +237,7 @@
         }
     },
     {
-        "model": "customer_app.OrderModel",
+        "model": "core_app.OrderModel",
         "pk": 16,
         "fields": {
             "address": 3,
@@ -252,7 +252,7 @@
         }
     },
     {
-        "model": "customer_app.OrderModel",
+        "model": "core_app.OrderModel",
         "pk": 17,
         "fields": {
             "address": 3,

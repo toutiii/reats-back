@@ -26,6 +26,7 @@ COPY reats/customer_app /usr/src/app/reats/customer_app/
 COPY reats/cooker_app /usr/src/app/reats/cooker_app/
 COPY reats/custom_renderers /usr/src/app/reats/custom_renderers/
 COPY reats/delivery_app /usr/src/app/reats/delivery_app/
+COPY reats/core_app /usr/src/app/reats/core_app/
 COPY reats/source /usr/src/app/reats/source/
 COPY reats/tests /usr/src/app/reats/tests/
 COPY reats/utils /usr/src/app/reats/utils/

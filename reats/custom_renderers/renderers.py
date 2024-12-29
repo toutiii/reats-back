@@ -2,8 +2,7 @@ import json
 import logging
 
 import phonenumbers
-from cooker_app.models import CookerModel
-from customer_app.models import CustomerModel
+from core_app.models import CookerModel, CustomerModel
 from django.conf import settings
 from rest_framework import status
 from rest_framework.renderers import JSONRenderer

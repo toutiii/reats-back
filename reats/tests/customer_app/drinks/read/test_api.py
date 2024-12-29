@@ -1,5 +1,5 @@
 import pytest
-from cooker_app.models import DrinkModel
+from core_app.models import DrinkModel
 from deepdiff import DeepDiff
 from rest_framework import status
 from rest_framework.test import APIClient

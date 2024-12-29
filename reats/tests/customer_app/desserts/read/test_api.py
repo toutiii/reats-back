@@ -1,5 +1,5 @@
 import pytest
-from cooker_app.models import DishModel
+from core_app.models import DishModel
 from deepdiff import DeepDiff
 from rest_framework import status
 from rest_framework.test import APIClient

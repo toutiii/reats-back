@@ -6,9 +6,9 @@ from uuid import uuid4
 
 import jwt
 import pytest
+from core_app.models import DeliverModel
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives.serialization import load_pem_private_key
-from delivery_app.models import DeliverModel
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from freezegun import freeze_time

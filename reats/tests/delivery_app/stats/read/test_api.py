@@ -1,5 +1,5 @@
 import pytest
-from customer_app.models import OrderModel
+from core_app.models import OrderModel
 from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from freezegun import freeze_time
 from rest_framework import status

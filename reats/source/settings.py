@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     "customer_app",
     "cooker_app",
     "delivery_app",
+    "core_app",
 ]
 
 MIDDLEWARE = [

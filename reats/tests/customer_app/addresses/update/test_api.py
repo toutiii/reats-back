@@ -1,5 +1,5 @@
 import pytest
-from customer_app.models import AddressModel
+from core_app.models import AddressModel
 from django.forms.models import model_to_dict
 from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from rest_framework import status

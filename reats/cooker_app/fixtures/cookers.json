@@ -1,6 +1,6 @@
 [
   {
-    "model": "cooker_app.cookermodel",
+    "model": "core_app.cookermodel",
     "pk": 1,
     "fields": {
       "created": "2023-09-02T22:52:05.718117+02:00",
@@ -18,7 +18,7 @@
     }
   },
   {
-    "model": "cooker_app.cookermodel",
+    "model": "core_app.cookermodel",
     "pk": 2,
     "fields": {
       "created": "2023-09-01T22:52:05.718117+02:00",
@@ -34,7 +34,7 @@
     }
   },
   {
-    "model": "cooker_app.cookermodel",
+    "model": "core_app.cookermodel",
     "pk": 3,
     "fields": {
       "created": "2023-12-01T22:52:05.718117+02:00",
@@ -51,7 +51,7 @@
     }
   },
   {
-    "model": "cooker_app.cookermodel",
+    "model": "core_app.cookermodel",
     "pk": 4,
     "fields": {
       "created": "2023-12-23T15:52:05.718117+02:00",
@@ -69,7 +69,7 @@
     }
   },
   {
-    "model": "cooker_app.cookermodel",
+    "model": "core_app.cookermodel",
     "pk": 5,
     "fields": {
       "created": "2024-02-24T15:52:05.718117+02:00",

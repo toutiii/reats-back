@@ -12,6 +12,7 @@ services:
     env_file:
       - .env
     volumes:
+      - ../core_app:/usr/src/app/reats/core_app/
       - ../customer_app:/usr/src/app/reats/customer_app/
       - ../cooker_app:/usr/src/app/reats/cooker_app/
       - ../custom_renderers:/usr/src/app/reats/custom_renderers/

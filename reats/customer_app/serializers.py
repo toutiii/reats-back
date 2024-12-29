@@ -1,17 +1,21 @@
 import ast
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 
 import pytz
-from cooker_app.models import DishModel, DrinkModel
+from core_app.models import (
+    AddressModel,
+    CustomerModel,
+    DishModel,
+    OrderItemModel,
+    OrderModel,
+)
+from core_app.serializers import OrderItemGETSerializer
 from django.conf import settings
 from django.db import transaction
 from phonenumbers.phonenumberutil import NumberParseException
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
 from utils.common import compute_order_items_total_amount, format_phone
-from utils.enums import OrderStatusEnum
-
-from .models import AddressModel, CustomerModel, OrderItemModel, OrderModel
 
 
 class CustomerSerializer(ModelSerializer):
@@ -34,12 +38,6 @@ class CustomerGETSerializer(ModelSerializer):
         exclude = ("created", "modified")
 
 
-class DishGETSerializer(ModelSerializer):
-    class Meta:
-        model = DishModel
-        exclude = ("created", "modified")
-
-
 class AddressSerializer(ModelSerializer):
     class Meta:
         model = AddressModel
@@ -50,21 +48,6 @@ class AddressGETSerializer(ModelSerializer):
     class Meta:
         model = AddressModel
         exclude = ("created", "modified", "is_enabled")
-
-
-class DrinkGETSerializer(ModelSerializer):
-    class Meta:
-        model = DrinkModel
-        exclude = ("created", "modified")
-
-
-class OrderItemGETSerializer(ModelSerializer):
-    dish = DishGETSerializer()
-    drink = DrinkGETSerializer()
-
-    class Meta:
-        model = OrderItemModel
-        exclude = ("created", "modified", "order", "id")
 
 
 class OrderGETSerializer(ModelSerializer):
@@ -205,37 +188,6 @@ class OrderSerializer(ModelSerializer):
             for attr, value in validated_data.items():
                 setattr(instance, attr, value)
             instance.save()
-        return instance
-
-
-class OrderPATCHSerializer(serializers.ModelSerializer):
-    status = serializers.CharField(required=True)
-
-    class Meta:
-        model = OrderModel
-        fields = ("status",)
-
-    def update(self, instance: OrderModel, validated_data: dict):
-        status = validated_data["status"]
-        instance.status = status
-
-        if status in (
-            OrderStatusEnum.CANCELLED_BY_COOKER,
-            OrderStatusEnum.CANCELLED_BY_CUSTOMER,
-        ):
-            instance.cancelled_date = datetime.now(timezone.utc)
-
-        if status == OrderStatusEnum.PROCESSING:
-            instance.processing_date = datetime.now(timezone.utc)
-
-        if status == OrderStatusEnum.COMPLETED:
-            instance.completed_date = datetime.now(timezone.utc)
-
-        if status == OrderStatusEnum.DELIVERED:
-            instance.delivered_date = datetime.now(timezone.utc)
-
-        instance.save()
-
         return instance
 
 

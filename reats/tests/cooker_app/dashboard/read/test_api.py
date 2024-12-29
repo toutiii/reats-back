@@ -1,7 +1,7 @@
 from typing import Callable
 
 import pytest
-from customer_app.models import OrderModel
+from core_app.models import OrderModel
 from rest_framework import status
 from rest_framework.test import APIClient
 from utils.enums import OrderStatusEnum

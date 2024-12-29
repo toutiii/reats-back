@@ -1,9 +1,8 @@
+from core_app.models import DeliverModel
 from phonenumbers.phonenumberutil import NumberParseException
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
 from utils.common import format_phone
-
-from .models import DeliverModel
 
 
 class DeliverSerializer(ModelSerializer):

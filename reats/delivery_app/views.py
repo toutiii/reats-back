@@ -1,13 +1,13 @@
 import logging
 from typing import Type, Union
 
+from core_app.models import DeliverModel, OrderModel
 from custom_renderers.renderers import (
     CustomRendererWithoutData,
     DeliverCustomRendererWithData,
     DeliveryStatsCustomRendererWithData,
     OrderCustomRendererWithData,
 )
-from customer_app.models import OrderModel
 from customer_app.serializers import OrderGETSerializer
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import IntegrityError
@@ -33,7 +33,6 @@ from utils.common import (
 from utils.custom_permissions import CustomAPIKeyPermission, UserPermission
 from utils.enums import OrderStatusEnum
 
-from .models import DeliverModel
 from .serializers import DeliverGETSerializer, DeliverSerializer
 
 logger = logging.getLogger("watchtower-logger")

@@ -1,8 +1,8 @@
 [
     {
-        "model": "customer_app.OrderItemModel",
+        "model": "core_app.OrderItemModel",
         "pk": 1,
-        "fields":{
+        "fields": {
             "order": 1,
             "dish": 1,
             "dish_quantity": 2,
@@ -11,9 +11,9 @@
         }
     },
     {
-        "model": "customer_app.OrderItemModel",
+        "model": "core_app.OrderItemModel",
         "pk": 2,
-        "fields":{
+        "fields": {
             "order": 1,
             "dish": 2,
             "dish_quantity": 1,
@@ -22,9 +22,9 @@
         }
     },
     {
-        "model": "customer_app.OrderItemModel",
+        "model": "core_app.OrderItemModel",
         "pk": 3,
-        "fields":{
+        "fields": {
             "order": 1,
             "drink": 2,
             "drink_quantity": 4,
@@ -33,9 +33,9 @@
         }
     },
     {
-        "model": "customer_app.OrderItemModel",
+        "model": "core_app.OrderItemModel",
         "pk": 4,
-        "fields":{
+        "fields": {
             "order": 1,
             "dish": 11,
             "dish_quantity": 1,
@@ -44,9 +44,9 @@
         }
     },
     {
-        "model": "customer_app.OrderItemModel",
+        "model": "core_app.OrderItemModel",
         "pk": 5,
-        "fields":{
+        "fields": {
             "order": 2,
             "dish": 1,
             "dish_quantity": 2,
@@ -55,9 +55,9 @@
         }
     },
     {
-        "model": "customer_app.OrderItemModel",
+        "model": "core_app.OrderItemModel",
         "pk": 6,
-        "fields":{
+        "fields": {
             "order": 2,
             "dish": 2,
             "dish_quantity": 1,
@@ -66,9 +66,9 @@
         }
     },
     {
-        "model": "customer_app.OrderItemModel",
+        "model": "core_app.OrderItemModel",
         "pk": 7,
-        "fields":{
+        "fields": {
             "order": 3,
             "dish": 1,
             "dish_quantity": 2,
@@ -77,9 +77,9 @@
         }
     },
     {
-        "model": "customer_app.OrderItemModel",
+        "model": "core_app.OrderItemModel",
         "pk": 8,
-        "fields":{
+        "fields": {
             "order": 3,
             "dish": 2,
             "dish_quantity": 1,
@@ -88,9 +88,9 @@
         }
     },
     {
-        "model": "customer_app.OrderItemModel",
+        "model": "core_app.OrderItemModel",
         "pk": 9,
-        "fields":{
+        "fields": {
             "order": 3,
             "drink": 2,
             "drink_quantity": 4,
@@ -99,9 +99,9 @@
         }
     },
     {
-        "model": "customer_app.OrderItemModel",
+        "model": "core_app.OrderItemModel",
         "pk": 10,
-        "fields":{
+        "fields": {
             "order": 3,
             "dish": 11,
             "dish_quantity": 1,
@@ -110,9 +110,9 @@
         }
     },
     {
-        "model": "customer_app.OrderItemModel",
+        "model": "core_app.OrderItemModel",
         "pk": 11,
-        "fields":{
+        "fields": {
             "order": 4,
             "dish": 1,
             "dish_quantity": 2,
@@ -121,9 +121,9 @@
         }
     },
     {
-        "model": "customer_app.OrderItemModel",
+        "model": "core_app.OrderItemModel",
         "pk": 12,
-        "fields":{
+        "fields": {
             "order": 4,
             "dish": 2,
             "dish_quantity": 1,
@@ -132,9 +132,9 @@
         }
     },
     {
-        "model": "customer_app.OrderItemModel",
+        "model": "core_app.OrderItemModel",
         "pk": 13,
-        "fields":{
+        "fields": {
             "order": 5,
             "dish": 1,
             "dish_quantity": 2,
@@ -143,9 +143,9 @@
         }
     },
     {
-        "model": "customer_app.OrderItemModel",
+        "model": "core_app.OrderItemModel",
         "pk": 14,
-        "fields":{
+        "fields": {
             "order": 5,
             "dish": 2,
             "dish_quantity": 1,
@@ -154,9 +154,9 @@
         }
     },
     {
-        "model": "customer_app.OrderItemModel",
+        "model": "core_app.OrderItemModel",
         "pk": 15,
-        "fields":{
+        "fields": {
             "order": 6,
             "dish": 1,
             "dish_quantity": 2,
@@ -165,9 +165,9 @@
         }
     },
     {
-        "model": "customer_app.OrderItemModel",
+        "model": "core_app.OrderItemModel",
         "pk": 16,
-        "fields":{
+        "fields": {
             "order": 6,
             "dish": 2,
             "dish_quantity": 1,
@@ -176,9 +176,9 @@
         }
     },
     {
-        "model": "customer_app.OrderItemModel",
+        "model": "core_app.OrderItemModel",
         "pk": 17,
-        "fields":{
+        "fields": {
             "order": 7,
             "dish": 1,
             "dish_quantity": 2,
@@ -187,9 +187,9 @@
         }
     },
     {
-        "model": "customer_app.OrderItemModel",
+        "model": "core_app.OrderItemModel",
         "pk": 18,
-        "fields":{
+        "fields": {
             "order": 7,
             "dish": 2,
             "dish_quantity": 1,
@@ -198,9 +198,9 @@
         }
     },
     {
-        "model": "customer_app.OrderItemModel",
+        "model": "core_app.OrderItemModel",
         "pk": 18,
-        "fields":{
+        "fields": {
             "order": 8,
             "dish": 1,
             "dish_quantity": 2,
@@ -209,9 +209,9 @@
         }
     },
     {
-        "model": "customer_app.OrderItemModel",
+        "model": "core_app.OrderItemModel",
         "pk": 19,
-        "fields":{
+        "fields": {
             "order": 8,
             "dish": 2,
             "dish_quantity": 1,

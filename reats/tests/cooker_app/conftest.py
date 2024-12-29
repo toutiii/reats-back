@@ -2,8 +2,7 @@ import random
 from datetime import datetime, timedelta, timezone
 
 import pytest
-from cooker_app.models import CookerModel
-from customer_app.models import AddressModel, CustomerModel, OrderModel
+from core_app.models import AddressModel, CookerModel, CustomerModel, OrderModel
 from django.db import transaction
 
 

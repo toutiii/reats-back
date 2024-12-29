@@ -1,8 +1,15 @@
 from typing import Any, Dict, Union
 
-from customer_app.models import AddressModel, CustomerModel, OrderModel
-from customer_app.serializers import OrderItemGETSerializer
-from delivery_app.models import DeliverModel
+from core_app.models import (
+    AddressModel,
+    CookerModel,
+    CustomerModel,
+    DeliverModel,
+    DishModel,
+    DrinkModel,
+    OrderModel,
+)
+from core_app.serializers import OrderItemGETSerializer
 from django.conf import settings
 from phonenumbers.phonenumberutil import NumberParseException
 from rest_framework import serializers, status
@@ -13,8 +20,6 @@ from rest_framework_simplejwt.serializers import (
     TokenRefreshSerializer,
 )
 from utils.common import compute_order_items_total_amount, format_phone
-
-from .models import CookerModel, DishModel, DrinkModel
 
 
 class CookerSerializer(ModelSerializer):

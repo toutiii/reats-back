@@ -1,9 +1,9 @@
 import json
 from datetime import datetime, timezone
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, call
 
 import pytest
-from customer_app.models import OrderItemModel, OrderModel
+from core_app.models import OrderItemModel, OrderModel
 from django.forms import model_to_dict
 from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from freezegun import freeze_time

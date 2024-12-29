@@ -4,6 +4,8 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Type, Union
 
+from core_app.models import CookerModel, DishModel, DrinkModel, OrderModel
+from core_app.serializers import OrderPATCHSerializer
 from custom_renderers.renderers import (
     CookerCustomRendererWithData,
     CustomJSONRendererWithData,
@@ -11,8 +13,6 @@ from custom_renderers.renderers import (
     CustomRendererWithoutData,
     OrderCustomRendererWithData,
 )
-from customer_app.models import OrderModel
-from customer_app.serializers import OrderPATCHSerializer
 from django.db import IntegrityError
 from django.db.models import Count
 from phonenumbers.phonenumberutil import NumberParseException
@@ -40,7 +40,6 @@ from utils.common import (
 from utils.custom_permissions import CustomAPIKeyPermission, UserPermission
 from utils.enums import OrderStatusEnum
 
-from .models import CookerModel, DishModel, DrinkModel
 from .serializers import (
     CookerGETSerializer,
     CookerOrderGETSerializer,

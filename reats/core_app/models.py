@@ -1,5 +1,4 @@
-from cooker_app.models import CookerModel
-from django.core.validators import MinLengthValidator
+from django.core.validators import MinLengthValidator, RegexValidator
 from django.db.models import (
     CASCADE,
     AutoField,
@@ -10,9 +9,143 @@ from django.db.models import (
     ForeignKey,
     IntegerField,
     Manager,
+    TextField,
 )
 from utils.enums import OrderStatusEnum
 from utils.models import ReatsModel
+
+
+class CookerModel(ReatsModel):
+    id: AutoField = AutoField(primary_key=True)
+    firstname: CharField = CharField(max_length=100)
+    lastname: CharField = CharField(max_length=100)
+    phone: CharField = CharField(
+        unique=True, max_length=17, validators=[MinLengthValidator(10)]
+    )
+    postal_code: CharField = CharField(
+        max_length=5,
+        validators=[RegexValidator(regex=r"[0-9]{5}")],
+        db_index=True,
+    )
+    siret: CharField = CharField(
+        unique=True,
+        validators=[RegexValidator(regex=r"[0-9]{14}")],
+        max_length=14,
+    )
+    street_name: CharField = CharField(max_length=100)
+    street_number: CharField = CharField(max_length=10)
+    town: CharField = CharField(max_length=100)
+    address_complement: CharField = CharField(max_length=512, null=True)
+    photo: CharField = CharField(
+        max_length=512,
+        default="cookers/1/profile_pics/default-profile-pic.jpg",
+    )
+    max_order_number: IntegerField = IntegerField(default=10)
+    is_online: BooleanField = BooleanField(default=False)
+    is_activated: BooleanField = BooleanField(default=False)
+    acceptance_rate: FloatField = FloatField(default=100.0)
+    last_acceptance_rate_update_date: DateTimeField = DateTimeField(null=True)
+
+    @property
+    def full_address(self) -> str:
+        if self.address_complement:
+            return f"{self.street_number} {self.street_name} {self.address_complement} {self.postal_code} {self.town}"  # noqa
+
+        return f"{self.street_number} {self.street_name} {self.postal_code} {self.town}"
+
+    class Meta:
+        db_table = "cookers"
+
+    objects: Manager = Manager()  # For linting purposes
+
+
+class DeliverModel(ReatsModel):
+
+    DELIVERY_VEHICLE_CHOICES = [
+        ("bike", "bike"),
+        ("scooter", "scooter"),
+        ("car", "car"),
+    ]
+
+    id: AutoField = AutoField(primary_key=True)
+    firstname: CharField = CharField(max_length=100)
+    lastname: CharField = CharField(max_length=100)
+    phone: CharField = CharField(
+        unique=True,
+        max_length=17,
+        validators=[MinLengthValidator(10)],
+    )
+    photo: CharField = CharField(
+        max_length=512,
+        default="delivers/1/profile_pics/default-profile-pic.jpg",
+    )
+    is_activated: BooleanField = BooleanField(default=False)
+    delivery_vehicle: CharField = CharField(
+        max_length=7,
+        choices=DELIVERY_VEHICLE_CHOICES,
+        default="bike",
+    )
+    town: CharField = CharField(max_length=100)
+    delivery_radius: IntegerField = IntegerField()
+    is_deleted: BooleanField = BooleanField(default=False)
+    siret: CharField = CharField(
+        unique=True,
+        validators=[RegexValidator(regex=r"[0-9]{14}")],
+        max_length=14,
+    )
+    is_online: BooleanField = BooleanField(default=False)
+    grades: FloatField = FloatField(default=0.0)
+
+    class Meta:
+        db_table = "delivers"
+
+    objects: Manager = Manager()  # For linting purposes
+
+
+class DishModel(ReatsModel):
+    CATEGORY_CHOICES = [
+        ("starter", "starter"),
+        ("dish", "dish"),
+        ("dessert", "dessert"),
+    ]
+
+    id: AutoField = AutoField(primary_key=True)
+    category: CharField = CharField(max_length=9, choices=CATEGORY_CHOICES)
+    country: CharField = CharField(max_length=50)
+    description: TextField = TextField(max_length=512, null=True)
+    name: CharField = CharField(max_length=128)
+    price: FloatField = FloatField()
+    photo: CharField = CharField(max_length=512)
+    cooker: ForeignKey = ForeignKey(CookerModel, on_delete=CASCADE)
+    is_enabled: BooleanField = BooleanField(default=True)
+    is_suitable_for_quick_delivery: BooleanField = BooleanField(default=False)
+    is_suitable_for_scheduled_delivery: BooleanField = BooleanField(default=False)
+
+    class Meta:
+        db_table = "dishes"
+
+
+class DrinkModel(ReatsModel):
+    UNIT_CHOICES = [
+        ("liter", "liter"),
+        ("centiliters", "centiliters"),
+    ]
+
+    id: AutoField = AutoField(primary_key=True)
+    unit: CharField = CharField(max_length=20, choices=UNIT_CHOICES)
+    country: CharField = CharField(max_length=50)
+    description: TextField = TextField(max_length=512, null=True)
+    name: CharField = CharField(max_length=128)
+    price: FloatField = FloatField()
+    photo: CharField = CharField(max_length=512)
+    cooker: ForeignKey = ForeignKey(CookerModel, on_delete=CASCADE)
+    is_enabled: BooleanField = BooleanField(default=True)
+    capacity: IntegerField = IntegerField()
+    is_suitable_for_quick_delivery: BooleanField = BooleanField(default=False)
+    is_suitable_for_scheduled_delivery: BooleanField = BooleanField(default=False)
+
+    class Meta:
+        db_table = "drinks"
 
 
 class CustomerModel(ReatsModel):
@@ -81,7 +214,7 @@ class OrderModel(ReatsModel):
         null=True,
     )
     delivery_man: ForeignKey = ForeignKey(
-        "delivery_app.DeliverModel",
+        DeliverModel,
         on_delete=CASCADE,
         null=True,
     )
@@ -148,12 +281,12 @@ class OrderItemModel(ReatsModel):
         related_name="items",
     )
     dish: ForeignKey = ForeignKey(
-        "cooker_app.DishModel",
+        DishModel,
         on_delete=CASCADE,
         null=True,
     )
     drink: ForeignKey = ForeignKey(
-        "cooker_app.DrinkModel",
+        DrinkModel,
         on_delete=CASCADE,
         null=True,
     )

@@ -4,7 +4,19 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Type, Union
 
-from cooker_app.models import CookerModel, DishModel, DrinkModel
+from core_app.models import (
+    AddressModel,
+    CookerModel,
+    CustomerModel,
+    DishModel,
+    DrinkModel,
+    OrderModel,
+)
+from core_app.serializers import (
+    DishGETSerializer,
+    DrinkGETSerializer,
+    OrderPATCHSerializer,
+)
 from custom_renderers.renderers import (
     AddressCustomRendererWithData,
     CustomerCustomRendererWithData,
@@ -53,17 +65,13 @@ from utils.distance_computer import (
 )
 from utils.enums import OrderStatusEnum
 
-from .models import AddressModel, CustomerModel, OrderModel
 from .serializers import (
     AddressGETSerializer,
     AddressSerializer,
     CustomerGETSerializer,
     CustomerSerializer,
     DishCountriesGETSerializer,
-    DishGETSerializer,
-    DrinkGETSerializer,
     OrderGETSerializer,
-    OrderPATCHSerializer,
     OrderSerializer,
 )
 

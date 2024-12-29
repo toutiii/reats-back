@@ -1,5 +1,5 @@
 import pytest
-from customer_app.models import CustomerModel
+from core_app.models import CustomerModel
 from rest_framework import status
 from rest_framework.test import APIClient
 

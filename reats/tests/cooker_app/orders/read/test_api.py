@@ -1,5 +1,5 @@
 import pytest
-from customer_app.models import OrderModel
+from core_app.models import OrderModel
 from deepdiff import DeepDiff
 from freezegun import freeze_time
 from rest_framework import status
