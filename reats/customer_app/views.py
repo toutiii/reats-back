@@ -404,7 +404,7 @@ class DishView(ListModelMixin, GenericViewSet):
         ):
             self.queryset = DishModel.objects.none()
         else:
-            self.queryset = self.queryset.order_by("cooker__acceptance_rate")
+            self.queryset = self.queryset.order_by("-cooker__acceptance_rate")
 
         return super().list(request, *args, **kwargs)
 
@@ -435,7 +435,7 @@ class DrinkView(ListModelMixin, GenericViewSet):
         if request_cooker_id is None and not request_cooker_ids:
             self.queryset = DrinkModel.objects.none()
         else:
-            self.queryset = self.queryset.order_by("cooker__acceptance_rate")
+            self.queryset = self.queryset.order_by("-cooker__acceptance_rate")
 
         return super().list(request, *args, **kwargs)
 
@@ -465,6 +465,8 @@ class DessertView(ListModelMixin, GenericViewSet):
 
         if request_cooker_id is None and not request_cooker_ids:
             self.queryset = DishModel.objects.none()
+        else:
+            self.queryset = self.queryset.order_by("-cooker__acceptance_rate")
 
         return super().list(request, *args, **kwargs)
 

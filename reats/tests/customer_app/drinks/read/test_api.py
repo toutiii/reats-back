@@ -15,7 +15,12 @@ class TestListDrinksForCustomerSuccess:
         return [
             {
                 "capacity": "1",
-                "cooker": "1",
+                "cooker": {
+                    "acceptance_rate": 100.0,
+                    "firstname": "test",
+                    "id": 1,
+                    "lastname": "test",
+                },
                 "country": "Sénégal",
                 "description": "Bissap maison",
                 "id": "1",
@@ -29,7 +34,12 @@ class TestListDrinksForCustomerSuccess:
             },
             {
                 "capacity": "75",
-                "cooker": "1",
+                "cooker": {
+                    "acceptance_rate": 100.0,
+                    "firstname": "test",
+                    "id": 1,
+                    "lastname": "test",
+                },
                 "country": "Cameroun",
                 "description": "Gingembre maison",
                 "id": "2",

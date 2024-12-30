@@ -42,12 +42,6 @@ class CookerGETSerializer(ModelSerializer):
         exclude = ("created", "modified")
 
 
-class DishGETSerializer(ModelSerializer):
-    class Meta:
-        model = DishModel
-        exclude = ("created", "modified")
-
-
 class DishSerializer(ModelSerializer):
     cooker = serializers.PrimaryKeyRelatedField(queryset=CookerModel.objects.all())
 
@@ -62,12 +56,6 @@ class DishPATCHSerializer(DishSerializer):
     class Meta:
         model = DishModel
         fields = ("is_enabled",)
-
-
-class DrinkGETSerializer(ModelSerializer):
-    class Meta:
-        model = DrinkModel
-        exclude = ("created", "modified")
 
 
 class DrinkSerializer(ModelSerializer):

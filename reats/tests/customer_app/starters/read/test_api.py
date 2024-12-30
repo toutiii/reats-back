@@ -38,7 +38,12 @@ class TestListStartersForCustomerSuccess:
             "data": [
                 {
                     "category": "starter",
-                    "cooker": "4",
+                    "cooker": {
+                        "acceptance_rate": 100.0,
+                        "firstname": "toutii",
+                        "id": 4,
+                        "lastname": "N",
+                    },
                     "country": "Cameroun",
                     "description": "Test",
                     "id": "1",

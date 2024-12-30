@@ -5,7 +5,11 @@ from decimal import Decimal
 from typing import Type, Union
 
 from core_app.models import CookerModel, DishModel, DrinkModel, OrderModel
-from core_app.serializers import OrderPATCHSerializer
+from core_app.serializers import (
+    DishGETSerializer,
+    DrinkGETSerializer,
+    OrderPATCHSerializer,
+)
 from custom_renderers.renderers import (
     CookerCustomRendererWithData,
     CustomJSONRendererWithData,
@@ -44,10 +48,8 @@ from .serializers import (
     CookerGETSerializer,
     CookerOrderGETSerializer,
     CookerSerializer,
-    DishGETSerializer,
     DishPATCHSerializer,
     DishPOSTSerializer,
-    DrinkGETSerializer,
     DrinkPATCHSerializer,
     DrinkPOSTSerializer,
     TokenObtainPairWithoutPasswordSerializer,

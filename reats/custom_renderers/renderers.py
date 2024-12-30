@@ -171,6 +171,21 @@ class DeliverCustomRendererWithData(JSONRenderer):
 
 
 class CustomRendererWithData(JSONRenderer):
+    def _enrich_response(self, response: dict) -> None:
+        """
+        Adding cooker info in each dish, drink and dessert
+        """
+        if (
+            "cooker" in response and "country" in response
+        ):  # To be sure to deal with DrinkModel or DishModel
+            cooker: CookerModel = CookerModel.objects.get(id=response["cooker"])
+            response["cooker"] = {
+                "id": cooker.id,
+                "firstname": cooker.firstname,
+                "lastname": cooker.lastname,
+                "acceptance_rate": cooker.acceptance_rate,
+            }
+
     def render(self, data, accepted_media_type=None, renderer_context=None):
         logger.info(data)
         status_code = renderer_context["response"].status_code
@@ -201,6 +216,8 @@ class CustomRendererWithData(JSONRenderer):
                     ],
                 }
             )
+            for response_item in response["data"]:
+                self._enrich_response(response_item)
 
         if not str(status_code).startswith("2"):
             response = {
