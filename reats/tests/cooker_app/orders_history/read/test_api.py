@@ -223,7 +223,7 @@ def test_orders_history_list_success_for_cookers(
 ) -> None:
 
     # we check that the customer has some orders
-    assert OrderModel.objects.filter(customer__id=cooker_id).count() > 0
+    assert OrderModel.objects.filter(cooker__id=cooker_id).count() > 0
 
     # Then we list customer orders history
     response = client.get(
