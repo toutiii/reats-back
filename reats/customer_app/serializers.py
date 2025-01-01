@@ -6,6 +6,8 @@ from core_app.models import (
     AddressModel,
     CustomerModel,
     DishModel,
+    DishRatingModel,
+    DrinkRatingModel,
     OrderItemModel,
     OrderModel,
 )
@@ -148,7 +150,6 @@ class OrderSerializer(ModelSerializer):
             ast.literal_eval(item)
             for item in self.context["request"].POST.getlist("items")
         ]
-
         for order_item in order_items[0]:
             temp_data = {}
             try:
@@ -195,3 +196,109 @@ class DishCountriesGETSerializer(serializers.ModelSerializer):
     class Meta:
         model = DishModel
         fields = ("country",)
+
+
+class BulkDishRatingSerializer(serializers.Serializer):
+    """Serializer for handling bulk dish ratings creation"""
+
+    dish_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        required=True,
+    )
+    ratings = serializers.ListField(
+        child=serializers.FloatField(),
+        required=True,
+    )
+    comments = serializers.ListField(
+        child=serializers.CharField(allow_blank=True),
+        required=False,
+    )
+    customer_id = serializers.IntegerField(required=True)
+
+    def validate(self, attrs):
+        dish_ids = attrs.get("dish_ids")
+        ratings = attrs.get("ratings")
+        comments = attrs.get("comments", [])
+
+        if len(dish_ids) != len(ratings):
+            raise serializers.ValidationError(
+                "The number of dish_ids and ratings must match."
+            )
+        if comments and len(dish_ids) != len(comments):
+            raise serializers.ValidationError(
+                "The number of dish_ids and comments must match."
+            )
+        return attrs
+
+    def create(self, validated_data):
+        dish_ids = validated_data["dish_ids"]
+        ratings = validated_data["ratings"]
+        comments = validated_data.get("comments", [])
+        customer_id = validated_data["customer_id"]
+
+        dish_ratings = []
+        for idx, dish_id in enumerate(dish_ids):
+            dish_ratings.append(
+                DishRatingModel(
+                    dish_id=dish_id,
+                    rating=ratings[idx],
+                    comment=comments[idx] if comments else None,
+                    customer_id=customer_id,
+                )
+            )
+
+        # Bulk create all dish ratings
+        return DishRatingModel.objects.bulk_create(dish_ratings)
+
+
+class BulkDrinkRatingSerializer(serializers.Serializer):
+    """Serializer for handling bulk drink ratings creation."""
+
+    drink_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        required=True,
+    )
+    ratings = serializers.ListField(
+        child=serializers.FloatField(),
+        required=True,
+    )
+    comments = serializers.ListField(
+        child=serializers.CharField(allow_blank=True),
+        required=False,
+    )
+    customer_id = serializers.IntegerField(required=True)
+
+    def validate(self, attrs):
+        drink_ids = attrs.get("drink_ids")
+        ratings = attrs.get("ratings")
+        comments = attrs.get("comments", [])
+
+        if len(drink_ids) != len(ratings):
+            raise serializers.ValidationError(
+                "The number of drink_ids and ratings must match."
+            )
+        if comments and len(drink_ids) != len(comments):
+            raise serializers.ValidationError(
+                "The number of drink_ids and comments must match."
+            )
+        return attrs
+
+    def create(self, validated_data):
+        drink_ids = validated_data["drink_ids"]
+        ratings = validated_data["ratings"]
+        comments = validated_data.get("comments", [])
+        customer_id = validated_data["customer_id"]
+
+        drink_ratings = []
+        for idx, drink_id in enumerate(drink_ids):
+            drink_ratings.append(
+                DrinkRatingModel(
+                    drink_id=drink_id,
+                    rating=ratings[idx],
+                    comment=comments[idx] if comments else None,
+                    customer_id=customer_id,
+                )
+            )
+
+        # Bulk create all drink ratings
+        return DrinkRatingModel.objects.bulk_create(drink_ratings)

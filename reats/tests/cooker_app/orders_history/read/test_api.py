@@ -53,6 +53,8 @@ def expected_data() -> list[dict]:
             "sub_total": 0,
             "service_fees": 0.0,
             "total_amount": 2.4,
+            "rating": 0.0,
+            "comment": None,
         },
         {
             "id": 14,
@@ -92,6 +94,8 @@ def expected_data() -> list[dict]:
             "sub_total": 0,
             "service_fees": 0.0,
             "total_amount": 2.4,
+            "rating": 0.0,
+            "comment": None,
         },
         {
             "id": 15,
@@ -131,6 +135,8 @@ def expected_data() -> list[dict]:
             "sub_total": 0,
             "service_fees": 0.0,
             "total_amount": 2.4,
+            "rating": 0.0,
+            "comment": None,
         },
         {
             "id": 16,
@@ -170,6 +176,8 @@ def expected_data() -> list[dict]:
             "sub_total": 0,
             "service_fees": 0.0,
             "total_amount": 2.4,
+            "rating": 0.0,
+            "comment": None,
         },
         {
             "id": 17,
@@ -209,6 +217,8 @@ def expected_data() -> list[dict]:
             "sub_total": 0,
             "service_fees": 0.0,
             "total_amount": 2.4,
+            "rating": 0.0,
+            "comment": None,
         },
     ]
 
@@ -385,6 +395,8 @@ def test_orders_list_success_with_dates_filter_when_no_orders_exist(
                     "sub_total": 0,
                     "service_fees": 0.0,
                     "total_amount": 2.4,
+                    "rating": 0.0,
+                    "comment": None,
                 }
             ],
         ),
@@ -431,6 +443,8 @@ def test_orders_list_success_with_dates_filter_when_no_orders_exist(
                     "sub_total": 0,
                     "service_fees": 0.0,
                     "total_amount": 2.4,
+                    "rating": 0.0,
+                    "comment": None,
                 }
             ],
         ),
@@ -477,6 +491,8 @@ def test_orders_list_success_with_dates_filter_when_no_orders_exist(
                     "sub_total": 0,
                     "service_fees": 0.0,
                     "total_amount": 2.4,
+                    "rating": 0.0,
+                    "comment": None,
                 },
                 {
                     "id": 15,
@@ -516,6 +532,8 @@ def test_orders_list_success_with_dates_filter_when_no_orders_exist(
                     "sub_total": 0,
                     "service_fees": 0.0,
                     "total_amount": 2.4,
+                    "rating": 0.0,
+                    "comment": None,
                 },
                 {
                     "id": 16,
@@ -555,6 +573,8 @@ def test_orders_list_success_with_dates_filter_when_no_orders_exist(
                     "sub_total": 0,
                     "service_fees": 0.0,
                     "total_amount": 2.4,
+                    "rating": 0.0,
+                    "comment": None,
                 },
             ],
         ),

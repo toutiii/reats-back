@@ -239,6 +239,8 @@ class OrderModel(ReatsModel):
     paid_date: DateTimeField = DateTimeField(null=True)
     stripe_payment_intent_id: CharField = CharField(max_length=100, null=True)
     stripe_payment_intent_secret: CharField = CharField(max_length=100, null=True)
+    rating: FloatField = FloatField(default=0.0)
+    comment: TextField = TextField(null=True)
 
     def get_state_map(self) -> dict:
         return {
@@ -362,3 +364,49 @@ class CancelledByCookerState(OrderState):
 class DeliveredState(OrderState):
     def can_transition_to(self, new_state: OrderState):
         raise ValueError("Cannot transition from DeliveredState to any other state.")
+
+
+class RatingsModel(ReatsModel):
+    id: AutoField = AutoField(primary_key=True)
+    rating: FloatField = FloatField()
+    comment: TextField = TextField(null=True)
+
+    class Meta:
+        db_table = "ratings"
+        abstract = True
+
+
+class DishRatingModel(RatingsModel):
+    customer: ForeignKey = ForeignKey(
+        "CustomerModel",
+        on_delete=CASCADE,
+        related_name="dish_ratings",
+    )
+    dish: ForeignKey = ForeignKey(
+        "DishModel", on_delete=CASCADE, related_name="ratings"
+    )
+
+    class Meta:
+        db_table = "dish_ratings"
+        unique_together = (
+            "customer",
+            "dish",
+        )  # One customer can rate a dish only once
+
+
+class DrinkRatingModel(RatingsModel):
+    customer: ForeignKey = ForeignKey(
+        "CustomerModel",
+        on_delete=CASCADE,
+        related_name="drink_ratings",
+    )
+    drink: ForeignKey = ForeignKey(
+        "DrinkModel", on_delete=CASCADE, related_name="ratings"
+    )
+
+    class Meta:
+        db_table = "drink_ratings"
+        unique_together = (
+            "customer",
+            "drink",
+        )  # One customer can rate a drink only once

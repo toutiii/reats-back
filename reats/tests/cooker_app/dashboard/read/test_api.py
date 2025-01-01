@@ -29,7 +29,7 @@ def test_get_dashboard_data_when_cooker_has_orders(
 
     response = client.get(
         dashboard_path,
-        {"start_date": "2024-01-01", "end_date": "2024-12-31"},
+        {"start_date": "2024-01-01", "end_date": "2099-12-31"},
         follow=False,
         **auth_headers,
     )
@@ -38,12 +38,12 @@ def test_get_dashboard_data_when_cooker_has_orders(
         "ok": True,
         "status_code": 200,
         "data": {
-            OrderStatusEnum.CANCELLED_BY_COOKER: 3,
-            OrderStatusEnum.CANCELLED_BY_CUSTOMER: 1,
-            OrderStatusEnum.COMPLETED: 5,
-            OrderStatusEnum.PENDING: 5,
-            OrderStatusEnum.DELIVERED: 4,
-            OrderStatusEnum.PROCESSING: 3,
+            OrderStatusEnum.CANCELLED_BY_COOKER.value: 3,
+            OrderStatusEnum.CANCELLED_BY_CUSTOMER.value: 1,
+            OrderStatusEnum.COMPLETED.value: 5,
+            OrderStatusEnum.PENDING.value: 5,
+            OrderStatusEnum.DELIVERED.value: 4,
+            OrderStatusEnum.PROCESSING.value: 3,
         },
     }
 

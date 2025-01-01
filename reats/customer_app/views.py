@@ -9,13 +9,16 @@ from core_app.models import (
     CookerModel,
     CustomerModel,
     DishModel,
+    DishRatingModel,
     DrinkModel,
+    DrinkRatingModel,
     OrderModel,
 )
 from core_app.serializers import (
     DishGETSerializer,
     DrinkGETSerializer,
     OrderPATCHSerializer,
+    OrderRatingSerializer,
 )
 from custom_renderers.renderers import (
     AddressCustomRendererWithData,
@@ -68,6 +71,8 @@ from utils.enums import OrderStatusEnum
 from .serializers import (
     AddressGETSerializer,
     AddressSerializer,
+    BulkDishRatingSerializer,
+    BulkDrinkRatingSerializer,
     CustomerGETSerializer,
     CustomerSerializer,
     DishCountriesGETSerializer,
@@ -705,3 +710,84 @@ class StripeWebhookView(GenericViewSet):
             order_instance.transition_to(OrderStatusEnum.PENDING)
 
         return Response(status=status.HTTP_200_OK)
+
+
+class CustomerDishRatingView(CreateModelMixin, GenericViewSet):
+    permission_classes = [UserPermission]
+    parser_classes = [MultiPartParser]
+    renderer_classes = [CustomRendererWithoutData]
+    serializer_class = BulkDishRatingSerializer
+
+    def get_queryset(self):
+        """
+        The queryset is not directly used since BulkDishRatingSerializer does not map directly to the model.
+        However, if needed for other operations, return a relevant queryset.
+        """
+        return DishRatingModel.objects.all()
+
+    def create(self, request, *args, **kwargs):
+        """
+        Override create to handle custom logic from the serializer.
+        """
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        # Call the custom `create` method from the serializer
+        self.perform_create(serializer)
+
+        # Return a suitable response
+        return Response(
+            {"detail": "Dish ratings created successfully."},
+            status=status.HTTP_201_CREATED,
+        )
+
+    def perform_create(self, serializer):
+        """
+        Call the serializer's create method to handle data creation.
+        """
+        serializer.save()
+
+
+class CustomerDrinkRatingView(CreateModelMixin, GenericViewSet):
+    permission_classes = [UserPermission]
+    queryset = DrinkRatingModel.objects.all()
+    parser_classes = [MultiPartParser]
+    renderer_classes = [CustomRendererWithoutData]
+    serializer_class = BulkDrinkRatingSerializer
+
+    def get_queryset(self):
+        """
+        The queryset is not directly used since BulkDishRatingSerializer does not map directly to the model.
+        However, if needed for other operations, return a relevant queryset.
+        """
+        return DrinkRatingModel.objects.all()
+
+    def create(self, request, *args, **kwargs):
+        """
+        Override create to handle custom logic from the serializer.
+        """
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        # Call the custom `create` method from the serializer
+        self.perform_create(serializer)
+
+        # Return a suitable response
+        return Response(
+            {"detail": "Dish ratings created successfully."},
+            status=status.HTTP_201_CREATED,
+        )
+
+    def perform_create(self, serializer):
+        """
+        Call the serializer's create method to handle data creation.
+        """
+        serializer.save()
+
+
+class CustomerOrderRatingView(UpdateModelMixin, GenericViewSet):
+    permission_classes = [UserPermission]
+    queryset = OrderModel.objects.all()
+    parser_classes = [MultiPartParser]
+    renderer_classes = [CustomRendererWithoutData]
+    serializer_class = OrderRatingSerializer

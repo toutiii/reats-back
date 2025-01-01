@@ -1,7 +1,6 @@
 from datetime import datetime, timezone
 
-from rest_framework import serializers
-from rest_framework.serializers import ModelSerializer
+from rest_framework.serializers import CharField, ModelSerializer
 from utils.enums import OrderStatusEnum
 
 from .models import DishModel, DrinkModel, OrderItemModel, OrderModel
@@ -28,8 +27,8 @@ class OrderItemGETSerializer(ModelSerializer):
         exclude = ("created", "modified", "order", "id")
 
 
-class OrderPATCHSerializer(serializers.ModelSerializer):
-    status = serializers.CharField(required=True)
+class OrderPATCHSerializer(ModelSerializer):
+    status = CharField(required=True)
 
     class Meta:
         model = OrderModel
@@ -54,6 +53,19 @@ class OrderPATCHSerializer(serializers.ModelSerializer):
         if status == OrderStatusEnum.DELIVERED:
             instance.delivered_date = datetime.now(timezone.utc)
 
+        instance.save()
+
+        return instance
+
+
+class OrderRatingSerializer(ModelSerializer):
+    class Meta:
+        model = OrderModel
+        fields = ("rating", "comment")
+
+    def update(self, instance: OrderModel, validated_data: dict):
+        instance.rating = validated_data.get("rating")
+        instance.comment = validated_data.get("comment")
         instance.save()
 
         return instance

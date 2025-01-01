@@ -116,6 +116,8 @@ def expected_data() -> list[dict]:
             "delivery_man": 1,
             "sub_total": 58.0,
             "service_fees": 4.06,
+            "rating": 0.0,
+            "comment": None,
             "total_amount": 65.26,
         },
         {
@@ -188,6 +190,8 @@ def expected_data() -> list[dict]:
             "delivery_man": 1,
             "sub_total": 33.0,
             "service_fees": 2.31,
+            "rating": 0.0,
+            "comment": None,
             "total_amount": 39.01,
         },
         {
@@ -227,6 +231,8 @@ def expected_data() -> list[dict]:
             "delivery_man": None,
             "sub_total": 0,
             "service_fees": 0.0,
+            "rating": 0.0,
+            "comment": None,
             "total_amount": 2.4,
         },
         {
@@ -266,6 +272,8 @@ def expected_data() -> list[dict]:
             "delivery_man": None,
             "sub_total": 0,
             "service_fees": 0.0,
+            "rating": 0.0,
+            "comment": None,
             "total_amount": 2.4,
         },
         {
@@ -305,6 +313,8 @@ def expected_data() -> list[dict]:
             "delivery_man": None,
             "sub_total": 0,
             "service_fees": 0.0,
+            "rating": 0.0,
+            "comment": None,
             "total_amount": 2.4,
         },
     ]
@@ -413,6 +423,8 @@ def expected_data_for_latest_deliveries() -> list[dict]:
             "delivery_man": 1,
             "sub_total": 33.0,
             "service_fees": 2.31,
+            "rating": 0.0,
+            "comment": None,
             "total_amount": 39.01,
         },
         {
@@ -452,6 +464,8 @@ def expected_data_for_latest_deliveries() -> list[dict]:
             "delivery_man": None,
             "sub_total": 0,
             "service_fees": 0.0,
+            "rating": 0.0,
+            "comment": None,
             "total_amount": 2.4,
         },
         {
@@ -491,6 +505,8 @@ def expected_data_for_latest_deliveries() -> list[dict]:
             "delivery_man": None,
             "sub_total": 0,
             "service_fees": 0.0,
+            "rating": 0.0,
+            "comment": None,
             "total_amount": 2.4,
         },
         {
@@ -530,6 +546,8 @@ def expected_data_for_latest_deliveries() -> list[dict]:
             "delivery_man": None,
             "sub_total": 0,
             "service_fees": 0.0,
+            "rating": 0.0,
+            "comment": None,
             "total_amount": 2.4,
         },
     ]

@@ -5,6 +5,9 @@ default:
 
 build-docker-image:
   script:
+    - echo "Cleaning up existing Docker resources..."
+    - docker compose -f reats/config/docker-compose.yaml down --volumes --remove-orphans
+    - docker system prune -af --volumes
     - echo "Logging into Docker Hub..."
     - if [ -z "$DOCKER_USERNAME" ] || [ -z "$DOCKER_PASSWORD" ]; then
         echo "DOCKER_USERNAME or DOCKER_PASSWORD is not set";
@@ -17,7 +20,6 @@ build-docker-image:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
   stage: build-docker-image
 
-
 pre-commit:
   script:
     - echo "Running pre-commit hooks..."
@@ -25,7 +27,6 @@ pre-commit:
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
   stage: pre-commit
-
 
 run-unit-tests:
   script:
@@ -39,3 +40,4 @@ stages:
   - build-docker-image
   - pre-commit
   - run-unit-tests
+

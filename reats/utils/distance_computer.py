@@ -57,10 +57,10 @@ def get_closest_cookers_ids_from_customer_search_address(
     :return: dict containing closest cookers ids from the customer address
     """
     closest_cookers_ids: list[int] = []
-    cookers_adresses_queryset: QuerySet = cookers.values_list(
+    cookers_adresses_queryset: QuerySet = cookers.order_by("id").values_list(
         "street_number", "street_name", "address_complement", "postal_code", "town"
     )
-    cookers_ids = cookers.values_list("id", flat=True)
+    cookers_ids = cookers.order_by("id").values_list("id", flat=True)
     cookers_adresses = [
         f"{cooker[0]} {cooker[1]} {cooker[2]}, {cooker[3]} {cooker[4]}, {settings.DEFAULT_SEARCH_COUNTRY}"
         for cooker in cookers_adresses_queryset

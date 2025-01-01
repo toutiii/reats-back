@@ -47,6 +47,21 @@ router.register(
     basename="orders-history",
 )
 router.register(
+    r"customers-orders-dish-rating",
+    customer_app_views.CustomerDishRatingView,
+    basename="dishes-rating",
+)
+router.register(
+    r"customers-orders-drink-rating",
+    customer_app_views.CustomerDrinkRatingView,
+    basename="drinks-rating",
+)
+router.register(
+    r"customers-orders-rating",
+    customer_app_views.CustomerOrderRatingView,
+    basename="orders-rating",
+)
+router.register(
     r"delivers",
     delivery_app_views.DeliverView,
     basename="delivers",

@@ -122,6 +122,8 @@ def test_create_order_success_with_asap_delivery(
                 "sub_total": 20.0,
                 "total_amount": 24.59,
                 "service_fees": 1.4,
+                "rating": 0.0,
+                "comment": None,
             },
         }
         order_dict = model_to_dict(OrderModel.objects.latest("pk"))
@@ -144,7 +146,9 @@ def test_create_order_success_with_asap_delivery(
             "is_scheduled": False,
             "processing_date": None,
             "scheduled_delivery_date": None,
-            "status": OrderStatusEnum.DRAFT,
+            "rating": 0.0,
+            "comment": None,
+            "status": OrderStatusEnum.DRAFT.value,
             "stripe_payment_intent_id": "pi_3Q6VU7EEYeaFww1W0xCZEUxw",
             "stripe_payment_intent_secret": "pi_3Q6VU7EEYeaFww1W0xCZEUxw_secret_OJqlWW9QRZZuSmAwUBklpxUf4",
         }
@@ -254,6 +258,8 @@ def test_create_order_success_with_scheduled_delivery(
                 "sub_total": 20.0,
                 "total_amount": 24.59,
                 "service_fees": 1.4,
+                "rating": 0.0,
+                "comment": None,
                 "items": [
                     {
                         "dish": 11,
@@ -293,10 +299,12 @@ def test_create_order_success_with_scheduled_delivery(
             "is_scheduled": True,
             "paid_date": None,
             "processing_date": None,
+            "rating": 0.0,
+            "comment": None,
             "scheduled_delivery_date": datetime(
                 2024, 5, 10, 12, 30, tzinfo=timezone.utc
             ),
-            "status": OrderStatusEnum.DRAFT,
+            "status": OrderStatusEnum.DRAFT.value,
             "stripe_payment_intent_id": "pi_3Q6VU7EEYeaFww1W0xCZEUxw",
             "stripe_payment_intent_secret": "pi_3Q6VU7EEYeaFww1W0xCZEUxw_secret_OJqlWW9QRZZuSmAwUBklpxUf4",
         }

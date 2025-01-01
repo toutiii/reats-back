@@ -949,6 +949,8 @@ def test_update_order_success_with_asap_delivery(
                 "sub_total": 20.0,
                 "total_amount": 24.59,
                 "service_fees": 1.4,
+                "rating": 0.0,
+                "comment": None,
             },
         }
         last_order: OrderModel = OrderModel.objects.latest("pk")
@@ -971,6 +973,8 @@ def test_update_order_success_with_asap_delivery(
             "paid_date": None,
             "is_scheduled": False,
             "processing_date": None,
+            "rating": 0.0,
+            "comment": None,
             "scheduled_delivery_date": None,
             "status": OrderStatusEnum.DRAFT.value,
             "stripe_payment_intent_id": "pi_3Q6VU7EEYeaFww1W0xCZEUxw",
@@ -1052,6 +1056,8 @@ def test_update_order_success_with_asap_delivery(
                 "sub_total": 66.0,
                 "total_amount": 73.81,
                 "service_fees": 4.62,
+                "rating": 0.0,
+                "comment": None,
             },
             "ok": True,
             "status_code": 200,
@@ -1076,6 +1082,8 @@ def test_update_order_success_with_asap_delivery(
             "delivery_fees_bonus": None,
             "delivery_distance": 1390.0,
             "delivery_initial_distance": None,
+            "rating": 0.0,
+            "comment": None,
             "paid_date": None,
             "stripe_payment_intent_id": "pi_3Q6VU7EEYeaFww1W0xCZEUxw",
             "stripe_payment_intent_secret": "pi_3Q6VU7EEYeaFww1W0xCZEUxw_secret_OJqlWW9QRZZuSmAwUBklpxUf4",
@@ -1191,6 +1199,8 @@ def test_update_order_after_successful_stripe_payment(
                 "sub_total": 20.0,
                 "total_amount": 24.59,
                 "service_fees": 1.4,
+                "rating": 0.0,
+                "comment": None,
             },
         }
 
@@ -1300,6 +1310,8 @@ def test_update_order_after_successful_stripe_payment_but_event_failed_to_be_ver
                 "sub_total": 20.0,
                 "total_amount": 24.59,
                 "service_fees": 1.4,
+                "rating": 0.0,
+                "comment": None,
             },
         }
 

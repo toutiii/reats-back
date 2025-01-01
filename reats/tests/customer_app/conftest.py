@@ -64,3 +64,18 @@ def customer_order_history_path() -> str:
 @pytest.fixture(scope="session")
 def customer_dishes_countries_path() -> str:
     return "/api/v1/customers-dishes-countries/"
+
+
+@pytest.fixture(scope="session")
+def customer_orders_dish_rating_path() -> str:
+    return "/api/v1/customers-orders-dish-rating/"
+
+
+@pytest.fixture(scope="session")
+def customer_orders_drink_rating_path() -> str:
+    return "/api/v1/customers-orders-drink-rating/"
+
+
+@pytest.fixture(scope="session")
+def customer_orders_rating_path() -> str:
+    return "/api/v1/customers-orders-rating/"
