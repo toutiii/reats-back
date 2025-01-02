@@ -382,20 +382,14 @@ class OrderCustomRendererWithData(JSONRenderer):
             data = json.loads(json.dumps(data))
             if isinstance(data, list):
                 for order_item in data:
-                    for item in order_item["items"]:
-                        try:
-                            item["dish"]["photo"] = get_pre_signed_url(
-                                item["dish"]["photo"]
-                            )
-                        except KeyError as err:
-                            logger.error(err)
-
-                        try:
-                            item["drink"]["photo"] = get_pre_signed_url(
-                                item["drink"]["photo"]
-                            )
-                        except KeyError as err:
-                            logger.error(err)
+                    for order_dish_item in order_item["dishes_items"]:
+                        order_dish_item["dish"]["photo"] = get_pre_signed_url(
+                            order_dish_item["dish"]["photo"]
+                        )
+                    for order_drink_item in order_item["drinks_items"]:
+                        order_drink_item["drink"]["photo"] = get_pre_signed_url(
+                            order_drink_item["drink"]["photo"]
+                        )
                 response = {
                     "ok": True,
                     "status_code": status.HTTP_200_OK,

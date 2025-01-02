@@ -537,9 +537,13 @@ def post_data_for_order_with_asap_delivery(
         "addressID": address_id,
         "customerID": customer_id,
         "cookerID": cooker_id,
-        "items": json.dumps(
+        "dishes_items": json.dumps(
             [
                 {"dishID": "11", "dishOrderedQuantity": 1},
+            ]
+        ),
+        "drinks_items": json.dumps(
+            [
                 {"drinkID": "2", "drinkOrderedQuantity": 3},
             ]
         ),

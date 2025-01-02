@@ -240,9 +240,11 @@ def compute_order_items_total_amount(order: OrderModel) -> int:
     dish_total = 0
     drink_total = 0
 
-    for item in order.items.all():  # type: ignore
-        dish_total += item.dish.price * item.dish_quantity if item.dish else 0
-        drink_total += item.drink.price * item.drink_quantity if item.drink else 0
+    for dish_item in order.dishes_items.all():  # type: ignore
+        dish_total += dish_item.dish.price * dish_item.dish_quantity
+
+    for drink_item in order.drinks_items.all():  # type: ignore
+        drink_total += drink_item.drink.price * drink_item.drink_quantity
 
     return round(dish_total + drink_total, 2)
 

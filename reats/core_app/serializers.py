@@ -3,7 +3,13 @@ from datetime import datetime, timezone
 from rest_framework.serializers import CharField, ModelSerializer
 from utils.enums import OrderStatusEnum
 
-from .models import DishModel, DrinkModel, OrderItemModel, OrderModel
+from .models import (
+    DishModel,
+    DrinkModel,
+    OrderDishItemModel,
+    OrderDrinkItemModel,
+    OrderModel,
+)
 
 
 class DishGETSerializer(ModelSerializer):
@@ -18,12 +24,19 @@ class DrinkGETSerializer(ModelSerializer):
         exclude = ("created", "modified")
 
 
-class OrderItemGETSerializer(ModelSerializer):
+class OrderDishItemGETSerializer(ModelSerializer):
     dish = DishGETSerializer()
+
+    class Meta:
+        model = OrderDishItemModel
+        exclude = ("created", "modified", "order", "id")
+
+
+class OrderDrinkItemGETSerializer(ModelSerializer):
     drink = DrinkGETSerializer()
 
     class Meta:
-        model = OrderItemModel
+        model = OrderDrinkItemModel
         exclude = ("created", "modified", "order", "id")
 
 

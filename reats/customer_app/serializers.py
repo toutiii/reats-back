@@ -8,10 +8,11 @@ from core_app.models import (
     DishModel,
     DishRatingModel,
     DrinkRatingModel,
-    OrderItemModel,
+    OrderDishItemModel,
+    OrderDrinkItemModel,
     OrderModel,
 )
-from core_app.serializers import OrderItemGETSerializer
+from core_app.serializers import OrderDishItemGETSerializer, OrderDrinkItemGETSerializer
 from django.conf import settings
 from django.db import transaction
 from phonenumbers.phonenumberutil import NumberParseException
@@ -53,7 +54,8 @@ class AddressGETSerializer(ModelSerializer):
 
 
 class OrderGETSerializer(ModelSerializer):
-    items = OrderItemGETSerializer(many=True)
+    dishes_items = OrderDishItemGETSerializer(many=True)
+    drinks_items = OrderDrinkItemGETSerializer(many=True)
     address = AddressGETSerializer()
 
     class Meta:
@@ -70,25 +72,24 @@ class OrderGETSerializer(ModelSerializer):
             data["sub_total"] + data["service_fees"] + instance.delivery_fees, 2
         )
 
-        for item in data["items"]:
-            if item["dish"] is None:
-                item.pop("dish")
-                item.pop("dish_quantity")
-            if item["drink"] is None:
-                item.pop("drink")
-                item.pop("drink_quantity")
-
         return data
 
 
-class OrderItemSerializer(ModelSerializer):
+class OrderDishItemSerializer(ModelSerializer):
     class Meta:
-        model = OrderItemModel
+        model = OrderDishItemModel
+        exclude = ("created", "modified", "order", "id")
+
+
+class OrderDrinkItemSerializer(ModelSerializer):
+    class Meta:
+        model = OrderDrinkItemModel
         exclude = ("created", "modified", "order", "id")
 
 
 class OrderSerializer(ModelSerializer):
-    items = OrderItemSerializer(many=True, required=True)
+    dishes_items = OrderDishItemSerializer(many=True, required=True)
+    drinks_items = OrderDrinkItemSerializer(many=True, required=False)
 
     class Meta:
         model = OrderModel
@@ -145,47 +146,67 @@ class OrderSerializer(ModelSerializer):
 
             data_to_validate["scheduled_delivery_date"] = utc_delivery_datetime
 
-        clean_order_items = []
-        order_items = [
+        # We extract the dishes items from the request
+        clean_order_dishes_items = []
+        dishes_order_items = [
             ast.literal_eval(item)
-            for item in self.context["request"].POST.getlist("items")
-        ]
-        for order_item in order_items[0]:
+            for item in self.context["request"].POST.getlist("dishes_items")
+        ]  # This will return a list of list
+        for dish_order_item in dishes_order_items[0]:
             temp_data = {}
-            try:
-                temp_data["drink"] = order_item["drinkID"]
-                temp_data["drink_quantity"] = order_item["drinkOrderedQuantity"]
-            except KeyError:
-                temp_data["drink"] = None
-                temp_data["drink_quantity"] = None
+            temp_data["dish"] = dish_order_item["dishID"]
+            temp_data["dish_quantity"] = dish_order_item["dishOrderedQuantity"]
+            clean_order_dishes_items.append(temp_data)
 
-            try:
-                temp_data["dish"] = order_item["dishID"]
-                temp_data["dish_quantity"] = order_item["dishOrderedQuantity"]
-            except KeyError:
-                temp_data["dish"] = None
-                temp_data["dish_quantity"] = None
+        data_to_validate["dishes_items"] = clean_order_dishes_items
 
-            clean_order_items.append(temp_data)
+        # Then we extract the drinks items from the request
+        clean_order_drinks_items = []
+        drinks_order_items = [
+            ast.literal_eval(item)
+            for item in self.context["request"].POST.getlist("drinks_items")
+        ]  # This will return a list of list
 
-        data_to_validate["items"] = clean_order_items
+        for drink_order_item in drinks_order_items[0]:
+            temp_data = {}
+            temp_data["drink"] = drink_order_item["drinkID"]
+            temp_data["drink_quantity"] = drink_order_item["drinkOrderedQuantity"]
+            clean_order_drinks_items.append(temp_data)
+
+        data_to_validate["drinks_items"] = clean_order_drinks_items
 
         return super().to_internal_value(data_to_validate)
 
     def create(self, validated_data: dict):
-        order_items_data = validated_data.pop("items")
+        order_dishes_items_data = validated_data.pop("dishes_items")
+        order_drinks_items_data = validated_data.pop("drinks_items")
+
         with transaction.atomic():
             order = OrderModel.objects.create(**validated_data)
-            for item_data in order_items_data:
-                OrderItemModel.objects.create(order=order, **item_data)
+
+            for dish_item_data in order_dishes_items_data:
+                OrderDishItemModel.objects.create(order=order, **dish_item_data)
+
+            for drink_item_data in order_drinks_items_data:
+                OrderDrinkItemModel.objects.create(order=order, **drink_item_data)
+
         return order
 
     def update(self, instance: OrderModel, validated_data: dict):
-        order_items_data = validated_data.pop("items")
+        order_dishes_items_data = validated_data.pop("dishes_items")
+        order_drinks_items_data = validated_data.pop("drinks_items")
+
+        OrderDishItemModel.objects.filter(order=instance).delete()
+        OrderDrinkItemModel.objects.filter(order=instance).delete()
+
         with transaction.atomic():
-            OrderItemModel.objects.filter(order=instance).delete()
-            for item_data in order_items_data:
-                OrderItemModel.objects.create(order=instance, **item_data)
+
+            for dish_item_data in order_dishes_items_data:
+                OrderDishItemModel.objects.create(order=instance, **dish_item_data)
+
+            for drink_item_data in order_drinks_items_data:
+                OrderDrinkItemModel.objects.create(order=instance, **drink_item_data)
+
             for attr, value in validated_data.items():
                 setattr(instance, attr, value)
             instance.save()

@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from unittest.mock import MagicMock
 
 import pytest
-from core_app.models import OrderItemModel, OrderModel
+from core_app.models import OrderDishItemModel, OrderDrinkItemModel, OrderModel
 from django.forms import model_to_dict
 from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from freezegun import freeze_time
@@ -40,9 +40,13 @@ def post_data_for_order_with_asap_delivery(
         "addressID": address_id,
         "customerID": customer_id,
         "cookerID": cooker_id,
-        "items": json.dumps(
+        "dishes_items": json.dumps(
             [
                 {"dishID": "11", "dishOrderedQuantity": 1},
+            ]
+        ),
+        "drinks_items": json.dumps(
+            [
                 {"drinkID": "2", "drinkOrderedQuantity": 3},
             ]
         ),
@@ -77,17 +81,15 @@ def test_create_order_success_with_asap_delivery(
             "ok": True,
             "status_code": 200,
             "data": {
-                "items": [
+                "dishes_items": [
                     {
                         "dish_quantity": 1,
-                        "drink_quantity": None,
                         "dish": 11,
-                        "drink": None,
                     },
+                ],
+                "drinks_items": [
                     {
-                        "dish_quantity": None,
                         "drink_quantity": 3,
-                        "dish": None,
                         "drink": 2,
                     },
                 ],
@@ -153,21 +155,23 @@ def test_create_order_success_with_asap_delivery(
             "stripe_payment_intent_secret": "pi_3Q6VU7EEYeaFww1W0xCZEUxw_secret_OJqlWW9QRZZuSmAwUBklpxUf4",
         }
 
-        order_item_query = OrderItemModel.objects.filter(
+        order_dish_item_query = OrderDishItemModel.objects.filter(
+            order__id=OrderModel.objects.latest("pk").pk
+        )
+        order_drink_item_query = OrderDrinkItemModel.objects.filter(
             order__id=OrderModel.objects.latest("pk").pk
         )
 
-        assert order_item_query.count() == 2
+        assert order_dish_item_query.count() == 1
+        assert order_drink_item_query.count() == 1
 
-        for order_item in order_item_query:
-            if order_item.dish:
-                assert order_item.dish.id == 11
-                assert order_item.dish_quantity == 1
-            elif order_item.drink:
-                assert order_item.drink.id == 2
-                assert order_item.drink_quantity == 3
-            else:
-                assert False, "An order item must be either a dish or a drink"
+        for order_dish_item in order_dish_item_query:
+            assert order_dish_item.dish.id == 11
+            assert order_dish_item.dish_quantity == 1
+
+        for order_drink_item in order_drink_item_query:
+            assert order_drink_item.drink.id == 2
+            assert order_drink_item.drink_quantity == 3
 
         mock_googlemaps_distance_matrix.assert_called_once_with(
             origins=["13 rue des Mazières 91000 Evry"],
@@ -197,9 +201,13 @@ def post_data_for_order_with_scheduled_delivery(
         "cookerID": cooker_id,
         "date": "5/10/2024",
         "time": "14:30:00",
-        "items": json.dumps(
+        "dishes_items": json.dumps(
             [
                 {"dishID": "11", "dishOrderedQuantity": 1},
+            ]
+        ),
+        "drinks_items": json.dumps(
+            [
                 {"drinkID": "2", "drinkOrderedQuantity": 3},
             ]
         ),
@@ -260,18 +268,16 @@ def test_create_order_success_with_scheduled_delivery(
                 "service_fees": 1.4,
                 "rating": 0.0,
                 "comment": None,
-                "items": [
+                "dishes_items": [
                     {
-                        "dish": 11,
                         "dish_quantity": 1,
-                        "drink": None,
-                        "drink_quantity": None,
+                        "dish": 11,
                     },
+                ],
+                "drinks_items": [
                     {
-                        "dish": None,
-                        "dish_quantity": None,
-                        "drink": 2,
                         "drink_quantity": 3,
+                        "drink": 2,
                     },
                 ],
                 "paid_date": None,
@@ -308,21 +314,24 @@ def test_create_order_success_with_scheduled_delivery(
             "stripe_payment_intent_id": "pi_3Q6VU7EEYeaFww1W0xCZEUxw",
             "stripe_payment_intent_secret": "pi_3Q6VU7EEYeaFww1W0xCZEUxw_secret_OJqlWW9QRZZuSmAwUBklpxUf4",
         }
-        order_item_query = OrderItemModel.objects.filter(
+
+        order_dish_item_query = OrderDishItemModel.objects.filter(
+            order__id=OrderModel.objects.latest("pk").pk
+        )
+        order_drink_item_query = OrderDrinkItemModel.objects.filter(
             order__id=OrderModel.objects.latest("pk").pk
         )
 
-        assert order_item_query.count() == 2
+        assert order_dish_item_query.count() == 1
+        assert order_drink_item_query.count() == 1
 
-        for order_item in order_item_query:
-            if order_item.dish:
-                assert order_item.dish.id == 11
-                assert order_item.dish_quantity == 1
-            elif order_item.drink:
-                assert order_item.drink.id == 2
-                assert order_item.drink_quantity == 3
-            else:
-                assert False, "An order item must be either a dish or a drink"
+        for order_dish_item in order_dish_item_query:
+            assert order_dish_item.dish.id == 11
+            assert order_dish_item.dish_quantity == 1
+
+        for order_drink_item in order_drink_item_query:
+            assert order_drink_item.drink.id == 2
+            assert order_drink_item.drink_quantity == 3
 
         mock_googlemaps_distance_matrix.assert_called_once_with(
             origins=["13 rue des Mazières 91000 Evry"],
@@ -379,9 +388,13 @@ def test_create_scheduled_order_failed_with_wrong_delivery_infos(
         "customerID": customer_id,
         "date": date,
         "time": time,
-        "items": json.dumps(
+        "dishes_items": json.dumps(
             [
                 {"dishID": "11", "dishOrderedQuantity": 1},
+            ]
+        ),
+        "drinks_items": json.dumps(
+            [
                 {"drinkID": "2", "drinkOrderedQuantity": 3},
             ]
         ),

@@ -21,7 +21,7 @@ def customer_id() -> int:
             [
                 {
                     "id": 1,
-                    "items": [
+                    "dishes_items": [
                         {
                             "dish": {
                                 "id": 1,
@@ -55,6 +55,24 @@ def customer_id() -> int:
                             "dish_quantity": 1,
                         },
                         {
+                            "dish": {
+                                "id": 11,
+                                "category": "dessert",
+                                "country": "Italie",
+                                "description": "Tiramisu maison au spéculos",
+                                "name": "Tiramisu spéculos",
+                                "price": 5.0,
+                                "photo": "https://some-url.com",
+                                "is_enabled": True,
+                                "is_suitable_for_quick_delivery": False,
+                                "is_suitable_for_scheduled_delivery": False,
+                                "cooker": 1,
+                            },
+                            "dish_quantity": 1,
+                        },
+                    ],
+                    "drinks_items": [
+                        {
                             "drink": {
                                 "id": 2,
                                 "unit": "centiliters",
@@ -70,22 +88,6 @@ def customer_id() -> int:
                                 "cooker": 1,
                             },
                             "drink_quantity": 4,
-                        },
-                        {
-                            "dish": {
-                                "id": 11,
-                                "category": "dessert",
-                                "country": "Italie",
-                                "description": "Tiramisu maison au spéculos",
-                                "name": "Tiramisu spéculos",
-                                "price": 5.0,
-                                "photo": "https://some-url.com",
-                                "is_enabled": True,
-                                "is_suitable_for_quick_delivery": False,
-                                "is_suitable_for_scheduled_delivery": False,
-                                "cooker": 1,
-                            },
-                            "dish_quantity": 1,
                         },
                     ],
                     "address": {
@@ -128,7 +130,8 @@ def customer_id() -> int:
                 },
                 {
                     "id": 9,
-                    "items": [],
+                    "dishes_items": [],
+                    "drinks_items": [],
                     "address": {
                         "id": 3,
                         "street_name": "Rue Jean Cocteau",
@@ -169,7 +172,8 @@ def customer_id() -> int:
                 },
                 {
                     "id": 10,
-                    "items": [],
+                    "dishes_items": [],
+                    "drinks_items": [],
                     "address": {
                         "id": 3,
                         "street_name": "Rue Jean Cocteau",
@@ -217,7 +221,8 @@ def customer_id() -> int:
             [
                 {
                     "id": 13,
-                    "items": [],
+                    "dishes_items": [],
+                    "drinks_items": [],
                     "address": {
                         "id": 3,
                         "street_name": "Rue Jean Cocteau",
@@ -258,7 +263,7 @@ def customer_id() -> int:
                 },
                 {
                     "id": 7,
-                    "items": [
+                    "dishes_items": [
                         {
                             "dish": {
                                 "id": 1,
@@ -276,6 +281,7 @@ def customer_id() -> int:
                             "dish_quantity": 2,
                         }
                     ],
+                    "drinks_items": [],
                     "address": {
                         "id": 3,
                         "street_name": "Rue Jean Cocteau",
@@ -323,7 +329,7 @@ def customer_id() -> int:
             [
                 {
                     "id": 8,
-                    "items": [
+                    "dishes_items": [
                         {
                             "dish": {
                                 "id": 1,
@@ -357,6 +363,7 @@ def customer_id() -> int:
                             "dish_quantity": 1,
                         },
                     ],
+                    "drinks_items": [],
                     "address": {
                         "id": 3,
                         "street_name": "Rue Jean Cocteau",
@@ -397,7 +404,8 @@ def customer_id() -> int:
                 },
                 {
                     "id": 11,
-                    "items": [],
+                    "dishes_items": [],
+                    "drinks_items": [],
                     "address": {
                         "id": 3,
                         "street_name": "Rue Jean Cocteau",

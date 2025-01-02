@@ -9,7 +9,8 @@ from core_app.models import (
     CustomerModel,
     DishModel,
     DrinkModel,
-    OrderItemModel,
+    OrderDishItemModel,
+    OrderDrinkItemModel,
     OrderModel,
 )
 from django.core.management.base import BaseCommand
@@ -79,7 +80,7 @@ class Command(BaseCommand):
             num_dishes = min(len(dishes), random.randint(1, 3))  # Up to 3 unique dishes
             selected_dishes = random.sample(dishes, num_dishes)
             for dish in selected_dishes:
-                OrderItemModel.objects.create(
+                OrderDishItemModel.objects.create(
                     order=order,
                     dish=dish,
                     dish_quantity=random.randint(1, 3),  # 1 to 5 units of each dish
@@ -88,7 +89,7 @@ class Command(BaseCommand):
             num_drinks = min(len(drinks), random.randint(1, 2))  # Up to 2 unique drinks
             selected_drinks = random.sample(drinks, num_drinks)
             for drink in selected_drinks:
-                OrderItemModel.objects.create(
+                OrderDrinkItemModel.objects.create(
                     order=order,
                     drink=drink,
                     drink_quantity=random.randint(1, 3),  # 1 to 3 units of each drink

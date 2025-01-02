@@ -519,8 +519,10 @@ class OrderView(
         distance_dict: dict = compute_distance(
             origins=[str(serializer.validated_data.get("address"))],
             destinations=[
-                serializer.validated_data.get("items")[0]["dish"].cooker.full_address
-            ],  # As on order is bound to only one cooker, fetch the first item's cooker is enough
+                serializer.validated_data.get("dishes_items")[0][
+                    "dish"
+                ].cooker.full_address
+            ],  # As on order is bound to only one cooker, fetch the first dishes's cooker is enough
         )
         if distance_dict.get("status") == "KO":
             logger.error("Failed to compute distance")

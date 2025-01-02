@@ -26,7 +26,8 @@ def cooker_id() -> int:
                         "postal_code": "91540",
                         "town": "Mennecy",
                     },
-                    "items": [],
+                    "dishes_items": [],
+                    "drinks_items": [],
                     "customer": {
                         "id": 1,
                         "stripe_id": "cus_QyZ76Ae0W5KeqP",
@@ -67,7 +68,8 @@ def cooker_id() -> int:
                         "postal_code": "91540",
                         "town": "Mennecy",
                     },
-                    "items": [],
+                    "dishes_items": [],
+                    "drinks_items": [],
                     "customer": {
                         "id": 1,
                         "stripe_id": "cus_QyZ76Ae0W5KeqP",
@@ -108,7 +110,7 @@ def cooker_id() -> int:
                         "postal_code": "91000",
                         "town": "Evry",
                     },
-                    "items": [
+                    "dishes_items": [
                         {
                             "dish": {
                                 "id": 1,
@@ -142,6 +144,24 @@ def cooker_id() -> int:
                             "dish_quantity": 1,
                         },
                         {
+                            "dish": {
+                                "id": 11,
+                                "category": "dessert",
+                                "country": "Italie",
+                                "description": "Tiramisu maison au spéculos",
+                                "name": "Tiramisu spéculos",
+                                "price": 5.0,
+                                "photo": "https://some-url.com",
+                                "is_enabled": True,
+                                "is_suitable_for_quick_delivery": False,
+                                "is_suitable_for_scheduled_delivery": False,
+                                "cooker": 1,
+                            },
+                            "dish_quantity": 1,
+                        },
+                    ],
+                    "drinks_items": [
+                        {
                             "drink": {
                                 "id": 2,
                                 "unit": "centiliters",
@@ -157,22 +177,6 @@ def cooker_id() -> int:
                                 "cooker": 1,
                             },
                             "drink_quantity": 4,
-                        },
-                        {
-                            "dish": {
-                                "id": 11,
-                                "category": "dessert",
-                                "country": "Italie",
-                                "description": "Tiramisu maison au spéculos",
-                                "name": "Tiramisu spéculos",
-                                "price": 5.0,
-                                "photo": "https://some-url.com",
-                                "is_enabled": True,
-                                "is_suitable_for_quick_delivery": False,
-                                "is_suitable_for_scheduled_delivery": False,
-                                "cooker": 1,
-                            },
-                            "dish_quantity": 1,
                         },
                     ],
                     "customer": {
@@ -222,7 +226,8 @@ def cooker_id() -> int:
                         "postal_code": "91540",
                         "town": "Mennecy",
                     },
-                    "items": [],
+                    "dishes_items": [],
+                    "drinks_items": [],
                     "customer": {
                         "id": 1,
                         "stripe_id": "cus_QyZ76Ae0W5KeqP",
@@ -263,7 +268,7 @@ def cooker_id() -> int:
                         "postal_code": "91540",
                         "town": "Mennecy",
                     },
-                    "items": [
+                    "dishes_items": [
                         {
                             "dish": {
                                 "id": 1,
@@ -281,6 +286,7 @@ def cooker_id() -> int:
                             "dish_quantity": 2,
                         }
                     ],
+                    "drinks_items": [],
                     "customer": {
                         "id": 1,
                         "stripe_id": "cus_QyZ76Ae0W5KeqP",
@@ -328,7 +334,8 @@ def cooker_id() -> int:
                         "postal_code": "91540",
                         "town": "Mennecy",
                     },
-                    "items": [],
+                    "dishes_items": [],
+                    "drinks_items": [],
                     "customer": {
                         "id": 1,
                         "stripe_id": "cus_QyZ76Ae0W5KeqP",
@@ -369,7 +376,7 @@ def cooker_id() -> int:
                         "postal_code": "91540",
                         "town": "Mennecy",
                     },
-                    "items": [
+                    "dishes_items": [
                         {
                             "dish": {
                                 "id": 1,
@@ -403,6 +410,7 @@ def cooker_id() -> int:
                             "dish_quantity": 1,
                         },
                     ],
+                    "drinks_items": [],
                     "customer": {
                         "id": 1,
                         "stripe_id": "cus_QyZ76Ae0W5KeqP",

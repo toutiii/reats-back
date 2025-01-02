@@ -275,28 +275,43 @@ class OrderModel(ReatsModel):
             current_state.transition_to(self, new_state)
 
 
-class OrderItemModel(ReatsModel):
+class OrderDishItemModel(ReatsModel):
     id: AutoField = AutoField(primary_key=True)
     order: ForeignKey = ForeignKey(
         OrderModel,
         on_delete=CASCADE,
-        related_name="items",
+        related_name="dishes_items",
     )
     dish: ForeignKey = ForeignKey(
         DishModel,
         on_delete=CASCADE,
         null=True,
     )
+
+    dish_quantity: IntegerField = IntegerField(null=True)
+
+    class Meta:
+        db_table = "order_dishes_items"
+
+    objects: Manager = Manager()  # For linting purposes
+
+
+class OrderDrinkItemModel(ReatsModel):
+    id: AutoField = AutoField(primary_key=True)
+    order: ForeignKey = ForeignKey(
+        OrderModel,
+        on_delete=CASCADE,
+        related_name="drinks_items",
+    )
     drink: ForeignKey = ForeignKey(
         DrinkModel,
         on_delete=CASCADE,
         null=True,
     )
-    dish_quantity: IntegerField = IntegerField(null=True)
     drink_quantity: IntegerField = IntegerField(null=True)
 
     class Meta:
-        db_table = "order_items"
+        db_table = "order_drinks_items"
 
     objects: Manager = Manager()  # For linting purposes
 

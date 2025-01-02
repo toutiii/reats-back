@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from unittest.mock import MagicMock, call
 
 import pytest
-from core_app.models import OrderItemModel, OrderModel
+from core_app.models import OrderDishItemModel, OrderDrinkItemModel, OrderModel
 from django.forms import model_to_dict
 from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from freezegun import freeze_time
@@ -40,9 +40,13 @@ def post_order_data(
         "addressID": address_id,
         "customerID": customer_id,
         "cookerID": cooker_id,
-        "items": json.dumps(
+        "dishes_items": json.dumps(
             [
                 {"dishID": "11", "dishOrderedQuantity": 1},
+            ]
+        ),
+        "drinks_items": json.dumps(
+            [
                 {"drinkID": "2", "drinkOrderedQuantity": 3},
             ]
         ),
@@ -861,10 +865,14 @@ def post_data_for_order_update(
         "addressID": address_id,
         "customerID": customer_id,
         "cookerID": cooker_id,
-        "items": json.dumps(
+        "dishes_items": json.dumps(
             [
                 {"dishID": "5", "dishOrderedQuantity": 2},
                 {"dishID": "6", "dishOrderedQuantity": 2},
+            ]
+        ),
+        "drinks_items": json.dumps(
+            [
                 {"drinkID": "2", "drinkOrderedQuantity": 3},
                 {"drinkID": "1", "drinkOrderedQuantity": 2},
             ]
@@ -904,17 +912,15 @@ def test_update_order_success_with_asap_delivery(
             "ok": True,
             "status_code": 200,
             "data": {
-                "items": [
+                "dishes_items": [
                     {
                         "dish_quantity": 1,
-                        "drink_quantity": None,
                         "dish": 11,
-                        "drink": None,
                     },
+                ],
+                "drinks_items": [
                     {
-                        "dish_quantity": None,
                         "drink_quantity": 3,
-                        "dish": None,
                         "drink": 2,
                     },
                 ],
@@ -981,7 +987,12 @@ def test_update_order_success_with_asap_delivery(
             "stripe_payment_intent_secret": "pi_3Q6VU7EEYeaFww1W0xCZEUxw_secret_OJqlWW9QRZZuSmAwUBklpxUf4",
         }
 
-        order_item_query = OrderItemModel.objects.filter(order__id=last_order.id)
+        order_dish_item_query = OrderDishItemModel.objects.filter(
+            order__id=last_order.id
+        )
+        order_drink_item_query = OrderDrinkItemModel.objects.filter(
+            order__id=last_order.id
+        )
 
         # Now we update the order with new items
         update_response = client.put(
@@ -1021,28 +1032,22 @@ def test_update_order_success_with_asap_delivery(
                 "delivery_initial_distance": None,
                 "delivery_man": None,
                 "is_scheduled": False,
-                "items": [
+                "dishes_items": [
                     {
                         "dish": 5,
                         "dish_quantity": 2,
-                        "drink": None,
-                        "drink_quantity": None,
                     },
                     {
                         "dish": 6,
                         "dish_quantity": 2,
-                        "drink": None,
-                        "drink_quantity": None,
                     },
+                ],
+                "drinks_items": [
                     {
-                        "dish": None,
-                        "dish_quantity": None,
                         "drink": 2,
                         "drink_quantity": 3,
                     },
                     {
-                        "dish": None,
-                        "dish_quantity": None,
                         "drink": 1,
                         "drink_quantity": 2,
                     },
@@ -1088,19 +1093,18 @@ def test_update_order_success_with_asap_delivery(
             "stripe_payment_intent_id": "pi_3Q6VU7EEYeaFww1W0xCZEUxw",
             "stripe_payment_intent_secret": "pi_3Q6VU7EEYeaFww1W0xCZEUxw_secret_OJqlWW9QRZZuSmAwUBklpxUf4",
         }
-        assert order_item_query.count() == 4
+        assert order_dish_item_query.count() == 2
+        assert order_drink_item_query.count() == 2
 
-        for order_item in order_item_query:
-            if order_item.dish:
-                assert order_item.dish.id in [5, 6]
-                assert order_item.dish_quantity == 2
-            elif order_item.drink:
-                if order_item.drink.id == 1:
-                    assert order_item.drink_quantity == 2
-                elif order_item.drink.id == 2:
-                    assert order_item.drink_quantity == 3
-            else:
-                assert False, "An order item must be either a dish or a drink"
+        for order_dish_item in order_dish_item_query:
+            assert order_dish_item.dish.id in [5, 6]
+            assert order_dish_item.dish_quantity == 2
+
+        for order_drink_item in order_drink_item_query:
+            if order_drink_item.drink.id == 1:
+                assert order_drink_item.drink_quantity == 2
+            elif order_drink_item.drink.id == 2:
+                assert order_drink_item.drink_quantity == 3
 
         mock_googlemaps_distance_matrix.assert_called_once_with(
             origins=["13 rue des Mazières 91000 Evry"],
@@ -1154,17 +1158,15 @@ def test_update_order_after_successful_stripe_payment(
             "ok": True,
             "status_code": 200,
             "data": {
-                "items": [
+                "dishes_items": [
                     {
                         "dish_quantity": 1,
-                        "drink_quantity": None,
                         "dish": 11,
-                        "drink": None,
                     },
+                ],
+                "drinks_items": [
                     {
-                        "dish_quantity": None,
                         "drink_quantity": 3,
-                        "dish": None,
                         "drink": 2,
                     },
                 ],
@@ -1265,17 +1267,15 @@ def test_update_order_after_successful_stripe_payment_but_event_failed_to_be_ver
             "ok": True,
             "status_code": 200,
             "data": {
-                "items": [
+                "dishes_items": [
                     {
                         "dish_quantity": 1,
-                        "drink_quantity": None,
                         "dish": 11,
-                        "drink": None,
                     },
+                ],
+                "drinks_items": [
                     {
-                        "dish_quantity": None,
                         "drink_quantity": 3,
-                        "dish": None,
                         "drink": 2,
                     },
                 ],
@@ -1355,9 +1355,13 @@ def test_update_order_after_successful_stripe_payment_but_event_failed_to_be_ver
                 "addressID": 1,
                 "customerID": 2,
                 "cookerID": 1,
-                "items": json.dumps(
+                "dishes_items": json.dumps(
                     [
                         {"dishID": "11", "dishOrderedQuantity": 1},
+                    ]
+                ),
+                "drinks_items": json.dumps(
+                    [
                         {"drinkID": "2", "drinkOrderedQuantity": 3},
                     ]
                 ),
@@ -1370,9 +1374,13 @@ def test_update_order_after_successful_stripe_payment_but_event_failed_to_be_ver
                 "addressID": 1,
                 "customerID": 2,
                 "cookerID": 1,
-                "items": json.dumps(
+                "dishes_items": json.dumps(
                     [
                         {"dishID": "11", "dishOrderedQuantity": 1},
+                    ]
+                ),
+                "drinks_items": json.dumps(
+                    [
                         {"drinkID": "2", "drinkOrderedQuantity": 3},
                     ]
                 ),
@@ -1486,9 +1494,13 @@ def test_cancel_order_when_initiated_by_customer_and_order_is_still_pending(
                 "addressID": 1,
                 "customerID": 2,
                 "cookerID": 1,
-                "items": json.dumps(
+                "dishes_items": json.dumps(
                     [
                         {"dishID": "11", "dishOrderedQuantity": 1},
+                    ]
+                ),
+                "drinks_items": json.dumps(
+                    [
                         {"drinkID": "2", "drinkOrderedQuantity": 3},
                     ]
                 ),
@@ -1501,9 +1513,13 @@ def test_cancel_order_when_initiated_by_customer_and_order_is_still_pending(
                 "addressID": 1,
                 "customerID": 2,
                 "cookerID": 1,
-                "items": json.dumps(
+                "dishes_items": json.dumps(
                     [
                         {"dishID": "11", "dishOrderedQuantity": 1},
+                    ]
+                ),
+                "drinks_items": json.dumps(
+                    [
                         {"drinkID": "2", "drinkOrderedQuantity": 3},
                     ]
                 ),
@@ -1620,9 +1636,13 @@ def test_cancel_order_when_initiated_by_customer_but_order_is_in_processing_stat
                 "addressID": 1,
                 "customerID": 2,
                 "cookerID": 1,
-                "items": json.dumps(
+                "dishes_items": json.dumps(
                     [
                         {"dishID": "11", "dishOrderedQuantity": 1},
+                    ]
+                ),
+                "drinks_items": json.dumps(
+                    [
                         {"drinkID": "2", "drinkOrderedQuantity": 3},
                     ]
                 ),
@@ -1635,9 +1655,13 @@ def test_cancel_order_when_initiated_by_customer_but_order_is_in_processing_stat
                 "addressID": 1,
                 "customerID": 2,
                 "cookerID": 1,
-                "items": json.dumps(
+                "dishes_items": json.dumps(
                     [
                         {"dishID": "11", "dishOrderedQuantity": 1},
+                    ]
+                ),
+                "drinks_items": json.dumps(
+                    [
                         {"drinkID": "2", "drinkOrderedQuantity": 3},
                     ]
                 ),

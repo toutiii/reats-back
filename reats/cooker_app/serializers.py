@@ -9,7 +9,7 @@ from core_app.models import (
     DrinkModel,
     OrderModel,
 )
-from core_app.serializers import OrderItemGETSerializer
+from core_app.serializers import OrderDishItemGETSerializer, OrderDrinkItemGETSerializer
 from django.conf import settings
 from phonenumbers.phonenumberutil import NumberParseException
 from rest_framework import serializers, status
@@ -170,7 +170,8 @@ class CookerOrderCustomerGETSerializer(ModelSerializer):
 
 class CookerOrderGETSerializer(ModelSerializer):
     address = CookerAddressSerializer()
-    items = OrderItemGETSerializer(many=True)
+    dishes_items = OrderDishItemGETSerializer(many=True)
+    drinks_items = OrderDrinkItemGETSerializer(many=True)
     customer = CookerOrderCustomerGETSerializer()
 
     class Meta:
@@ -190,13 +191,5 @@ class CookerOrderGETSerializer(ModelSerializer):
         data["total_amount"] = round(
             data["sub_total"] + data["service_fees"] + instance.delivery_fees, 2
         )
-
-        for item in data["items"]:
-            if item["dish"] is None:
-                item.pop("dish")
-                item.pop("dish_quantity")
-            if item["drink"] is None:
-                item.pop("drink")
-                item.pop("drink_quantity")
 
         return data

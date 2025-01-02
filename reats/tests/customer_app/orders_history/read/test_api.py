@@ -17,7 +17,8 @@ def expected_data() -> list[dict]:
     return [
         {
             "id": 12,
-            "items": [],
+            "dishes_items": [],
+            "drinks_items": [],
             "address": {
                 "id": 3,
                 "street_name": "Rue Jean Cocteau",
@@ -58,7 +59,8 @@ def expected_data() -> list[dict]:
         },
         {
             "id": 14,
-            "items": [],
+            "dishes_items": [],
+            "drinks_items": [],
             "address": {
                 "id": 3,
                 "street_name": "Rue Jean Cocteau",
@@ -99,7 +101,8 @@ def expected_data() -> list[dict]:
         },
         {
             "id": 15,
-            "items": [],
+            "dishes_items": [],
+            "drinks_items": [],
             "address": {
                 "id": 3,
                 "street_name": "Rue Jean Cocteau",
@@ -140,7 +143,8 @@ def expected_data() -> list[dict]:
         },
         {
             "id": 16,
-            "items": [],
+            "dishes_items": [],
+            "drinks_items": [],
             "address": {
                 "id": 3,
                 "street_name": "Rue Jean Cocteau",
@@ -181,7 +185,8 @@ def expected_data() -> list[dict]:
         },
         {
             "id": 17,
-            "items": [],
+            "dishes_items": [],
+            "drinks_items": [],
             "address": {
                 "id": 3,
                 "street_name": "Rue Jean Cocteau",
@@ -222,7 +227,7 @@ def expected_data() -> list[dict]:
         },
         {
             "id": 4,
-            "items": [
+            "dishes_items": [
                 {
                     "dish": {
                         "id": 1,
@@ -256,6 +261,7 @@ def expected_data() -> list[dict]:
                     "dish_quantity": 1,
                 },
             ],
+            "drinks_items": [],
             "address": {
                 "id": 3,
                 "street_name": "Rue Jean Cocteau",
@@ -296,7 +302,7 @@ def expected_data() -> list[dict]:
         },
         {
             "id": 3,
-            "items": [
+            "dishes_items": [
                 {
                     "dish": {
                         "id": 1,
@@ -330,6 +336,24 @@ def expected_data() -> list[dict]:
                     "dish_quantity": 1,
                 },
                 {
+                    "dish": {
+                        "id": 11,
+                        "category": "dessert",
+                        "country": "Italie",
+                        "description": "Tiramisu maison au spéculos",
+                        "name": "Tiramisu spéculos",
+                        "price": 5.0,
+                        "photo": "https://some-url.com",
+                        "is_enabled": True,
+                        "is_suitable_for_quick_delivery": False,
+                        "is_suitable_for_scheduled_delivery": False,
+                        "cooker": 1,
+                    },
+                    "dish_quantity": 1,
+                },
+            ],
+            "drinks_items": [
+                {
                     "drink": {
                         "id": 2,
                         "unit": "centiliters",
@@ -345,22 +369,6 @@ def expected_data() -> list[dict]:
                         "cooker": 1,
                     },
                     "drink_quantity": 4,
-                },
-                {
-                    "dish": {
-                        "id": 11,
-                        "category": "dessert",
-                        "country": "Italie",
-                        "description": "Tiramisu maison au spéculos",
-                        "name": "Tiramisu spéculos",
-                        "price": 5.0,
-                        "photo": "https://some-url.com",
-                        "is_enabled": True,
-                        "is_suitable_for_quick_delivery": False,
-                        "is_suitable_for_scheduled_delivery": False,
-                        "cooker": 1,
-                    },
-                    "dish_quantity": 1,
                 },
             ],
             "address": {
@@ -403,7 +411,7 @@ def expected_data() -> list[dict]:
         },
         {
             "id": 5,
-            "items": [
+            "dishes_items": [
                 {
                     "dish": {
                         "id": 1,
@@ -437,6 +445,7 @@ def expected_data() -> list[dict]:
                     "dish_quantity": 1,
                 },
             ],
+            "drinks_items": [],
             "address": {
                 "id": 3,
                 "street_name": "Rue Jean Cocteau",
@@ -477,7 +486,7 @@ def expected_data() -> list[dict]:
         },
         {
             "id": 6,
-            "items": [
+            "dishes_items": [
                 {
                     "dish": {
                         "id": 1,
@@ -511,6 +520,7 @@ def expected_data() -> list[dict]:
                     "dish_quantity": 1,
                 },
             ],
+            "drinks_items": [],
             "address": {
                 "id": 3,
                 "street_name": "Rue Jean Cocteau",
@@ -713,7 +723,8 @@ def test_orders_list_success_with_dates_filter_when_no_orders_exist(
                     "delivery_man": None,
                     "id": 12,
                     "is_scheduled": False,
-                    "items": [],
+                    "dishes_items": [],
+                    "drinks_items": [],
                     "paid_date": None,
                     "processing_date": None,
                     "scheduled_delivery_date": "2024-12-17T16:30:00Z",
@@ -735,7 +746,8 @@ def test_orders_list_success_with_dates_filter_when_no_orders_exist(
             [
                 {
                     "id": 17,
-                    "items": [],
+                    "dishes_items": [],
+                    "drinks_items": [],
                     "address": {
                         "id": 3,
                         "street_name": "Rue Jean Cocteau",
@@ -783,7 +795,8 @@ def test_orders_list_success_with_dates_filter_when_no_orders_exist(
             [
                 {
                     "id": 14,
-                    "items": [],
+                    "dishes_items": [],
+                    "drinks_items": [],
                     "address": {
                         "id": 3,
                         "street_name": "Rue Jean Cocteau",
@@ -824,7 +837,8 @@ def test_orders_list_success_with_dates_filter_when_no_orders_exist(
                 },
                 {
                     "id": 15,
-                    "items": [],
+                    "dishes_items": [],
+                    "drinks_items": [],
                     "address": {
                         "id": 3,
                         "street_name": "Rue Jean Cocteau",
@@ -865,7 +879,8 @@ def test_orders_list_success_with_dates_filter_when_no_orders_exist(
                 },
                 {
                     "id": 16,
-                    "items": [],
+                    "dishes_items": [],
+                    "drinks_items": [],
                     "address": {
                         "id": 3,
                         "street_name": "Rue Jean Cocteau",

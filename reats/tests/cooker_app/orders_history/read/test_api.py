@@ -22,7 +22,8 @@ def expected_data() -> list[dict]:
                 "postal_code": "91540",
                 "town": "Mennecy",
             },
-            "items": [],
+            "dishes_items": [],
+            "drinks_items": [],
             "customer": {
                 "id": 1,
                 "stripe_id": "cus_QyZ76Ae0W5KeqP",
@@ -63,7 +64,8 @@ def expected_data() -> list[dict]:
                 "postal_code": "91540",
                 "town": "Mennecy",
             },
-            "items": [],
+            "dishes_items": [],
+            "drinks_items": [],
             "customer": {
                 "id": 1,
                 "stripe_id": "cus_QyZ76Ae0W5KeqP",
@@ -104,7 +106,8 @@ def expected_data() -> list[dict]:
                 "postal_code": "91540",
                 "town": "Mennecy",
             },
-            "items": [],
+            "dishes_items": [],
+            "drinks_items": [],
             "customer": {
                 "id": 1,
                 "stripe_id": "cus_QyZ76Ae0W5KeqP",
@@ -145,7 +148,8 @@ def expected_data() -> list[dict]:
                 "postal_code": "91540",
                 "town": "Mennecy",
             },
-            "items": [],
+            "dishes_items": [],
+            "drinks_items": [],
             "customer": {
                 "id": 1,
                 "stripe_id": "cus_QyZ76Ae0W5KeqP",
@@ -186,7 +190,8 @@ def expected_data() -> list[dict]:
                 "postal_code": "91540",
                 "town": "Mennecy",
             },
-            "items": [],
+            "dishes_items": [],
+            "drinks_items": [],
             "customer": {
                 "id": 1,
                 "stripe_id": "cus_QyZ76Ae0W5KeqP",
@@ -364,7 +369,8 @@ def test_orders_list_success_with_dates_filter_when_no_orders_exist(
                         "postal_code": "91540",
                         "town": "Mennecy",
                     },
-                    "items": [],
+                    "dishes_items": [],
+                    "drinks_items": [],
                     "customer": {
                         "id": 1,
                         "stripe_id": "cus_QyZ76Ae0W5KeqP",
@@ -412,7 +418,8 @@ def test_orders_list_success_with_dates_filter_when_no_orders_exist(
                         "postal_code": "91540",
                         "town": "Mennecy",
                     },
-                    "items": [],
+                    "dishes_items": [],
+                    "drinks_items": [],
                     "customer": {
                         "id": 1,
                         "stripe_id": "cus_QyZ76Ae0W5KeqP",
@@ -460,7 +467,8 @@ def test_orders_list_success_with_dates_filter_when_no_orders_exist(
                         "postal_code": "91540",
                         "town": "Mennecy",
                     },
-                    "items": [],
+                    "dishes_items": [],
+                    "drinks_items": [],
                     "customer": {
                         "id": 1,
                         "stripe_id": "cus_QyZ76Ae0W5KeqP",
@@ -501,7 +509,8 @@ def test_orders_list_success_with_dates_filter_when_no_orders_exist(
                         "postal_code": "91540",
                         "town": "Mennecy",
                     },
-                    "items": [],
+                    "dishes_items": [],
+                    "drinks_items": [],
                     "customer": {
                         "id": 1,
                         "stripe_id": "cus_QyZ76Ae0W5KeqP",
@@ -542,7 +551,8 @@ def test_orders_list_success_with_dates_filter_when_no_orders_exist(
                         "postal_code": "91540",
                         "town": "Mennecy",
                     },
-                    "items": [],
+                    "dishes_items": [],
+                    "drinks_items": [],
                     "customer": {
                         "id": 1,
                         "stripe_id": "cus_QyZ76Ae0W5KeqP",
