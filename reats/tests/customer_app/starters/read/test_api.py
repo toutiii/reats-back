@@ -53,6 +53,7 @@ class TestListStartersForCustomerSuccess:
                     "price": "10.0",
                     "is_suitable_for_quick_delivery": False,
                     "is_suitable_for_scheduled_delivery": False,
+                    "ratings": "[]",
                 }
             ],
             "ok": True,

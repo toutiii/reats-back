@@ -19,6 +19,7 @@ def expected_data() -> list[dict]:
                 {
                     "dish": {
                         "id": 1,
+                        "ratings": [],
                         "category": "starter",
                         "country": "Cameroun",
                         "description": "Test",
@@ -35,6 +36,7 @@ def expected_data() -> list[dict]:
                 {
                     "dish": {
                         "id": 2,
+                        "ratings": [],
                         "category": "dish",
                         "country": "Congo",
                         "description": "Test",
@@ -51,6 +53,7 @@ def expected_data() -> list[dict]:
                 {
                     "dish": {
                         "id": 11,
+                        "ratings": [],
                         "category": "dessert",
                         "country": "Italie",
                         "description": "Tiramisu maison au spéculos",
@@ -69,6 +72,7 @@ def expected_data() -> list[dict]:
                 {
                     "drink": {
                         "id": 2,
+                        "ratings": [],
                         "unit": "centiliters",
                         "country": "Cameroun",
                         "description": "Gingembre maison",
@@ -82,7 +86,7 @@ def expected_data() -> list[dict]:
                         "cooker": 1,
                     },
                     "drink_quantity": 4,
-                },
+                }
             ],
             "address": {
                 "id": 2,
@@ -109,6 +113,8 @@ def expected_data() -> list[dict]:
             "paid_date": None,
             "stripe_payment_intent_id": None,
             "stripe_payment_intent_secret": None,
+            "rating": 0.0,
+            "comment": None,
             "cooker": {
                 "id": 4,
                 "firstname": "toutii",
@@ -118,8 +124,6 @@ def expected_data() -> list[dict]:
             "delivery_man": 1,
             "sub_total": 58.0,
             "service_fees": 4.06,
-            "rating": 0.0,
-            "comment": None,
             "total_amount": 65.26,
         },
         {
@@ -128,6 +132,7 @@ def expected_data() -> list[dict]:
                 {
                     "dish": {
                         "id": 1,
+                        "ratings": [],
                         "category": "starter",
                         "country": "Cameroun",
                         "description": "Test",
@@ -144,6 +149,7 @@ def expected_data() -> list[dict]:
                 {
                     "dish": {
                         "id": 2,
+                        "ratings": [],
                         "category": "dish",
                         "country": "Congo",
                         "description": "Test",
@@ -184,6 +190,8 @@ def expected_data() -> list[dict]:
             "paid_date": None,
             "stripe_payment_intent_id": None,
             "stripe_payment_intent_secret": None,
+            "rating": 0.0,
+            "comment": None,
             "cooker": {
                 "id": 4,
                 "firstname": "toutii",
@@ -193,8 +201,6 @@ def expected_data() -> list[dict]:
             "delivery_man": 1,
             "sub_total": 33.0,
             "service_fees": 2.31,
-            "rating": 0.0,
-            "comment": None,
             "total_amount": 39.01,
         },
         {
@@ -226,6 +232,8 @@ def expected_data() -> list[dict]:
             "paid_date": None,
             "stripe_payment_intent_id": None,
             "stripe_payment_intent_secret": None,
+            "rating": 0.0,
+            "comment": None,
             "cooker": {
                 "id": 1,
                 "firstname": "test",
@@ -235,8 +243,6 @@ def expected_data() -> list[dict]:
             "delivery_man": None,
             "sub_total": 0,
             "service_fees": 0.0,
-            "rating": 0.0,
-            "comment": None,
             "total_amount": 2.4,
         },
         {
@@ -268,6 +274,8 @@ def expected_data() -> list[dict]:
             "paid_date": None,
             "stripe_payment_intent_id": None,
             "stripe_payment_intent_secret": None,
+            "rating": 0.0,
+            "comment": None,
             "cooker": {
                 "id": 1,
                 "firstname": "test",
@@ -277,8 +285,6 @@ def expected_data() -> list[dict]:
             "delivery_man": None,
             "sub_total": 0,
             "service_fees": 0.0,
-            "rating": 0.0,
-            "comment": None,
             "total_amount": 2.4,
         },
         {
@@ -310,6 +316,8 @@ def expected_data() -> list[dict]:
             "paid_date": None,
             "stripe_payment_intent_id": None,
             "stripe_payment_intent_secret": None,
+            "rating": 0.0,
+            "comment": None,
             "cooker": {
                 "id": 1,
                 "firstname": "test",
@@ -319,8 +327,6 @@ def expected_data() -> list[dict]:
             "delivery_man": None,
             "sub_total": 0,
             "service_fees": 0.0,
-            "rating": 0.0,
-            "comment": None,
             "total_amount": 2.4,
         },
     ]
@@ -365,6 +371,7 @@ def expected_data_for_latest_deliveries() -> list[dict]:
                 {
                     "dish": {
                         "id": 1,
+                        "ratings": [],
                         "category": "starter",
                         "country": "Cameroun",
                         "description": "Test",
@@ -381,6 +388,7 @@ def expected_data_for_latest_deliveries() -> list[dict]:
                 {
                     "dish": {
                         "id": 2,
+                        "ratings": [],
                         "category": "dish",
                         "country": "Congo",
                         "description": "Test",
@@ -421,6 +429,8 @@ def expected_data_for_latest_deliveries() -> list[dict]:
             "paid_date": None,
             "stripe_payment_intent_id": None,
             "stripe_payment_intent_secret": None,
+            "rating": 0.0,
+            "comment": None,
             "cooker": {
                 "id": 4,
                 "firstname": "toutii",
@@ -430,8 +440,6 @@ def expected_data_for_latest_deliveries() -> list[dict]:
             "delivery_man": 1,
             "sub_total": 33.0,
             "service_fees": 2.31,
-            "rating": 0.0,
-            "comment": None,
             "total_amount": 39.01,
         },
         {
@@ -463,6 +471,8 @@ def expected_data_for_latest_deliveries() -> list[dict]:
             "paid_date": None,
             "stripe_payment_intent_id": None,
             "stripe_payment_intent_secret": None,
+            "rating": 0.0,
+            "comment": None,
             "cooker": {
                 "id": 1,
                 "firstname": "test",
@@ -472,8 +482,6 @@ def expected_data_for_latest_deliveries() -> list[dict]:
             "delivery_man": None,
             "sub_total": 0,
             "service_fees": 0.0,
-            "rating": 0.0,
-            "comment": None,
             "total_amount": 2.4,
         },
         {
@@ -505,6 +513,8 @@ def expected_data_for_latest_deliveries() -> list[dict]:
             "paid_date": None,
             "stripe_payment_intent_id": None,
             "stripe_payment_intent_secret": None,
+            "rating": 0.0,
+            "comment": None,
             "cooker": {
                 "id": 1,
                 "firstname": "test",
@@ -514,8 +524,6 @@ def expected_data_for_latest_deliveries() -> list[dict]:
             "delivery_man": None,
             "sub_total": 0,
             "service_fees": 0.0,
-            "rating": 0.0,
-            "comment": None,
             "total_amount": 2.4,
         },
         {
@@ -547,6 +555,8 @@ def expected_data_for_latest_deliveries() -> list[dict]:
             "paid_date": None,
             "stripe_payment_intent_id": None,
             "stripe_payment_intent_secret": None,
+            "rating": 0.0,
+            "comment": None,
             "cooker": {
                 "id": 1,
                 "firstname": "test",
@@ -556,8 +566,6 @@ def expected_data_for_latest_deliveries() -> list[dict]:
             "delivery_man": None,
             "sub_total": 0,
             "service_fees": 0.0,
-            "rating": 0.0,
-            "comment": None,
             "total_amount": 2.4,
         },
     ]

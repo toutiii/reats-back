@@ -222,7 +222,7 @@ class DishCountriesGETSerializer(serializers.ModelSerializer):
 class BulkDishRatingSerializer(serializers.Serializer):
     """Serializer for handling bulk dish ratings creation"""
 
-    dish_ids = serializers.ListField(
+    dishes_ids = serializers.ListField(
         child=serializers.IntegerField(),
         required=True,
     )
@@ -237,28 +237,28 @@ class BulkDishRatingSerializer(serializers.Serializer):
     customer_id = serializers.IntegerField(required=True)
 
     def validate(self, attrs):
-        dish_ids = attrs.get("dish_ids")
+        dishes_ids = attrs.get("dishes_ids")
         ratings = attrs.get("ratings")
         comments = attrs.get("comments", [])
 
-        if len(dish_ids) != len(ratings):
+        if len(dishes_ids) != len(ratings):
             raise serializers.ValidationError(
-                "The number of dish_ids and ratings must match."
+                "The number of dishes_ids and ratings must match."
             )
-        if comments and len(dish_ids) != len(comments):
+        if comments and len(dishes_ids) != len(comments):
             raise serializers.ValidationError(
-                "The number of dish_ids and comments must match."
+                "The number of dishes_ids and comments must match."
             )
         return attrs
 
     def create(self, validated_data):
-        dish_ids = validated_data["dish_ids"]
+        dishes_ids = validated_data["dishes_ids"]
         ratings = validated_data["ratings"]
         comments = validated_data.get("comments", [])
         customer_id = validated_data["customer_id"]
 
         dish_ratings = []
-        for idx, dish_id in enumerate(dish_ids):
+        for idx, dish_id in enumerate(dishes_ids):
             dish_ratings.append(
                 DishRatingModel(
                     dish_id=dish_id,

@@ -21,11 +21,7 @@ def cooker_id() -> int:
             [
                 {
                     "id": 9,
-                    "address": {
-                        "id": 3,
-                        "postal_code": "91540",
-                        "town": "Mennecy",
-                    },
+                    "address": {"id": 3, "postal_code": "91540", "town": "Mennecy"},
                     "dishes_items": [],
                     "drinks_items": [],
                     "customer": {
@@ -48,6 +44,8 @@ def cooker_id() -> int:
                     "delivery_distance": None,
                     "delivery_initial_distance": None,
                     "paid_date": None,
+                    "rating": 0.0,
+                    "comment": None,
                     "cooker": {
                         "id": 1,
                         "firstname": "test",
@@ -58,16 +56,10 @@ def cooker_id() -> int:
                     "sub_total": 0,
                     "service_fees": 0.0,
                     "total_amount": 2.4,
-                    "rating": 0.0,
-                    "comment": None,
                 },
                 {
                     "id": 10,
-                    "address": {
-                        "id": 3,
-                        "postal_code": "91540",
-                        "town": "Mennecy",
-                    },
+                    "address": {"id": 3, "postal_code": "91540", "town": "Mennecy"},
                     "dishes_items": [],
                     "drinks_items": [],
                     "customer": {
@@ -90,6 +82,8 @@ def cooker_id() -> int:
                     "delivery_distance": None,
                     "delivery_initial_distance": None,
                     "paid_date": None,
+                    "rating": 0.0,
+                    "comment": None,
                     "cooker": {
                         "id": 1,
                         "firstname": "test",
@@ -100,20 +94,15 @@ def cooker_id() -> int:
                     "sub_total": 0,
                     "service_fees": 0.0,
                     "total_amount": 2.4,
-                    "rating": 0.0,
-                    "comment": None,
                 },
                 {
                     "id": 1,
-                    "address": {
-                        "id": 2,
-                        "postal_code": "91000",
-                        "town": "Evry",
-                    },
+                    "address": {"id": 2, "postal_code": "91000", "town": "Evry"},
                     "dishes_items": [
                         {
                             "dish": {
                                 "id": 1,
+                                "ratings": [],
                                 "category": "starter",
                                 "country": "Cameroun",
                                 "description": "Test",
@@ -130,6 +119,7 @@ def cooker_id() -> int:
                         {
                             "dish": {
                                 "id": 2,
+                                "ratings": [],
                                 "category": "dish",
                                 "country": "Congo",
                                 "description": "Test",
@@ -146,6 +136,7 @@ def cooker_id() -> int:
                         {
                             "dish": {
                                 "id": 11,
+                                "ratings": [],
                                 "category": "dessert",
                                 "country": "Italie",
                                 "description": "Tiramisu maison au spéculos",
@@ -164,6 +155,7 @@ def cooker_id() -> int:
                         {
                             "drink": {
                                 "id": 2,
+                                "ratings": [],
                                 "unit": "centiliters",
                                 "country": "Cameroun",
                                 "description": "Gingembre maison",
@@ -177,7 +169,7 @@ def cooker_id() -> int:
                                 "cooker": 1,
                             },
                             "drink_quantity": 4,
-                        },
+                        }
                     ],
                     "customer": {
                         "id": 1,
@@ -199,6 +191,8 @@ def cooker_id() -> int:
                     "delivery_distance": 1390.0,
                     "delivery_initial_distance": None,
                     "paid_date": None,
+                    "rating": 0.0,
+                    "comment": None,
                     "cooker": {
                         "id": 4,
                         "firstname": "toutii",
@@ -209,8 +203,6 @@ def cooker_id() -> int:
                     "sub_total": 58.0,
                     "service_fees": 4.06,
                     "total_amount": 65.25,
-                    "rating": 0.0,
-                    "comment": None,
                 },
             ],
             200,
@@ -221,11 +213,7 @@ def cooker_id() -> int:
             [
                 {
                     "id": 13,
-                    "address": {
-                        "id": 3,
-                        "postal_code": "91540",
-                        "town": "Mennecy",
-                    },
+                    "address": {"id": 3, "postal_code": "91540", "town": "Mennecy"},
                     "dishes_items": [],
                     "drinks_items": [],
                     "customer": {
@@ -248,6 +236,8 @@ def cooker_id() -> int:
                     "delivery_distance": None,
                     "delivery_initial_distance": None,
                     "paid_date": None,
+                    "rating": 0.0,
+                    "comment": None,
                     "cooker": {
                         "id": 1,
                         "firstname": "test",
@@ -258,20 +248,15 @@ def cooker_id() -> int:
                     "sub_total": 0,
                     "service_fees": 0.0,
                     "total_amount": 2.4,
-                    "rating": 0.0,
-                    "comment": None,
                 },
                 {
                     "id": 7,
-                    "address": {
-                        "id": 3,
-                        "postal_code": "91540",
-                        "town": "Mennecy",
-                    },
+                    "address": {"id": 3, "postal_code": "91540", "town": "Mennecy"},
                     "dishes_items": [
                         {
                             "dish": {
                                 "id": 1,
+                                "ratings": [],
                                 "category": "starter",
                                 "country": "Cameroun",
                                 "description": "Test",
@@ -307,6 +292,8 @@ def cooker_id() -> int:
                     "delivery_distance": None,
                     "delivery_initial_distance": None,
                     "paid_date": None,
+                    "rating": 0.0,
+                    "comment": None,
                     "cooker": {
                         "id": 4,
                         "firstname": "toutii",
@@ -317,8 +304,6 @@ def cooker_id() -> int:
                     "sub_total": 20.0,
                     "service_fees": 1.4,
                     "total_amount": 24.1,
-                    "rating": 0.0,
-                    "comment": None,
                 },
             ],
             200,
@@ -329,11 +314,7 @@ def cooker_id() -> int:
             [
                 {
                     "id": 11,
-                    "address": {
-                        "id": 3,
-                        "postal_code": "91540",
-                        "town": "Mennecy",
-                    },
+                    "address": {"id": 3, "postal_code": "91540", "town": "Mennecy"},
                     "dishes_items": [],
                     "drinks_items": [],
                     "customer": {
@@ -356,6 +337,8 @@ def cooker_id() -> int:
                     "delivery_distance": None,
                     "delivery_initial_distance": None,
                     "paid_date": None,
+                    "rating": 0.0,
+                    "comment": None,
                     "cooker": {
                         "id": 1,
                         "firstname": "test",
@@ -366,20 +349,15 @@ def cooker_id() -> int:
                     "sub_total": 0,
                     "service_fees": 0.0,
                     "total_amount": 2.4,
-                    "rating": 0.0,
-                    "comment": None,
                 },
                 {
                     "id": 8,
-                    "address": {
-                        "id": 3,
-                        "postal_code": "91540",
-                        "town": "Mennecy",
-                    },
+                    "address": {"id": 3, "postal_code": "91540", "town": "Mennecy"},
                     "dishes_items": [
                         {
                             "dish": {
                                 "id": 1,
+                                "ratings": [],
                                 "category": "starter",
                                 "country": "Cameroun",
                                 "description": "Test",
@@ -396,6 +374,7 @@ def cooker_id() -> int:
                         {
                             "dish": {
                                 "id": 2,
+                                "ratings": [],
                                 "category": "dish",
                                 "country": "Congo",
                                 "description": "Test",
@@ -431,6 +410,8 @@ def cooker_id() -> int:
                     "delivery_distance": None,
                     "delivery_initial_distance": None,
                     "paid_date": None,
+                    "rating": 0.0,
+                    "comment": None,
                     "cooker": {
                         "id": 4,
                         "firstname": "toutii",
@@ -441,8 +422,6 @@ def cooker_id() -> int:
                     "sub_total": 33.0,
                     "service_fees": 2.31,
                     "total_amount": 37.71,
-                    "rating": 0.0,
-                    "comment": None,
                 },
             ],
             200,
@@ -490,7 +469,6 @@ def test_orders_list_success_with_no_filters(
     assert response.status_code == status.HTTP_200_OK
     assert response.json().get("ok") == ok_value
     assert response.json().get("status_code") == expected_status_code
-
     diff = DeepDiff(response.json().get("data"), expected_data, ignore_order=True)
 
     assert not diff

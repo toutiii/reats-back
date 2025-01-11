@@ -240,7 +240,7 @@ class OrderModel(ReatsModel):
     stripe_payment_intent_id: CharField = CharField(max_length=100, null=True)
     stripe_payment_intent_secret: CharField = CharField(max_length=100, null=True)
     rating: FloatField = FloatField(default=0.0)
-    comment: TextField = TextField(null=True)
+    comment: TextField = TextField(null=True, blank=True)
 
     def get_state_map(self) -> dict:
         return {
@@ -384,7 +384,7 @@ class DeliveredState(OrderState):
 class RatingsModel(ReatsModel):
     id: AutoField = AutoField(primary_key=True)
     rating: FloatField = FloatField()
-    comment: TextField = TextField(null=True)
+    comment: TextField = TextField(null=True, blank=True)
 
     class Meta:
         db_table = "ratings"
@@ -416,7 +416,9 @@ class DrinkRatingModel(RatingsModel):
         related_name="drink_ratings",
     )
     drink: ForeignKey = ForeignKey(
-        "DrinkModel", on_delete=CASCADE, related_name="ratings"
+        "DrinkModel",
+        on_delete=CASCADE,
+        related_name="ratings",
     )
 
     class Meta:

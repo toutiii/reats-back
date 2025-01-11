@@ -112,8 +112,7 @@ def test_add_rates_to_orders_and_orders_items(
     }
     update_order_response = client.put(
         f"{customer_orders_rating_path}{order.id}/",
-        encode_multipart(BOUNDARY, order_rating_data),
-        content_type=MULTIPART_CONTENT,
+        order_rating_data,
         follow=False,
         **auth_headers,
     )
@@ -129,7 +128,7 @@ def test_add_rates_to_orders_and_orders_items(
 
     # We add infos in dish ratings table
     dish_rating_data: dict = {
-        "dish_ids": [11],
+        "dishes_ids": [11],
         "ratings": [3],
         "comments": ["Good"],
         "customer_id": customer_id,
@@ -137,8 +136,7 @@ def test_add_rates_to_orders_and_orders_items(
 
     create_dish_rating_response = client.post(
         f"{customer_orders_dish_rating_path}",
-        encode_multipart(BOUNDARY, dish_rating_data),
-        content_type=MULTIPART_CONTENT,
+        dish_rating_data,
         follow=False,
         **auth_headers,
     )
@@ -149,9 +147,9 @@ def test_add_rates_to_orders_and_orders_items(
         "status_code": 201,
     }
 
-    for idx in range(len(dish_rating_data["dish_ids"])):
+    for idx in range(len(dish_rating_data["dishes_ids"])):
         dish_rating_instance: DishRatingModel = DishRatingModel.objects.get(
-            dish_id=dish_rating_data["dish_ids"][idx]
+            dish_id=dish_rating_data["dishes_ids"][idx]
         )
         assert dish_rating_instance.rating == dish_rating_data["ratings"][idx]
         assert dish_rating_instance.comment == dish_rating_data["comments"][idx]
@@ -166,8 +164,7 @@ def test_add_rates_to_orders_and_orders_items(
 
     create_drink_rating_response = client.post(
         f"{customer_orders_drink_rating_path}",
-        encode_multipart(BOUNDARY, drink_rating_data),
-        content_type=MULTIPART_CONTENT,
+        drink_rating_data,
         follow=False,
         **auth_headers,
     )

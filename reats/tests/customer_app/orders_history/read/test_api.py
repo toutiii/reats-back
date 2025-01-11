@@ -16,6 +16,48 @@ def customer_id() -> int:
 def expected_data() -> list[dict]:
     return [
         {
+            "id": 17,
+            "dishes_items": [],
+            "drinks_items": [],
+            "address": {
+                "id": 3,
+                "street_name": "Rue Jean Cocteau",
+                "street_number": "2",
+                "town": "Mennecy",
+                "postal_code": "91540",
+                "address_complement": None,
+                "customer": 2,
+            },
+            "created": "2024-12-11T20:53:05.718117Z",
+            "scheduled_delivery_date": "2024-12-17T16:30:00Z",
+            "is_scheduled": False,
+            "status": "cancelled_by_customer",
+            "processing_date": None,
+            "completed_date": None,
+            "delivery_in_progress_date": None,
+            "cancelled_date": None,
+            "delivered_date": None,
+            "delivery_fees": 2.4,
+            "delivery_fees_bonus": 1.1,
+            "delivery_distance": None,
+            "delivery_initial_distance": None,
+            "paid_date": None,
+            "stripe_payment_intent_id": None,
+            "stripe_payment_intent_secret": None,
+            "rating": 0.0,
+            "comment": None,
+            "cooker": {
+                "id": 1,
+                "firstname": "test",
+                "lastname": "test",
+                "acceptance_rate": 100.0,
+            },
+            "delivery_man": None,
+            "sub_total": 0,
+            "service_fees": 0.0,
+            "total_amount": 2.4,
+        },
+        {
             "id": 12,
             "dishes_items": [],
             "drinks_items": [],
@@ -44,6 +86,8 @@ def expected_data() -> list[dict]:
             "paid_date": None,
             "stripe_payment_intent_id": None,
             "stripe_payment_intent_secret": None,
+            "rating": 0.0,
+            "comment": None,
             "cooker": {
                 "id": 1,
                 "firstname": "test",
@@ -53,8 +97,6 @@ def expected_data() -> list[dict]:
             "delivery_man": None,
             "sub_total": 0,
             "service_fees": 0.0,
-            "rating": 0.0,
-            "comment": None,
             "total_amount": 2.4,
         },
         {
@@ -86,6 +128,8 @@ def expected_data() -> list[dict]:
             "paid_date": None,
             "stripe_payment_intent_id": None,
             "stripe_payment_intent_secret": None,
+            "rating": 0.0,
+            "comment": None,
             "cooker": {
                 "id": 1,
                 "firstname": "test",
@@ -95,8 +139,6 @@ def expected_data() -> list[dict]:
             "delivery_man": None,
             "sub_total": 0,
             "service_fees": 0.0,
-            "rating": 0.0,
-            "comment": None,
             "total_amount": 2.4,
         },
         {
@@ -128,6 +170,8 @@ def expected_data() -> list[dict]:
             "paid_date": None,
             "stripe_payment_intent_id": None,
             "stripe_payment_intent_secret": None,
+            "rating": 0.0,
+            "comment": None,
             "cooker": {
                 "id": 1,
                 "firstname": "test",
@@ -137,8 +181,6 @@ def expected_data() -> list[dict]:
             "delivery_man": None,
             "sub_total": 0,
             "service_fees": 0.0,
-            "rating": 0.0,
-            "comment": None,
             "total_amount": 2.4,
         },
         {
@@ -170,6 +212,8 @@ def expected_data() -> list[dict]:
             "paid_date": None,
             "stripe_payment_intent_id": None,
             "stripe_payment_intent_secret": None,
+            "rating": 0.0,
+            "comment": None,
             "cooker": {
                 "id": 1,
                 "firstname": "test",
@@ -179,50 +223,6 @@ def expected_data() -> list[dict]:
             "delivery_man": None,
             "sub_total": 0,
             "service_fees": 0.0,
-            "rating": 0.0,
-            "comment": None,
-            "total_amount": 2.4,
-        },
-        {
-            "id": 17,
-            "dishes_items": [],
-            "drinks_items": [],
-            "address": {
-                "id": 3,
-                "street_name": "Rue Jean Cocteau",
-                "street_number": "2",
-                "town": "Mennecy",
-                "postal_code": "91540",
-                "address_complement": None,
-                "customer": 2,
-            },
-            "created": "2024-12-11T20:53:05.718117Z",
-            "scheduled_delivery_date": "2024-12-17T16:30:00Z",
-            "is_scheduled": False,
-            "status": "cancelled_by_customer",
-            "processing_date": None,
-            "completed_date": None,
-            "delivery_in_progress_date": None,
-            "cancelled_date": None,
-            "delivered_date": None,
-            "delivery_fees": 2.4,
-            "delivery_fees_bonus": 1.1,
-            "delivery_distance": None,
-            "delivery_initial_distance": None,
-            "paid_date": None,
-            "stripe_payment_intent_id": None,
-            "stripe_payment_intent_secret": None,
-            "cooker": {
-                "id": 1,
-                "firstname": "test",
-                "lastname": "test",
-                "acceptance_rate": 100.0,
-            },
-            "delivery_man": None,
-            "sub_total": 0,
-            "service_fees": 0.0,
-            "rating": 0.0,
-            "comment": None,
             "total_amount": 2.4,
         },
         {
@@ -231,6 +231,7 @@ def expected_data() -> list[dict]:
                 {
                     "dish": {
                         "id": 1,
+                        "ratings": [],
                         "category": "starter",
                         "country": "Cameroun",
                         "description": "Test",
@@ -247,6 +248,7 @@ def expected_data() -> list[dict]:
                 {
                     "dish": {
                         "id": 2,
+                        "ratings": [],
                         "category": "dish",
                         "country": "Congo",
                         "description": "Test",
@@ -287,6 +289,8 @@ def expected_data() -> list[dict]:
             "paid_date": None,
             "stripe_payment_intent_id": None,
             "stripe_payment_intent_secret": None,
+            "rating": 0.0,
+            "comment": None,
             "cooker": {
                 "id": 4,
                 "firstname": "toutii",
@@ -296,8 +300,6 @@ def expected_data() -> list[dict]:
             "delivery_man": 1,
             "sub_total": 33.0,
             "service_fees": 2.31,
-            "rating": 0.0,
-            "comment": None,
             "total_amount": 39.01,
         },
         {
@@ -306,6 +308,7 @@ def expected_data() -> list[dict]:
                 {
                     "dish": {
                         "id": 1,
+                        "ratings": [],
                         "category": "starter",
                         "country": "Cameroun",
                         "description": "Test",
@@ -322,6 +325,7 @@ def expected_data() -> list[dict]:
                 {
                     "dish": {
                         "id": 2,
+                        "ratings": [],
                         "category": "dish",
                         "country": "Congo",
                         "description": "Test",
@@ -338,6 +342,7 @@ def expected_data() -> list[dict]:
                 {
                     "dish": {
                         "id": 11,
+                        "ratings": [],
                         "category": "dessert",
                         "country": "Italie",
                         "description": "Tiramisu maison au spéculos",
@@ -356,6 +361,7 @@ def expected_data() -> list[dict]:
                 {
                     "drink": {
                         "id": 2,
+                        "ratings": [],
                         "unit": "centiliters",
                         "country": "Cameroun",
                         "description": "Gingembre maison",
@@ -369,7 +375,7 @@ def expected_data() -> list[dict]:
                         "cooker": 1,
                     },
                     "drink_quantity": 4,
-                },
+                }
             ],
             "address": {
                 "id": 2,
@@ -396,6 +402,8 @@ def expected_data() -> list[dict]:
             "paid_date": None,
             "stripe_payment_intent_id": None,
             "stripe_payment_intent_secret": None,
+            "rating": 0.0,
+            "comment": None,
             "cooker": {
                 "id": 4,
                 "firstname": "toutii",
@@ -405,8 +413,6 @@ def expected_data() -> list[dict]:
             "delivery_man": 1,
             "sub_total": 58.0,
             "service_fees": 4.06,
-            "rating": 0.0,
-            "comment": None,
             "total_amount": 65.26,
         },
         {
@@ -415,6 +421,7 @@ def expected_data() -> list[dict]:
                 {
                     "dish": {
                         "id": 1,
+                        "ratings": [],
                         "category": "starter",
                         "country": "Cameroun",
                         "description": "Test",
@@ -431,6 +438,7 @@ def expected_data() -> list[dict]:
                 {
                     "dish": {
                         "id": 2,
+                        "ratings": [],
                         "category": "dish",
                         "country": "Congo",
                         "description": "Test",
@@ -471,6 +479,8 @@ def expected_data() -> list[dict]:
             "paid_date": None,
             "stripe_payment_intent_id": None,
             "stripe_payment_intent_secret": None,
+            "rating": 0.0,
+            "comment": None,
             "cooker": {
                 "id": 4,
                 "firstname": "toutii",
@@ -480,8 +490,6 @@ def expected_data() -> list[dict]:
             "delivery_man": None,
             "sub_total": 33.0,
             "service_fees": 2.31,
-            "rating": 0.0,
-            "comment": None,
             "total_amount": 39.41,
         },
         {
@@ -490,6 +498,7 @@ def expected_data() -> list[dict]:
                 {
                     "dish": {
                         "id": 1,
+                        "ratings": [],
                         "category": "starter",
                         "country": "Cameroun",
                         "description": "Test",
@@ -506,6 +515,7 @@ def expected_data() -> list[dict]:
                 {
                     "dish": {
                         "id": 2,
+                        "ratings": [],
                         "category": "dish",
                         "country": "Congo",
                         "description": "Test",
@@ -546,6 +556,8 @@ def expected_data() -> list[dict]:
             "paid_date": None,
             "stripe_payment_intent_id": None,
             "stripe_payment_intent_secret": None,
+            "rating": 0.0,
+            "comment": None,
             "cooker": {
                 "id": 4,
                 "firstname": "toutii",
@@ -555,8 +567,6 @@ def expected_data() -> list[dict]:
             "delivery_man": None,
             "sub_total": 33.0,
             "service_fees": 2.31,
-            "rating": 0.0,
-            "comment": None,
             "total_amount": 39.81,
         },
     ]
@@ -581,6 +591,7 @@ def test_orders_history_list_success_for_customers(
         **auth_headers,
     )
     assert response.status_code == status.HTTP_200_OK
+
     diff = DeepDiff(response.json().get("data"), expected_data, ignore_order=True)
 
     assert not diff

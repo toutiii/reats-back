@@ -716,7 +716,7 @@ class StripeWebhookView(GenericViewSet):
 
 class CustomerDishRatingView(CreateModelMixin, GenericViewSet):
     permission_classes = [UserPermission]
-    parser_classes = [MultiPartParser]
+    parser_classes = [JSONParser]
     renderer_classes = [CustomRendererWithoutData]
     serializer_class = BulkDishRatingSerializer
 
@@ -753,7 +753,7 @@ class CustomerDishRatingView(CreateModelMixin, GenericViewSet):
 class CustomerDrinkRatingView(CreateModelMixin, GenericViewSet):
     permission_classes = [UserPermission]
     queryset = DrinkRatingModel.objects.all()
-    parser_classes = [MultiPartParser]
+    parser_classes = [JSONParser]
     renderer_classes = [CustomRendererWithoutData]
     serializer_class = BulkDrinkRatingSerializer
 
@@ -790,6 +790,6 @@ class CustomerDrinkRatingView(CreateModelMixin, GenericViewSet):
 class CustomerOrderRatingView(UpdateModelMixin, GenericViewSet):
     permission_classes = [UserPermission]
     queryset = OrderModel.objects.all()
-    parser_classes = [MultiPartParser]
+    parser_classes = [JSONParser]
     renderer_classes = [CustomRendererWithoutData]
     serializer_class = OrderRatingSerializer

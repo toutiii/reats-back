@@ -5,20 +5,38 @@ from utils.enums import OrderStatusEnum
 
 from .models import (
     DishModel,
+    DishRatingModel,
     DrinkModel,
+    DrinkRatingModel,
     OrderDishItemModel,
     OrderDrinkItemModel,
     OrderModel,
 )
 
 
+class DishRatingSerializer(ModelSerializer):
+    class Meta:
+        model = DishRatingModel
+        fields = ("rating", "comment")
+
+
+class DrinkRatingSerializer(ModelSerializer):
+    class Meta:
+        model = DrinkRatingModel
+        fields = ("rating", "comment")
+
+
 class DishGETSerializer(ModelSerializer):
+    ratings = DishRatingSerializer(many=True, read_only=True)
+
     class Meta:
         model = DishModel
         exclude = ("created", "modified")
 
 
 class DrinkGETSerializer(ModelSerializer):
+    ratings = DrinkRatingSerializer(many=True, read_only=True)
+
     class Meta:
         model = DrinkModel
         exclude = ("created", "modified")

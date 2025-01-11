@@ -31,6 +31,7 @@ class TestListDrinksForCustomerSuccess:
                 "unit": "liter",
                 "is_suitable_for_quick_delivery": False,
                 "is_suitable_for_scheduled_delivery": False,
+                "ratings": "[]",
             },
             {
                 "capacity": "75",
@@ -50,6 +51,7 @@ class TestListDrinksForCustomerSuccess:
                 "unit": "centiliters",
                 "is_suitable_for_quick_delivery": False,
                 "is_suitable_for_scheduled_delivery": False,
+                "ratings": "[]",
             },
         ]
 
