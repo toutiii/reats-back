@@ -84,9 +84,9 @@ def test_delivery_orders_stats_with_wrong_dates(
 
     assert response.status_code == status.HTTP_200_OK
     assert response.json() == {
+        "ok": True,
+        "status_code": status.HTTP_200_OK,
         "data": [],
-        "ok": False,
-        "status_code": 404,
     }
 
 

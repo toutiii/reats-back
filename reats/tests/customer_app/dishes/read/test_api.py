@@ -59,8 +59,8 @@ class TestListDishesForCustomerNoResultsWithQueryParameterGivenByUser:
         mock_googlemaps_distance_matrix.assert_called_once()
         if query_parameter.get("search_radius") == "2":
             assert response.json().get("ok") is True
-            assert response.json().get("status_code") == status.HTTP_404_NOT_FOUND
-            assert not response.json().get("data")
+            assert response.json().get("status_code") == status.HTTP_200_OK
+            assert response.json().get("data") == []
 
 
 @pytest.mark.parametrize(

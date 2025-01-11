@@ -85,7 +85,11 @@ class TestListStartersForCustomeFailedWithUnknownCookerId:
             **auth_headers,
         )
         assert response.status_code == status.HTTP_200_OK
-        assert response.json() == {"ok": True, "status_code": 404}
+        assert response.json() == {
+            "ok": True,
+            "status_code": status.HTTP_200_OK,
+            "data": [],
+        }
 
 
 class TestListStartersForCustomerFailedWithoutCookerId:
@@ -104,4 +108,8 @@ class TestListStartersForCustomerFailedWithoutCookerId:
             **auth_headers,
         )
         assert response.status_code == status.HTTP_200_OK
-        assert response.json() == {"ok": True, "status_code": 404}
+        assert response.json() == {
+            "ok": True,
+            "status_code": status.HTTP_200_OK,
+            "data": [],
+        }

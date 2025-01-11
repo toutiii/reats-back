@@ -224,4 +224,4 @@ class TestOneCookerCantSeeOtherCookerDishes:
             )
             assert response.status_code == status.HTTP_200_OK
 
-            assert response.json().get("data") is None
+            assert response.json().get("data") == []

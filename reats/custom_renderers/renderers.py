@@ -14,6 +14,8 @@ logger = logging.getLogger("watchtower-logger")
 
 class CookerCustomRendererWithData(JSONRenderer):
     def render(self, data, accepted_media_type=None, renderer_context=None):
+        status_code = renderer_context["response"].status_code
+
         try:
             data["detail"].code
         except KeyError:
@@ -21,8 +23,14 @@ class CookerCustomRendererWithData(JSONRenderer):
         except Exception as err:
             logger.error(err)
             status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
-        else:
-            status_code = status.HTTP_404_NOT_FOUND
+
+        if not data and status_code == status.HTTP_200_OK:
+            response = {
+                "ok": True,
+                "data": [],
+                "status_code": status_code,
+            }
+            return super().render(response)
 
         if status_code == status.HTTP_200_OK:
             response = {
@@ -77,6 +85,8 @@ class CookerCustomRendererWithData(JSONRenderer):
 
 class CustomerCustomRendererWithData(JSONRenderer):
     def render(self, data, accepted_media_type=None, renderer_context=None):
+        status_code = renderer_context["response"].status_code
+
         try:
             data["detail"].code
         except KeyError:
@@ -84,8 +94,14 @@ class CustomerCustomRendererWithData(JSONRenderer):
         except Exception as err:
             logger.error(err)
             status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
-        else:
-            status_code = status.HTTP_404_NOT_FOUND
+
+        if not data and status_code == status.HTTP_200_OK:
+            response = {
+                "ok": True,
+                "data": [],
+                "status_code": status_code,
+            }
+            return super().render(response)
 
         if status_code == status.HTTP_200_OK:
             response = {
@@ -126,6 +142,8 @@ class CustomerCustomRendererWithData(JSONRenderer):
 
 class DeliverCustomRendererWithData(JSONRenderer):
     def render(self, data, accepted_media_type=None, renderer_context=None):
+        status_code = renderer_context["response"].status_code
+
         try:
             data["detail"].code
         except KeyError:
@@ -133,8 +151,14 @@ class DeliverCustomRendererWithData(JSONRenderer):
         except Exception as err:
             logger.error(err)
             status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
-        else:
-            status_code = status.HTTP_404_NOT_FOUND
+
+        if not data and status_code == status.HTTP_200_OK:
+            response = {
+                "ok": True,
+                "data": [],
+                "status_code": status_code,
+            }
+            return super().render(response)
 
         if status_code == status.HTTP_200_OK:
             response = {
@@ -197,8 +221,10 @@ class CustomRendererWithData(JSONRenderer):
         if not data and status_code == status.HTTP_200_OK:
             response = {
                 "ok": True,
-                "status_code": status.HTTP_404_NOT_FOUND,
+                "data": [],
+                "status_code": status_code,
             }
+            return super().render(response)
 
         if data and status_code == status.HTTP_200_OK:
             response.update(
@@ -247,8 +273,10 @@ class DishesCountriesCustomRendererWithData(JSONRenderer):
         if not data and status_code == status.HTTP_200_OK:
             response = {
                 "ok": True,
-                "status_code": status.HTTP_404_NOT_FOUND,
+                "data": [],
+                "status_code": status_code,
             }
+            return super().render(response)
 
         if data and status_code == status.HTTP_200_OK:
             response.update({"data": [item["country"] for item in data]})
@@ -327,8 +355,8 @@ class AddressCustomRendererWithData(JSONRenderer):
                 }
             else:
                 response = {
-                    "ok": False,
-                    "status_code": status.HTTP_404_NOT_FOUND,
+                    "ok": True,
+                    "status_code": status.HTTP_200_OK,
                     "data": [],
                 }
         logger.info(response)
@@ -443,8 +471,8 @@ class DeliveryStatsCustomRendererWithData(JSONRenderer):
                 }
             else:
                 response = {
-                    "ok": False,
-                    "status_code": status.HTTP_404_NOT_FOUND,
+                    "ok": True,
+                    "status_code": status.HTTP_200_OK,
                     "data": [],
                 }
         logger.info(response)
