@@ -49,6 +49,38 @@ def test_get_enabled_dishes(auth_headers: dict, client: APIClient, path: str) ->
 
 
 @pytest.mark.django_db
+def test_get_enabled_dishes_when_item_has_been_deleted(
+    auth_headers: dict,
+    client: APIClient,
+    path: str,
+    cooker_id: int,
+) -> None:
+    first_dish = DishModel.objects.filter(cooker__id=cooker_id).first()
+
+    if first_dish is not None:
+        first_dish.is_deleted = True
+        first_dish.save()
+    else:
+        assert False
+
+    response = client.get(
+        path,
+        {"is_enabled": "true"},
+        follow=False,
+        **auth_headers,
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json().get("ok") is True
+    assert response.json().get("status_code") == status.HTTP_200_OK
+    assert response.json().get("data") is not None
+
+    for item in response.json().get("data"):
+        assert item.get("is_enabled") is True
+        assert DishModel.objects.get(pk=item.get("id")).is_deleted is False
+
+
+@pytest.mark.django_db
 def test_get_disabled_dishes(auth_headers: dict, client: APIClient, path: str) -> None:
     response = client.get(
         path,
