@@ -163,7 +163,8 @@ class CustomerView(ModelViewSet):
 
     def destroy(self, request, *args, **kwargs) -> Response:
         instance: CustomerModel = self.get_object()
-        super().perform_destroy(instance)
+        instance.is_deleted = True
+        instance.save()
         delete_stripe_customer(instance.stripe_id)
         return Response(
             {

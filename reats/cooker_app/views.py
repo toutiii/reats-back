@@ -136,8 +136,9 @@ class CookerView(ModelViewSet):
         return super().partial_update(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs) -> Response:
-        instance = self.get_object()
-        super().perform_destroy(instance)
+        instance: CookerModel = self.get_object()
+        instance.is_deleted = True
+        instance.save()
 
         return Response(
             {
@@ -364,8 +365,9 @@ class DishView(ModelViewSet):
         return super().list(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs) -> Response:
-        instance = self.get_object()
-        super().perform_destroy(instance)
+        instance: DishModel = self.get_object()
+        instance.is_deleted = True
+        instance.save()
 
         return Response(
             {
@@ -464,8 +466,9 @@ class DrinkView(ModelViewSet):
         return super().list(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs) -> Response:
-        instance = self.get_object()
-        super().perform_destroy(instance)
+        instance: DrinkModel = self.get_object()
+        instance.is_deleted = True
+        instance.save()
 
         return Response(
             {
