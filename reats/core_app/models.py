@@ -45,6 +45,7 @@ class CookerModel(ReatsModel):
     is_activated: BooleanField = BooleanField(default=False)
     acceptance_rate: FloatField = FloatField(default=100.0)
     last_acceptance_rate_update_date: DateTimeField = DateTimeField(null=True)
+    is_deleted: BooleanField = BooleanField(default=False)
 
     @property
     def full_address(self) -> str:
@@ -120,6 +121,7 @@ class DishModel(ReatsModel):
     is_enabled: BooleanField = BooleanField(default=True)
     is_suitable_for_quick_delivery: BooleanField = BooleanField(default=False)
     is_suitable_for_scheduled_delivery: BooleanField = BooleanField(default=False)
+    is_deleted: BooleanField = BooleanField(default=False)
 
     class Meta:
         db_table = "dishes"
@@ -143,6 +145,7 @@ class DrinkModel(ReatsModel):
     capacity: IntegerField = IntegerField()
     is_suitable_for_quick_delivery: BooleanField = BooleanField(default=False)
     is_suitable_for_scheduled_delivery: BooleanField = BooleanField(default=False)
+    is_deleted: BooleanField = BooleanField(default=False)
 
     class Meta:
         db_table = "drinks"
@@ -161,6 +164,7 @@ class CustomerModel(ReatsModel):
     )
     is_activated: BooleanField = BooleanField(default=False)
     stripe_id: CharField = CharField(max_length=100, null=True)
+    is_deleted: BooleanField = BooleanField(default=False)
 
     class Meta:
         db_table = "customers"
@@ -241,6 +245,7 @@ class OrderModel(ReatsModel):
     stripe_payment_intent_secret: CharField = CharField(max_length=100, null=True)
     rating: FloatField = FloatField(default=0.0)
     comment: TextField = TextField(null=True, blank=True)
+    is_deleted: BooleanField = BooleanField(default=False)
 
     def get_state_map(self) -> dict:
         return {
