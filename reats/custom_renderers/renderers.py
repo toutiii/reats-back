@@ -425,6 +425,8 @@ class OrderCustomRendererWithData(JSONRenderer):
                 }
                 for response_item in response["data"]:
                     self._enrich_response(response_item)
+                    if "is_deleted" in response_item:
+                        del response_item["is_deleted"]
 
             else:
                 response = {
@@ -432,6 +434,8 @@ class OrderCustomRendererWithData(JSONRenderer):
                     "status_code": status.HTTP_200_OK,
                     "data": data,
                 }
+                if "is_deleted" in response["data"]:
+                    del response["data"]["is_deleted"]
                 self._enrich_response(response["data"])
 
         if status_code == status.HTTP_401_UNAUTHORIZED:

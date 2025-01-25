@@ -60,7 +60,11 @@ class OrderGETSerializer(ModelSerializer):
 
     class Meta:
         model = OrderModel
-        exclude = ("modified", "customer")
+        exclude = (
+            "modified",
+            "customer",
+            "is_deleted",
+        )
         many = True
 
     def to_representation(self, instance):
