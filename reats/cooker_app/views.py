@@ -268,7 +268,7 @@ class DashboardView(GenericViewSet):
 
 class DishView(ModelViewSet):
     parser_classes = [MultiPartParser]
-    queryset = DishModel.objects.all()
+    queryset = DishModel.objects.filter(is_deleted=False).all()
 
     def get_serializer_class(self) -> type[BaseSerializer]:
         if self.request.method in ("POST", "PUT"):
@@ -379,7 +379,7 @@ class DishView(ModelViewSet):
 
 class DrinkView(ModelViewSet):
     parser_classes = [MultiPartParser]
-    queryset = DrinkModel.objects.all()
+    queryset = DrinkModel.objects.filter(is_deleted=False).all()
 
     def get_serializer_class(self) -> type[BaseSerializer]:
         if self.request.method in ("POST", "PUT"):

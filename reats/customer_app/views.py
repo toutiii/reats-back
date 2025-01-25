@@ -309,7 +309,7 @@ class DishView(ListModelMixin, GenericViewSet):
     serializer_class = DishGETSerializer
     renderer_classes = [CustomRendererWithData]
     parser_classes = [MultiPartParser]
-    queryset = DishModel.objects.filter(category="dish").all()
+    queryset = DishModel.objects.filter(category="dish").filter(is_deleted=False).all()
 
     def list(self, request, *args, **kwargs) -> Response:
         request_sort: Union[str, None] = self.request.query_params.get("sort")
@@ -419,7 +419,7 @@ class DrinkView(ListModelMixin, GenericViewSet):
     serializer_class = DrinkGETSerializer
     renderer_classes = [CustomRendererWithData]
     parser_classes = [MultiPartParser]
-    queryset = DrinkModel.objects.all()
+    queryset = DrinkModel.objects.filter(is_deleted=False).all()
 
     def list(self, request, *args, **kwargs) -> Response:
         request_cooker_id: Union[str, int, None] = self.request.query_params.get(
@@ -450,7 +450,9 @@ class DessertView(ListModelMixin, GenericViewSet):
     serializer_class = DishGETSerializer
     renderer_classes = [CustomRendererWithData]
     parser_classes = [MultiPartParser]
-    queryset = DishModel.objects.filter(category="dessert").all()
+    queryset = (
+        DishModel.objects.filter(category="dessert").filter(is_deleted=False).all()
+    )
 
     def list(self, request, *args, **kwargs) -> Response:
         request_cooker_id: Union[str, int, None] = self.request.query_params.get(
@@ -481,7 +483,9 @@ class StarterView(ListModelMixin, GenericViewSet):
     serializer_class = DishGETSerializer
     renderer_classes = [CustomRendererWithData]
     parser_classes = [MultiPartParser]
-    queryset = DishModel.objects.filter(category="starter").all()
+    queryset = (
+        DishModel.objects.filter(category="starter").filter(is_deleted=False).all()
+    )
 
     def list(self, request, *args, **kwargs) -> Response:
         request_cooker_id: Union[str, int, None] = self.request.query_params.get(
