@@ -1,6 +1,5 @@
 import pytest
 from core_app.models import DishModel
-from django.core.exceptions import ObjectDoesNotExist
 from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from freezegun import freeze_time
 from rest_framework import status
@@ -35,8 +34,7 @@ class TestDishDeleteSuccess:
             "status_code": status.HTTP_200_OK,
         }
 
-        with pytest.raises(ObjectDoesNotExist):
-            DishModel.objects.get(pk=dish_id)
+        assert DishModel.objects.get(pk=dish_id).is_deleted is True
 
 
 @pytest.mark.django_db

@@ -1,6 +1,5 @@
 import pytest
 from core_app.models import DrinkModel
-from django.core.exceptions import ObjectDoesNotExist
 from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from freezegun import freeze_time
 from rest_framework import status
@@ -35,8 +34,7 @@ class TestDrinkDeleteSuccess:
             "status_code": status.HTTP_200_OK,
         }
 
-        with pytest.raises(ObjectDoesNotExist):
-            DrinkModel.objects.get(pk=drink_id)
+        assert DrinkModel.objects.get(pk=drink_id).is_deleted is True
 
 
 @pytest.mark.django_db

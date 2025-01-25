@@ -170,14 +170,12 @@ def test_delete_customer_will_also_delete_his_addresses(
     assert delete_response.status_code == status.HTTP_200_OK
     assert delete_response.json() == {"ok": True, "status_code": 200}
 
-    # Then we check that the 1st address is not in the database anymore
-    assert not AddressModel.objects.filter(pk=first_address.pk).exists()
+    # As we don't really delete customers for now, the addresses will not be deleted in DB.
 
-    # Then we check that the 2nd address is not in the database anymore
-    assert not AddressModel.objects.filter(pk=second_address.pk).exists()
+    assert AddressModel.objects.get(pk=first_address.pk).is_enabled is True
+    assert AddressModel.objects.get(pk=second_address.pk).is_enabled is True
 
-    # Then we check that the customer is not in the database anymore
-    assert not CustomerModel.objects.filter(pk=customer_id).exists()
+    assert CustomerModel.objects.get(pk=customer_id).is_deleted is True
 
 
 @pytest.mark.django_db

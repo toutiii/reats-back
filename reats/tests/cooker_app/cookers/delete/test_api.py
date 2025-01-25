@@ -1,6 +1,5 @@
 import pytest
 from core_app.models import CookerModel, DishModel, DrinkModel
-from django.core.exceptions import ObjectDoesNotExist
 from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from freezegun import freeze_time
 from rest_framework import status
@@ -33,15 +32,9 @@ class TestCookerDeleteSuccess:
             "ok": True,
             "status_code": status.HTTP_200_OK,
         }
-
-        with pytest.raises(ObjectDoesNotExist):
-            CookerModel.objects.get(phone=data.get("phone"))
-
-        with pytest.raises(ObjectDoesNotExist):
-            CookerModel.objects.get(pk=1)
-
-        assert DishModel.objects.filter(cooker__id=cooker_id).count() == 0
-        assert DrinkModel.objects.filter(cooker__id=cooker_id).count() == 0
+        assert CookerModel.objects.get(pk=cooker_id).is_deleted is True
+        assert DishModel.objects.filter(cooker__id=cooker_id).count() > 0
+        assert DrinkModel.objects.filter(cooker__id=cooker_id).count() > 0
 
 
 @pytest.mark.django_db
