@@ -5,12 +5,27 @@ on:
     branches:
       - main
   pull_request:
-    branches:
-      - main
+      branches:
+        - main
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ${{ secrets.POSTGRES_USER }} -d ${{ secrets.POSTGRES_DB }}"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     env:
       ENV: "local"
@@ -25,7 +40,7 @@ jobs:
       POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
       POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
       POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-      DB_HOST: "localhost"  # Change later if using Docker Compose
+      DB_HOST: "localhost"
       DB_PORT: "5432"
 
       AWS_REGION: "eu-central-1"
@@ -48,6 +63,18 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r reats/requirements.txt
           pip install pre-commit pytest python-dotenv
+
+      - name: Wait for PostgreSQL to be Ready
+        run: |
+          echo "Waiting for PostgreSQL..."
+          for i in {1..30}; do
+            nc -z localhost 5432 && echo "PostgreSQL is up" && exit 0
+            sleep 1
+          done
+          echo "PostgreSQL failed to start" && exit 1
+
+      - name: Run Migrations
+        run: python reats/manage.py migrate
 
       - name: Run Pre-Commit Hooks
         run: pre-commit run --all-files
