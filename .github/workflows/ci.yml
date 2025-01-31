@@ -13,10 +13,26 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
+      ENV: "local"
+      DEBUG: "1"
+      SECRET_KEY: ${{ secrets.SECRET_KEY }}
+      RSA_PRIVATE_KEY_PATH: "/reats/dev/rsa/private/key"
+      RSA_PUBLIC_KEY_PATH: "/reats/dev/rsa/public/key"
+      DJANGO_ALLOWED_HOSTS: "*"
+      DJANGO_SIMPLE_JWT_ALGORITHM: "RS256"
+
+      DB_ENGINE: "django.db.backends.postgresql_psycopg2"
+      POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+      POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      DB_HOST: "localhost"  # Change later if using Docker Compose
+      DB_PORT: "5432"
+
       AWS_REGION: "eu-central-1"
-      AWS_DEFAULT_REGION: "eu-central-1"  # Optional but recommended
+      AWS_DEFAULT_REGION: "eu-central-1"
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
 
     steps:
       - name: Checkout Code
@@ -32,16 +48,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r reats/requirements.txt
           pip install pre-commit pytest python-dotenv
-
-      - name: Load Environment Variables
-        run: |
-          echo "Loading environment variables..."
-          cat <<EOF > .env
-          AWS_REGION=eu-central-1
-          AWS_DEFAULT_REGION=eu-central-1
-          AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          EOF
 
       - name: Run Pre-Commit Hooks
         run: pre-commit run --all-files
