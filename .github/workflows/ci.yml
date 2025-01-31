@@ -12,6 +12,12 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
 
+    env:
+      AWS_REGION: "eu-central-1"
+      AWS_DEFAULT_REGION: "eu-central-1"  # Optional but recommended
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -25,7 +31,17 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r reats/requirements.txt
-          pip install pre-commit pytest
+          pip install pre-commit pytest python-dotenv
+
+      - name: Load Environment Variables
+        run: |
+          echo "Loading environment variables..."
+          cat <<EOF > .env
+          AWS_REGION=eu-central-1
+          AWS_DEFAULT_REGION=eu-central-1
+          AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          EOF
 
       - name: Run Pre-Commit Hooks
         run: pre-commit run --all-files
