@@ -12,6 +12,8 @@ then
 fi
 
 ./wait-for-it.sh -h db -p 5432
+pwd
+ls -la /usr/src/app/reats/cooker_app
 python manage.py flush --no-input
 python manage.py collectstatic --no-input
 python manage.py makemigrations
