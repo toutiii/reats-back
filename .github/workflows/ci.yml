@@ -121,6 +121,15 @@ jobs:
           eb init ${{ secrets.EB_APP_NAME }} --region ${{ secrets.AWS_REGION }} --platform "Docker"
           eb create ${{ secrets.EB_ENV_NAME }} --single
 
+      - name: Package the App for Elastic Beanstalk
+        run: |
+          mkdir -p eb-deploy
+          cp -r reats/config/Dockerfile eb-deploy/
+          cp -r reats/* eb-deploy/
+          cd eb-deploy
+          zip -r ../app-deploy.zip .
+          cd ..
+
       - name: Deploy to Elastic Beanstalk
         run: |
           eb init ${{ secrets.EB_APP_NAME }} --region ${{ secrets.AWS_REGION }} --platform "Docker"
