@@ -1,9 +1,9 @@
 {
-  "AWSEBDockerrunVersion": "3",
+  "AWSEBDockerrunVersion": 3,
   "containerDefinitions": [
     {
       "name": "web",
-      "image": "your-dockerhub-or-ecr-image:latest",
+      "image": "python:3.10-slim",
       "essential": true,
       "memory": 512,
       "cpu": 256,
