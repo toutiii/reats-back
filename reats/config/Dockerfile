@@ -37,9 +37,6 @@ COPY reats/manage.py /usr/src/app/reats/manage.py
 # copy .pre-commit-config.yaml
 COPY .pre-commit-config.yaml /usr/src/app/.pre-commit-config.yaml
 
-# COPY .git repository
-COPY .git /usr/src/app/.git
-
 # copy config files
 COPY reats/config/.env /usr/src/app/reats/.env
 COPY reats/config/wait-for-it.sh /usr/src/app/reats/wait-for-it.sh
