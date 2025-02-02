@@ -37,7 +37,8 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 
 
 # Load all env vars in config/.env
-load_dotenv(os.path.join(BASE_DIR, "config/.env"))
+if os.environ["ENV"] == "local":
+    load_dotenv(os.path.join(BASE_DIR, "config/.env"))
 
 ALLOWED_HOSTS = os.environ["DJANGO_ALLOWED_HOSTS"].split(" ")
 
@@ -93,6 +94,7 @@ WSGI_APPLICATION = "source.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
 
+
 DATABASES = {
     "default": {
         "ENGINE": os.environ["DB_ENGINE"],
@@ -103,6 +105,12 @@ DATABASES = {
         "PORT": os.environ["DB_PORT"],
     }
 }
+
+if os.environ["ENV"] != "local":
+    DATABASES["default"]["HOST"] = os.environ["RDS_HOST"]
+    DATABASES["default"]["USER"] = os.environ["RDS_USER"]
+    DATABASES["default"]["PASSWORD"] = os.environ["RDS_PASSWORD"]
+    DATABASES["default"]["NAME"] = os.environ["RDS_DB"]
 
 
 # Password validation
