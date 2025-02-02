@@ -37,8 +37,7 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 
 
 # Load all env vars in config/.env
-if os.environ["ENV"] == "dev":
-    load_dotenv(os.path.join(BASE_DIR, "config/.env"))
+load_dotenv(os.path.join(BASE_DIR, "config/.env"))
 
 ALLOWED_HOSTS = os.environ["DJANGO_ALLOWED_HOSTS"].split(" ")
 
