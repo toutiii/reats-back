@@ -37,7 +37,7 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 
 
 # Load all env vars in config/.env
-if os.environ["ENV"] == "local":
+if os.environ["ENV"] == "dev":
     load_dotenv(os.path.join(BASE_DIR, "config/.env"))
 
 ALLOWED_HOSTS = os.environ["DJANGO_ALLOWED_HOSTS"].split(" ")
@@ -153,7 +153,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 STATIC_URL = os.path.join(BASE_DIR, "staticfiles/")
 
 PHONE_REGION = "FR"
-PHONE_BLACK_LIST = ("0000000000",)
+PHONE_BLACK_LIST = ("0000000000",)  # Check if we need to add more numbers
 
 REST_FRAMEWORK = {
     "EXCEPTION_HANDLER": "utils.custom_middlewares.custom_exception_handler",
