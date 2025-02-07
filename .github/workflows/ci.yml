@@ -31,6 +31,7 @@ jobs:
 
     env:
       DB_HOST: "postgres"
+      DB_PORT: "5432"
       # ENV: "local"
       # DEBUG: "1"
       # SECRET_KEY: ${{ secrets.SECRET_KEY }}
