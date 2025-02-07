@@ -37,9 +37,9 @@ jobs:
       # DJANGO_SIMPLE_JWT_ALGORITHM: "RS256"
 
       # DB_ENGINE: "django.db.backends.postgresql_psycopg2"
-      POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
-      POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      # POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+      # POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+      # POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
       # DB_HOST: "localhost"
       # DB_PORT: "5432"
 
