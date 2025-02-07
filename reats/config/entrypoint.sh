@@ -1,20 +1,31 @@
 #!/bin/sh
 
-if [ "$DATABASE" = "$POSTGRES_DB" ]
-then
-    echo "Waiting for postgres..."
+# Check if we're in a local Docker Compose environment
+if [ "$ENV" = "local" ]; then
+    echo "Local environment detected. Checking for PostgreSQL container..."
 
-    while ! nc -z $DB_HOST $DB_PORT; do
-      sleep 0.1
-    done
+    if [ "$DATABASE" = "$POSTGRES_DB" ]; then
+        echo "Waiting for PostgreSQL at $DB_HOST:$DB_PORT..."
 
-    echo "PostgreSQL started"
+        while ! nc -z $DB_HOST $DB_PORT; do
+            sleep 0.1
+        done
+
+        echo "PostgreSQL started"
+    fi
+
+    # Ensure wait-for-it.sh is only used in local mode
+    ./wait-for-it.sh -h db -p 5432
+else
+    echo "non local environment detected. Skipping PostgreSQL check."
 fi
 
-./wait-for-it.sh -h db -p 5432
+# Django setup
 python manage.py flush --no-input
 python manage.py collectstatic --no-input
 python manage.py makemigrations
 python manage.py migrate
 python manage.py loaddata */fixtures/*.json
+
+# Start Gunicorn
 gunicorn source.wsgi
