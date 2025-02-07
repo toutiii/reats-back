@@ -15,6 +15,12 @@ jobs:
     services:
       postgres:
         image: postgres:15
+        env:
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          # DB_HOST: "localhost"
+          # DB_PORT: "5432"
         ports:
           - 5432:5432
         options: >-
@@ -24,6 +30,7 @@ jobs:
           --health-retries 5
 
     env:
+      DB_HOST: "postgres"
       # ENV: "local"
       # DEBUG: "1"
       # SECRET_KEY: ${{ secrets.SECRET_KEY }}
@@ -35,10 +42,9 @@ jobs:
       # DB_ENGINE: "django.db.backends.postgresql_psycopg2"
       # POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
       # POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      # POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
       # DB_HOST: "localhost"
       # DB_PORT: "5432"
-      DB_HOST: "postgres"
 
       AWS_REGION: "eu-central-1"
       AWS_DEFAULT_REGION: "eu-central-1"
