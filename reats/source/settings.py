@@ -98,10 +98,6 @@ WSGI_APPLICATION = "source.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": os.environ["DB_ENGINE"],
-        "NAME": os.environ["POSTGRES_DB"],
-        "USER": os.environ["POSTGRES_USER"],
-        "PASSWORD": os.environ["POSTGRES_PASSWORD"],
-        "HOST": os.environ["DB_HOST"],
         "PORT": os.environ["DB_PORT"],
     }
 }
@@ -111,7 +107,11 @@ if os.environ["ENV"] != "local":
     DATABASES["default"]["USER"] = os.environ["RDS_USER"]
     DATABASES["default"]["PASSWORD"] = os.environ["RDS_PASSWORD"]
     DATABASES["default"]["NAME"] = os.environ["RDS_DB"]
-
+else:
+    DATABASES["default"]["HOST"] = os.environ["DB_HOST"]
+    DATABASES["default"]["USER"] = os.environ["POSTGRES_USER"]
+    DATABASES["default"]["PASSWORD"] = os.environ["POSTGRES_PASSWORD"]
+    DATABASES["default"]["NAME"] = os.environ["POSTGRES_DB"]
 
 # Password validation
 # https://docs.djangoproject.com/en/3.1/ref/settings/#auth-password-validators
