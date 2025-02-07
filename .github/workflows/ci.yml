@@ -19,8 +19,6 @@ jobs:
           POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
           POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-          # DB_HOST: "localhost"
-          # DB_PORT: "5432"
         ports:
           - 5432:5432
         options: >-
@@ -30,28 +28,13 @@ jobs:
           --health-retries 5
 
     env:
-      DB_HOST: "localhost"
-      DB_PORT: "5432"
-      # ENV: "local"
-      # DEBUG: "1"
-      # SECRET_KEY: ${{ secrets.SECRET_KEY }}
-      # RSA_PRIVATE_KEY_PATH: "/reats/dev/rsa/private/key"
-      # RSA_PUBLIC_KEY_PATH: "/reats/dev/rsa/public/key"
-      # DJANGO_ALLOWED_HOSTS: "*"
-      # DJANGO_SIMPLE_JWT_ALGORITHM: "RS256"
-
-      # DB_ENGINE: "django.db.backends.postgresql_psycopg2"
-      # POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
-      # POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-      # POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-      # DB_HOST: "localhost"
-      # DB_PORT: "5432"
-
       AWS_REGION: "eu-central-1"
       AWS_DEFAULT_REGION: "eu-central-1"
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
+      DB_HOST: "localhost"
+      DB_PORT: "5432"
 
     steps:
       - name: Checkout Code
