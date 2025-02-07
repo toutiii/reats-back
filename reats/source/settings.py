@@ -21,8 +21,8 @@ from dotenv import load_dotenv
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Load all env vars in config/.env
-load_dotenv(os.path.join(BASE_DIR, "config/.env"))
+# Load all env vars in .env
+load_dotenv(os.path.join(BASE_DIR, ".env"))
 
 boto3.set_stream_logger(name="botocore.credentials", level=logging.ERROR)
 session = boto3.session.Session()
