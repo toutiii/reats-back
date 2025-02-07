@@ -28,4 +28,4 @@ python manage.py migrate
 python manage.py loaddata */fixtures/*.json
 
 # Start Gunicorn
-gunicorn source.wsgi
+gunicorn --bind 0.0.0.0:8000 source.wsgi
