@@ -1,4 +1,5 @@
 from cooker_app import views as cooker_app_views
+from core_app import views as CoreAppViews
 from customer_app import views as customer_app_views
 from delivery_app import views as delivery_app_views
 from django.conf import settings
@@ -79,6 +80,7 @@ router.register(
 # The API URLs are now determined automatically by the router.
 urlpatterns = [
     path("api/v1/", include(router.urls)),
+    path("api/v1/health/", CoreAppViews.HealthCheckView.as_view(), name="health-check"),
     path(
         "api/v1/token/",
         cooker_app_views.TokenObtainPairWithoutPasswordView.as_view(),
