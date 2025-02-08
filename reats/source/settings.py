@@ -22,7 +22,8 @@ from dotenv import load_dotenv
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Load all env vars in .env
-load_dotenv(os.path.join(BASE_DIR, ".env"))
+if os.environ["ENV"] == "local":
+    load_dotenv(os.path.join(BASE_DIR, ".env"))
 
 boto3.set_stream_logger(name="botocore.credentials", level=logging.ERROR)
 session = boto3.session.Session()
