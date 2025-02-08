@@ -455,7 +455,7 @@ class TestTokenFetch:
         client: APIClient,
         data: dict,
         token_path: str,
-        ssm_get_parameter: MagicMock,
+        secrets_manager_get_secret: MagicMock,
     ) -> None:
         response = client.post(
             token_path,
@@ -465,7 +465,7 @@ class TestTokenFetch:
             **cooker_api_key_header
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        ssm_get_parameter.assert_not_called()
+        secrets_manager_get_secret.assert_not_called()
 
     @pytest.fixture
     def data(self) -> dict:
@@ -478,7 +478,7 @@ class TestTokenFetch:
         client: APIClient,
         data: dict,
         token_path: str,
-        ssm_get_parameter: MagicMock,
+        secrets_manager_get_secret: MagicMock,
     ) -> None:
         response = client.post(
             token_path,
@@ -497,4 +497,4 @@ class TestTokenFetch:
             },
             "user_id": ANY,
         }
-        ssm_get_parameter.assert_not_called()
+        secrets_manager_get_secret.assert_not_called()

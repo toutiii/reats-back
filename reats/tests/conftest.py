@@ -125,9 +125,17 @@ def verify_otp_message_failed() -> Iterator:
 
 
 @pytest.fixture
-def ssm_get_parameter() -> Iterator:
-    patcher = patch("source.settings.ssm_client.get_parameter")
-    yield patcher.start()
+def secrets_manager_get_secret() -> Iterator:
+    patcher = patch("source.settings.boto3.client")
+    mock_client = patcher.start()
+
+    # Mock AWS Secrets Manager behavior
+    mock_secrets_manager = mock_client.return_value
+    mock_secrets_manager.get_secret_value.side_effect = lambda SecretId: {
+        "SecretString": "mocked_secret_value"
+    }
+
+    yield mock_secrets_manager
     patcher.stop()
 
 

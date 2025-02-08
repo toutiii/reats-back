@@ -15,8 +15,8 @@ import os
 from pathlib import Path
 
 import boto3
-from botocore.exceptions import ClientError
 from dotenv import load_dotenv
+from utils.get_secrets import fetch_aws_secrets
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -38,10 +38,10 @@ boto3_logs_client = boto3.client("logs", region_name=os.getenv("AWS_REGION"))
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ["DEBUG"]
 
-SECRET_KEY = os.getenv("SECRET_KEY")
-
-
 ALLOWED_HOSTS = os.environ["DJANGO_ALLOWED_HOSTS"].split(" ")
+COOKER_APP_ORIGIN = "cooker"
+CUSTOMER_APP_ORIGIN = "customer"
+DELIVERY_APP_ORIGIN = "delivery"
 
 # Application definition
 
@@ -95,6 +95,22 @@ WSGI_APPLICATION = "source.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
 
+secret_data = fetch_aws_secrets(os.environ["AWS_SECRET_NAME"])
+
+if secret_data:
+    print("Secrets loaded successfully")
+    RSA_PRIVATE_KEY_PATH = secret_data["RSA_PRIVATE_KEY_PATH"]
+    RSA_PUBLIC_KEY_PATH = secret_data["RSA_PUBLIC_KEY_PATH"]
+    COOKER_APP_API_KEY = secret_data["COOKER_APP_API_KEY"]
+    CUSTOMER_APP_API_KEY = secret_data["CUSTOMER_APP_API_KEY"]
+    DELIVERY_APP_API_KEY = secret_data["DELIVERY_APP_API_KEY"]
+    GOOGLE_API_KEY = secret_data["GOOGLE_API_KEY"]
+    STRIPE_PRIVATE_API_KEY = secret_data["STRIPE_PRIVATE_API_KEY"]
+    STRIPE_WEBHOOK_ENDPOINT_SIGNATURE = secret_data["STRIPE_WEBHOOK_ENDPOINT_SIGNATURE"]
+    SECRET_KEY = secret_data["DJANGO_SECRET_KEY"]
+else:
+    raise RuntimeError("Failed to load secrets from AWS Secrets Manager")
+
 
 DATABASES = {
     "default": {
@@ -106,7 +122,7 @@ DATABASES = {
 if os.environ["ENV"] != "local":
     DATABASES["default"]["HOST"] = os.environ["RDS_HOST"]
     DATABASES["default"]["USER"] = os.environ["RDS_USER"]
-    DATABASES["default"]["PASSWORD"] = os.environ["RDS_PASSWORD"]
+    DATABASES["default"]["PASSWORD"] = secret_data["RDS_PASSWORD"]
     DATABASES["default"]["NAME"] = os.environ["RDS_DB"]
 else:
     DATABASES["default"]["HOST"] = os.environ["DB_HOST"]
@@ -165,84 +181,6 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": ("utils.custom_permissions.UserPermission",),
 }
 
-try:
-    response = ssm_client.get_parameter(
-        Name=os.getenv("RSA_PRIVATE_KEY_PATH"), WithDecryption=False
-    )
-except ClientError as e:
-    raise e
-
-secret_key = response["Parameter"]["Value"]
-
-try:
-    response = ssm_client.get_parameter(
-        Name=os.getenv("RSA_PUBLIC_KEY_PATH"), WithDecryption=False
-    )
-except ClientError as e:
-    raise e
-
-verifying_key = response["Parameter"]["Value"]
-
-
-try:
-    response = ssm_client.get_parameter(
-        Name=os.getenv("AWS_API_KEY_COOKER_APP"), WithDecryption=False
-    )
-except ClientError as e:
-    raise e
-
-COOKER_APP_API_KEY = response["Parameter"]["Value"]
-COOKER_APP_ORIGIN = "cooker"
-
-
-try:
-    response = ssm_client.get_parameter(
-        Name=os.getenv("AWS_API_KEY_CUSTOMER_APP"), WithDecryption=False
-    )
-except ClientError as e:
-    raise e
-
-CUSTOMER_APP_API_KEY = response["Parameter"]["Value"]
-CUSTOMER_APP_ORIGIN = "customer"
-
-try:
-    response = ssm_client.get_parameter(
-        Name=os.getenv("AWS_API_KEY_DELIVERY_APP"), WithDecryption=False
-    )
-except ClientError as e:
-    raise e
-
-DELIVERY_APP_API_KEY = response["Parameter"]["Value"]
-DELIVERY_APP_ORIGIN = "delivery"
-
-
-try:
-    response = ssm_client.get_parameter(
-        Name=os.getenv("GOOGLE_API_KEY"), WithDecryption=False
-    )
-except ClientError as e:
-    raise e
-
-GOOGLE_API_KEY = response["Parameter"]["Value"]
-
-try:
-    response = ssm_client.get_parameter(
-        Name=os.getenv("AWS_API_KEY_STRIPE_PRIVATE"), WithDecryption=False
-    )
-except ClientError as e:
-    raise e
-
-STRIPE_PRIVATE_API_KEY = response["Parameter"]["Value"]
-
-try:
-    response = ssm_client.get_parameter(
-        Name=os.getenv("AWS_API_KEY_STRIPE_WEBHOOK_ENDPOINT_SIGNATURE"),
-        WithDecryption=False,
-    )
-except ClientError as e:
-    raise e
-
-STRIPE_WEBHOOK_ENDPOINT_SIGNATURE = response["Parameter"]["Value"]
 
 DEFAULT_SEARCH_COUNTRY = "France"
 
@@ -253,8 +191,8 @@ IDLE_CANCEL_TIME_FOR_SCHEDULED_DELIVERY = 60  # in minutes
 
 SIMPLE_JWT = {
     "ALGORITHM": os.getenv("DJANGO_SIMPLE_JWT_ALGORITHM"),
-    "SIGNING_KEY": secret_key,
-    "VERIFYING_KEY": verifying_key,
+    "SIGNING_KEY": RSA_PRIVATE_KEY_PATH,
+    "VERIFYING_KEY": RSA_PUBLIC_KEY_PATH,
     "TOKEN_OBTAIN_SERIALIZER": "cookers_app.serializers.TokenObtainPairWithoutPasswordSerializer",
 }
 
