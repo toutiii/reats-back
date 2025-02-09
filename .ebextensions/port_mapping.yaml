@@ -1,0 +1,4 @@
+container_commands:
+  00001_add_mapping:
+    command: 'sed -i "s/docker run -d/docker run -p 8000:8000 -d/" /opt/elasticbeanstalk/hooks/appdeploy/enact/00run.sh'
+
