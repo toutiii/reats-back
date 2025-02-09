@@ -96,17 +96,6 @@ jobs:
           # Ensure we are in the project root before creating the ZIP
           zip -r deployment.zip Dockerrun.aws.json Dockerfile
 
-      - name: Check if Elastic Beanstalk Environment Exists
-        id: check_env
-        run: |
-          if aws elasticbeanstalk describe-environments --environment-names "${{ secrets.EB_ENV_NAME }}" --query "Environments[*].Status" --output text | grep -q "Ready"; then
-            echo "Environment exists and is ready."
-            echo "exists=true" >> $GITHUB_ENV
-          else
-            echo "Elastic Beanstalk environment does not exist or is not ready."
-            echo "exists=false" >> $GITHUB_ENV
-          fi
-
       - name: Deploy to Elastic Beanstalk
         run: |
           eb init ${{ secrets.EB_APP_NAME }} --region ${{ secrets.AWS_REGION }} --platform "Docker"
