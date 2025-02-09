@@ -32,7 +32,6 @@ ssm_client = boto3.client("ssm", region_name=os.getenv("AWS_REGION"))
 boto3_logs_client = boto3.client("logs", region_name=os.getenv("AWS_REGION"))
 
 
-SECURE_SSL_REDIRECT = os.getenv("ENV") == "local"  # Only enforce HTTPS locally
 SESSION_COOKIE_SECURE = True  # Keep secure session cookies
 CSRF_COOKIE_SECURE = True  # Keep secure CSRF cookies
 SECURE_PROXY_SSL_HEADER = (
