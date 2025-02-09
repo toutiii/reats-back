@@ -91,6 +91,11 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
+      - name: Package Deployment ZIP
+        run: |
+          # Ensure we are in the project root before creating the ZIP
+          zip -r deployment.zip Dockerrun.aws.json Dockerfile
+
       - name: Check if Elastic Beanstalk Environment Exists
         id: check_env
         run: |
@@ -102,15 +107,7 @@ jobs:
             echo "exists=false" >> $GITHUB_ENV
           fi
 
-      - name: Create Elastic Beanstalk Environment (If Missing)
-        if: env.exists == 'false'
-        run: |
-          echo "Creating new Elastic Beanstalk environment..."
-          eb init ${{ secrets.EB_APP_NAME }} --region ${{ secrets.AWS_REGION }} --platform "Docker"
-          eb create ${{ secrets.EB_ENV_NAME }} --single
-
       - name: Deploy to Elastic Beanstalk
         run: |
           eb init ${{ secrets.EB_APP_NAME }} --region ${{ secrets.AWS_REGION }} --platform "Docker"
-          eb deploy ${{ secrets.EB_ENV_NAME }}
-
+          eb deploy --staged --label "deploy-$(date +'%Y%m%d-%H%M%S')"
