@@ -31,6 +31,9 @@ session = boto3.session.Session()
 ssm_client = boto3.client("ssm", region_name=os.getenv("AWS_REGION"))
 boto3_logs_client = boto3.client("logs", region_name=os.getenv("AWS_REGION"))
 
+SECURE_SSL_REDIRECT = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
