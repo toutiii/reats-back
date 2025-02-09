@@ -32,12 +32,13 @@ ssm_client = boto3.client("ssm", region_name=os.getenv("AWS_REGION"))
 boto3_logs_client = boto3.client("logs", region_name=os.getenv("AWS_REGION"))
 
 
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
-
-if os.getenv("ENV") == "local":
-    SESSION_COOKIE_SECURE = False
-    CSRF_COOKIE_SECURE = False
+SECURE_SSL_REDIRECT = os.getenv("ENV") == "local"  # Only enforce HTTPS locally
+SESSION_COOKIE_SECURE = True  # Keep secure session cookies
+CSRF_COOKIE_SECURE = True  # Keep secure CSRF cookies
+SECURE_PROXY_SSL_HEADER = (
+    "HTTP_X_FORWARDED_PROTO",
+    "https",
+)  # Trust AWS Load Balancer SSL
 
 
 # Quick-start development settings - unsuitable for production
