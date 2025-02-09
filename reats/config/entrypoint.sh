@@ -1,8 +1,5 @@
 #!/bin/sh
 
-# Explicitly set PORT in case EB overrides it
-export PORT=8000
-
 # Check if we're in a local Docker Compose environment
 if [ "$ENV" = "local" ]; then
     echo "Local environment detected. Checking for PostgreSQL container..."
@@ -31,4 +28,4 @@ python manage.py migrate
 python manage.py loaddata */fixtures/*.json
 
 # Start Gunicorn
-gunicorn --bind 0.0.0.0:$PORT source.wsgi
+gunicorn --bind 0.0.0.0:8000 source.wsgi
