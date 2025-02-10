@@ -8,17 +8,5 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - ENV=dev
-    depends_on:
-      - db
-    env_file:
-      - reats/.env
-    volumes:
-      - ./reats/core_app:/usr/src/app/reats/core_app/
-      - ./reats/customer_app:/usr/src/app/reats/customer_app/
-      - ./reats/cooker_app:/usr/src/app/reats/cooker_app/
-      - ./reats/custom_renderers:/usr/src/app/reats/custom_renderers/
-      - ./reats/delivery_app:/usr/src/app/reats/delivery_app/
-      - ./reats/tests:/usr/src/app/reats/tests/
-      - ./reats/utils:/usr/src/app/reats/utils/
+      - ENV=aws
     container_name: django_app
