@@ -5,6 +5,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    env_file:
+      - reats/.env
     ports:
       - "8000:8000"
     container_name: django_app
