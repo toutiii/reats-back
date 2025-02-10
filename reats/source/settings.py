@@ -21,9 +21,8 @@ from utils.get_secrets import fetch_aws_secrets
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Load all env vars in .env
-if os.environ["ENV"] == "local":
-    load_dotenv(os.path.join(BASE_DIR, ".env"))
+# Load dotenv file
+load_dotenv(os.path.join(BASE_DIR, ".env"))
 
 boto3.set_stream_logger(name="botocore.credentials", level=logging.ERROR)
 session = boto3.session.Session()

@@ -7,6 +7,4 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
-    environment:
-      - ENV=aws
     container_name: django_app

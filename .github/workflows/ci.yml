@@ -78,6 +78,22 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Set Environment Variables
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            export ENV="dev"
+            export EB_ENV_NAME="reats-api-dev"
+          elif [[ "${{ github.ref }}" == "refs/heads/staging" ]]; then
+            export ENV="dev"
+            export EB_ENV_NAME="reats-api-dev"
+          else
+            export ENV="dev"
+            export EB_ENV_NAME="reats-api-dev"
+          fi
+
+          # Copy correct .env file
+          cp reats/config/.env.$ENV reats/.env
+
       - name: Install AWS CLI & EB CLI
         run: |
           sudo apt-get update

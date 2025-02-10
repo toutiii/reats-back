@@ -37,8 +37,13 @@ COPY reats/manage.py /usr/src/app/reats/manage.py
 # copy .pre-commit-config.yaml
 COPY .pre-commit-config.yaml /usr/src/app/.pre-commit-config.yaml
 
-# copy config files
-COPY reats/.env /usr/src/app/reats/.env
+# copy all .env files
+COPY reats/.env.local /usr/src/app/reats/.env.local
+COPY reats/.env.dev /usr/src/app/reats/.env.dev
+COPY reats/.env.staging /usr/src/app/reats/.env.staging
+COPY reats/.env.prod /usr/src/app/reats/.env.prod
+
+
 COPY reats/config/wait-for-it.sh /usr/src/app/reats/wait-for-it.sh
 COPY reats/config/entrypoint.sh /usr/src/app/reats/entrypoint.sh
 COPY reats/tox.ini /usr/src/app/reats/tox.ini
