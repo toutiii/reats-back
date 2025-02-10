@@ -92,7 +92,7 @@ jobs:
           fi
 
           # Copy correct .env file
-          cp reats/config/.env.$ENV reats/.env
+          cp reats/.env.$ENV reats/.env
 
       - name: Install AWS CLI & EB CLI
         run: |
