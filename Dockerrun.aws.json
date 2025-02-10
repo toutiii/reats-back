@@ -1,0 +1,12 @@
+{
+  "AWSEBDockerrunVersion": "3",
+  "containerDefinitions": [
+    {
+      "portMappings": [
+        {
+          "containerPort": 8000
+        }
+      ]
+    }
+  ]
+}
