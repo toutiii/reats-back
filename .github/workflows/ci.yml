@@ -91,12 +91,8 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      # - name: Package Deployment ZIP
-      #   run: |
-      #     # Ensure we are in the project root before creating the ZIP
-      #     zip -r deployment.zip Dockerrun.aws.json Dockerfile
-
       - name: Deploy to Elastic Beanstalk
         run: |
           eb init ${{ secrets.EB_APP_NAME }} --region ${{ secrets.AWS_REGION }} --platform "Docker"
+          zip -r deploy.zip Dockerrun.aws.json
           eb deploy --staged --label "deploy-$(date +'%Y%m%d-%H%M%S')"
