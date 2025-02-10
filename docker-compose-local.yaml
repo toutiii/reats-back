@@ -8,7 +8,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - ENV=dev
+      - ENV=local
     depends_on:
       - db
     env_file:
@@ -22,3 +22,16 @@ services:
       - ./reats/tests:/usr/src/app/reats/tests/
       - ./reats/utils:/usr/src/app/reats/utils/
     container_name: django_app
+
+  db:
+    image: postgres:15
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "8001:5432"
+    env_file:
+      - reats/.env
+    container_name: postgres_db
+
+volumes:
+  postgres_data:
