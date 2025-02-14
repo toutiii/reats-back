@@ -88,7 +88,7 @@ jobs:
             export EB_ENV_NAME="reats-api-dev"
           else
             export ENV="dev"
-            export EB_ENV_NAME="reats-api-dev"
+            export EB_ENV_NAME="reats-dev-env-alb"
           fi
 
           # Copy correct .env file
