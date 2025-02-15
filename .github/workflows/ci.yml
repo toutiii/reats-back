@@ -82,13 +82,13 @@ jobs:
         run: |
           if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
             export ENV="dev"
-            export EB_ENV_NAME="reats-api-dev"
+            export EB_ENV_NAME="reats-dev-env"
           elif [[ "${{ github.ref }}" == "refs/heads/staging" ]]; then
             export ENV="dev"
             export EB_ENV_NAME="reats-api-dev"
           else
             export ENV="dev"
-            export EB_ENV_NAME="reats-dev-env-alb"
+            export EB_ENV_NAME="reats-dev-env"
           fi
 
           # Copy correct .env file
