@@ -81,11 +81,11 @@ jobs:
       - name: Set Environment Variables
         run: |
           if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            export ENV="dev"
-            export EB_ENV_NAME="reats-dev-env"
+            export ENV="prod"
+            export EB_ENV_NAME="reats-prod-env"
           elif [[ "${{ github.ref }}" == "refs/heads/staging" ]]; then
-            export ENV="dev"
-            export EB_ENV_NAME="reats-api-dev"
+            export ENV="staging"
+            export EB_ENV_NAME="reats-staging-env"
           else
             export ENV="dev"
             export EB_ENV_NAME="reats-dev-env"
