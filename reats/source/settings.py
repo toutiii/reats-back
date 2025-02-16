@@ -13,7 +13,6 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 import logging
 import os
 from pathlib import Path
-from pprint import pprint
 
 import boto3
 from dotenv import load_dotenv
@@ -23,14 +22,10 @@ from utils.get_secrets import fetch_aws_secrets
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Load dotenv file
-load_dotenv(os.path.join(BASE_DIR, ".env"))
-
-print(os.path.join(BASE_DIR, ".env"))
-pprint(dict(os.environ))
-
-# Printing the content of the .env file
-with open(os.path.join(BASE_DIR, ".env"), "r") as f:
-    print(f.read())
+if os.environ["ENV"] == "local":
+    load_dotenv(os.path.join(BASE_DIR, ".env.local"))
+else:
+    load_dotenv(os.path.join(BASE_DIR, ".env"))
 
 
 boto3.set_stream_logger(name="botocore.credentials", level=logging.ERROR)
