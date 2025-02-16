@@ -20,8 +20,8 @@ jobs:
       postgres:
         image: postgres:15
         env:
-          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
-          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_DB: 'reats_local_db'
+          POSTGRES_USER: 'dev'
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
         ports:
           - 5432:5432
@@ -36,10 +36,28 @@ jobs:
       AWS_DEFAULT_REGION: "eu-central-1"
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
+      AWS_S3_BUCKET: 'reats-dev-bucket'
       DB_HOST: "localhost"
       DB_PORT: "5432"
-      ENV: ${{ secrets.ENV }}
+      DB_ENGINE: 'django.db.backends.postgresql'
+      ENV: "local"
+      DEBUG: 1
+      DJANGO_ALLOWED_HOSTS: "*"
+      DJANGO_SIMPLE_JWT_ALGORITHM: 'RS256'
+      POSTGRES_DB: 'reats_local_db'
+      POSTGRES_USER: 'dev'
+      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      AWS_PINPOINT_ALLOWED_ATTEMPTS: 3
+      AWS_PINPOINT_APP_ID: ${{ secrets.AWS_PINPOINT_APP_ID }}
+      AWS_PINPOINT_BRAND_NAME: "REATS"
+      AWS_PINPOINT_CHANNEL: "SMS"
+      AWS_PINPOINT_CODE_LENGTH: 6
+      AWS_PINPOINT_LANGUAGE: "fr-FR"
+      AWS_PINPOINT_VALIDITY_PERIOD: 30
+      AWS_SENDER_ID: "REATS-DEV"
+      AWS_LOG_GROUP_NAME: "reats-dev"
+      AWS_SECRET_NAME: ${{ secrets.AWS_SECRET_NAME }}
+
 
     steps:
       - name: Checkout Code
@@ -75,14 +93,15 @@ jobs:
         run: pytest reats/tests --disable-warnings
 
   deploy:
-    needs: build-and-test  # Deploy only if tests pass
+    needs: build-and-test
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Set Environment Variables
+      - name: Pick the right env file to use
         run: |
           if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
             export ENV="prod"
