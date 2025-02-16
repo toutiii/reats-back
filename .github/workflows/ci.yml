@@ -20,8 +20,8 @@ jobs:
       postgres:
         image: postgres:15
         env:
-          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
-          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_DB: 'reats_local_db'
+          POSTGRES_USER: 'dev'
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
         ports:
           - 5432:5432
@@ -40,7 +40,7 @@ jobs:
       DB_HOST: "localhost"
       DB_PORT: "5432"
       DB_ENGINE: 'django.db.backends.postgresql'
-      ENV: ${{ secrets.ENV }}
+      ENV: "local"
       DEBUG: 1
       DJANGO_ALLOWED_HOSTS: "*"
       DJANGO_SIMPLE_JWT_ALGORITHM: 'RS256'
