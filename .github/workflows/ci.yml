@@ -91,8 +91,8 @@ jobs:
             export ENV="staging"
             export EB_ENV_NAME="reats-staging-env"
           elif [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
-            export ENV="develop"
-            export EB_ENV_NAME="reats-deve-env"
+            export ENV="dev"
+            export EB_ENV_NAME="reats-dev-env"
           else
             echo "Error: This branch is not configured for deployment!"
             exit 1
