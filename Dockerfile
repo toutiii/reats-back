@@ -38,7 +38,8 @@ COPY reats/manage.py /usr/src/app/reats/manage.py
 COPY .pre-commit-config.yaml /usr/src/app/.pre-commit-config.yaml
 
 # copy all .env files
-COPY reats/.env.local /usr/src/app/reats/.env.local
+# Uncomment the line below when working on local
+# COPY reats/.env.local /usr/src/app/reats/.env.local
 COPY reats/.env.dev /usr/src/app/reats/.env.dev
 COPY reats/.env.staging /usr/src/app/reats/.env.staging
 COPY reats/.env.prod /usr/src/app/reats/.env.prod
