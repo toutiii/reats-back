@@ -129,11 +129,11 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: $AWS_REGION
 
       - name: Deploy to Elastic Beanstalk
         run: |
-          eb init ${{ secrets.EB_APP_NAME }} --region ${{ secrets.AWS_REGION }} --platform "Docker"
+          eb init ${{ secrets.EB_APP_NAME }} --region $AWS_REGION --platform "Docker"
           if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
             eb deploy reats-prod-env --label "deploy-$(date +'%Y%m%d-%H%M%S')"
           elif [[ "${{ github.ref }}" == "refs/heads/staging" ]]; then
