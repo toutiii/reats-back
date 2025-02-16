@@ -28,6 +28,11 @@ load_dotenv(os.path.join(BASE_DIR, ".env"))
 print(os.path.join(BASE_DIR, ".env"))
 pprint(dict(os.environ))
 
+# Printing the content of the .env file
+with open(os.path.join(BASE_DIR, ".env"), "r") as f:
+    print(f.read())
+
+
 boto3.set_stream_logger(name="botocore.credentials", level=logging.ERROR)
 session = boto3.session.Session()
 
