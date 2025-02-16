@@ -75,14 +75,15 @@ jobs:
         run: pytest reats/tests --disable-warnings
 
   deploy:
-    needs: build-and-test  # Deploy only if tests pass
+    needs: build-and-test
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Set Environment Variables
+      - name: Pick the right env file to use
         run: |
           if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
             export ENV="prod"
