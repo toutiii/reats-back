@@ -117,4 +117,4 @@ jobs:
       - name: Deploy to Elastic Beanstalk
         run: |
           eb init ${{ secrets.EB_APP_NAME }} --region ${{ secrets.AWS_REGION }} --platform "Docker"
-          eb deploy --label "deploy-$(date +'%Y%m%d-%H%M%S')"
+          eb deploy $EB_ENV_NAME --label "deploy-$(date +'%Y%m%d-%H%M%S')"
