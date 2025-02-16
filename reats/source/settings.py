@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 import logging
 import os
 from pathlib import Path
+from pprint import pprint
 
 import boto3
 from dotenv import load_dotenv
@@ -23,6 +24,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Load dotenv file
 load_dotenv(os.path.join(BASE_DIR, ".env"))
+
+print(os.path.join(BASE_DIR, ".env"))
+pprint(dict(os.environ))
 
 boto3.set_stream_logger(name="botocore.credentials", level=logging.ERROR)
 session = boto3.session.Session()
