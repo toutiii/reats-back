@@ -86,13 +86,10 @@ jobs:
         run: |
           if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
             export ENV="prod"
-            export EB_ENV_NAME="reats-prod-env"
           elif [[ "${{ github.ref }}" == "refs/heads/staging" ]]; then
             export ENV="staging"
-            export EB_ENV_NAME="reats-staging-env"
           elif [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
             export ENV="dev"
-            export EB_ENV_NAME="reats-dev-env"
           else
             echo "Error: This branch is not configured for deployment!"
             exit 1
@@ -118,5 +115,14 @@ jobs:
       - name: Deploy to Elastic Beanstalk
         run: |
           eb init ${{ secrets.EB_APP_NAME }} --region ${{ secrets.AWS_REGION }} --platform "Docker"
-          eb use $EB_ENV_NAME
-          eb deploy $EB_ENV_NAME --label "deploy-$(date +'%Y%m%d-%H%M%S')"
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            eb deploy reats-prod-env --label "deploy-$(date +'%Y%m%d-%H%M%S')"
+          elif [[ "${{ github.ref }}" == "refs/heads/staging" ]]; then
+            eb deploy reats-staging-env --label "deploy-$(date +'%Y%m%d-%H%M%S')"
+          elif [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
+            eb deploy reats-dev-env --label "deploy-$(date +'%Y%m%d-%H%M%S')"
+          else
+            echo "Error: Wrong branch for deployment"
+            exit 1
+          fi
+
