@@ -39,6 +39,7 @@ jobs:
       AWS_S3_BUCKET: 'reats-dev-bucket"'
       DB_HOST: "localhost"
       DB_PORT: "5432"
+      DB_ENGINE: 'django.db.backends.postgresql'
       ENV: ${{ secrets.ENV }}
       DEBUG: 1
       DJANGO_ALLOWED_HOSTS: "*"
