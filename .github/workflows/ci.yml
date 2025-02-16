@@ -94,7 +94,7 @@ jobs:
             echo "Error: This branch is not configured for deployment!"
             exit 1
           fi
-          echo "Selected Environment: $EB_ENV_NAME"
+          echo "Deploying to $ENV environment..."
 
           # Copy correct .env file
           cp reats/.env.$ENV reats/.env
