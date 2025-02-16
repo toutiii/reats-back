@@ -11,7 +11,16 @@ def fetch_aws_secrets(secret_name: str):
     if not region:
         raise ValueError("AWS_REGION environment variable is not set")
 
-    secrets_client = boto3.client("secretsmanager", region_name=region)
+    if os.environ["ENV"] == "local":
+        session = boto3.Session(
+            aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+            aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+            region_name=region,
+        )
+    else:
+        session = boto3.Session()  # Uses IAM Role in AWS
+
+    secrets_client = session.client("secretsmanager", region_name=region)
 
     try:
         secrets_response = secrets_client.get_secret_value(SecretId=secret_name)
