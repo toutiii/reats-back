@@ -2,8 +2,8 @@
 FROM python:3.10-slim
 
 # set environment variables
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
 # get some useful python lib for dev
 RUN apt-get -y update \
