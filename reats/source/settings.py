@@ -210,10 +210,6 @@ DEFAULT_CURRENCY = "EUR"
 ACCEPTANCE_RATE_INCREASE_VALUE = 2
 ACCEPTANCE_RATE_DECREASE_VALUE = 10
 
-if os.getenv("ENV") == "local":
-    propagate = False
-    handlers = ["console"]
-
 LOGGING: dict[str, Any] = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -225,7 +221,6 @@ LOGGING: dict[str, Any] = {
     },
     "root": {
         "level": "DEBUG",  # Ensure everything is logged
-        "handlers": ["console", "watchtower"],  # Log both to console and CloudWatch
     },
     "handlers": {
         "console": {
@@ -274,3 +269,7 @@ if os.environ["ENV"] in ["dev", "staging"]:
         "console",
         "watchtower",
     ]  # Log to both in dev/staging
+
+if os.environ["ENV"] == "local":
+    propagate = False
+    handlers = ["console"]
