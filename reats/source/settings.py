@@ -202,14 +202,13 @@ SIMPLE_JWT = {
     "TOKEN_OBTAIN_SERIALIZER": "cookers_app.serializers.TokenObtainPairWithoutPasswordSerializer",
 }
 
-propagate = True
-handlers = ["watchtower"]
 SERVICE_FEES_RATE = 0.07
 DEFAULT_CURRENCY = "EUR"
 
 ACCEPTANCE_RATE_INCREASE_VALUE = 2
 ACCEPTANCE_RATE_DECREASE_VALUE = 10
 
+propagate = True
 LOGGING: dict[str, Any] = {
     "version": 1,
     "disable_existing_loggers": False,
