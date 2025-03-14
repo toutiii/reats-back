@@ -1,0 +1,33 @@
+name: Staging Deployment
+
+on:
+  push:
+    branches:
+      - staging
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set Environment Variables
+        run: echo "ENV=staging" >> $GITHUB_ENV
+
+      - name: Authenticate with AWS ECR
+        run: |
+          aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin 189773933338.dkr.ecr.eu-central-1.amazonaws.com
+
+      - name: Build and Tag Docker Image
+        run: |
+          docker build -t 189773933338.dkr.ecr.eu-central-1.amazonaws.com/reats/django:staging .
+
+      - name: Push Image to ECR
+        run: |
+          docker push 189773933338.dkr.ecr.eu-central-1.amazonaws.com/reats/django:staging
+
+      - name: Update ECS Service
+        run: |
+          aws ecs update-service --cluster reats-staging-cluster --service reats-staging-ecs-service --force-new-deployment
