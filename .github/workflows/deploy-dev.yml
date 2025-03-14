@@ -36,7 +36,7 @@ jobs:
 
       - name: Build and Tag Docker Image
         run: |
-          IMAGE_TAG=$(date +'%Y%m%d-%H%M%S' + ':dev')
+          IMAGE_TAG=$(date +'%Y%m%d-%H%M%S')
           echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
           docker build -t $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:$IMAGE_TAG .
           docker tag $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:$IMAGE_TAG \
