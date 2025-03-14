@@ -1,9 +1,9 @@
-name: Deploy to Staging (ECS)
+name: Deploy to Production (ECS)
 
 on:
   push:
     branches:
-      - staging
+      - main
 
 jobs:
   build-and-deploy:
@@ -11,13 +11,10 @@ jobs:
 
     env:
       AWS_REGION: ${{ secrets.AWS_REGION }}
-      AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
       AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
       ECR_REPOSITORY: "reats/django"
-      ECS_CLUSTER: "reats-staging-cluster"
-      ECS_SERVICE: "reats-staging-ecs-service"
-      ECS_TASK_DEFINITION: "reats-staging-task"
-      CONTAINER_NAME: "django_app"
+      ECS_CLUSTER: "reats-prod-cluster"
+      ECS_SERVICE: "reats-prod-ecs-service"
 
     steps:
       - name: Checkout Code
@@ -42,12 +39,12 @@ jobs:
           docker build -t $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:$IMAGE_TAG .
 
           docker tag $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:$IMAGE_TAG \
-                     $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:staging
+                     $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:prod
 
       - name: Push Docker Image to ECR
         run: |
           docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:$IMAGE_TAG
-          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:staging
+          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:prod
 
       - name: Deploy to ECS
         run: |
