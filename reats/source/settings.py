@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 import logging
 import os
 from pathlib import Path
+from typing import Any
 
 import boto3
 from dotenv import load_dotenv
@@ -21,11 +22,13 @@ from utils.get_secrets import fetch_aws_secrets
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+
+if os.environ["ENV"].lower() not in ["local", "dev", "staging", "prod"]:
+    raise ValueError("Invalid ENV value")
+
 # Load dotenv file
-if os.environ["ENV"] == "local":
-    load_dotenv(os.path.join(BASE_DIR, ".env.local"))
-else:
-    load_dotenv(os.path.join(BASE_DIR, ".env"))
+env_file = f".env.{os.environ['ENV'].lower()}"
+load_dotenv(os.path.join(BASE_DIR, env_file))
 
 
 boto3.set_stream_logger(name="botocore.credentials", level=logging.ERROR)
@@ -199,66 +202,73 @@ SIMPLE_JWT = {
     "TOKEN_OBTAIN_SERIALIZER": "cookers_app.serializers.TokenObtainPairWithoutPasswordSerializer",
 }
 
-propagate = True
-handlers = ["watchtower"]
 SERVICE_FEES_RATE = 0.07
 DEFAULT_CURRENCY = "EUR"
 
 ACCEPTANCE_RATE_INCREASE_VALUE = 2
 ACCEPTANCE_RATE_DECREASE_VALUE = 10
 
-if os.getenv("ENV") == "local":
-    propagate = False
-    handlers = ["console"]
-
-LOGGING = {
+propagate = True
+LOGGING: dict[str, Any] = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
         "aws": {
-            # you can add specific format for aws here
-            # if you want to change format, you can read:
-            #    https://stackoverflow.com/questions/533048/how-to-log-source-file-name-and-line-number-in-python/44401529
             "format": "%(asctime)s [%(levelname)-8s] %(message)s [%(pathname)s:%(lineno)d]",
             "datefmt": "%Y-%m-%d %H:%M:%S",
         },
     },
     "root": {
-        "level": "INFO",
-        # Adding the watchtower handler here causes all loggers in the project that
-        # have propagate=True (the default) to send messages to watchtower. If you
-        # wish to send only from specific loggers instead, remove "watchtower" here
-        # and configure individual loggers below.
-        "handlers": handlers,
+        "level": "DEBUG",  # Ensure everything is logged
     },
     "handlers": {
         "console": {
             "class": "logging.StreamHandler",
             "formatter": "aws",
-            "level": "DEBUG",
+            "level": "DEBUG",  # Capture detailed logs
         },
         "watchtower": {
             "class": "watchtower.CloudWatchLogHandler",
             "boto3_client": boto3_logs_client,
             "log_group_name": os.getenv("AWS_LOG_GROUP_NAME"),
-            # Decrease the verbosity level here to send only those logs to watchtower,
-            # but still see more verbose logs in the console. See the watchtower
-            # documentation for other parameters that can be set here.
             "level": "INFO",
             "formatter": "aws",
         },
     },
     "loggers": {
-        # In the debug server (`manage.py runserver`), several Django system loggers cause
-        # deadlocks when using threading in the logging handler, and are not supported by
-        # watchtower. This limitation does not apply when running on production WSGI servers
-        # (gunicorn, uwsgi, etc.), so we recommend that you set `propagate=True` below in your
-        # production-specific Django settings file to receive Django system logs in CloudWatch.
+        "django": {
+            "level": "DEBUG",
+            "handlers": ["console", "watchtower"],
+            "propagate": True,
+        },
+        "django.request": {
+            "level": "DEBUG",
+            "handlers": ["console", "watchtower"],
+            "propagate": True,
+        },
+        "django.security": {
+            "level": "DEBUG",
+            "handlers": ["console", "watchtower"],
+            "propagate": True,
+        },
         "reats_logger": {
-            "level": "INFO",
-            "handlers": handlers,
-            "propagate": propagate,
-        }
-        # Add any other logger-specific configuration here.
+            "level": "DEBUG",
+            "handlers": ["console", "watchtower"],
+            "propagate": True,
+        },
     },
 }
+
+
+if os.environ["ENV"] == "prod":
+    LOGGING["root"]["handlers"] = ["watchtower"]  # Log only to CloudWatch
+
+if os.environ["ENV"] in ["dev", "staging"]:
+    LOGGING["root"]["handlers"] = [
+        "console",
+        "watchtower",
+    ]  # Log to both in dev/staging
+
+if os.environ["ENV"] == "local":
+    propagate = False
+    handlers = ["console"]
