@@ -1,15 +1,8 @@
-name: CI Pipeline
+name: PR CI/CD
 
 on:
-  push:
-    branches:
-      - main
-      - staging
-      - develop
   pull_request:
     branches:
-      - main
-      - staging
       - develop
 
 jobs:
@@ -18,7 +11,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:15
+        image: postgres:16
         env:
           POSTGRES_DB: 'reats_local_db'
           POSTGRES_USER: 'dev'
@@ -46,7 +39,7 @@ jobs:
       DJANGO_SIMPLE_JWT_ALGORITHM: 'RS256'
       POSTGRES_DB: 'reats_local_db'
       POSTGRES_USER: 'dev'
-      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      POSTGRES_PASSWORD: 'devpassword'
       AWS_PINPOINT_ALLOWED_ATTEMPTS: 3
       AWS_PINPOINT_APP_ID: ${{ secrets.AWS_PINPOINT_APP_ID }}
       AWS_PINPOINT_BRAND_NAME: "REATS"
@@ -91,57 +84,3 @@ jobs:
 
       - name: Run Tests
         run: pytest reats/tests --disable-warnings
-
-  deploy:
-    needs: build-and-test
-    if: github.event_name == 'push'
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Pick the right env file to use
-        run: |
-          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            export ENV="prod"
-          elif [[ "${{ github.ref }}" == "refs/heads/staging" ]]; then
-            export ENV="staging"
-          elif [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
-            export ENV="dev"
-          else
-            echo "Error: This branch is not configured for deployment!"
-            exit 1
-          fi
-          echo "Deploying to $ENV environment..."
-
-          # Copy correct .env file
-          cp reats/.env.$ENV reats/.env
-
-      - name: Install AWS CLI & EB CLI
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y python3-pip
-          pip install awsebcli --upgrade --user
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
-
-      - name: Deploy to Elastic Beanstalk
-        run: |
-          eb init ${{ secrets.EB_APP_NAME }} --region ${{ secrets.AWS_REGION }} --platform "Docker"
-          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            eb deploy reats-prod-env --label "deploy-$(date +'%Y%m%d-%H%M%S')"
-          elif [[ "${{ github.ref }}" == "refs/heads/staging" ]]; then
-            eb deploy reats-staging-env --label "deploy-$(date +'%Y%m%d-%H%M%S')"
-          elif [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
-            eb deploy reats-dev-env --label "deploy-$(date +'%Y%m%d-%H%M%S')"
-          else
-            echo "Error: Wrong branch for deployment"
-            exit 1
-          fi
-
