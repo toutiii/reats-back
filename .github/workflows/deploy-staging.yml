@@ -1,4 +1,4 @@
-name: Staging Deployment
+name: Deploy to Staging (ECS)
 
 on:
   push:
@@ -6,28 +6,47 @@ on:
       - staging
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
+
+    env:
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
+      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+      ECR_REPOSITORY: "reats/django"
+      ECS_CLUSTER: "reats-staging-cluster"
+      ECS_SERVICE: "reats-staging-ecs-service"
+      ECS_TASK_DEFINITION: "reats-staging-task"
+      CONTAINER_NAME: "django_app"
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Set Environment Variables
-        run: echo "ENV=staging" >> $GITHUB_ENV
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Authenticate with AWS ECR
+      - name: Log in to Amazon ECR
         run: |
-          aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin 189773933338.dkr.ecr.eu-central-1.amazonaws.com
+          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
 
       - name: Build and Tag Docker Image
         run: |
-          docker build -t 189773933338.dkr.ecr.eu-central-1.amazonaws.com/reats/django:staging .
+          IMAGE_TAG=$(date +'%Y%m%d-%H%M%S' + ':staging')
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+          docker build -t $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker tag $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:$IMAGE_TAG \
+                     $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:staging
 
-      - name: Push Image to ECR
+      - name: Push Docker Image to ECR
         run: |
-          docker push 189773933338.dkr.ecr.eu-central-1.amazonaws.com/reats/django:staging
+          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:staging
 
-      - name: Update ECS Service
+      - name: Deploy to ECS
         run: |
-          aws ecs update-service --cluster reats-staging-cluster --service reats-staging-ecs-service --force-new-deployment
+          aws ecs update-service --cluster $ECS_CLUSTER --service $ECS_SERVICE --force-new-deployment
