@@ -268,7 +268,8 @@ LOGGING: dict[str, Any] = {
 
 if os.environ["ENV"] == "prod":
     LOGGING["root"]["handlers"] = ["watchtower"]  # Log only to CloudWatch
-else:
+
+if os.environ["ENV"] in ["dev", "staging"]:
     LOGGING["root"]["handlers"] = [
         "console",
         "watchtower",
