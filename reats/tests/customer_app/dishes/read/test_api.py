@@ -1,6 +1,7 @@
 from unittest.mock import MagicMock
 
 import pytest
+from core_app.models import DishModel
 from deepdiff import DeepDiff
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -481,3 +482,75 @@ class TestListDishesWithCookerIdFilter:
         assert response.status_code == status.HTTP_200_OK
         mock_googlemaps_distance_matrix.assert_called_once()
         assert response.json() == expected_results
+
+
+@pytest.mark.parametrize(
+    "query_parameter",
+    [
+        {
+            "search_radius": "10",
+            "search_address_id": "1",
+        },
+        {
+            "name": "pou",
+            "country": "Cameroun",
+            "search_address_id": "1",
+            "search_radius": "10",
+        },
+    ],
+    ids=[
+        "search_by_radius",
+        "search_by_name_and_country_and_radius_and_address",
+    ],
+)
+class TestListDishesOnlyReturnNonDeletedItems:
+    @pytest.fixture
+    def cooker_id(self) -> int:
+        return 1
+
+    @pytest.mark.django_db
+    def test_response(
+        self,
+        auth_headers: dict,
+        client: APIClient,
+        cooker_id: int,
+        customer_dish_path: str,
+        query_parameter: dict,
+        mock_googlemaps_distance_matrix: MagicMock,
+    ) -> None:
+
+        assert (
+            DishModel.objects.filter(category="dish")
+            .filter(cooker__id=cooker_id)
+            .filter(is_enabled=True)
+            .count()
+            > 0
+        )
+
+        first_item = (
+            DishModel.objects.filter(category="dish")
+            .filter(cooker__id=cooker_id)
+            .filter(is_enabled=True)
+            .first()
+        )
+        if first_item is not None:
+            first_item.is_deleted = True
+            first_item.save()
+        else:
+            assert False
+
+        response = client.get(
+            f"{customer_dish_path}",
+            follow=False,
+            **auth_headers,
+            data=query_parameter,
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json().get("ok") is True
+        assert response.json().get("status_code") == status.HTTP_200_OK
+
+        for item in response.json().get("data"):
+            assert item.get("is_enabled") is True
+            assert DishModel.objects.get(pk=int(item.get("id"))).is_deleted is False
+
+        mock_googlemaps_distance_matrix.assert_called_once()

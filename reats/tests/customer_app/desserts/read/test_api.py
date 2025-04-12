@@ -196,3 +196,51 @@ class TestListDessertsForCustomerFailedWithoutCookerId:
             "status_code": status.HTTP_200_OK,
             "data": [],
         }
+
+
+class TestListDessertsOnlyReturnNonDeletedItems:
+    @pytest.fixture
+    def cooker_id(self) -> int:
+        return 1
+
+    @pytest.mark.django_db
+    def test_response(
+        self,
+        auth_headers: dict,
+        client: APIClient,
+        cooker_id: int,
+        customer_dessert_path: str,
+    ) -> None:
+
+        assert (
+            DishModel.objects.filter(category="dessert")
+            .filter(cooker__id=cooker_id)
+            .filter(is_enabled=True)
+            .count()
+            > 0
+        )
+
+        first_item = (
+            DishModel.objects.filter(category="dessert")
+            .filter(cooker__id=cooker_id)
+            .filter(is_enabled=True)
+            .first()
+        )
+        if first_item is not None:
+            first_item.is_deleted = True
+            first_item.save()
+        else:
+            assert False
+
+        response = client.get(
+            f"{customer_dessert_path}?cooker_id={cooker_id}",
+            follow=False,
+            **auth_headers,
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json().get("ok") is True
+        assert response.json().get("status_code") == status.HTTP_200_OK
+
+        for item in response.json().get("data"):
+            assert item.get("is_enabled") is True
+            assert DishModel.objects.get(pk=int(item.get("id"))).is_deleted is False

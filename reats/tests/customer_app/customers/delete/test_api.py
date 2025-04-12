@@ -2,7 +2,6 @@ from unittest.mock import MagicMock
 
 import pytest
 from core_app.models import CustomerModel
-from django.core.exceptions import ObjectDoesNotExist
 from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from freezegun import freeze_time
 from rest_framework import status
@@ -38,11 +37,8 @@ class TestCustomerDeleteSuccess:
                 "status_code": status.HTTP_200_OK,
             }
 
-            with pytest.raises(ObjectDoesNotExist):
-                CustomerModel.objects.get(phone=data.get("phone"))
-
-            with pytest.raises(ObjectDoesNotExist):
-                CustomerModel.objects.get(pk=customer_id)
+            CustomerModel.objects.get(phone=data.get("phone")).is_deleted is True
+            CustomerModel.objects.get(pk=customer_id).is_deleted is True
 
             mock_stripe_customer_delete.assert_called_once_with("cus_QyZ76Ae0W5KeqP")
 

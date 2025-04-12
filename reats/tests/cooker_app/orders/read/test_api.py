@@ -469,6 +469,7 @@ def test_orders_list_success_with_no_filters(
     assert response.status_code == status.HTTP_200_OK
     assert response.json().get("ok") == ok_value
     assert response.json().get("status_code") == expected_status_code
+
     diff = DeepDiff(response.json().get("data"), expected_data, ignore_order=True)
 
     assert not diff

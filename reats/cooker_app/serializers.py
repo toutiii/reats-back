@@ -165,6 +165,7 @@ class CookerOrderCustomerGETSerializer(ModelSerializer):
             "id",
             "firstname",
             "lastname",
+            "is_deleted",
         )
 
 
@@ -180,6 +181,7 @@ class CookerOrderGETSerializer(ModelSerializer):
             "modified",
             "stripe_payment_intent_id",
             "stripe_payment_intent_secret",
+            "is_deleted",
         )
         many = True
 

@@ -153,6 +153,7 @@ def test_create_order_success_with_asap_delivery(
             "status": OrderStatusEnum.DRAFT.value,
             "stripe_payment_intent_id": "pi_3Q6VU7EEYeaFww1W0xCZEUxw",
             "stripe_payment_intent_secret": "pi_3Q6VU7EEYeaFww1W0xCZEUxw_secret_OJqlWW9QRZZuSmAwUBklpxUf4",
+            "is_deleted": False,
         }
 
         order_dish_item_query = OrderDishItemModel.objects.filter(
@@ -313,6 +314,7 @@ def test_create_order_success_with_scheduled_delivery(
             "status": OrderStatusEnum.DRAFT.value,
             "stripe_payment_intent_id": "pi_3Q6VU7EEYeaFww1W0xCZEUxw",
             "stripe_payment_intent_secret": "pi_3Q6VU7EEYeaFww1W0xCZEUxw_secret_OJqlWW9QRZZuSmAwUBklpxUf4",
+            "is_deleted": False,
         }
 
         order_dish_item_query = OrderDishItemModel.objects.filter(

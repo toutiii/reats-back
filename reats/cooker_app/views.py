@@ -136,8 +136,9 @@ class CookerView(ModelViewSet):
         return super().partial_update(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs) -> Response:
-        instance = self.get_object()
-        super().perform_destroy(instance)
+        instance: CookerModel = self.get_object()
+        instance.is_deleted = True
+        instance.save()
 
         return Response(
             {
@@ -267,7 +268,7 @@ class DashboardView(GenericViewSet):
 
 class DishView(ModelViewSet):
     parser_classes = [MultiPartParser]
-    queryset = DishModel.objects.all()
+    queryset = DishModel.objects.filter(is_deleted=False).all()
 
     def get_serializer_class(self) -> type[BaseSerializer]:
         if self.request.method in ("POST", "PUT"):
@@ -364,8 +365,9 @@ class DishView(ModelViewSet):
         return super().list(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs) -> Response:
-        instance = self.get_object()
-        super().perform_destroy(instance)
+        instance: DishModel = self.get_object()
+        instance.is_deleted = True
+        instance.save()
 
         return Response(
             {
@@ -377,7 +379,7 @@ class DishView(ModelViewSet):
 
 class DrinkView(ModelViewSet):
     parser_classes = [MultiPartParser]
-    queryset = DrinkModel.objects.all()
+    queryset = DrinkModel.objects.filter(is_deleted=False).all()
 
     def get_serializer_class(self) -> type[BaseSerializer]:
         if self.request.method in ("POST", "PUT"):
@@ -464,8 +466,9 @@ class DrinkView(ModelViewSet):
         return super().list(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs) -> Response:
-        instance = self.get_object()
-        super().perform_destroy(instance)
+        instance: DrinkModel = self.get_object()
+        instance.is_deleted = True
+        instance.save()
 
         return Response(
             {

@@ -31,7 +31,11 @@ class DishGETSerializer(ModelSerializer):
 
     class Meta:
         model = DishModel
-        exclude = ("created", "modified")
+        exclude = (
+            "created",
+            "modified",
+            "is_deleted",
+        )
 
 
 class DrinkGETSerializer(ModelSerializer):
@@ -39,7 +43,11 @@ class DrinkGETSerializer(ModelSerializer):
 
     class Meta:
         model = DrinkModel
-        exclude = ("created", "modified")
+        exclude = (
+            "created",
+            "modified",
+            "is_deleted",
+        )
 
 
 class OrderDishItemGETSerializer(ModelSerializer):
@@ -47,7 +55,12 @@ class OrderDishItemGETSerializer(ModelSerializer):
 
     class Meta:
         model = OrderDishItemModel
-        exclude = ("created", "modified", "order", "id")
+        exclude = (
+            "created",
+            "modified",
+            "order",
+            "id",
+        )
 
 
 class OrderDrinkItemGETSerializer(ModelSerializer):
@@ -55,7 +68,12 @@ class OrderDrinkItemGETSerializer(ModelSerializer):
 
     class Meta:
         model = OrderDrinkItemModel
-        exclude = ("created", "modified", "order", "id")
+        exclude = (
+            "created",
+            "modified",
+            "order",
+            "id",
+        )
 
 
 class OrderPATCHSerializer(ModelSerializer):
