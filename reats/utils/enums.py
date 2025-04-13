@@ -8,6 +8,7 @@ class OrderStatusEnum(str, Enum):
     )
     PROCESSING = "processing"  # State when the order has been accepted by the cooker
     COMPLETED = "completed"  # State when the order is ready for delivery
+    IN_DELIVERY = "in_delivery"  # State when the order is on its way to the customer
     CANCELLED_BY_CUSTOMER = "cancelled_by_customer"  # Final state when the order has been cancelled by the customer.
     CANCELLED_BY_COOKER = "cancelled_by_cooker"  # Final state when the order has been cancelled by the cooker.
     DELIVERED = (

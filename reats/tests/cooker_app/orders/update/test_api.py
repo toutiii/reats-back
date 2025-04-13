@@ -477,7 +477,7 @@ def test_update_order_but_unexpected_exception_raises_on_cooker_app(
         OrderStatusEnum.CANCELLED_BY_COOKER,
     ],
     ids=[
-        "switch_to_processing",
+        "switch_to_delivered",
         "switch_to_cancelled_by_cooker",
     ],
 )
@@ -530,7 +530,7 @@ def test_update_cooker_acceptance_rate(
 
     if new_status == OrderStatusEnum.DELIVERED:
         # Bypassing status update logic for simplicity
-        order.status = OrderStatusEnum.COMPLETED.value
+        order.status = OrderStatusEnum.IN_DELIVERY.value
         order.save()
 
     with freeze_time("2024-05-08T10:41:00+00:00"):
@@ -538,14 +538,14 @@ def test_update_cooker_acceptance_rate(
         update_status_data = {
             "status": new_status.value,
         }
-        update_to_cancelled_by_cooker_response = client.patch(
+        update_response = client.patch(
             f"{cookers_order_path}{order.id}/",
             encode_multipart(BOUNDARY, update_status_data),
             content_type=MULTIPART_CONTENT,
             follow=False,
             **auth_headers,
         )
-        assert update_to_cancelled_by_cooker_response.status_code == status.HTTP_200_OK
+        assert update_response.status_code == status.HTTP_200_OK
 
         order.refresh_from_db()
 
