@@ -255,6 +255,7 @@ class OrderModel(ReatsModel):
             OrderStatusEnum.COMPLETED: CompletedState(),
             OrderStatusEnum.CANCELLED_BY_CUSTOMER: CancelledByCustomerState(),
             OrderStatusEnum.CANCELLED_BY_COOKER: CancelledByCookerState(),
+            OrderStatusEnum.IN_DELIVERY: IndeliveryState(),
             OrderStatusEnum.DELIVERED: DeliveredState(),
         }
 
@@ -266,6 +267,7 @@ class OrderModel(ReatsModel):
             "CompletedState": OrderStatusEnum.COMPLETED,
             "CancelledByCustomerState": OrderStatusEnum.CANCELLED_BY_CUSTOMER,
             "CancelledByCookerState": OrderStatusEnum.CANCELLED_BY_COOKER,
+            "IndeliveryState": OrderStatusEnum.IN_DELIVERY,
             "DeliveredState": OrderStatusEnum.DELIVERED,
         }
 
@@ -362,8 +364,8 @@ class ProcessingState(OrderState):
 
 class CompletedState(OrderState):
     def can_transition_to(self, new_state: OrderState):
-        return isinstance(new_state, DeliveredState) or isinstance(
-            new_state, CancelledByCustomerState
+        return isinstance(new_state, CancelledByCustomerState) or isinstance(
+            new_state, IndeliveryState
         )
 
 
@@ -379,6 +381,11 @@ class CancelledByCookerState(OrderState):
         raise ValueError(
             "Cannot transition from CancelledByCookerState to any other state."
         )
+
+
+class IndeliveryState(OrderState):
+    def can_transition_to(self, new_state: OrderState):
+        return isinstance(new_state, DeliveredState)
 
 
 class DeliveredState(OrderState):
