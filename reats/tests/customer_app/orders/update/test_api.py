@@ -283,6 +283,27 @@ def test_switch_order_status_from_draft_to_delivered(
         )
 
     with freeze_time("2024-05-08T10:35:00+00:00"):
+        # Then we switch the order to in delivery few minutes later
+        update_status_data = {
+            "status": OrderStatusEnum.IN_DELIVERY.value,
+        }
+        update_in_delivery_response = client.patch(
+            f"{customer_order_path}{order.id}/",
+            encode_multipart(BOUNDARY, update_status_data),
+            content_type=MULTIPART_CONTENT,
+            follow=False,
+            **auth_headers,
+        )
+        assert update_in_delivery_response.status_code == status.HTTP_200_OK
+
+        order.refresh_from_db()
+
+        assert order.status == OrderStatusEnum.IN_DELIVERY.value
+        assert order.delivery_in_progress_date == datetime(
+            2024, 5, 8, 10, 35, 0, tzinfo=timezone.utc
+        )
+
+    with freeze_time("2024-05-08T10:47:00+00:00"):
         # Then we switch the order to delivered few minutes later
         update_status_data = {
             "status": OrderStatusEnum.DELIVERED.value,
@@ -300,7 +321,7 @@ def test_switch_order_status_from_draft_to_delivered(
 
         assert order.status == OrderStatusEnum.DELIVERED.value
         assert order.delivered_date == datetime(
-            2024, 5, 8, 10, 35, 0, tzinfo=timezone.utc
+            2024, 5, 8, 10, 47, 0, tzinfo=timezone.utc
         )
 
     mock_googlemaps_distance_matrix.assert_called_once_with(
@@ -346,6 +367,7 @@ def test_switch_order_status_from_draft_to_non_allowed_status(
     non_allowed_statuses = [
         OrderStatusEnum.PROCESSING.value,
         OrderStatusEnum.COMPLETED.value,
+        OrderStatusEnum.IN_DELIVERY.value,
         OrderStatusEnum.DELIVERED.value,
         OrderStatusEnum.CANCELLED_BY_CUSTOMER.value,
         OrderStatusEnum.CANCELLED_BY_COOKER.value,
@@ -407,6 +429,7 @@ def test_switch_order_status_from_pending_to_non_allowed_status(
     non_allowed_statuses = [
         OrderStatusEnum.DRAFT.value,
         OrderStatusEnum.COMPLETED.value,
+        OrderStatusEnum.IN_DELIVERY.value,
         OrderStatusEnum.DELIVERED.value,
     ]
 
@@ -479,6 +502,7 @@ def test_switch_order_status_from_processing_to_non_allowed_status(
     non_allowed_statuses = [
         OrderStatusEnum.DRAFT.value,
         OrderStatusEnum.PENDING.value,
+        OrderStatusEnum.IN_DELIVERY.value,
         OrderStatusEnum.DELIVERED.value,
     ]
 
@@ -578,6 +602,7 @@ def test_switch_order_status_from_completed_to_non_allowed_status(
                 follow=False,
                 **auth_headers,
             )
+
             assert response.status_code == status.HTTP_400_BAD_REQUEST
             mock_googlemaps_distance_matrix.assert_called_once_with(
                 origins=["13 rue des Mazières 91000 Evry"],
@@ -647,8 +672,21 @@ def test_switch_order_status_from_delivered_to_non_allowed_status(
         assert response.status_code == status.HTTP_200_OK
         order.refresh_from_db()
 
-    # Transition from completed to delivered
+    # Transition from completed to in delivery
     with freeze_time("2024-05-08T11:10:00+00:00"):
+        update_status_data = {"status": OrderStatusEnum.IN_DELIVERY.value}
+        response = client.patch(
+            f"{customer_order_path}{order.id}/",
+            encode_multipart(BOUNDARY, update_status_data),
+            content_type=MULTIPART_CONTENT,
+            follow=False,
+            **auth_headers,
+        )
+        assert response.status_code == status.HTTP_200_OK
+        order.refresh_from_db()
+
+    # Transition from completed to delivered
+    with freeze_time("2024-05-08T11:20:00+00:00"):
         update_status_data = {"status": OrderStatusEnum.DELIVERED.value}
         response = client.patch(
             f"{customer_order_path}{order.id}/",
@@ -665,6 +703,7 @@ def test_switch_order_status_from_delivered_to_non_allowed_status(
         OrderStatusEnum.PENDING.value,
         OrderStatusEnum.PROCESSING.value,
         OrderStatusEnum.COMPLETED.value,
+        OrderStatusEnum.IN_DELIVERY.value,
         OrderStatusEnum.CANCELLED_BY_CUSTOMER.value,
         OrderStatusEnum.CANCELLED_BY_COOKER.value,
     ]
@@ -746,6 +785,7 @@ def test_switch_order_status_from_cancelled_by_customer_to_non_allowed_status(
         OrderStatusEnum.PROCESSING.value,
         OrderStatusEnum.COMPLETED.value,
         OrderStatusEnum.DELIVERED.value,
+        OrderStatusEnum.IN_DELIVERY.value,
         OrderStatusEnum.CANCELLED_BY_COOKER.value,
     ]
 
@@ -834,6 +874,7 @@ def test_switch_order_status_from_cancelled_by_cooker_to_non_allowed_status(
         OrderStatusEnum.PENDING.value,
         OrderStatusEnum.PROCESSING.value,
         OrderStatusEnum.COMPLETED.value,
+        OrderStatusEnum.IN_DELIVERY.value,
         OrderStatusEnum.DELIVERED.value,
         OrderStatusEnum.CANCELLED_BY_CUSTOMER.value,
     ]
