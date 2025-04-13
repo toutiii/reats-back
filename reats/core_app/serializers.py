@@ -99,6 +99,9 @@ class OrderPATCHSerializer(ModelSerializer):
         if status == OrderStatusEnum.COMPLETED:
             instance.completed_date = datetime.now(timezone.utc)
 
+        if status == OrderStatusEnum.IN_DELIVERY:
+            instance.delivery_in_progress_date = datetime.now(timezone.utc)
+
         if status == OrderStatusEnum.DELIVERED:
             instance.delivered_date = datetime.now(timezone.utc)
 
