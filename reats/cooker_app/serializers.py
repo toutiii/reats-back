@@ -19,7 +19,8 @@ from rest_framework_simplejwt.serializers import (
     TokenObtainPairSerializer,
     TokenRefreshSerializer,
 )
-from utils.common import compute_order_items_total_amount, format_phone
+from utils.common import compute_order_items_total_amount, format_phone, get_pre_signed_url
+import phonenumbers
 
 
 class CookerSerializer(ModelSerializer):
@@ -40,6 +41,43 @@ class CookerGETSerializer(ModelSerializer):
     class Meta:
         model = CookerModel
         exclude = ("created", "modified")
+
+    def to_representation(self, instance: CookerModel) -> dict:
+        data = super().to_representation(instance)
+        
+        try:
+            parsed_phone = phonenumbers.parse(data["phone"], settings.PHONE_REGION)
+            formatted_phone = phonenumbers.format_number(
+                parsed_phone, phonenumbers.PhoneNumberFormat.NATIONAL
+            ).replace(" ", "")
+        except Exception:
+            formatted_phone = data["phone"]
+
+        return {
+            "personal_infos_section": {
+                "title": "personal_infos",
+                "data": {
+                    "photo": get_pre_signed_url(data["photo"]),
+                    "siret": data["siret"],
+                    "firstname": data["firstname"],
+                    "lastname": data["lastname"],
+                    "phone": formatted_phone,
+                    "max_order_number": str(data["max_order_number"]),
+                    "is_online": data["is_online"],
+                    "acceptance_rate": data["acceptance_rate"],
+                },
+            },
+            "address_section": {
+                "title": "address",
+                "data": {
+                    "street_number": data.get("street_number"),
+                    "street_name": data.get("street_name"),
+                    "address_complement": data.get("address_complement"),
+                    "postal_code": data["postal_code"],
+                    "town": data["town"],
+                },
+            },
+        }
 
 
 class DishSerializer(ModelSerializer):

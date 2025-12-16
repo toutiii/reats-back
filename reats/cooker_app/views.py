@@ -17,6 +17,7 @@ from custom_renderers.renderers import (
     CustomRendererWithoutData,
     OrderCustomRendererWithData,
 )
+
 from django.db import IntegrityError
 from django.db.models import Count
 from phonenumbers.phonenumberutil import NumberParseException
@@ -41,6 +42,8 @@ from utils.common import (
     update_cooker_acceptance_rate,
     upload_image_to_s3,
 )
+from utils.custom_api_reponse import StandardizedResponseMixin
+
 from utils.custom_permissions import CustomAPIKeyPermission, UserPermission
 from utils.enums import OrderStatusEnum
 
@@ -59,7 +62,7 @@ from .serializers import (
 logger = logging.getLogger("watchtower-logger")
 
 
-class CookerView(ModelViewSet):
+class CookerView(StandardizedResponseMixin, ModelViewSet):
     parser_classes = [MultiPartParser]
     queryset = CookerModel.objects.all()
 
@@ -86,6 +89,14 @@ class CookerView(ModelViewSet):
 
         return super().get_serializer_class()
 
+    def list(self, request, *args, **kwargs):
+        response = super().list(request, *args, **kwargs)
+        return self.success(response.data)
+
+    def retrieve(self, request, *args, **kwargs):
+        response = super().retrieve(request, *args, **kwargs)
+        return self.success(response.data)
+
     def perform_create(self, serializer: BaseSerializer) -> None:
         try:
             super().perform_create(serializer)
@@ -95,14 +106,6 @@ class CookerView(ModelViewSet):
 
         send_otp(serializer.validated_data.get("phone"))
 
-    def get_renderers(self) -> list[BaseRenderer]:
-        if self.request.method in ("POST", "PATCH", "DELETE"):
-            self.renderer_classes = [CustomRendererWithoutData]
-
-        if self.request.method == "GET":
-            self.renderer_classes = [CookerCustomRendererWithData]
-
-        return super().get_renderers()
 
     def partial_update(self, request, *args, **kwargs) -> Response:
         kwargs.pop("pk")  # pk is unexpected in parent's partial_update method
@@ -139,13 +142,7 @@ class CookerView(ModelViewSet):
         instance: CookerModel = self.get_object()
         instance.is_deleted = True
         instance.save()
-
-        return Response(
-            {
-                "ok": True,
-                "status_code": status.HTTP_200_OK,
-            }
-        )
+        return self.success(message="compte supprimé avec succès")
 
     @action(methods=["post"], detail=False, url_path="otp-verify")
     def otp_verify(self, request) -> Response:
@@ -153,35 +150,42 @@ class CookerView(ModelViewSet):
 
         if result:
             activate_user(CookerModel, request.data)
-            return Response(status=status.HTTP_200_OK)
+            return self.success(message="Account successfully activated")
 
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+        return self.error(
+            message="Invalid OTP code",
+            code="OTP_INVALID",
+            status_code=status.HTTP_400_BAD_REQUEST
+        )
 
     @action(methods=["post"], detail=False)
     def auth(self, request) -> Response:
         phone = request.data.get("phone")
 
         if phone is None:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return self.error("Phone number is required", status_code=status.HTTP_400_BAD_REQUEST)
 
         try:
             e164_phone_format = format_phone(phone)
         except NumberParseException:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return self.error("Invalid phone format", status_code=status.HTTP_400_BAD_REQUEST)
 
         try:
             cooker: CookerModel = CookerModel.objects.get(phone=e164_phone_format)
         except CookerModel.DoesNotExist:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return self.error("User not found", status_code=status.HTTP_404_NOT_FOUND)
 
         if not cooker.is_activated:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return self.error("Account not activated", status_code=status.HTTP_403_FORBIDDEN)
 
         otp_response: Union[dict, None] = send_otp(e164_phone_format)
 
         if otp_response is None:
-            return Response(status=status.HTTP_503_SERVICE_UNAVAILABLE)
+            return self.error("Failed to send OTP", code="OTP_SEND_FAILED", status_code=status.HTTP_503_SERVICE_UNAVAILABLE)
 
+        # Simplified success check (assuming previous logic was detailed but basic success is mostly what matters)
+        # Keeping previous logic structure but wrapping response
+         
         otp_response_status_code = (
             otp_response.get("MessageResponse", {})
             .get("Result", {})
@@ -190,7 +194,7 @@ class CookerView(ModelViewSet):
         )
 
         if otp_response_status_code != status.HTTP_200_OK:
-            return Response(status=status.HTTP_503_SERVICE_UNAVAILABLE)
+             return self.error("OTP provider error", code="OTP_PROVIDER_ERROR", status_code=status.HTTP_503_SERVICE_UNAVAILABLE)
 
         otp_response_delivery_status = (
             otp_response.get("MessageResponse", {})
@@ -200,9 +204,9 @@ class CookerView(ModelViewSet):
         )
 
         if otp_response_delivery_status != "SUCCESSFUL":
-            return Response(status=status.HTTP_503_SERVICE_UNAVAILABLE)
+             return self.error("OTP delivery failed", code="OTP_DELIVERY_FAILED", status_code=status.HTTP_503_SERVICE_UNAVAILABLE)
 
-        return Response(status=status.HTTP_200_OK)
+        return self.success(message="OTP sent successfully")
 
     @action(methods=["post"], detail=False, url_path="otp/ask")
     def ask_otp(self, request) -> Response:
@@ -211,11 +215,11 @@ class CookerView(ModelViewSet):
         try:
             e164_phone_format = format_phone(phone)
         except NumberParseException:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return self.error(message="Numéro de téléphone invalide", code="PHONE_INVALID_FORMAT", status_code=status.HTTP_400_BAD_REQUEST)
 
         send_otp(e164_phone_format)
 
-        return Response(status=status.HTTP_200_OK)
+        return self.success(message="Code OTP envoyé avec succès")
 
 
 class DashboardView(GenericViewSet):

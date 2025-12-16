@@ -17,6 +17,12 @@ from PIL import Image
 from rest_framework.test import APIClient
 
 
+@pytest.fixture(autouse=True)
+def mock_env_vars():
+    with patch.dict(os.environ, {"ENV": "test"}):
+        yield
+
+
 @pytest.fixture(scope="session")
 def client():
     return APIClient()
