@@ -33,19 +33,17 @@ def test_get_dashboard_data_when_cooker_has_orders(
         follow=False,
         **auth_headers,
     )
-
-    assert response.json() == {
-        "ok": True,
-        "status_code": 200,
-        "data": {
-            OrderStatusEnum.CANCELLED_BY_COOKER.value: 3,
-            OrderStatusEnum.CANCELLED_BY_CUSTOMER.value: 1,
-            OrderStatusEnum.COMPLETED.value: 5,
-            OrderStatusEnum.PENDING.value: 5,
-            OrderStatusEnum.DELIVERED.value: 4,
-            OrderStatusEnum.PROCESSING.value: 3,
-        },
+    assert response.json().get("success") is True
+    assert response.json().get("success") is True
+    assert response.json().get("data") == {
+        OrderStatusEnum.CANCELLED_BY_COOKER.value: 3,
+        OrderStatusEnum.CANCELLED_BY_CUSTOMER.value: 1,
+        OrderStatusEnum.COMPLETED.value: 5,
+        OrderStatusEnum.PENDING.value: 5,
+        OrderStatusEnum.DELIVERED.value: 4,
+        OrderStatusEnum.PROCESSING.value: 3,
     }
+    assert response.json().get("timestamp") is not None
 
 
 @pytest.mark.django_db
@@ -69,11 +67,8 @@ def test_get_dashboard_data_when_cooker_has_no_orders(
         **auth_headers,
     )
 
-    assert response.json() == {
-        "ok": True,
-        "status_code": status.HTTP_200_OK,
-        "data": {},
-    }
+    assert response.json().get("success") is True
+    assert response.json().get("data") == {}
 
 
 @pytest.mark.django_db
@@ -104,7 +99,6 @@ def test_get_dashboard_data_fails_when_a_date_is_missing(
         **auth_headers,
     )
 
-    assert response.json() == {
-        "ok": False,
-        "status_code": status.HTTP_400_BAD_REQUEST,
-    }
+    assert response.json().get("success") is False
+    assert response.json().get("error").get("code") == "MISSING_PARAMETERS"
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
