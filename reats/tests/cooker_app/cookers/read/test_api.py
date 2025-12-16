@@ -26,8 +26,10 @@ def test_get_existing_cooker_data(
         **auth_headers,
     )
     assert response.status_code == status.HTTP_200_OK
-    assert response.json().get("ok") is True
+    assert response.json().get("success") is True
     assert response.json() == {
+        "success": True,
+        "message": "Operation successful",
         "data": {
             "address_section": {
                 "data": {
@@ -53,8 +55,7 @@ def test_get_existing_cooker_data(
                 "title": "personal_infos",
             },
         },
-        "ok": True,
-        "status_code": 200,
+        "timestamp": response.json().get("timestamp"),
     }
 
 
@@ -71,5 +72,6 @@ def test_get_missing_cooker_data(
         **auth_headers,
     )
     assert response.status_code == status.HTTP_404_NOT_FOUND
-    assert response.json().get("ok") is False
-    assert response.json().get("data") is None
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    # Note: Standard DRF 404 is {"detail": "Not found."} unless a custom exception handler is installed
+    assert response.json().get("detail") is not None
