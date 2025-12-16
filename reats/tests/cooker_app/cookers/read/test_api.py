@@ -73,5 +73,5 @@ def test_get_missing_cooker_data(
     )
     assert response.status_code == status.HTTP_404_NOT_FOUND
     assert response.status_code == status.HTTP_404_NOT_FOUND
-    # Note: Standard DRF 404 is {"detail": "Not found."} unless a custom exception handler is installed
-    assert response.json().get("detail") is not None
+    assert response.json().get("success") is False
+    assert response.json().get("error").get("code") == "not_found"

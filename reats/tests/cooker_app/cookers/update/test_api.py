@@ -437,8 +437,8 @@ FhxtAirMySNzId/rIu6k6wPIqyziXjh0DBu0eI4flX3CJe1In0UfX9oqcFuw+VbY
                 **wrong_auth_header,
             )
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
-        assert response.json().get("error_code") == "token_not_valid"
-
+        assert response.json().get("error").get("code") == "token_not_valid"
+    
 
 @pytest.mark.django_db
 class TestRequestIsRejectedWithExpiredAccessToken:
@@ -482,11 +482,11 @@ ct4oFdWCTtEg1i4CV0LS43lOnu1Gv168nOvqc-WFXqMMNJnT88Ruz1St96KbpPw0m6K
             **expired_auth_header,
         )
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
-        assert response.json().get("error_code") == "token_not_valid"
+        assert response.json().get("error").get("code") == "token_not_valid"
 
 
 @pytest.mark.django_db
-class TestAccessTokenRenew:
+class TestAccessTokenRenew: 
     @pytest.fixture
     def post_switch_cooker_online(self) -> dict:
         return {
@@ -518,19 +518,13 @@ class TestAccessTokenRenew:
                 **cooker_api_key_header,
             )
             assert response.status_code == status.HTTP_200_OK
-            assert response.json() == {
-                "ok": True,
-                "status_code": status.HTTP_200_OK,
-                "token": {
-                    "access": ANY,
-                    "refresh": ANY,
-                },
-                "user_id": ANY,
-            }
+            assert response.json().get("success") is True
+            assert response.json().get("data").get("token") is not None
+            assert response.json().get("data").get("user_id") is not None
 
             # Extracting access and refresh tokens from the API response
-            access_token = response.json().get("token").get("access")
-            refresh_token = response.json().get("token").get("refresh")
+            access_token = response.json().get("data").get("token").get("access")
+            refresh_token = response.json().get("data").get("token").get("refresh")
             access_auth_header = {"HTTP_AUTHORIZATION": f"Bearer {access_token}"}
             refresh_token_data = {"refresh": refresh_token}
 
@@ -557,7 +551,8 @@ class TestAccessTokenRenew:
                 **access_auth_header,
             )
             assert response.status_code == status.HTTP_401_UNAUTHORIZED
-            assert response.json().get("error_code") == "token_not_valid"
+            assert response.json().get("error").get("code") == "token_not_valid"
+            assert response.json().get("success") is False
 
             # We try now to ask a new access token using the refresh token
             response = client.post(
@@ -568,12 +563,10 @@ class TestAccessTokenRenew:
             )
 
             assert response.status_code == status.HTTP_200_OK
-            assert response.json() == {
-                "ok": True,
-                "status_code": status.HTTP_200_OK,
-                "access": ANY,
-            }
-            new_access_token = response.json().get("access")
+            assert response.json().get("success") is True
+            assert response.json().get("data").get("access") is not None
+            
+            new_access_token = response.json().get("data").get("access")
             assert new_access_token != access_token
 
             # Finally we try again the request with our new access token
@@ -623,19 +616,13 @@ class TestRefreshTokenRenew:
                 **cooker_api_key_header,
             )
             assert response.status_code == status.HTTP_200_OK
-            assert response.json() == {
-                "ok": True,
-                "status_code": status.HTTP_200_OK,
-                "token": {
-                    "access": ANY,
-                    "refresh": ANY,
-                },
-                "user_id": ANY,
-            }
+            assert response.json().get("success") is True
+            assert response.json().get("data").get("token") is not None
+            assert response.json().get("data").get("user_id") is not None
 
             # Extracting access and refresh tokens from the API response
-            access_token = response.json().get("token").get("access")
-            refresh_token = response.json().get("token").get("refresh")
+            access_token = response.json().get("data").get("token").get("access")
+            refresh_token = response.json().get("data").get("token").get("refresh")
             access_auth_header = {"HTTP_AUTHORIZATION": f"Bearer {access_token}"}
             refresh_token_data = {"refresh": refresh_token}
 
@@ -662,7 +649,7 @@ class TestRefreshTokenRenew:
                 **access_auth_header,
             )
             assert response.status_code == status.HTTP_401_UNAUTHORIZED
-            assert response.json().get("error_code") == "token_not_valid"
+            assert response.json().get("error").get("code") == "token_not_valid"
 
             # We try now to ask a new access token using the expired refresh token
             response = client.post(
@@ -672,7 +659,7 @@ class TestRefreshTokenRenew:
                 follow=False,
             )
             assert response.status_code == status.HTTP_401_UNAUTHORIZED
-            assert response.json().get("error_code") == "token_not_valid"
+            assert response.json().get("error").get("code") == "token_not_valid"
 
             # So now we have to ask again a new token pair
             response = client.post(
@@ -683,18 +670,12 @@ class TestRefreshTokenRenew:
                 **cooker_api_key_header,
             )
             assert response.status_code == status.HTTP_200_OK
-            assert response.json() == {
-                "ok": True,
-                "status_code": status.HTTP_200_OK,
-                "token": {
-                    "access": ANY,
-                    "refresh": ANY,
-                },
-                "user_id": ANY,
-            }
+            assert response.json().get("success") is True
+            assert response.json().get("data").get("token") is not None
+            assert response.json().get("data").get("user_id") is not None
 
             # Finally we try again the request with our new access token
-            new_access_token = response.json().get("token").get("access")
+            new_access_token = response.json().get("data").get("token").get("access")
             new_access_auth_header = {
                 "HTTP_AUTHORIZATION": f"Bearer {new_access_token}"
             }

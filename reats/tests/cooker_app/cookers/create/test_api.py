@@ -514,13 +514,7 @@ class TestTokenFetch:
             **cooker_api_key_header
         )
         assert response.status_code == status.HTTP_200_OK
-        assert response.json() == {
-            "ok": True,
-            "status_code": status.HTTP_200_OK,
-            "token": {
-                "access": ANY,
-                "refresh": ANY,
-            },
-            "user_id": ANY,
-        }
+        assert response.json().get("success") is True
+        assert response.json().get("data").get("token") is not None
+        assert response.json().get("data").get("user_id") is not None
         secrets_manager_get_secret.assert_not_called()

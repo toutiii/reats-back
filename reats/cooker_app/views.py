@@ -222,32 +222,28 @@ class CookerView(StandardizedResponseMixin, ModelViewSet):
         return self.success(message="Code OTP envoyé avec succès")
 
 
-class DashboardView(GenericViewSet):
+class DashboardView(StandardizedResponseMixin, GenericViewSet):
     permission_classes = [UserPermission]
-    renderer_classes = [CustomJSONRendererWithData]
 
     def list(self, request) -> Response:
         start_date_str: Union[str, None] = request.query_params.get("start_date")
         end_date_str: Union[str, None] = request.query_params.get("end_date")
 
         if start_date_str is None or end_date_str is None:
-            return Response(
-                {
-                    "ok": False,
-                    "status_code": status.HTTP_400_BAD_REQUEST,
-                }
+            return self.error(
+                message="start_date and end_date are required",
+                code="MISSING_PARAMETERS",
+                status_code=status.HTTP_400_BAD_REQUEST,
             )
 
         try:
             start_date = datetime.fromisoformat(start_date_str.replace("Z", "+00:00"))
             end_date = datetime.fromisoformat(end_date_str.replace("Z", "+00:00"))
         except ValueError:
-            return Response(
-                {
-                    "ok": False,
-                    "status_code": status.HTTP_400_BAD_REQUEST,
-                    "error": "Invalid date format. ISO 8601 format is expected. Ex: 2024-01-01T00:00:00Z",
-                }
+            return self.error(
+                message="Invalid date format. ISO 8601 format is expected. Ex: 2024-01-01T00:00:00Z",
+                code="INVALID_DATE_FORMAT",
+                status_code=status.HTTP_400_BAD_REQUEST,
             )
 
         orders = (
@@ -261,12 +257,8 @@ class DashboardView(GenericViewSet):
         )
         orders_dict = {status: count for status, count in orders}
 
-        return Response(
-            {
-                "ok": True,
-                "status_code": status.HTTP_200_OK,
-                "data": orders_dict,
-            }
+        return self.success(
+            data=orders_dict
         )
 
 
@@ -482,15 +474,47 @@ class DrinkView(ModelViewSet):
         )
 
 
-class TokenObtainPairWithoutPasswordView(TokenViewBase):
+from rest_framework.renderers import JSONRenderer
+
+class TokenObtainPairWithoutPasswordView(StandardizedResponseMixin, TokenViewBase):
     serializer_class = TokenObtainPairWithoutPasswordSerializer
-    renderer_classes = [CustomRendererWithoutData]
     permission_classes = [CustomAPIKeyPermission]
+    renderer_classes = [JSONRenderer]
+    
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+
+        try:
+            serializer.is_valid(raise_exception=True)
+        except Exception:
+             raise
+
+        validated_data = serializer.validated_data
+        if isinstance(validated_data, dict) and validated_data.get("status") == status.HTTP_400_BAD_REQUEST:
+             return self.error("Invalid user", code="USER_NOT_FOUND", status_code=status.HTTP_400_BAD_REQUEST)
+
+        return self.success(
+            data=validated_data, 
+            message="Token generated successfully"
+        )
 
 
-class TokenObtainRefreshWithoutPasswordView(TokenViewBase):
+class TokenObtainRefreshWithoutPasswordView(StandardizedResponseMixin, TokenViewBase):
     serializer_class = TokenObtainRefreshWithoutPasswordSerializer
-    renderer_classes = [CustomRendererWithoutData]
+    renderer_classes = [JSONRenderer]
+    
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+
+        try:
+            serializer.is_valid(raise_exception=True)
+        except Exception:
+             raise
+
+        return self.success(
+            data=serializer.validated_data, 
+            message="Token refreshed successfully"
+        )
 
 
 class CookerOrderView(
