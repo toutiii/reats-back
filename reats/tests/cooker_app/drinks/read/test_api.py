@@ -22,8 +22,8 @@ def test_empty_query_params(
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json().get("ok") is True
-    assert response.json().get("status_code") == status.HTTP_200_OK
+    assert response.json().get("success") is True
+    assert response.json().get("data") is not None
     assert (
         len(response.json().get("data"))
         == DrinkModel.objects.filter(is_enabled=True)
@@ -46,8 +46,7 @@ def test_get_enabled_drinks(
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json().get("ok") is True
-    assert response.json().get("status_code") == status.HTTP_200_OK
+    assert response.json().get("success") is True
     assert response.json().get("data") is not None
 
     for item in response.json().get("data"):
@@ -68,8 +67,7 @@ def test_get_disabled_drinks(
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json().get("ok") is True
-    assert response.json().get("status_code") == status.HTTP_200_OK
+    assert response.json().get("success") is True
     assert response.json().get("data") is not None
 
     for item in response.json().get("data"):
@@ -101,7 +99,11 @@ class TestOneCookerCantSeeOtherCookerDrinks:
             )
 
             assert token_response.status_code == status.HTTP_200_OK
-            access_token = token_response.json().get("token").get("access")
+            assert token_response.json().get("success") is True
+            assert token_response.json().get("data") is not None
+
+            access_token = token_response.json().get("data").get("token").get("access")
+            assert access_token is not None
             access_auth_header = {"HTTP_AUTHORIZATION": f"Bearer {access_token}"}
 
             # Then we can ask for some dishes

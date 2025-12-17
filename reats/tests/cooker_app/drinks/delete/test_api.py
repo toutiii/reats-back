@@ -29,10 +29,8 @@ class TestDrinkDeleteSuccess:
         )
 
         assert response.status_code == status.HTTP_200_OK
-        assert response.json() == {
-            "ok": True,
-            "status_code": status.HTTP_200_OK,
-        }
+        assert response.json().get("success") is True
+        assert response.json().get("message") == "Drink deleted successfully"
 
         assert DrinkModel.objects.get(pk=drink_id).is_deleted is True
 
@@ -63,7 +61,7 @@ class TestDrinkDeleteFailedWithExpiredToken:
             )
 
             assert token_response.status_code == status.HTTP_200_OK
-            access_token = token_response.json().get("token").get("access")
+            access_token = token_response.json().get("data").get("token").get("access")
             auth_headers = {"HTTP_AUTHORIZATION": f"Bearer {access_token}"}
 
         with freeze_time("2024-01-20T17:30:45+00:00"):
@@ -75,7 +73,7 @@ class TestDrinkDeleteFailedWithExpiredToken:
                 **auth_headers,
             )
             assert response.status_code == status.HTTP_401_UNAUTHORIZED
-            assert response.json().get("error_code") == "token_not_valid"
+            assert response.json().get("error").get("code") == "token_not_valid"
 
 
 @pytest.mark.django_db
@@ -101,8 +99,8 @@ def test_get_enabled_drinks_when_item_has_been_deleted(
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json().get("ok") is True
-    assert response.json().get("status_code") == status.HTTP_200_OK
+    assert response.json().get("success") is True
+    assert response.json().get("message") == "Operation successful"
     assert response.json().get("data") is not None
 
     for item in response.json().get("data"):

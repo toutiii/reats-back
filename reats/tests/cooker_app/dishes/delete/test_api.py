@@ -29,7 +29,6 @@ class TestDishDeleteSuccess:
         )
 
         assert response.status_code == status.HTTP_200_OK
-        assert response.status_code == status.HTTP_200_OK
         assert response.json().get("success") is True
         assert response.json().get("message") == "Dish deleted successfully"
 

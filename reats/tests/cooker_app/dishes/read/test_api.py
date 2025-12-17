@@ -22,8 +22,8 @@ def test_empty_query_params(
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.status_code == status.HTTP_200_OK
     assert response.json().get("success") is True
+    assert response.json().get("data") is not None
     assert (
         len(response.json().get("data"))
         == DishModel.objects.filter(is_enabled=True).filter(cooker_id=cooker_id).count()
