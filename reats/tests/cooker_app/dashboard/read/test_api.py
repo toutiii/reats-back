@@ -53,9 +53,6 @@ def test_get_dashboard_data_when_cooker_has_no_orders(
     dashboard_path: str,
 ) -> None:
 
-    # First we delete all orders for cooker_id=1 to ensure
-    # that the cooker has no orders.
-
     OrderModel.objects.filter(cooker_id=1).delete()
 
     assert OrderModel.objects.filter(cooker_id=1).count() == 0

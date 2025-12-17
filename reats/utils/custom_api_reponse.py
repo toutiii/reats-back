@@ -14,16 +14,17 @@ class CustomApiResponse:
         message: str = "Operation successful",
         status_code: int = status.HTTP_200_OK,
         extra_data: dict | None = None,
+        headers: dict | None = None,
     ) -> Response:
         payload: dict = {
             "success": True,
-            "data": data or {},
+            "data": data if data is not None else {},
             "message": message,
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
         if extra_data:
             payload.update(extra_data)
-        return Response(payload, status=status_code)
+        return Response(payload, status=status_code, headers=headers)
 
     @staticmethod
     def error(
@@ -54,8 +55,9 @@ class StandardizedResponseMixin:
         message="Operation successful",
         status_code=status.HTTP_200_OK,
         extra=None,
+        headers=None,
     ):
-        return CustomApiResponse.success(data, message, status_code, extra)
+        return CustomApiResponse.success(data, message, status_code, extra, headers)
 
     def error(
         self,

@@ -29,10 +29,9 @@ class TestDishDeleteSuccess:
         )
 
         assert response.status_code == status.HTTP_200_OK
-        assert response.json() == {
-            "ok": True,
-            "status_code": status.HTTP_200_OK,
-        }
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json().get("success") is True
+        assert response.json().get("message") == "Dish deleted successfully"
 
         assert DishModel.objects.get(pk=dish_id).is_deleted is True
 
@@ -63,7 +62,7 @@ class TestDishDeleteFailedWithExpiredToken:
             )
 
             assert token_response.status_code == status.HTTP_200_OK
-            access_token = token_response.json().get("token").get("access")
+            access_token = token_response.json().get("data").get("token").get("access")
             auth_headers = {"HTTP_AUTHORIZATION": f"Bearer {access_token}"}
 
         with freeze_time("2024-01-20T17:30:45+00:00"):
@@ -75,4 +74,4 @@ class TestDishDeleteFailedWithExpiredToken:
                 **auth_headers,
             )
             assert response.status_code == status.HTTP_401_UNAUTHORIZED
-            assert response.json().get("error_code") == "token_not_valid"
+            assert response.json().get("error").get("code") == "token_not_valid"

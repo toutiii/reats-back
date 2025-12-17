@@ -262,7 +262,7 @@ class DashboardView(StandardizedResponseMixin, GenericViewSet):
         )
 
 
-class DishView(ModelViewSet):
+class DishView(StandardizedResponseMixin, ModelViewSet):
     parser_classes = [MultiPartParser]
     queryset = DishModel.objects.filter(is_deleted=False).all()
 
@@ -277,15 +277,6 @@ class DishView(ModelViewSet):
             self.serializer_class = DishGETSerializer
 
         return super().get_serializer_class()
-
-    def get_renderers(self) -> list[BaseRenderer]:
-        if self.request.method in ("POST", "PUT", "PATCH", "DELETE"):
-            self.renderer_classes = [CustomRendererWithoutData]
-
-        if self.request.method == "GET":
-            self.renderer_classes = [CustomRendererWithData]
-
-        return super().get_renderers()
 
     def perform_create(self, serializer: BaseSerializer) -> None:
         photo = (
@@ -303,6 +294,17 @@ class DishView(ModelViewSet):
         upload_image_to_s3(self.request.FILES["photo"], photo)
         serializer.validated_data["photo"] = photo
         super().perform_create(serializer)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return self.success(
+            data=serializer.data,
+            status_code=status.HTTP_201_CREATED,
+            headers=headers
+        )
 
     def perform_update(self, serializer: BaseSerializer) -> None:
         current_object = self.get_object()
@@ -332,6 +334,23 @@ class DishView(ModelViewSet):
             delete_s3_object(old_photo_key)
 
         super().perform_update(serializer)
+    
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        
+        if getattr(instance, '_prefetched_objects_cache', None):
+            instance._prefetched_objects_cache = {}
+
+        return self.success(data=serializer.data)
+    
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return self.success(data=serializer.data)
 
     def list(self, request, *args, **kwargs) -> Response:
         request_name: Union[str, None] = self.request.query_params.get("name")
@@ -358,18 +377,23 @@ class DishView(ModelViewSet):
 
         self.queryset = self.queryset.order_by("name")
 
-        return super().list(request, *args, **kwargs)
+        queryset = self.filter_queryset(self.get_queryset())
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return self.success(data=serializer.data)
 
     def destroy(self, request, *args, **kwargs) -> Response:
         instance: DishModel = self.get_object()
         instance.is_deleted = True
         instance.save()
 
-        return Response(
-            {
-                "ok": True,
-                "status_code": status.HTTP_200_OK,
-            }
+        return self.success(
+            message="Dish deleted successfully"
         )
 
 
