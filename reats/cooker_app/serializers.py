@@ -203,7 +203,18 @@ class CookerOrderCustomerGETSerializer(ModelSerializer):
             "id",
             "firstname",
             "lastname",
-            "is_deleted",
+            "stripe_id",
+        )
+
+
+class CookerOrderCookerGETSerializer(ModelSerializer):
+    class Meta:
+        model = CookerModel
+        fields = (
+            "id",
+            "firstname",
+            "lastname",
+            "acceptance_rate",
         )
 
 
@@ -212,6 +223,7 @@ class CookerOrderGETSerializer(ModelSerializer):
     dishes_items = OrderDishItemGETSerializer(many=True)
     drinks_items = OrderDrinkItemGETSerializer(many=True)
     customer = CookerOrderCustomerGETSerializer()
+    cooker = CookerOrderCookerGETSerializer()
 
     class Meta:
         model = OrderModel

@@ -590,7 +590,7 @@ class TokenObtainRefreshWithoutPasswordView(StandardizedResponseMixin, TokenView
         )
 
 
-class CookerOrderView(
+class CookerOrderView(StandardizedResponseMixin,
     ListModelMixin,
     UpdateModelMixin,
     GenericViewSet,
@@ -606,9 +606,10 @@ class CookerOrderView(
         if new_status == OrderStatusEnum.PENDING:
             error_message = f"Cookers orders are not supposed to be in the {OrderStatusEnum.PENDING.value} state"
             logger.error(error_message)
-            return Response(
-                {"error": error_message},
-                status=status.HTTP_400_BAD_REQUEST,
+            return self.error(
+                message=error_message,
+                code="INVALID_ORDER_STATUS",
+                status_code=status.HTTP_400_BAD_REQUEST,
             )
 
         if new_status:
@@ -616,12 +617,17 @@ class CookerOrderView(
                 instance.transition_to(new_status)
             except ValueError as e:
                 logger.error(e)
-                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+                return self.error(
+                    message=str(e),
+                    code="TRANSITION_ERROR",
+                    status_code=status.HTTP_400_BAD_REQUEST
+                )
             except Exception as e:
                 logger.error(e)
-                return Response(
-                    {"error": "An error occurred"},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                return self.error(
+                    message="An error occurred",
+                    code="INTERNAL_SERVER_ERROR",
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
 
         if new_status == OrderStatusEnum.CANCELLED_BY_COOKER:
@@ -634,16 +640,13 @@ class CookerOrderView(
 
         update_cooker_acceptance_rate(instance, new_status)
 
-        return super().partial_update(request, *args, **kwargs)
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
 
-    def get_renderers(self) -> list[BaseRenderer]:
-        if self.request.method == "PATCH":
-            self.renderer_classes = [CustomRendererWithoutData]
+        return self.success(serializer.data)
 
-        if self.request.method == "GET":
-            self.renderer_classes = [OrderCustomRendererWithData]
-
-        return super().get_renderers()
+   
 
     def get_serializer_class(self) -> type[BaseSerializer]:
         if self.request.method == "GET":
@@ -655,7 +658,7 @@ class CookerOrderView(
         return super().get_serializer_class()
 
     def list(self, request, *args, **kwargs) -> Response:
-        self.queryset = self.queryset.filter(customer__id=request.user.pk)
+        self.queryset = self.queryset.filter(cooker__id=request.user.pk)
         request_status: Union[str, None] = self.request.query_params.get("status")
 
         if request_status is None or request_status not in [
@@ -663,7 +666,8 @@ class CookerOrderView(
             OrderStatusEnum.PROCESSING,
             OrderStatusEnum.COMPLETED,
         ]:
-            logger.error(f"Invalid status {request_status}")
+            if request_status is not None:
+                logger.error(f"Invalid status {request_status}")
             self.queryset = OrderModel.objects.none()
 
         if request_status is not None:
@@ -671,7 +675,14 @@ class CookerOrderView(
                 "-modified"
             )
 
-        return super().list(request, *args, **kwargs)
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return self.success(serializer.data)
 
 
 class CookerOrderHistoryView(ListModelMixin, GenericViewSet):
