@@ -1,3 +1,4 @@
+from utils.custom_api_reponse import StandardizedResponseMixin
 import json
 import logging
 from datetime import datetime, timezone
@@ -263,13 +264,13 @@ class CustomerView(ModelViewSet):
         return Response(status=status.HTTP_200_OK)
 
 
-class AddressView(ModelViewSet):
+class AddressView(StandardizedResponseMixin,ModelViewSet):
     queryset = AddressModel.objects.all()
     parser_classes = [MultiPartParser]
     permission_classes = [UserPermission]
 
     def get_renderers(self) -> list[BaseRenderer]:
-        if self.request.method in ("POST", "PUT", "DELETE"):
+        if self.request.method in ("POST", "PUT", ):
             self.renderer_classes = [CustomRendererWithoutData]
 
         if self.request.method == "GET":
@@ -291,11 +292,8 @@ class AddressView(ModelViewSet):
         instance.is_enabled = False
         instance.save()
 
-        return Response(
-            {
-                "ok": True,
-                "status_code": status.HTTP_200_OK,
-            }
+        return self.success(
+            message="Address deleted successfully"
         )
 
     def list(self, request, *args, **kwargs) -> Response:

@@ -56,7 +56,7 @@ def test_delete_address_success(
         **auth_headers,
     )
     assert first_create_response.status_code == status.HTTP_201_CREATED
-    assert first_create_response.json() == {"ok": True, "status_code": 201}
+    assert first_create_response.json().get("ok") is True
 
     first_address = AddressModel.objects.latest("pk")
 
@@ -68,8 +68,7 @@ def test_delete_address_success(
         **auth_headers,
     )
     assert second_create_response.status_code == status.HTTP_201_CREATED
-    assert second_create_response.json() == {"ok": True, "status_code": 201}
-
+    assert second_create_response.json().get("ok") is True
     second_address = AddressModel.objects.latest("pk")
 
     # Then we check that the customer has both addresses
@@ -82,7 +81,7 @@ def test_delete_address_success(
         **auth_headers,
     )
     assert delete_response.status_code == status.HTTP_200_OK
-    assert delete_response.json() == {"ok": True, "status_code": 200}
+    assert delete_response.json().get("success") is True
 
     # Then we check that the 2nd address is not in the database anymore
     second_address_dict = model_to_dict(AddressModel.objects.get(pk=second_address.pk))
@@ -118,7 +117,9 @@ def test_delete_address_failed_not_existing(
         **auth_headers,
     )
     assert delete_response.status_code == status.HTTP_404_NOT_FOUND
-    assert delete_response.json() == {"ok": False, "status_code": 404}
+    assert delete_response.json().get("success") is False
+    assert delete_response.json().get("error").get("code") == "not_found"
+    assert delete_response.json().get("error").get("message") == "Not found."
 
 
 @pytest.mark.django_db
@@ -203,7 +204,7 @@ class TestDeleteAddressFailedWithExpiredToken:
             )
 
             assert token_response.status_code == status.HTTP_200_OK
-            access_token = token_response.json().get("token").get("access")
+            access_token = token_response.json().get('data').get("token").get("access")
             access_auth_header = {"HTTP_AUTHORIZATION": f"Bearer {access_token}"}
 
         with freeze_time("2024-01-20T17:30:45+00:00"):
@@ -213,4 +214,5 @@ class TestDeleteAddressFailedWithExpiredToken:
                 **access_auth_header,
             )
             assert response.status_code == status.HTTP_401_UNAUTHORIZED
-            assert response.json().get("error_code") == "token_not_valid"
+            assert response.json().get("success") is False
+            assert response.json().get("error").get("code") == "token_not_valid"

@@ -685,7 +685,7 @@ class CookerOrderView(StandardizedResponseMixin,
         return self.success(serializer.data)
 
 
-class CookerOrderHistoryView(ListModelMixin, GenericViewSet):
+class CookerOrderHistoryView(StandardizedResponseMixin, ListModelMixin, GenericViewSet):
     permission_classes = [UserPermission]
     queryset = OrderModel.objects.all().filter(
         status__in=[
@@ -695,7 +695,6 @@ class CookerOrderHistoryView(ListModelMixin, GenericViewSet):
         ]
     )
     parser_classes = [MultiPartParser]
-    renderer_classes = [OrderCustomRendererWithData]
     serializer_class = CookerOrderGETSerializer
 
     def list(self, request, *args, **kwargs) -> Response:
@@ -726,4 +725,11 @@ class CookerOrderHistoryView(ListModelMixin, GenericViewSet):
         if order_status:
             self.queryset = self.queryset.filter(status=order_status)
 
-        return super().list(request, *args, **kwargs)
+        page = self.paginate_queryset(self.queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(self.queryset, many=True)
+        return self.success(serializer.data, status_code=status.HTTP_200_OK)
+       

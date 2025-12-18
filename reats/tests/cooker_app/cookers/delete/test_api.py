@@ -28,10 +28,7 @@ class TestCookerDeleteSuccess:
         )
 
         assert response.status_code == status.HTTP_200_OK
-        assert response.json() == {
-            "ok": True,
-            "status_code": status.HTTP_200_OK,
-        }
+        assert response.json().get("success") is True
         assert CookerModel.objects.get(pk=cooker_id).is_deleted is True
         assert DishModel.objects.filter(cooker__id=cooker_id).count() > 0
         assert DrinkModel.objects.filter(cooker__id=cooker_id).count() > 0
@@ -63,7 +60,7 @@ class TestCookerDeleteFailedWithExpiredToken:
             )
 
             assert token_response.status_code == status.HTTP_200_OK
-            access_token = token_response.json().get("token").get("access")
+            access_token = token_response.json().get('data').get("token").get("access")
             access_auth_header = {"HTTP_AUTHORIZATION": f"Bearer {access_token}"}
 
         with freeze_time("2024-01-20T17:30:45+00:00"):
@@ -73,4 +70,5 @@ class TestCookerDeleteFailedWithExpiredToken:
                 **access_auth_header,
             )
             assert response.status_code == status.HTTP_401_UNAUTHORIZED
-            assert response.json().get("error_code") == "token_not_valid"
+            assert response.json().get("success") is False
+            assert response.json().get("error").get("code") == "token_not_valid"
