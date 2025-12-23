@@ -26,7 +26,6 @@ def expected_data() -> list[dict]:
             "drinks_items": [],
             "customer": {
                 "id": 1,
-                "stripe_id": "cus_QyZ76Ae0W5KeqP",
                 "lastname": "TEN",
                 "firstname": "Ben",
             },
@@ -68,7 +67,6 @@ def expected_data() -> list[dict]:
             "drinks_items": [],
             "customer": {
                 "id": 1,
-                "stripe_id": "cus_QyZ76Ae0W5KeqP",
                 "lastname": "TEN",
                 "firstname": "Ben",
             },
@@ -110,7 +108,6 @@ def expected_data() -> list[dict]:
             "drinks_items": [],
             "customer": {
                 "id": 1,
-                "stripe_id": "cus_QyZ76Ae0W5KeqP",
                 "lastname": "TEN",
                 "firstname": "Ben",
             },
@@ -152,7 +149,6 @@ def expected_data() -> list[dict]:
             "drinks_items": [],
             "customer": {
                 "id": 1,
-                "stripe_id": "cus_QyZ76Ae0W5KeqP",
                 "lastname": "TEN",
                 "firstname": "Ben",
             },
@@ -194,7 +190,6 @@ def expected_data() -> list[dict]:
             "drinks_items": [],
             "customer": {
                 "id": 1,
-                "stripe_id": "cus_QyZ76Ae0W5KeqP",
                 "lastname": "TEN",
                 "firstname": "Ben",
             },
@@ -236,7 +231,6 @@ def test_orders_history_list_success_for_cookers(
     cookers_order_history_path: str,
     expected_data: list[dict],
 ) -> None:
-
     # we check that the customer has some orders
     assert OrderModel.objects.filter(cooker__id=cooker_id).count() > 0
 
@@ -275,7 +269,6 @@ def test_orders_list_success_with_order_status_filter(
     cookers_order_history_path: str,
     order_status: OrderStatusEnum,
 ) -> None:
-
     # we check that the cooker has some orders
     assert OrderModel.objects.filter(cooker__id=cooker_id).count() > 0
 
@@ -302,7 +295,6 @@ def test_orders_list_success_with_dates_filter_when_some_orders_exist(
     cooker_id: int,
     cookers_order_history_path: str,
 ) -> None:
-
     # we check that the cooker has some orders
     assert OrderModel.objects.filter(cooker__id=cooker_id).count() > 0
 
@@ -330,7 +322,6 @@ def test_orders_list_success_with_dates_filter_when_no_orders_exist(
     cooker_id: int,
     cookers_order_history_path: str,
 ) -> None:
-
     # we check that the cooker has some orders
     assert OrderModel.objects.filter(cooker__id=cooker_id).count() > 0
 
@@ -370,7 +361,6 @@ def test_orders_list_success_with_dates_filter_when_no_orders_exist(
                     "drinks_items": [],
                     "customer": {
                         "id": 1,
-                        "stripe_id": "cus_QyZ76Ae0W5KeqP",
                         "lastname": "TEN",
                         "firstname": "Ben",
                     },
@@ -419,7 +409,6 @@ def test_orders_list_success_with_dates_filter_when_no_orders_exist(
                     "drinks_items": [],
                     "customer": {
                         "id": 1,
-                        "stripe_id": "cus_QyZ76Ae0W5KeqP",
                         "lastname": "TEN",
                         "firstname": "Ben",
                     },
@@ -468,7 +457,6 @@ def test_orders_list_success_with_dates_filter_when_no_orders_exist(
                     "drinks_items": [],
                     "customer": {
                         "id": 1,
-                        "stripe_id": "cus_QyZ76Ae0W5KeqP",
                         "lastname": "TEN",
                         "firstname": "Ben",
                     },
@@ -510,7 +498,6 @@ def test_orders_list_success_with_dates_filter_when_no_orders_exist(
                     "drinks_items": [],
                     "customer": {
                         "id": 1,
-                        "stripe_id": "cus_QyZ76Ae0W5KeqP",
                         "lastname": "TEN",
                         "firstname": "Ben",
                     },
@@ -552,7 +539,6 @@ def test_orders_list_success_with_dates_filter_when_no_orders_exist(
                     "drinks_items": [],
                     "customer": {
                         "id": 1,
-                        "stripe_id": "cus_QyZ76Ae0W5KeqP",
                         "lastname": "TEN",
                         "firstname": "Ben",
                     },
@@ -603,7 +589,6 @@ def test_orders_list_success_with_multiple_filters(
     end_date: str,
     expected_data: list[dict],
 ) -> None:
-
     # we check that the cooker has some orders
     assert OrderModel.objects.filter(cooker__id=cooker_id).count() > 0
 

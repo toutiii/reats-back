@@ -1,5 +1,6 @@
 from typing import Any, Dict, Union
 
+import phonenumbers
 from core_app.models import (
     AddressModel,
     CookerModel,
@@ -19,8 +20,11 @@ from rest_framework_simplejwt.serializers import (
     TokenObtainPairSerializer,
     TokenRefreshSerializer,
 )
-from utils.common import compute_order_items_total_amount, format_phone, get_pre_signed_url
-import phonenumbers
+from utils.common import (
+    compute_order_items_total_amount,
+    format_phone,
+    get_pre_signed_url,
+)
 
 
 class CookerSerializer(ModelSerializer):
@@ -44,7 +48,7 @@ class CookerGETSerializer(ModelSerializer):
 
     def to_representation(self, instance: CookerModel) -> dict:
         data = super().to_representation(instance)
-        
+
         try:
             parsed_phone = phonenumbers.parse(data["phone"], settings.PHONE_REGION)
             formatted_phone = phonenumbers.format_number(
@@ -122,7 +126,6 @@ class TokenObtainPairWithoutPasswordSerializer(TokenObtainPairSerializer):
     phone = serializers.CharField()
 
     def validate(self, attrs) -> dict:
-
         phone = attrs["phone"]
         request_headers = self.context.get("request").headers
         app_origin = request_headers.get("App-Origin")
@@ -203,7 +206,6 @@ class CookerOrderCustomerGETSerializer(ModelSerializer):
             "id",
             "firstname",
             "lastname",
-            "stripe_id",
         )
 
 

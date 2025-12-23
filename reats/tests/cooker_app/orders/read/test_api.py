@@ -26,7 +26,6 @@ def cooker_id() -> int:
                     "drinks_items": [],
                     "customer": {
                         "id": 1,
-                        "stripe_id": "cus_QyZ76Ae0W5KeqP",
                         "lastname": "TEN",
                         "firstname": "Ben",
                     },
@@ -64,7 +63,6 @@ def cooker_id() -> int:
                     "drinks_items": [],
                     "customer": {
                         "id": 1,
-                        "stripe_id": "cus_QyZ76Ae0W5KeqP",
                         "lastname": "TEN",
                         "firstname": "Ben",
                     },
@@ -109,7 +107,6 @@ def cooker_id() -> int:
                     "drinks_items": [],
                     "customer": {
                         "id": 1,
-                        "stripe_id": "cus_QyZ76Ae0W5KeqP",
                         "lastname": "TEN",
                         "firstname": "Ben",
                     },
@@ -154,7 +151,6 @@ def cooker_id() -> int:
                     "drinks_items": [],
                     "customer": {
                         "id": 1,
-                        "stripe_id": "cus_QyZ76Ae0W5KeqP",
                         "lastname": "TEN",
                         "firstname": "Ben",
                     },
@@ -216,7 +212,6 @@ def test_orders_list_success_with_no_filters(
     expected_status_code: int,
     ok_value: bool,
 ) -> None:
-
     # we check that the cooker has some orders
     assert OrderModel.objects.filter(cooker__id=cooker_id).count() > 0
 
@@ -234,4 +229,3 @@ def test_orders_list_success_with_no_filters(
     diff = DeepDiff(response.json().get("data"), expected_data, ignore_order=True)
 
     assert not diff
-
