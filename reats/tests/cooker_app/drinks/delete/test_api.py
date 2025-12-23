@@ -4,6 +4,7 @@ from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from freezegun import freeze_time
 from rest_framework import status
 from rest_framework.test import APIClient
+from utils.enums import ErrorCodeEnum, SuccessMessageEnum
 
 
 @pytest.fixture
@@ -30,7 +31,7 @@ class TestDrinkDeleteSuccess:
 
         assert response.status_code == status.HTTP_200_OK
         assert response.json().get("success") is True
-        assert response.json().get("message") == "Drink deleted successfully"
+        assert response.json().get("message") == SuccessMessageEnum.DRINK_DELETED
 
         assert DrinkModel.objects.get(pk=drink_id).is_deleted is True
 
@@ -50,7 +51,6 @@ class TestDrinkDeleteFailedWithExpiredToken:
         path: str,
         token_path: str,
     ) -> None:
-
         with freeze_time("2024-01-20T17:05:45+00:00"):
             token_response = client.post(
                 token_path,
@@ -73,7 +73,10 @@ class TestDrinkDeleteFailedWithExpiredToken:
                 **auth_headers,
             )
             assert response.status_code == status.HTTP_401_UNAUTHORIZED
-            assert response.json().get("error").get("code") == "token_not_valid"
+            assert (
+                response.json().get("error").get("code")
+                == ErrorCodeEnum.TOKEN_NOT_VALID
+            )
 
 
 @pytest.mark.django_db
@@ -100,7 +103,7 @@ def test_get_enabled_drinks_when_item_has_been_deleted(
 
     assert response.status_code == status.HTTP_200_OK
     assert response.json().get("success") is True
-    assert response.json().get("message") == "Operation successful"
+    assert response.json().get("message") == SuccessMessageEnum.OPERATION_SUCCESSFUL
     assert response.json().get("data") is not None
 
     for item in response.json().get("data"):

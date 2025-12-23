@@ -4,6 +4,7 @@ from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from freezegun import freeze_time
 from rest_framework import status
 from rest_framework.test import APIClient
+from utils.enums import ErrorCodeEnum
 
 
 @pytest.mark.django_db
@@ -60,7 +61,7 @@ class TestCookerDeleteFailedWithExpiredToken:
             )
 
             assert token_response.status_code == status.HTTP_200_OK
-            access_token = token_response.json().get('data').get("token").get("access")
+            access_token = token_response.json().get("data").get("token").get("access")
             access_auth_header = {"HTTP_AUTHORIZATION": f"Bearer {access_token}"}
 
         with freeze_time("2024-01-20T17:30:45+00:00"):
@@ -71,4 +72,7 @@ class TestCookerDeleteFailedWithExpiredToken:
             )
             assert response.status_code == status.HTTP_401_UNAUTHORIZED
             assert response.json().get("success") is False
-            assert response.json().get("error").get("code") == "token_not_valid"
+            assert (
+                response.json().get("error").get("code")
+                == ErrorCodeEnum.TOKEN_NOT_VALID
+            )

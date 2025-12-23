@@ -36,7 +36,12 @@ from utils.common import (
 )
 from utils.custom_api_reponse import StandardizedResponseMixin
 from utils.custom_permissions import CustomAPIKeyPermission, UserPermission
-from utils.enums import OrderStatusEnum
+from utils.enums import (
+    ErrorCodeEnum,
+    ErrorMessageEnum,
+    OrderStatusEnum,
+    SuccessMessageEnum,
+)
 
 from .serializers import (
     CookerGETSerializer,
@@ -132,7 +137,7 @@ class CookerView(StandardizedResponseMixin, ModelViewSet):
         instance: CookerModel = self.get_object()
         instance.is_deleted = True
         instance.save()
-        return self.success(message="compte supprimé avec succès")
+        return self.success(message=SuccessMessageEnum.ACCOUNT_DELETED)
 
     @action(methods=["post"], detail=False, url_path="otp-verify")
     def otp_verify(self, request) -> Response:
@@ -140,11 +145,11 @@ class CookerView(StandardizedResponseMixin, ModelViewSet):
 
         if result:
             activate_user(CookerModel, request.data)
-            return self.success(message="Account successfully activated")
+            return self.success(message=SuccessMessageEnum.ACCOUNT_ACTIVATED)
 
         return self.error(
-            message="Invalid OTP code",
-            code="OTP_INVALID",
+            message=ErrorMessageEnum.INVALID_OTP_CODE,
+            code=ErrorCodeEnum.OTP_INVALID,
             status_code=status.HTTP_400_BAD_REQUEST,
         )
 
@@ -154,32 +159,42 @@ class CookerView(StandardizedResponseMixin, ModelViewSet):
 
         if phone is None:
             return self.error(
-                "Phone number is required", status_code=status.HTTP_400_BAD_REQUEST
+                ErrorMessageEnum.PHONE_REQUIRED,
+                code=ErrorCodeEnum.PHONE_REQUIRED,
+                status_code=status.HTTP_400_BAD_REQUEST,
             )
 
         try:
             e164_phone_format = format_phone(phone)
         except NumberParseException:
             return self.error(
-                "Invalid phone format", status_code=status.HTTP_400_BAD_REQUEST
+                ErrorMessageEnum.PHONE_INVALID_FORMAT,
+                code=ErrorCodeEnum.PHONE_INVALID_FORMAT,
+                status_code=status.HTTP_400_BAD_REQUEST,
             )
 
         try:
             cooker: CookerModel = CookerModel.objects.get(phone=e164_phone_format)
         except CookerModel.DoesNotExist:
-            return self.error("User not found", status_code=status.HTTP_404_NOT_FOUND)
+            return self.error(
+                ErrorMessageEnum.USER_NOT_FOUND,
+                code=ErrorCodeEnum.USER_NOT_FOUND,
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
 
         if not cooker.is_activated:
             return self.error(
-                "Account not activated", status_code=status.HTTP_403_FORBIDDEN
+                ErrorMessageEnum.ACCOUNT_NOT_ACTIVATED,
+                code=ErrorCodeEnum.ACCOUNT_NOT_ACTIVATED,
+                status_code=status.HTTP_403_FORBIDDEN,
             )
 
         otp_response: Union[dict, None] = send_otp(e164_phone_format)
 
         if otp_response is None:
             return self.error(
-                "Failed to send OTP",
-                code="OTP_SEND_FAILED",
+                ErrorMessageEnum.OTP_SEND_FAILED,
+                code=ErrorCodeEnum.OTP_SEND_FAILED,
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
 
@@ -195,8 +210,8 @@ class CookerView(StandardizedResponseMixin, ModelViewSet):
 
         if otp_response_status_code != status.HTTP_200_OK:
             return self.error(
-                "OTP provider error",
-                code="OTP_PROVIDER_ERROR",
+                ErrorMessageEnum.OTP_PROVIDER_ERROR,
+                code=ErrorCodeEnum.OTP_PROVIDER_ERROR,
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
 
@@ -209,12 +224,12 @@ class CookerView(StandardizedResponseMixin, ModelViewSet):
 
         if otp_response_delivery_status != "SUCCESSFUL":
             return self.error(
-                "OTP delivery failed",
-                code="OTP_DELIVERY_FAILED",
+                ErrorMessageEnum.OTP_DELIVERY_FAILED,
+                code=ErrorCodeEnum.OTP_DELIVERY_FAILED,
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
 
-        return self.success(message="OTP sent successfully")
+        return self.success(message=SuccessMessageEnum.OTP_SENT)
 
     @action(methods=["post"], detail=False, url_path="otp/ask")
     def ask_otp(self, request) -> Response:
@@ -224,14 +239,14 @@ class CookerView(StandardizedResponseMixin, ModelViewSet):
             e164_phone_format = format_phone(phone)
         except NumberParseException:
             return self.error(
-                message="Numéro de téléphone invalide",
-                code="PHONE_INVALID_FORMAT",
+                message=ErrorMessageEnum.PHONE_INVALID_FORMAT,
+                code=ErrorCodeEnum.PHONE_INVALID_FORMAT,
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
 
         send_otp(e164_phone_format)
 
-        return self.success(message="Code OTP envoyé avec succès")
+        return self.success(message=SuccessMessageEnum.OTP_SENT_FR)
 
 
 class DashboardView(StandardizedResponseMixin, GenericViewSet):
@@ -243,8 +258,8 @@ class DashboardView(StandardizedResponseMixin, GenericViewSet):
 
         if start_date_str is None or end_date_str is None:
             return self.error(
-                message="start_date and end_date are required",
-                code="MISSING_PARAMETERS",
+                message=ErrorMessageEnum.MISSING_PARAMETERS,
+                code=ErrorCodeEnum.MISSING_PARAMETERS,
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -253,8 +268,8 @@ class DashboardView(StandardizedResponseMixin, GenericViewSet):
             end_date = datetime.fromisoformat(end_date_str.replace("Z", "+00:00"))
         except ValueError:
             return self.error(
-                message="Invalid date format. ISO 8601 format is expected. Ex: 2024-01-01T00:00:00Z",
-                code="INVALID_DATE_FORMAT",
+                message=ErrorMessageEnum.INVALID_DATE_FORMAT,
+                code=ErrorCodeEnum.INVALID_DATE_FORMAT,
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -405,7 +420,7 @@ class DishView(StandardizedResponseMixin, ModelViewSet):
         instance.is_deleted = True
         instance.save()
 
-        return self.success(message="Dish deleted successfully")
+        return self.success(message=SuccessMessageEnum.DISH_DELETED)
 
 
 class DrinkView(StandardizedResponseMixin, ModelViewSet):
@@ -540,7 +555,7 @@ class DrinkView(StandardizedResponseMixin, ModelViewSet):
         instance.save()
 
         return self.success(
-            message="Drink deleted successfully",
+            message=SuccessMessageEnum.DRINK_DELETED,
         )
 
 
@@ -563,12 +578,14 @@ class TokenObtainPairWithoutPasswordView(StandardizedResponseMixin, TokenViewBas
             and validated_data.get("status") == status.HTTP_400_BAD_REQUEST
         ):
             return self.error(
-                "Invalid user",
-                code="USER_NOT_FOUND",
+                ErrorMessageEnum.INVALID_USER,
+                code=ErrorCodeEnum.USER_NOT_FOUND,
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
 
-        return self.success(data=validated_data, message="Token generated successfully")
+        return self.success(
+            data=validated_data, message=SuccessMessageEnum.TOKEN_GENERATED
+        )
 
 
 class TokenObtainRefreshWithoutPasswordView(StandardizedResponseMixin, TokenViewBase):
@@ -584,7 +601,7 @@ class TokenObtainRefreshWithoutPasswordView(StandardizedResponseMixin, TokenView
             raise
 
         return self.success(
-            data=serializer.validated_data, message="Token refreshed successfully"
+            data=serializer.validated_data, message=SuccessMessageEnum.TOKEN_REFRESHED
         )
 
 
@@ -607,7 +624,7 @@ class CookerOrderView(
             logger.error(error_message)
             return self.error(
                 message=error_message,
-                code="INVALID_ORDER_STATUS",
+                code=ErrorCodeEnum.INVALID_ORDER_STATUS,
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -618,14 +635,14 @@ class CookerOrderView(
                 logger.error(e)
                 return self.error(
                     message=str(e),
-                    code="TRANSITION_ERROR",
+                    code=ErrorCodeEnum.TRANSITION_ERROR,
                     status_code=status.HTTP_400_BAD_REQUEST,
                 )
             except Exception as e:
                 logger.error(e)
                 return self.error(
-                    message="An error occurred",
-                    code="INTERNAL_SERVER_ERROR",
+                    message=ErrorMessageEnum.INTERNAL_SERVER_ERROR,
+                    code=ErrorCodeEnum.INTERNAL_SERVER_ERROR,
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
 

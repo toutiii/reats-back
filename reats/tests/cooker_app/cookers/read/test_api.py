@@ -1,6 +1,7 @@
 import pytest
 from rest_framework import status
 from rest_framework.test import APIClient
+from utils.enums import SuccessMessageEnum
 
 
 @pytest.fixture
@@ -29,7 +30,7 @@ def test_get_existing_cooker_data(
     assert response.json().get("success") is True
     assert response.json() == {
         "success": True,
-        "message": "Operation successful",
+        "message": SuccessMessageEnum.OPERATION_SUCCESSFUL,
         "data": {
             "address_section": {
                 "data": {

@@ -4,14 +4,14 @@ from typing import Any
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
-import sys
+from utils.enums import ErrorCodeEnum, ErrorMessageEnum, SuccessMessageEnum
 
 
 class CustomApiResponse:
     @staticmethod
     def success(
         data: Any = None,
-        message: str = "Operation successful",
+        message: str = SuccessMessageEnum.OPERATION_SUCCESSFUL,
         status_code: int = status.HTTP_200_OK,
         extra_data: dict | None = None,
         headers: dict | None = None,
@@ -20,7 +20,7 @@ class CustomApiResponse:
             "success": True,
             "data": data if data is not None else {},
             "message": message,
-            "timestamp": datetime.now(timezone.utc).isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
         if extra_data:
             payload.update(extra_data)
@@ -29,19 +29,15 @@ class CustomApiResponse:
     @staticmethod
     def error(
         message: str = "Operation failed",
-        code: str = "INTERNAL_SERVER_ERROR",
+        code: str = ErrorCodeEnum.INTERNAL_SERVER_ERROR,
         details: str | None = None,
         status_code: int = status.HTTP_500_INTERNAL_SERVER_ERROR,
         extra_data: dict | None = None,
     ) -> Response:
         payload: dict = {
             "success": False,
-            "error": {
-                "code": code,
-                "message": message,
-                "details": details or {}
-            },
-            "timestamp": datetime.now(timezone.utc).isoformat()
+            "error": {"code": code, "message": message, "details": details or {}},
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
         if extra_data:
             payload.update(extra_data)
@@ -52,7 +48,7 @@ class StandardizedResponseMixin:
     def success(
         self,
         data=None,
-        message="Operation successful",
+        message=SuccessMessageEnum.OPERATION_SUCCESSFUL,
         status_code=status.HTTP_200_OK,
         extra=None,
         headers=None,
@@ -62,7 +58,7 @@ class StandardizedResponseMixin:
     def error(
         self,
         message,
-        code="INTERNAL_SERVER_ERROR",
+        code=ErrorCodeEnum.INTERNAL_SERVER_ERROR,
         details=None,
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         extra=None,
@@ -73,22 +69,21 @@ class StandardizedResponseMixin:
         try:
             response = super().handle_exception(exc)
         except (TokenError, InvalidToken):
-             return self.error(
-                message="Token is invalid or expired",
-                code="token_not_valid",
-                status_code=status.HTTP_401_UNAUTHORIZED
+            return self.error(
+                message=ErrorMessageEnum.TOKEN_NOT_VALID,
+                code=ErrorCodeEnum.TOKEN_NOT_VALID,
+                status_code=status.HTTP_401_UNAUTHORIZED,
             )
 
         if response is None:
             if isinstance(exc, (TokenError, InvalidToken)):
                 return self.error(
-                    message="Token is invalid or expired",
-                    code="token_not_valid",
-                    status_code=status.HTTP_401_UNAUTHORIZED
+                    message=ErrorMessageEnum.TOKEN_NOT_VALID,
+                    code=ErrorCodeEnum.TOKEN_NOT_VALID,
+                    status_code=status.HTTP_401_UNAUTHORIZED,
                 )
 
         if response is not None:
-
             if isinstance(response.data, dict) and "success" in response.data:
                 return response
 
@@ -102,7 +97,7 @@ class StandardizedResponseMixin:
                         code = details["detail"].code
                     message = str(details["detail"])
                     if message == "Given token not valid for any token type":
-                        message = "Token is invalid or expired"
+                        message = ErrorMessageEnum.TOKEN_NOT_VALID
 
                 if response.status_code == status.HTTP_400_BAD_REQUEST:
                     code = "VALIDATION_ERROR"
@@ -112,7 +107,7 @@ class StandardizedResponseMixin:
                 message=message,
                 code=code,
                 details=details,
-                status_code=response.status_code
+                status_code=response.status_code,
             )
             return error_response
 

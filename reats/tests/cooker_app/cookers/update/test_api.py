@@ -1,7 +1,7 @@
 import os
 from datetime import datetime, timedelta
 from io import BytesIO
-from unittest.mock import ANY, MagicMock
+from unittest.mock import MagicMock
 from uuid import uuid4
 
 import jwt
@@ -15,6 +15,7 @@ from freezegun import freeze_time
 from PIL import Image
 from rest_framework import status
 from rest_framework.test import APIClient
+from utils.enums import ErrorCodeEnum
 
 
 @pytest.fixture
@@ -437,8 +438,8 @@ FhxtAirMySNzId/rIu6k6wPIqyziXjh0DBu0eI4flX3CJe1In0UfX9oqcFuw+VbY
                 **wrong_auth_header,
             )
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
-        assert response.json().get("error").get("code") == "token_not_valid"
-    
+        assert response.json().get("error").get("code") == ErrorCodeEnum.TOKEN_NOT_VALID
+
 
 @pytest.mark.django_db
 class TestRequestIsRejectedWithExpiredAccessToken:
@@ -482,11 +483,11 @@ ct4oFdWCTtEg1i4CV0LS43lOnu1Gv168nOvqc-WFXqMMNJnT88Ruz1St96KbpPw0m6K
             **expired_auth_header,
         )
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
-        assert response.json().get("error").get("code") == "token_not_valid"
+        assert response.json().get("error").get("code") == ErrorCodeEnum.TOKEN_NOT_VALID
 
 
 @pytest.mark.django_db
-class TestAccessTokenRenew: 
+class TestAccessTokenRenew:
     @pytest.fixture
     def post_switch_cooker_online(self) -> dict:
         return {
@@ -551,7 +552,10 @@ class TestAccessTokenRenew:
                 **access_auth_header,
             )
             assert response.status_code == status.HTTP_401_UNAUTHORIZED
-            assert response.json().get("error").get("code") == "token_not_valid"
+            assert (
+                response.json().get("error").get("code")
+                == ErrorCodeEnum.TOKEN_NOT_VALID
+            )
             assert response.json().get("success") is False
 
             # We try now to ask a new access token using the refresh token
@@ -565,7 +569,7 @@ class TestAccessTokenRenew:
             assert response.status_code == status.HTTP_200_OK
             assert response.json().get("success") is True
             assert response.json().get("data").get("access") is not None
-            
+
             new_access_token = response.json().get("data").get("access")
             assert new_access_token != access_token
 
@@ -649,7 +653,10 @@ class TestRefreshTokenRenew:
                 **access_auth_header,
             )
             assert response.status_code == status.HTTP_401_UNAUTHORIZED
-            assert response.json().get("error").get("code") == "token_not_valid"
+            assert (
+                response.json().get("error").get("code")
+                == ErrorCodeEnum.TOKEN_NOT_VALID
+            )
 
             # We try now to ask a new access token using the expired refresh token
             response = client.post(
@@ -659,7 +666,10 @@ class TestRefreshTokenRenew:
                 follow=False,
             )
             assert response.status_code == status.HTTP_401_UNAUTHORIZED
-            assert response.json().get("error").get("code") == "token_not_valid"
+            assert (
+                response.json().get("error").get("code")
+                == ErrorCodeEnum.TOKEN_NOT_VALID
+            )
 
             # So now we have to ask again a new token pair
             response = client.post(

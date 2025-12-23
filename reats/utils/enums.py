@@ -1,5 +1,7 @@
 from enum import Enum
 
+from django.utils.translation import gettext_lazy as _
+
 
 class OrderStatusEnum(str, Enum):
     DRAFT = "draft"  # Initial state for an order, a draft order has not been paid yet
@@ -24,3 +26,55 @@ class TimeFrameEnum(str, Enum):
     WEEK = "week"
     MONTH = "month"
     YEAR = "year"
+
+
+class SuccessMessageEnum(str, Enum):
+    OPERATION_SUCCESSFUL = _("Operation successful")
+    ACCOUNT_DELETED = _("compte supprimé avec succès")
+    ACCOUNT_ACTIVATED = _("Account successfully activated")
+    OTP_SENT = _("OTP sent successfully")
+    OTP_SENT_FR = _("Code OTP envoyé avec succès")
+    DISH_DELETED = _("Dish deleted successfully")
+    DRINK_DELETED = _("Drink deleted successfully")
+    TOKEN_GENERATED = _("Token generated successfully")
+    TOKEN_REFRESHED = _("Token refreshed successfully")
+
+
+class ErrorCodeEnum(str, Enum):
+    INTERNAL_SERVER_ERROR = "INTERNAL_SERVER_ERROR"
+    OTP_INVALID = "OTP_INVALID"
+    PHONE_REQUIRED = "PHONE_REQUIRED"
+    PHONE_INVALID_FORMAT = "PHONE_INVALID_FORMAT"
+    USER_NOT_FOUND = "USER_NOT_FOUND"
+    ACCOUNT_NOT_ACTIVATED = "ACCOUNT_NOT_ACTIVATED"
+    OTP_SEND_FAILED = "OTP_SEND_FAILED"
+    OTP_PROVIDER_ERROR = "OTP_PROVIDER_ERROR"
+    OTP_DELIVERY_FAILED = "OTP_DELIVERY_FAILED"
+    MISSING_PARAMETERS = "MISSING_PARAMETERS"
+    INVALID_DATE_FORMAT = "INVALID_DATE_FORMAT"
+    INVALID_DATA = "INVALID_DATA"
+    INVALID_ORDER_STATUS = "INVALID_ORDER_STATUS"
+    TRANSITION_ERROR = "TRANSITION_ERROR"
+    VALIDATION_ERROR = "VALIDATION_ERROR"
+    API_ERROR = "API_ERROR"
+    USER_LOGIN_FAILED = "USER_LOGIN_FAILED"
+    TOKEN_NOT_VALID = "token_not_valid"
+
+
+class ErrorMessageEnum(str, Enum):
+    INVALID_DATE_FORMAT = _(
+        "Invalid date format. ISO 8601 format is expected. Ex: 2024-01-01T00:00:00Z"
+    )
+    MISSING_PARAMETERS = _("start_date and end_date are required")
+    INVALID_OTP_CODE = _("Invalid OTP code")
+    PHONE_REQUIRED = _("Phone number is required")
+    PHONE_INVALID_FORMAT = _("Invalid phone format")
+    USER_NOT_FOUND = _("User not found")
+    ACCOUNT_NOT_ACTIVATED = _("Account not activated")
+    OTP_SEND_FAILED = _("Failed to send OTP")
+    OTP_PROVIDER_ERROR = _("OTP provider error")
+    OTP_DELIVERY_FAILED = _("OTP delivery failed")
+    INVALID_DATA = _("Invalid data")
+    INVALID_USER = _("Invalid user")
+    INTERNAL_SERVER_ERROR = _("An error occurred")
+    TOKEN_NOT_VALID = _("Token is invalid or expired")

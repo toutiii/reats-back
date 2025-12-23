@@ -4,7 +4,7 @@ import pytest
 from core_app.models import OrderModel
 from rest_framework import status
 from rest_framework.test import APIClient
-from utils.enums import OrderStatusEnum
+from utils.enums import ErrorCodeEnum, OrderStatusEnum
 
 
 @pytest.fixture
@@ -26,7 +26,6 @@ def test_get_dashboard_data_when_cooker_has_orders(
     create_orders: Callable,
     custom_counts: dict,
 ) -> None:
-
     response = client.get(
         dashboard_path,
         {"start_date": "2024-01-01", "end_date": "2099-12-31"},
@@ -52,7 +51,6 @@ def test_get_dashboard_data_when_cooker_has_no_orders(
     client: APIClient,
     dashboard_path: str,
 ) -> None:
-
     OrderModel.objects.filter(cooker_id=1).delete()
 
     assert OrderModel.objects.filter(cooker_id=1).count() == 0
@@ -88,7 +86,6 @@ def test_get_dashboard_data_fails_when_a_date_is_missing(
     dashboard_path: str,
     query_parameter: dict,
 ) -> None:
-
     response = client.get(
         dashboard_path,
         query_parameter,
@@ -97,5 +94,5 @@ def test_get_dashboard_data_fails_when_a_date_is_missing(
     )
 
     assert response.json().get("success") is False
-    assert response.json().get("error").get("code") == "MISSING_PARAMETERS"
+    assert response.json().get("error").get("code") == ErrorCodeEnum.MISSING_PARAMETERS
     assert response.status_code == status.HTTP_400_BAD_REQUEST
