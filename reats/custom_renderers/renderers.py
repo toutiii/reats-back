@@ -12,75 +12,75 @@ from utils.enums import OrderStatusEnum
 logger = logging.getLogger("watchtower-logger")
 
 
-class CookerCustomRendererWithData(JSONRenderer):
-    def render(self, data, accepted_media_type=None, renderer_context=None):
-        status_code = renderer_context["response"].status_code
+# class CookerCustomRendererWithData(JSONRenderer):
+#     def render(self, data, accepted_media_type=None, renderer_context=None):
+#         status_code = renderer_context["response"].status_code
 
-        try:
-            data["detail"].code
-        except KeyError:
-            status_code = status.HTTP_200_OK
-        except Exception as err:
-            logger.error(err)
-            status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+#         try:
+#             data["detail"].code
+#         except KeyError:
+#             status_code = status.HTTP_200_OK
+#         except Exception as err:
+#             logger.error(err)
+#             status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
 
-        if not data and status_code == status.HTTP_200_OK:
-            response = {
-                "ok": True,
-                "data": [],
-                "status_code": status_code,
-            }
-            return super().render(response)
+#         if not data and status_code == status.HTTP_200_OK:
+#             response = {
+#                 "ok": True,
+#                 "data": [],
+#                 "status_code": status_code,
+#             }
+#             return super().render(response)
 
-        if status_code == status.HTTP_200_OK:
-            response = {
-                "ok": True,
-                "status_code": status_code,
-                "data": {
-                    "personal_infos_section": {
-                        "title": "personal_infos",
-                        "data": {
-                            "photo": get_pre_signed_url(data["photo"]),
-                            "siret": data["siret"],
-                            "firstname": data["firstname"],
-                            "lastname": data["lastname"],
-                            "phone": phonenumbers.format_number(
-                                phonenumbers.parse(
-                                    data["phone"], settings.PHONE_REGION
-                                ),
-                                phonenumbers.PhoneNumberFormat.NATIONAL,
-                            ).replace(" ", ""),
-                            "max_order_number": str(data["max_order_number"]),
-                            "is_online": data["is_online"],
-                            "acceptance_rate": data["acceptance_rate"],
-                        },
-                    },
-                    "address_section": {
-                        "title": "address",
-                        "data": {
-                            "street_number": data["street_number"],
-                            "street_name": data["street_name"],
-                            "address_complement": data["address_complement"],
-                            "postal_code": data["postal_code"],
-                            "town": data["town"],
-                        },
-                    },
-                },
-            }
-        else:
-            response = {
-                "ok": False,
-                "status_code": status_code,
-            }
+#         if status_code == status.HTTP_200_OK:
+#             response = {
+#                 "ok": True,
+#                 "status_code": status_code,
+#                 "data": {
+#                     "personal_infos_section": {
+#                         "title": "personal_infos",
+#                         "data": {
+#                             "photo": get_pre_signed_url(data["photo"]),
+#                             "siret": data["siret"],
+#                             "firstname": data["firstname"],
+#                             "lastname": data["lastname"],
+#                             "phone": phonenumbers.format_number(
+#                                 phonenumbers.parse(
+#                                     data["phone"], settings.PHONE_REGION
+#                                 ),
+#                                 phonenumbers.PhoneNumberFormat.NATIONAL,
+#                             ).replace(" ", ""),
+#                             "max_order_number": str(data["max_order_number"]),
+#                             "is_online": data["is_online"],
+#                             "acceptance_rate": data["acceptance_rate"],
+#                         },
+#                     },
+#                     "address_section": {
+#                         "title": "address",
+#                         "data": {
+#                             "street_number": data["street_number"],
+#                             "street_name": data["street_name"],
+#                             "address_complement": data["address_complement"],
+#                             "postal_code": data["postal_code"],
+#                             "town": data["town"],
+#                         },
+#                     },
+#                 },
+#             }
+#         else:
+#             response = {
+#                 "ok": False,
+#                 "status_code": status_code,
+#             }
 
-        if status_code == status.HTTP_401_UNAUTHORIZED:
-            try:
-                response["error_code"] = data["detail"].code
-            except KeyError:
-                pass
+#         if status_code == status.HTTP_401_UNAUTHORIZED:
+#             try:
+#                 response["error_code"] = data["detail"].code
+#             except KeyError:
+#                 pass
 
-        logger.info(response)
-        return super().render(response)
+#         logger.info(response)
+#         return super().render(response)
 
 
 class CustomerCustomRendererWithData(JSONRenderer):
