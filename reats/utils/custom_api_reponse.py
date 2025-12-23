@@ -72,15 +72,14 @@ class StandardizedResponseMixin:
                 status_code=status.HTTP_401_UNAUTHORIZED,
             )
 
-        if response is None:
-            if isinstance(exc, (TokenError, InvalidToken)):
-                return self.error(
-                    message=ErrorMessageEnum.TOKEN_NOT_VALID,
-                    code=ErrorCodeEnum.TOKEN_NOT_VALID,
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                )
+        if all([response is None, isinstance(exc, (TokenError, InvalidToken))]):
+            return self.error(
+                message=ErrorMessageEnum.TOKEN_NOT_VALID,
+                code=ErrorCodeEnum.TOKEN_NOT_VALID,
+                status_code=status.HTTP_401_UNAUTHORIZED,
+            )
 
-        if response is not None:
+        if response is not None and response.data:
             if isinstance(response.data, dict) and "success" in response.data:
                 return response
 
