@@ -117,9 +117,7 @@ def send_otp(phone: str) -> Union[dict, None]:
     if os.environ["ENV"] == "local":
         return {
             "MessageResponse": {
-                "Result": {
-                    phone: {"StatusCode": 200, "DeliveryStatus": "SUCCESSFUL"}
-                }
+                "Result": {phone: {"StatusCode": 200, "DeliveryStatus": "SUCCESSFUL"}}
             }
         }
     try:
@@ -146,11 +144,6 @@ def send_otp(phone: str) -> Union[dict, None]:
 
 
 def is_otp_valid(data: dict) -> bool:
-    
-    if os.environ["ENV"] == "local" and data["otp"] == "000000":
-        logger.info("Using magic OTP 000000 for local environment")
-        return True
-
     try:
         response = pinpoint_client.verify_otp_message(
             ApplicationId=os.getenv("AWS_PINPOINT_APP_ID"),
@@ -220,7 +213,6 @@ def create_stripe_customer(
             stripe.APIConnectionError,
             stripe.RateLimitError,
         ) as e:  # These exceptions are retryable
-
             logger.warning(f"Attempt {attempt} failed: {e}")
             if attempt == max_retries:
                 logger.error(

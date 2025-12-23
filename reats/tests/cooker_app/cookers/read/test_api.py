@@ -56,7 +56,6 @@ def test_get_existing_cooker_data(
                 "title": "personal_infos",
             },
         },
-        "timestamp": response.json().get("timestamp"),
     }
 
 

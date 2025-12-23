@@ -33,7 +33,6 @@ def test_get_dashboard_data_when_cooker_has_orders(
         **auth_headers,
     )
     assert response.json().get("success") is True
-    assert response.json().get("success") is True
     assert response.json().get("data") == {
         OrderStatusEnum.CANCELLED_BY_COOKER.value: 3,
         OrderStatusEnum.CANCELLED_BY_CUSTOMER.value: 1,
@@ -42,7 +41,6 @@ def test_get_dashboard_data_when_cooker_has_orders(
         OrderStatusEnum.DELIVERED.value: 4,
         OrderStatusEnum.PROCESSING.value: 3,
     }
-    assert response.json().get("timestamp") is not None
 
 
 @pytest.mark.django_db

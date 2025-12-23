@@ -1,4 +1,3 @@
-from datetime import datetime, timezone
 from typing import Any
 
 from rest_framework import status
@@ -20,7 +19,6 @@ class CustomApiResponse:
             "success": True,
             "data": data if data is not None else {},
             "message": message,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
         if extra_data:
             payload.update(extra_data)
@@ -37,7 +35,6 @@ class CustomApiResponse:
         payload: dict = {
             "success": False,
             "error": {"code": code, "message": message, "details": details or {}},
-            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
         if extra_data:
             payload.update(extra_data)
