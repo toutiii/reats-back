@@ -50,7 +50,7 @@ class CookerGETSerializer(ModelSerializer):
             formatted_phone = phonenumbers.format_number(
                 parsed_phone, phonenumbers.PhoneNumberFormat.NATIONAL
             ).replace(" ", "")
-        except Exception:
+        except NumberParseException:
             formatted_phone = data["phone"]
 
         return {
