@@ -114,12 +114,6 @@ def generate_ref_id(phone: str):
 
 
 def send_otp(phone: str) -> Union[dict, None]:
-    if os.environ["ENV"] == "local":
-        return {
-            "MessageResponse": {
-                "Result": {phone: {"StatusCode": 200, "DeliveryStatus": "SUCCESSFUL"}}
-            }
-        }
     try:
         response: dict = pinpoint_client.send_otp_message(
             ApplicationId=os.getenv("AWS_PINPOINT_APP_ID"),
