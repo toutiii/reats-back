@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Callable
 
 from rest_framework import status
 from rest_framework.exceptions import (
@@ -10,6 +10,83 @@ from rest_framework.exceptions import (
 from rest_framework.response import Response
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from utils.enums import ErrorCodeEnum, ErrorMessageEnum, SuccessMessageEnum
+
+
+class ExceptionHandler:
+    def __init__(self):
+        self._handlers = {}
+        self._register_default_handlers()
+
+    def _register_default_handlers(self):
+        self.register(
+            (TokenError, InvalidToken, AuthenticationFailed),
+            {
+                "message": ErrorMessageEnum.TOKEN_NOT_VALID,
+                "code": ErrorCodeEnum.TOKEN_NOT_VALID,
+                "status_code": status.HTTP_401_UNAUTHORIZED,
+            },
+        )
+        self.register(
+            ValidationError,
+            {
+                "message": ErrorMessageEnum.VALIDATION_FAILED,
+                "code": ErrorCodeEnum.VALIDATION_ERROR,
+                "status_code": status.HTTP_400_BAD_REQUEST,
+                "extract_details": True,
+            },
+        )
+        self.register(
+            PermissionDenied,
+            {
+                "message": ErrorMessageEnum.PERMISSION_DENIED,
+                "code": ErrorCodeEnum.PERMISSION_DENIED,
+                "status_code": status.HTTP_403_FORBIDDEN,
+                "extract_details": True,
+            },
+        )
+        self.register(
+            NotFound,
+            {
+                "message": ErrorMessageEnum.NOT_FOUND,
+                "code": ErrorCodeEnum.NOT_FOUND,
+                "status_code": status.HTTP_404_NOT_FOUND,
+                "extract_details": True,
+            },
+        )
+
+    def register(self, exc_type, handler_config: dict):
+        if isinstance(exc_type, tuple):
+            for exc_class in exc_type:
+                self._handlers[exc_class] = handler_config
+        else:
+            self._handlers[exc_type] = handler_config
+
+    def get_handler_config(self, exc: Exception) -> dict | None:
+        for exc_type, config in self._handlers.items():
+            if isinstance(exc, exc_type):
+                return config
+        return None
+
+    def build_error_response(
+        self, exc: Exception, error_method: Callable
+    ) -> Response | None:
+        config = self.get_handler_config(exc)
+        if not config:
+            return None
+
+        details = None
+        if config.get("extract_details"):
+            details = getattr(exc, "detail", {})
+
+        return error_method(
+            message=config["message"],
+            code=config["code"],
+            status_code=config["status_code"],
+            details=details,
+        )
+
+
+exception_handler = ExceptionHandler()
 
 
 class CustomApiResponse:
@@ -69,7 +146,6 @@ class StandardizedResponseMixin:
         return CustomApiResponse.error(message, code, details, status_code, extra)
 
     def handle_exception(self, exc):
-
         try:
             response = super().handle_exception(exc)
         except (TokenError, InvalidToken):
@@ -79,36 +155,11 @@ class StandardizedResponseMixin:
                 status_code=status.HTTP_401_UNAUTHORIZED,
             )
 
-        # Si super() ne renvoie pas de Response, je dois construire une réponse standardisée
         if response is None:
-            if isinstance(exc, (TokenError, InvalidToken, AuthenticationFailed)):
-                return self.error(
-                    message=ErrorMessageEnum.TOKEN_NOT_VALID,
-                    code=ErrorCodeEnum.TOKEN_NOT_VALID,
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                )
-            if isinstance(exc, ValidationError):
-                return self.error(
-                    message=ErrorMessageEnum.VALIDATION_FAILED,
-                    code=ErrorCodeEnum.VALIDATION_ERROR,
-                    details=getattr(exc, "detail", {}),
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                )
-            if isinstance(exc, PermissionDenied):
-                return self.error(
-                    message=ErrorMessageEnum.PERMISSION_DENIED,
-                    code=ErrorCodeEnum.PERMISSION_DENIED,
-                    details=getattr(exc, "detail", {}),
-                    status_code=status.HTTP_403_FORBIDDEN,
-                )
-            if isinstance(exc, NotFound):
-                return self.error(
-                    message=ErrorMessageEnum.NOT_FOUND,
-                    code=ErrorCodeEnum.NOT_FOUND,
-                    details=getattr(exc, "detail", {}),
-                    status_code=status.HTTP_404_NOT_FOUND,
-                )
-            # Dans la mesure ou les exceptions non gérées arrivent ici, on renvoie une erreur 500
+            handler_response = exception_handler.build_error_response(exc, self.error)
+            if handler_response:
+                return handler_response
+
             return self.error(
                 message=str(exc) or "Operation failed",
                 code=ErrorCodeEnum.INTERNAL_SERVER_ERROR,
@@ -116,34 +167,35 @@ class StandardizedResponseMixin:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-        # Si response existe, garder la logique existante.
+        return self._process_existing_response(response)
+
+    def _process_existing_response(self, response: Response) -> Response:
         resp_data = getattr(response, "data", None)
-        if resp_data is not None:
-            if isinstance(resp_data, dict) and "success" in resp_data:
-                return response
+        if resp_data is None:
+            return response
 
-            message = "Operation failed"
-            code = "API_ERROR"
-            details = resp_data
+        if isinstance(resp_data, dict) and "success" in resp_data:
+            return response
 
-            if isinstance(details, dict):
-                if "detail" in details:
-                    detail_obj = details["detail"]
-                    if getattr(detail_obj, "code", None):
-                        code = detail_obj.code
-                    message = str(detail_obj)
-                    if message == "Given token not valid for any token type":
-                        message = ErrorMessageEnum.TOKEN_NOT_VALID
+        message = "Operation failed"
+        code = "API_ERROR"
+        details = resp_data
 
-                if response.status_code == status.HTTP_400_BAD_REQUEST:
-                    code = ErrorCodeEnum.VALIDATION_ERROR
-                    message = ErrorMessageEnum.VALIDATION_FAILED
+        if isinstance(details, dict) and "detail" in details:
+            detail_obj = details["detail"]
+            if getattr(detail_obj, "code", None):
+                code = detail_obj.code
+            message = str(detail_obj)
+            if message == "Given token not valid for any token type":
+                message = ErrorMessageEnum.TOKEN_NOT_VALID
 
-            return self.error(
-                message=message,
-                code=code,
-                details=details,
-                status_code=response.status_code,
-            )
+        if response.status_code == status.HTTP_400_BAD_REQUEST:
+            code = ErrorCodeEnum.VALIDATION_ERROR
+            message = ErrorMessageEnum.VALIDATION_FAILED
 
-        return response
+        return self.error(
+            message=message,
+            code=code,
+            details=details,
+            status_code=response.status_code,
+        )
