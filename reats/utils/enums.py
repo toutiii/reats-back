@@ -59,6 +59,9 @@ class ErrorCodeEnum(str, Enum):
     API_ERROR = "API_ERROR"
     USER_LOGIN_FAILED = "USER_LOGIN_FAILED"
     TOKEN_NOT_VALID = "token_not_valid"
+    UNAUTHORIZED = "UNAUTHORIZED"
+    NOT_FOUND = "NOT_FOUND"
+    PERMISSION_DENIED = "PERMISSION_DENIED"
 
 
 class ErrorMessageEnum(str, Enum):
@@ -78,3 +81,6 @@ class ErrorMessageEnum(str, Enum):
     INVALID_USER = _("Invalid user")
     INTERNAL_SERVER_ERROR = _("An error occurred")
     TOKEN_NOT_VALID = _("Token is invalid or expired")
+    VALIDATION_FAILED = _("Validation failed")
+    PERMISSION_DENIED = _("Permission denied")
+    NOT_FOUND = _("Resource not found")

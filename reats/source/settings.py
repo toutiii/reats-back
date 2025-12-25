@@ -105,23 +105,9 @@ secret_data = fetch_aws_secrets(os.environ["AWS_SECRET_NAME"])
 
 if secret_data:
     print("Secrets loaded successfully")
-    if os.environ["ENV"] == "local":
-        def format_pem_key(key: str, key_type: str) -> str:
-            # check if key is already formatted
-            if "\n" in key.strip():
-                return key
-                
-            clean_key = key.replace(f"-----BEGIN {key_type} KEY-----", "").replace(f"-----END {key_type} KEY-----", "").replace(" ", "")
-            chunked_body = "\n".join(clean_key[i : i + 64] for i in range(0, len(clean_key), 64))
-            
-            return f"-----BEGIN {key_type} KEY-----\n{chunked_body}\n-----END {key_type} KEY-----"
 
-        RSA_PRIVATE_KEY_PATH = format_pem_key(secret_data["RSA_PRIVATE_KEY_PATH"], "PRIVATE")
-        RSA_PUBLIC_KEY_PATH = format_pem_key(secret_data["RSA_PUBLIC_KEY_PATH"], "PUBLIC")
-    else:
-        RSA_PRIVATE_KEY_PATH = secret_data["RSA_PRIVATE_KEY_PATH"]
-        RSA_PUBLIC_KEY_PATH = secret_data["RSA_PUBLIC_KEY_PATH"]
-
+    RSA_PRIVATE_KEY_PATH = secret_data["RSA_PRIVATE_KEY_PATH"]
+    RSA_PUBLIC_KEY_PATH = secret_data["RSA_PUBLIC_KEY_PATH"]
     COOKER_APP_API_KEY = secret_data["COOKER_APP_API_KEY"]
     CUSTOMER_APP_API_KEY = secret_data["CUSTOMER_APP_API_KEY"]
     DELIVERY_APP_API_KEY = secret_data["DELIVERY_APP_API_KEY"]

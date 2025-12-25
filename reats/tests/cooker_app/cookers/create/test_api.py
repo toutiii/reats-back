@@ -166,7 +166,7 @@ class TestActivateCookerFailed:
     ) -> None:
         phone = "+33600000002"
         user = CookerModel.objects.get(phone=phone)
-        
+
         assert user is not None
         assert user.is_activated is False
 
@@ -331,8 +331,8 @@ class TestCookerAuth:
     @pytest.mark.parametrize(
         "phone, expected_status_code",
         [
-            ("0700000001", status.HTTP_404_NOT_FOUND),  
-            ("0600000002", status.HTTP_403_FORBIDDEN), 
+            ("0700000001", status.HTTP_404_NOT_FOUND),
+            ("0600000002", status.HTTP_403_FORBIDDEN),
         ],
     )
     @pytest.mark.django_db

@@ -204,7 +204,7 @@ class TestDeleteAddressFailedWithExpiredToken:
             )
 
             assert token_response.status_code == status.HTTP_200_OK
-            access_token = token_response.json().get('data').get("token").get("access")
+            access_token = token_response.json().get("data").get("token").get("access")
             access_auth_header = {"HTTP_AUTHORIZATION": f"Bearer {access_token}"}
 
         with freeze_time("2024-01-20T17:30:45+00:00"):
