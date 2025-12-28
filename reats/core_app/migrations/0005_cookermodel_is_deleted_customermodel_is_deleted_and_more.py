@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("core_app", "0004_alter_dishratingmodel_comment_and_more"),
     ]

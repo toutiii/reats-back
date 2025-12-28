@@ -50,7 +50,7 @@ def test_create_deliver_success(
         encode_multipart(BOUNDARY, post_data),
         content_type=MULTIPART_CONTENT,
         follow=False,
-        **delivery_api_key_header
+        **delivery_api_key_header,
     )
     assert response.status_code == status.HTTP_201_CREATED
     new_count = DeliverModel.objects.count()
@@ -115,7 +115,7 @@ class TestActivateDeliverSuccess:
             encode_multipart(BOUNDARY, post_data),
             content_type=MULTIPART_CONTENT,
             follow=False,
-            **delivery_api_key_header
+            **delivery_api_key_header,
         )
 
         assert create_response.status_code == status.HTTP_201_CREATED
@@ -129,7 +129,7 @@ class TestActivateDeliverSuccess:
             encode_multipart(BOUNDARY, otp_data),
             content_type=MULTIPART_CONTENT,
             follow=False,
-            **delivery_api_key_header
+            **delivery_api_key_header,
         )
 
         assert activate_response.status_code == status.HTTP_200_OK
@@ -169,7 +169,7 @@ class TestActivateDeliverFailedInCaseOfFailingOTPValidation:
             encode_multipart(BOUNDARY, post_data),
             content_type=MULTIPART_CONTENT,
             follow=False,
-            **delivery_api_key_header
+            **delivery_api_key_header,
         )
 
         assert create_response.status_code == status.HTTP_201_CREATED
@@ -183,7 +183,7 @@ class TestActivateDeliverFailedInCaseOfFailingOTPValidation:
             encode_multipart(BOUNDARY, otp_data),
             content_type=MULTIPART_CONTENT,
             follow=False,
-            **delivery_api_key_header
+            **delivery_api_key_header,
         )
 
         assert activate_response.status_code == status.HTTP_400_BAD_REQUEST
@@ -227,7 +227,7 @@ class TestCreateSameDeliverTwice:
             encode_multipart(BOUNDARY, post_data),
             content_type=MULTIPART_CONTENT,
             follow=False,
-            **delivery_api_key_header
+            **delivery_api_key_header,
         )
         assert create_response.status_code == status.HTTP_201_CREATED
         new_count = DeliverModel.objects.count()
@@ -239,7 +239,7 @@ class TestCreateSameDeliverTwice:
             encode_multipart(BOUNDARY, post_data),
             content_type=MULTIPART_CONTENT,
             follow=False,
-            **delivery_api_key_header
+            **delivery_api_key_header,
         )
         assert duplicate_create_response.status_code == status.HTTP_400_BAD_REQUEST
         assert DeliverModel.objects.count() == new_count
@@ -285,7 +285,7 @@ def test_failed_create_deliver_wrong_data(
         encode_multipart(BOUNDARY, post_data),
         content_type=MULTIPART_CONTENT,
         follow=False,
-        **delivery_api_key_header
+        **delivery_api_key_header,
     )
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     new_count = DeliverModel.objects.count()

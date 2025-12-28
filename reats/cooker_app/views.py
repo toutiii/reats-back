@@ -113,15 +113,7 @@ class CookerView(StandardizedResponseMixin, ModelViewSet):
         except KeyError:
             pass
         else:
-            photo = (
-                "cookers"
-                + "/"
-                + str(cooker.pk)
-                + "/"
-                + "profile_pics"
-                + "/"
-                + self.request.FILES["photo"].name
-            )
+            photo = "cookers" + "/" + str(cooker.pk) + "/" + "profile_pics" + "/" + self.request.FILES["photo"].name
 
         if photo is not None:
             upload_image_to_s3(self.request.FILES["photo"], photo)
@@ -202,10 +194,7 @@ class CookerView(StandardizedResponseMixin, ModelViewSet):
         # Keeping previous logic structure but wrapping response
 
         otp_response_status_code = (
-            otp_response.get("MessageResponse", {})
-            .get("Result", {})
-            .get(e164_phone_format, {})
-            .get("StatusCode")
+            otp_response.get("MessageResponse", {}).get("Result", {}).get(e164_phone_format, {}).get("StatusCode")
         )
 
         if otp_response_status_code != status.HTTP_200_OK:
@@ -216,10 +205,7 @@ class CookerView(StandardizedResponseMixin, ModelViewSet):
             )
 
         otp_response_delivery_status = (
-            otp_response.get("MessageResponse", {})
-            .get("Result", {})
-            .get(e164_phone_format, {})
-            .get("DeliveryStatus")
+            otp_response.get("MessageResponse", {}).get("Result", {}).get(e164_phone_format, {}).get("DeliveryStatus")
         )
 
         if otp_response_delivery_status != "SUCCESSFUL":
@@ -330,9 +316,7 @@ class DishView(StandardizedResponseMixin, ModelViewSet):
             )
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
-        return self.success(
-            data=serializer.data, status_code=status.HTTP_201_CREATED, headers=headers
-        )
+        return self.success(data=serializer.data, status_code=status.HTTP_201_CREATED, headers=headers)
 
     def perform_update(self, serializer: BaseSerializer) -> None:
         current_object = self.get_object()
@@ -383,9 +367,7 @@ class DishView(StandardizedResponseMixin, ModelViewSet):
     def list(self, request, *args, **kwargs) -> Response:
         request_name: Union[str, None] = self.request.query_params.get("name")
         request_category: Union[str, None] = self.request.query_params.get("category")
-        request_status: Union[str, None] = self.request.query_params.get(
-            "is_enabled", "true"
-        )
+        request_status: Union[str, None] = self.request.query_params.get("is_enabled", "true")
 
         self.queryset = self.queryset.filter(cooker__id=request.user.pk)
 
@@ -393,9 +375,7 @@ class DishView(StandardizedResponseMixin, ModelViewSet):
             self.queryset = self.queryset.filter(name__icontains=request_name)
 
         if request_category is not None:
-            self.queryset = self.queryset.filter(
-                category__in=request_category.split(",")
-            )
+            self.queryset = self.queryset.filter(category__in=request_category.split(","))
 
         if request_status is not None:
             self.queryset = self.queryset.filter(is_enabled=json.loads(request_status))
@@ -449,9 +429,7 @@ class DrinkView(StandardizedResponseMixin, ModelViewSet):
             )
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
-        return self.success(
-            data=serializer.data, status_code=status.HTTP_201_CREATED, headers=headers
-        )
+        return self.success(data=serializer.data, status_code=status.HTTP_201_CREATED, headers=headers)
 
     def perform_create(self, serializer: BaseSerializer) -> None:
         photo = (
@@ -469,9 +447,7 @@ class DrinkView(StandardizedResponseMixin, ModelViewSet):
         super().perform_create(serializer)
 
     def partial_update(self, request, *args, **kwargs):
-        serializer = self.get_serializer(
-            self.get_object(), data=request.data, partial=True
-        )
+        serializer = self.get_serializer(self.get_object(), data=request.data, partial=True)
         if not serializer.is_valid():
             return self.error(
                 message="Invalid data",
@@ -523,9 +499,7 @@ class DrinkView(StandardizedResponseMixin, ModelViewSet):
 
     def list(self, request, *args, **kwargs) -> Response:
         request_name: Union[str, None] = self.request.query_params.get("name")
-        request_status: Union[str, None] = self.request.query_params.get(
-            "is_enabled", "true"
-        )
+        request_status: Union[str, None] = self.request.query_params.get("is_enabled", "true")
 
         self.queryset = self.queryset.filter(cooker__id=request.user.pk)
 
@@ -573,19 +547,14 @@ class TokenObtainPairWithoutPasswordView(StandardizedResponseMixin, TokenViewBas
             raise
 
         validated_data = serializer.validated_data
-        if (
-            isinstance(validated_data, dict)
-            and validated_data.get("status") == status.HTTP_400_BAD_REQUEST
-        ):
+        if isinstance(validated_data, dict) and validated_data.get("status") == status.HTTP_400_BAD_REQUEST:
             return self.error(
                 ErrorMessageEnum.INVALID_USER,
                 code=ErrorCodeEnum.USER_NOT_FOUND,
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
 
-        return self.success(
-            data=validated_data, message=SuccessMessageEnum.TOKEN_GENERATED
-        )
+        return self.success(data=validated_data, message=SuccessMessageEnum.TOKEN_GENERATED)
 
 
 class TokenObtainRefreshWithoutPasswordView(StandardizedResponseMixin, TokenViewBase):
@@ -600,9 +569,7 @@ class TokenObtainRefreshWithoutPasswordView(StandardizedResponseMixin, TokenView
         except Exception:
             raise
 
-        return self.success(
-            data=serializer.validated_data, message=SuccessMessageEnum.TOKEN_REFRESHED
-        )
+        return self.success(data=serializer.validated_data, message=SuccessMessageEnum.TOKEN_REFRESHED)
 
 
 class CookerOrderView(
@@ -650,9 +617,7 @@ class CookerOrderView(
             amount_to_refund_in_cents = Decimal(
                 str(compute_order_items_total_amount(instance) + instance.delivery_fees)
             ) * Decimal("100")
-            create_stripe_refund(
-                int(amount_to_refund_in_cents), instance.stripe_payment_intent_id
-            )
+            create_stripe_refund(int(amount_to_refund_in_cents), instance.stripe_payment_intent_id)
 
         update_cooker_acceptance_rate(instance, new_status)
 
@@ -685,9 +650,7 @@ class CookerOrderView(
             self.queryset = OrderModel.objects.none()
 
         if request_status is not None:
-            self.queryset = self.queryset.filter(status=request_status).order_by(
-                "-modified"
-            )
+            self.queryset = self.queryset.filter(status=request_status).order_by("-modified")
 
         queryset = self.filter_queryset(self.get_queryset())
         page = self.paginate_queryset(queryset)
@@ -715,14 +678,10 @@ class CookerOrderHistoryView(StandardizedResponseMixin, ListModelMixin, GenericV
         order_status: Union[str, None] = self.request.query_params.get("status")
         start_date: Union[str, None] = self.request.query_params.get("start_date")
         end_date: Union[str, None] = self.request.query_params.get("end_date")
-        self.queryset = self.queryset.filter(cooker__id=request.user.pk).order_by(
-            "-modified"
-        )
+        self.queryset = self.queryset.filter(cooker__id=request.user.pk).order_by("-modified")
 
         if start_date and end_date:
-            start_date_object = datetime.fromisoformat(
-                start_date.replace("Z", "+00:00")
-            )
+            start_date_object = datetime.fromisoformat(start_date.replace("Z", "+00:00"))
             end_date_object = datetime.fromisoformat(end_date.replace("Z", "+00:00"))
             if start_date_object > end_date_object:
                 return Response(

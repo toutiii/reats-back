@@ -63,7 +63,6 @@ def test_add_rates_to_orders_and_orders_items(
     mock_stripe_create_ephemeral_key: MagicMock,
     mock_stripe_create_refund_success: MagicMock,
 ) -> None:
-
     with freeze_time("2024-05-08T10:16:00+00:00"):
         # First we create a delivered order
         response = client.post(
@@ -148,9 +147,7 @@ def test_add_rates_to_orders_and_orders_items(
     }
 
     for idx in range(len(dish_rating_data["dishes_ids"])):
-        dish_rating_instance: DishRatingModel = DishRatingModel.objects.get(
-            dish_id=dish_rating_data["dishes_ids"][idx]
-        )
+        dish_rating_instance: DishRatingModel = DishRatingModel.objects.get(dish_id=dish_rating_data["dishes_ids"][idx])
         assert dish_rating_instance.rating == dish_rating_data["ratings"][idx]
         assert dish_rating_instance.comment == dish_rating_data["comments"][idx]
 

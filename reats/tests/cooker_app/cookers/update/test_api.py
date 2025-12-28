@@ -104,9 +104,7 @@ class TestUpdateCookerAccountInfoWithoutPhoto:
         with freeze_time("2023-10-14T22:00:00+00:00"):
             response = client.patch(
                 f"{path}{cooker_id}/",
-                encode_multipart(
-                    BOUNDARY, post_personal_information_data_without_photo
-                ),
+                encode_multipart(BOUNDARY, post_personal_information_data_without_photo),
                 content_type=MULTIPART_CONTENT,
                 follow=False,
                 **auth_headers,
@@ -472,9 +470,7 @@ ct4oFdWCTtEg1i4CV0LS43lOnu1Gv168nOvqc-WFXqMMNJnT88Ruz1St96KbpPw0m6K
         path: str,
         data: dict,
     ) -> None:
-        expired_auth_header = {
-            "HTTP_AUTHORIZATION": expired_access_token.replace("\n", "")
-        }
+        expired_auth_header = {"HTTP_AUTHORIZATION": expired_access_token.replace("\n", "")}
         response = client.patch(
             f"{path}{cooker_id}/",
             encode_multipart(BOUNDARY, data),
@@ -552,10 +548,7 @@ class TestAccessTokenRenew:
                 **access_auth_header,
             )
             assert response.status_code == status.HTTP_401_UNAUTHORIZED
-            assert (
-                response.json().get("error").get("code")
-                == ErrorCodeEnum.TOKEN_NOT_VALID
-            )
+            assert response.json().get("error").get("code") == ErrorCodeEnum.TOKEN_NOT_VALID
             assert response.json().get("success") is False
 
             # We try now to ask a new access token using the refresh token
@@ -574,9 +567,7 @@ class TestAccessTokenRenew:
             assert new_access_token != access_token
 
             # Finally we try again the request with our new access token
-            new_access_auth_header = {
-                "HTTP_AUTHORIZATION": f"Bearer {new_access_token}"
-            }
+            new_access_auth_header = {"HTTP_AUTHORIZATION": f"Bearer {new_access_token}"}
             response = client.patch(
                 f"{path}{cooker_id}/",
                 encode_multipart(BOUNDARY, post_switch_cooker_online),
@@ -653,10 +644,7 @@ class TestRefreshTokenRenew:
                 **access_auth_header,
             )
             assert response.status_code == status.HTTP_401_UNAUTHORIZED
-            assert (
-                response.json().get("error").get("code")
-                == ErrorCodeEnum.TOKEN_NOT_VALID
-            )
+            assert response.json().get("error").get("code") == ErrorCodeEnum.TOKEN_NOT_VALID
 
             # We try now to ask a new access token using the expired refresh token
             response = client.post(
@@ -666,10 +654,7 @@ class TestRefreshTokenRenew:
                 follow=False,
             )
             assert response.status_code == status.HTTP_401_UNAUTHORIZED
-            assert (
-                response.json().get("error").get("code")
-                == ErrorCodeEnum.TOKEN_NOT_VALID
-            )
+            assert response.json().get("error").get("code") == ErrorCodeEnum.TOKEN_NOT_VALID
 
             # So now we have to ask again a new token pair
             response = client.post(
@@ -686,9 +671,7 @@ class TestRefreshTokenRenew:
 
             # Finally we try again the request with our new access token
             new_access_token = response.json().get("data").get("token").get("access")
-            new_access_auth_header = {
-                "HTTP_AUTHORIZATION": f"Bearer {new_access_token}"
-            }
+            new_access_auth_header = {"HTTP_AUTHORIZATION": f"Bearer {new_access_token}"}
             response = client.patch(
                 f"{path}{cooker_id}/",
                 encode_multipart(BOUNDARY, post_switch_cooker_online),

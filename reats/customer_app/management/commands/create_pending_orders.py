@@ -28,15 +28,11 @@ class Command(BaseCommand):
         }
 
     def add_arguments(self, parser):
-        parser.add_argument(
-            "--count", type=int, default=5, help="Number of pending orders to create"
-        )
+        parser.add_argument("--count", type=int, default=5, help="Number of pending orders to create")
 
     def handle(self, *args, **options):
         if not self.check_local_environment():
-            self.stderr.write(
-                "This command can only be run in a local development environment."
-            )
+            self.stderr.write("This command can only be run in a local development environment.")
             return
 
         count = options["count"]

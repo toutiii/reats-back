@@ -5,7 +5,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("core_app", "0002_ordermodel_comment_ordermodel_rating_and_more"),
     ]

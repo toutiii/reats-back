@@ -45,7 +45,6 @@ def test_delete_address_success(
     post_payload_1: dict,
     post_payload_2: dict,
 ) -> None:
-
     # Fist create both addresses
 
     first_create_response = client.post(
@@ -109,7 +108,6 @@ def test_delete_address_failed_not_existing(
     client: APIClient,
     customer_address_path: str,
 ) -> None:
-
     # Then we try to delete an address that does not exist
     delete_response = client.delete(
         f"{customer_address_path}999/",
@@ -132,7 +130,6 @@ def test_delete_customer_will_also_delete_his_addresses(
     post_payload_1: dict,
     post_payload_2: dict,
 ) -> None:
-
     # Fist create both addresses
 
     first_create_response = client.post(

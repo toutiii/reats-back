@@ -9,6 +9,7 @@ from rest_framework.exceptions import (
 )
 from rest_framework.response import Response
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
+
 from utils.enums import ErrorCodeEnum, ErrorMessageEnum, SuccessMessageEnum
 
 
@@ -67,9 +68,7 @@ class ExceptionHandler:
                 return config
         return None
 
-    def build_error_response(
-        self, exc: Exception, error_method: Callable
-    ) -> Response | None:
+    def build_error_response(self, exc: Exception, error_method: Callable) -> Response | None:
         config = self.get_handler_config(exc)
         if not config:
             return None

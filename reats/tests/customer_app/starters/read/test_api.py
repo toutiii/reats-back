@@ -17,13 +17,9 @@ class TestListStartersForCustomerSuccess:
         cooker_id: int,
         customer_starter_path: str,
     ) -> None:
-
         # we check that the cooker has some starters
         assert (
-            DishModel.objects.filter(category="starter")
-            .filter(cooker__id=cooker_id)
-            .filter(is_enabled=True)
-            .count()
+            DishModel.objects.filter(category="starter").filter(cooker__id=cooker_id).filter(is_enabled=True).count()
             > 0
         )
 
@@ -74,7 +70,6 @@ class TestListStartersForCustomeFailedWithUnknownCookerId:
         cooker_id: int,
         customer_starter_path: str,
     ) -> None:
-
         # we assert that no starter is linked to the unknown cooker
         assert DishModel.objects.filter(cooker__id=cooker_id).count() == 0
 
@@ -100,7 +95,6 @@ class TestListStartersForCustomerFailedWithoutCookerId:
         client: APIClient,
         customer_starter_path: str,
     ) -> None:
-
         # Then we list the starters without specifying the cooker_id
         response = client.get(
             customer_starter_path,
@@ -128,20 +122,13 @@ class TestListStartersOnlyReturnNonDeletedItems:
         cooker_id: int,
         customer_starter_path: str,
     ) -> None:
-
         assert (
-            DishModel.objects.filter(category="starter")
-            .filter(cooker__id=cooker_id)
-            .filter(is_enabled=True)
-            .count()
+            DishModel.objects.filter(category="starter").filter(cooker__id=cooker_id).filter(is_enabled=True).count()
             > 0
         )
 
         first_item = (
-            DishModel.objects.filter(category="starter")
-            .filter(cooker__id=cooker_id)
-            .filter(is_enabled=True)
-            .first()
+            DishModel.objects.filter(category="starter").filter(cooker__id=cooker_id).filter(is_enabled=True).first()
         )
         if first_item is not None:
             first_item.is_deleted = True

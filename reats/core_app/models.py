@@ -19,9 +19,7 @@ class CookerModel(ReatsModel):
     id: AutoField = AutoField(primary_key=True)
     firstname: CharField = CharField(max_length=100)
     lastname: CharField = CharField(max_length=100)
-    phone: CharField = CharField(
-        unique=True, max_length=17, validators=[MinLengthValidator(10)]
-    )
+    phone: CharField = CharField(unique=True, max_length=17, validators=[MinLengthValidator(10)])
     postal_code: CharField = CharField(
         max_length=5,
         validators=[RegexValidator(regex=r"[0-9]{5}")],
@@ -61,7 +59,6 @@ class CookerModel(ReatsModel):
 
 
 class DeliverModel(ReatsModel):
-
     DELIVERY_VEHICLE_CHOICES = [
         ("bike", "bike"),
         ("scooter", "scooter"),
@@ -155,9 +152,7 @@ class CustomerModel(ReatsModel):
     id: AutoField = AutoField(primary_key=True)
     firstname: CharField = CharField(max_length=100)
     lastname: CharField = CharField(max_length=100)
-    phone: CharField = CharField(
-        unique=True, max_length=17, validators=[MinLengthValidator(10)]
-    )
+    phone: CharField = CharField(unique=True, max_length=17, validators=[MinLengthValidator(10)])
     photo: CharField = CharField(
         max_length=512,
         default="customers/1/profile_pics/default-profile-pic.jpg",
@@ -179,9 +174,7 @@ class AddressModel(ReatsModel):
     town: CharField = CharField(max_length=100)
     postal_code: CharField = CharField(max_length=5)
     address_complement: CharField = CharField(max_length=512, null=True)
-    customer: ForeignKey = ForeignKey(
-        CustomerModel, on_delete=CASCADE, related_name="addresses"
-    )
+    customer: ForeignKey = ForeignKey(CustomerModel, on_delete=CASCADE, related_name="addresses")
     is_enabled: BooleanField = BooleanField(default=True)
 
     class Meta:
@@ -329,14 +322,10 @@ class OrderState:
 
     def transition_to(self, order: OrderModel, new_state):
         if self.can_transition_to(new_state):
-            order.status = order.get_reverse_state_map().get(
-                new_state.__class__.__name__
-            )
+            order.status = order.get_reverse_state_map().get(new_state.__class__.__name__)
             order.save()
         else:
-            raise ValueError(
-                f"Cannot transition from {self.__class__.__name__} to {new_state.__class__.__name__}"
-            )
+            raise ValueError(f"Cannot transition from {self.__class__.__name__} to {new_state.__class__.__name__}")
 
 
 class DraftState(OrderState):
@@ -364,23 +353,17 @@ class ProcessingState(OrderState):
 
 class CompletedState(OrderState):
     def can_transition_to(self, new_state: OrderState):
-        return isinstance(new_state, CancelledByCustomerState) or isinstance(
-            new_state, IndeliveryState
-        )
+        return isinstance(new_state, CancelledByCustomerState) or isinstance(new_state, IndeliveryState)
 
 
 class CancelledByCustomerState(OrderState):
     def can_transition_to(self, new_state: OrderState):
-        raise ValueError(
-            "Cannot transition from CancelledByCustomerState to any other state."
-        )
+        raise ValueError("Cannot transition from CancelledByCustomerState to any other state.")
 
 
 class CancelledByCookerState(OrderState):
     def can_transition_to(self, new_state: OrderState):
-        raise ValueError(
-            "Cannot transition from CancelledByCookerState to any other state."
-        )
+        raise ValueError("Cannot transition from CancelledByCookerState to any other state.")
 
 
 class IndeliveryState(OrderState):
@@ -409,9 +392,7 @@ class DishRatingModel(RatingsModel):
         on_delete=CASCADE,
         related_name="dish_ratings",
     )
-    dish: ForeignKey = ForeignKey(
-        "DishModel", on_delete=CASCADE, related_name="ratings"
-    )
+    dish: ForeignKey = ForeignKey("DishModel", on_delete=CASCADE, related_name="ratings")
 
     class Meta:
         db_table = "dish_ratings"

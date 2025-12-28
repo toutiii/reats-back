@@ -12,9 +12,7 @@ def cooker_id() -> int:
 
 
 @pytest.mark.django_db
-def test_empty_query_params(
-    auth_headers: dict, client: APIClient, path: str, cooker_id: int
-) -> None:
+def test_empty_query_params(auth_headers: dict, client: APIClient, path: str, cooker_id: int) -> None:
     response = client.get(
         path,
         follow=False,
@@ -172,9 +170,7 @@ def test_get_all_categories(auth_headers: dict, client: APIClient, path: str) ->
 
 
 @pytest.mark.django_db
-def test_get_all_enabled_categories(
-    auth_headers: dict, client: APIClient, path: str
-) -> None:
+def test_get_all_enabled_categories(auth_headers: dict, client: APIClient, path: str) -> None:
     response = client.get(
         path,
         {
@@ -196,9 +192,7 @@ def test_get_all_enabled_categories(
 
 
 @pytest.mark.django_db
-def test_get_all_disabled_categories(
-    auth_headers: dict, client: APIClient, path: str
-) -> None:
+def test_get_all_disabled_categories(auth_headers: dict, client: APIClient, path: str) -> None:
     response = client.get(
         path,
         {

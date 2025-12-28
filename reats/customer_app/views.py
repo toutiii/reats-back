@@ -142,13 +142,7 @@ class CustomerView(ModelViewSet):
             pass
         else:
             new_photo_key = (
-                "customers"
-                + "/"
-                + str(customer.pk)
-                + "/"
-                + "profile_pics"
-                + "/"
-                + self.request.FILES["photo"].name
+                "customers" + "/" + str(customer.pk) + "/" + "profile_pics" + "/" + self.request.FILES["photo"].name
             )
 
         if new_photo_key is not None:
@@ -234,31 +228,21 @@ class CustomerView(ModelViewSet):
             return Response(status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
         otp_response_status_code = (
-            otp_response.get("MessageResponse", {})
-            .get("Result", {})
-            .get(e164_phone_format, {})
-            .get("StatusCode")
+            otp_response.get("MessageResponse", {}).get("Result", {}).get(e164_phone_format, {}).get("StatusCode")
         )
 
         if otp_response_status_code != status.HTTP_200_OK:
             logger.error(f"Failed to send an OTP to {e164_phone_format}")
-            logger.error(
-                f"Expected {status.HTTP_200_OK} but got {otp_response_status_code} in otp response"
-            )
+            logger.error(f"Expected {status.HTTP_200_OK} but got {otp_response_status_code} in otp response")
             return Response(status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
         otp_response_delivery_status = (
-            otp_response.get("MessageResponse", {})
-            .get("Result", {})
-            .get(e164_phone_format, {})
-            .get("DeliveryStatus")
+            otp_response.get("MessageResponse", {}).get("Result", {}).get(e164_phone_format, {}).get("DeliveryStatus")
         )
 
         if otp_response_delivery_status != "SUCCESSFUL":
             logger.error(f"Failed to send an OTP to {e164_phone_format}")
-            logger.error(
-                f"Expected SUCCESSFUL but got {otp_response_delivery_status} in otp elivery status"
-            )
+            logger.error(f"Expected SUCCESSFUL but got {otp_response_delivery_status} in otp elivery status")
             return Response(status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
         return Response(status=status.HTTP_200_OK)
@@ -298,9 +282,7 @@ class AddressView(StandardizedResponseMixin, ModelViewSet):
         return self.success(message="Address deleted successfully")
 
     def list(self, request, *args, **kwargs) -> Response:
-        self.queryset = self.queryset.filter(customer__id=request.user.pk).filter(
-            is_enabled=True
-        )
+        self.queryset = self.queryset.filter(customer__id=request.user.pk).filter(is_enabled=True)
         return super().list(request, *args, **kwargs)
 
 
@@ -319,12 +301,8 @@ class DishView(ListModelMixin, GenericViewSet):
             "search_radius",
             "10",
         )
-        request_address_id: Union[str, None] = self.request.query_params.get(
-            "search_address_id"
-        )
-        request_delivery_mode: Union[str, None] = self.request.query_params.get(
-            "delivery_mode"
-        )
+        request_address_id: Union[str, None] = self.request.query_params.get("search_address_id")
+        request_delivery_mode: Union[str, None] = self.request.query_params.get("delivery_mode")
         request_cooker_id: Union[str, None] = self.request.query_params.get("cooker_id")
         closest_cookers_ids: list = []
 
@@ -357,19 +335,11 @@ class DishView(ListModelMixin, GenericViewSet):
                 self.queryset = DishModel.objects.none()
 
         if request_address_id is not None:
-            customer_address: AddressModel = AddressModel.objects.get(
-                pk=request_address_id
-            )
+            customer_address: AddressModel = AddressModel.objects.get(pk=request_address_id)
             closest_cookers_ids = get_closest_cookers_ids_from_customer_search_address(
                 str(customer_address),
-                CookerModel.objects.filter(
-                    postal_code__startswith=customer_address.postal_code[:2]
-                ),
-                (
-                    int(request_search_radius)
-                    if request_search_radius
-                    else settings.DEFAULT_SEARCH_RADIUS
-                ),
+                CookerModel.objects.filter(postal_code__startswith=customer_address.postal_code[:2]),
+                (int(request_search_radius) if request_search_radius else settings.DEFAULT_SEARCH_RADIUS),
             )
 
         if not closest_cookers_ids:
@@ -378,13 +348,9 @@ class DishView(ListModelMixin, GenericViewSet):
 
         if request_delivery_mode is not None:
             if request_delivery_mode == "now":
-                self.queryset = self.queryset.filter(
-                    is_suitable_for_quick_delivery=True
-                )
+                self.queryset = self.queryset.filter(is_suitable_for_quick_delivery=True)
             elif request_delivery_mode == "scheduled":
-                self.queryset = self.queryset.filter(
-                    is_suitable_for_scheduled_delivery=True
-                )
+                self.queryset = self.queryset.filter(is_suitable_for_scheduled_delivery=True)
             else:
                 logger.error(f"Invalid delivery mode {request_delivery_mode}")
                 self.queryset = DishModel.objects.none()
@@ -421,12 +387,8 @@ class DrinkView(ListModelMixin, GenericViewSet):
     queryset = DrinkModel.objects.filter(is_deleted=False).all()
 
     def list(self, request, *args, **kwargs) -> Response:
-        request_cooker_id: Union[str, int, None] = self.request.query_params.get(
-            "cooker_id"
-        )
-        request_cooker_ids: list = self.request.query_params.get(
-            "cooker_ids", ""
-        ).split(",")
+        request_cooker_id: Union[str, int, None] = self.request.query_params.get("cooker_id")
+        request_cooker_ids: list = self.request.query_params.get("cooker_ids", "").split(",")
         request_cooker_ids = [item for item in request_cooker_ids if item]
 
         if request_cooker_ids:
@@ -449,17 +411,11 @@ class DessertView(ListModelMixin, GenericViewSet):
     serializer_class = DishGETSerializer
     renderer_classes = [CustomRendererWithData]
     parser_classes = [MultiPartParser]
-    queryset = (
-        DishModel.objects.filter(category="dessert").filter(is_deleted=False).all()
-    )
+    queryset = DishModel.objects.filter(category="dessert").filter(is_deleted=False).all()
 
     def list(self, request, *args, **kwargs) -> Response:
-        request_cooker_id: Union[str, int, None] = self.request.query_params.get(
-            "cooker_id"
-        )
-        request_cooker_ids: list = self.request.query_params.get(
-            "cooker_ids", ""
-        ).split(",")
+        request_cooker_id: Union[str, int, None] = self.request.query_params.get("cooker_id")
+        request_cooker_ids: list = self.request.query_params.get("cooker_ids", "").split(",")
         request_cooker_ids = [item for item in request_cooker_ids if item]
 
         if request_cooker_id is not None:
@@ -482,17 +438,11 @@ class StarterView(ListModelMixin, GenericViewSet):
     serializer_class = DishGETSerializer
     renderer_classes = [CustomRendererWithData]
     parser_classes = [MultiPartParser]
-    queryset = (
-        DishModel.objects.filter(category="starter").filter(is_deleted=False).all()
-    )
+    queryset = DishModel.objects.filter(category="starter").filter(is_deleted=False).all()
 
     def list(self, request, *args, **kwargs) -> Response:
-        request_cooker_id: Union[str, int, None] = self.request.query_params.get(
-            "cooker_id"
-        )
-        request_cooker_ids: list = self.request.query_params.get(
-            "cooker_ids", ""
-        ).split(",")
+        request_cooker_id: Union[str, int, None] = self.request.query_params.get("cooker_id")
+        request_cooker_ids: list = self.request.query_params.get("cooker_ids", "").split(",")
         request_cooker_ids = [item for item in request_cooker_ids if item]
 
         if request_cooker_id is not None:
@@ -523,9 +473,7 @@ class OrderView(
         distance_dict: dict = compute_distance(
             origins=[str(serializer.validated_data.get("address"))],
             destinations=[
-                serializer.validated_data.get("dishes_items")[0][
-                    "dish"
-                ].cooker.full_address
+                serializer.validated_data.get("dishes_items")[0]["dish"].cooker.full_address
             ],  # As on order is bound to only one cooker, fetch the first dishes's cooker is enough
         )
         if distance_dict.get("status") == "KO":
@@ -533,9 +481,7 @@ class OrderView(
             raise ValidationError("Failed to compute distance")
 
         order_instance: OrderModel = serializer.save()
-        delivery_distance: float = distance_dict["rows"][0]["elements"][0]["distance"][
-            "value"
-        ]
+        delivery_distance: float = distance_dict["rows"][0]["elements"][0]["distance"]["value"]
         order_instance.delivery_distance = delivery_distance
         order_instance.delivery_fees = get_delivery_fee(delivery_distance)
 
@@ -553,9 +499,7 @@ class OrderView(
     def perform_update(self, serializer: BaseSerializer) -> None:
         super().perform_update(serializer)
         order_instance: OrderModel = serializer.instance  # type: ignore
-        current_order_instance: OrderModel = OrderModel.objects.get(
-            pk=order_instance.pk
-        )
+        current_order_instance: OrderModel = OrderModel.objects.get(pk=order_instance.pk)
 
         if current_order_instance.status == OrderStatusEnum.DRAFT:
             # We can update a payment intent only if it has not been paid yet.
@@ -568,14 +512,9 @@ class OrderView(
         if new_status == OrderStatusEnum.CANCELLED_BY_CUSTOMER:
             if instance.status == OrderStatusEnum.PENDING:
                 amount_to_refund_in_cents = Decimal(
-                    str(
-                        compute_order_items_total_amount(instance)
-                        + instance.delivery_fees
-                    )
+                    str(compute_order_items_total_amount(instance) + instance.delivery_fees)
                 ) * Decimal("100")
-                create_stripe_refund(
-                    int(amount_to_refund_in_cents), instance.stripe_payment_intent_id
-                )
+                create_stripe_refund(int(amount_to_refund_in_cents), instance.stripe_payment_intent_id)
 
         if new_status:
             try:
@@ -626,9 +565,7 @@ class OrderView(
             self.queryset = OrderModel.objects.none()
 
         if request_status is not None:
-            self.queryset = self.queryset.filter(status=request_status).order_by(
-                "-modified"
-            )
+            self.queryset = self.queryset.filter(status=request_status).order_by("-modified")
 
         return super().list(request, *args, **kwargs)
 
@@ -650,14 +587,10 @@ class CustomerOrderHistoryView(ListModelMixin, GenericViewSet):
         order_status: Union[str, None] = self.request.query_params.get("status")
         start_date: Union[str, None] = self.request.query_params.get("start_date")
         end_date: Union[str, None] = self.request.query_params.get("end_date")
-        self.queryset = self.queryset.filter(customer__id=request.user.pk).order_by(
-            "-modified"
-        )
+        self.queryset = self.queryset.filter(customer__id=request.user.pk).order_by("-modified")
 
         if start_date and end_date:
-            start_date_object = datetime.fromisoformat(
-                start_date.replace("Z", "+00:00")
-            )
+            start_date_object = datetime.fromisoformat(start_date.replace("Z", "+00:00"))
             end_date_object = datetime.fromisoformat(end_date.replace("Z", "+00:00"))
             if start_date_object > end_date_object:
                 return Response(
@@ -680,12 +613,7 @@ class CustomerOrderHistoryView(ListModelMixin, GenericViewSet):
 class DishCountriesView(ListModelMixin, GenericViewSet):
     renderer_classes = [DishesCountriesCustomRendererWithData]
     serializer_class = DishCountriesGETSerializer
-    queryset = (
-        DishModel.objects.filter(is_enabled=True)
-        .filter(category="dish")
-        .order_by("country")
-        .distinct("country")
-    )
+    queryset = DishModel.objects.filter(is_enabled=True).filter(category="dish").order_by("country").distinct("country")
 
     def list(self, request, *args, **kwargs) -> Response:
         return super().list(request, *args, **kwargs)
@@ -706,13 +634,9 @@ class StripeWebhookView(GenericViewSet):
 
         if event["type"] == "payment_intent.succeeded":
             payment_intent_id = event["data"]["object"]["id"]
-            order_instance: OrderModel = OrderModel.objects.get(
-                stripe_payment_intent_id=payment_intent_id
-            )
+            order_instance: OrderModel = OrderModel.objects.get(stripe_payment_intent_id=payment_intent_id)
 
-            order_instance.paid_date = datetime.fromtimestamp(
-                event["created"], timezone.utc
-            )
+            order_instance.paid_date = datetime.fromtimestamp(event["created"], timezone.utc)
             order_instance.transition_to(OrderStatusEnum.PENDING)
 
         return Response(status=status.HTTP_200_OK)

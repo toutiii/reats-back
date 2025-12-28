@@ -64,7 +64,6 @@ def test_switch_order_status_from_draft_to_cancelled_by_customer(
     mock_stripe_create_ephemeral_key: MagicMock,
     mock_stripe_create_refund_success: MagicMock,
 ) -> None:
-
     with freeze_time("2024-05-08T10:16:00+00:00"):
         # First we create a draft order
         response = client.post(
@@ -100,16 +99,12 @@ def test_switch_order_status_from_draft_to_cancelled_by_customer(
             follow=False,
             **auth_headers,
         )
-        assert (
-            update_to_cancelled_by_customer_response.status_code == status.HTTP_200_OK
-        )
+        assert update_to_cancelled_by_customer_response.status_code == status.HTTP_200_OK
 
         order.refresh_from_db()
 
         assert order.status == OrderStatusEnum.CANCELLED_BY_CUSTOMER.value
-        assert order.cancelled_date == datetime(
-            2024, 5, 8, 10, 41, 0, tzinfo=timezone.utc
-        )
+        assert order.cancelled_date == datetime(2024, 5, 8, 10, 41, 0, tzinfo=timezone.utc)
         assert order
 
     mock_googlemaps_distance_matrix.assert_called_once_with(
@@ -143,7 +138,6 @@ def test_switch_order_status_from_draft_to_cancelled_by_cooker(
     mock_stripe_create_ephemeral_key: MagicMock,
     mock_stripe_create_refund_success: MagicMock,
 ) -> None:
-
     with freeze_time("2024-05-08T10:16:00+00:00"):
         # First we create a draft order
         response = client.post(
@@ -184,9 +178,7 @@ def test_switch_order_status_from_draft_to_cancelled_by_cooker(
         order.refresh_from_db()
 
         assert order.status == OrderStatusEnum.CANCELLED_BY_COOKER.value
-        assert order.cancelled_date == datetime(
-            2024, 5, 8, 10, 41, 0, tzinfo=timezone.utc
-        )
+        assert order.cancelled_date == datetime(2024, 5, 8, 10, 41, 0, tzinfo=timezone.utc)
 
     mock_googlemaps_distance_matrix.assert_called_once_with(
         origins=["13 rue des Mazières 91000 Evry"],
@@ -216,7 +208,6 @@ def test_switch_order_status_from_draft_to_delivered(
     mock_stripe_create_ephemeral_key: MagicMock,
     mock_stripe_create_refund_success: MagicMock,
 ) -> None:
-
     with freeze_time("2024-05-08T10:16:00+00:00"):
         # First we create a draft order
         response = client.post(
@@ -257,9 +248,7 @@ def test_switch_order_status_from_draft_to_delivered(
         order.refresh_from_db()
 
         assert order.status == OrderStatusEnum.PROCESSING.value
-        assert order.processing_date == datetime(
-            2024, 5, 8, 10, 30, 0, tzinfo=timezone.utc
-        )
+        assert order.processing_date == datetime(2024, 5, 8, 10, 30, 0, tzinfo=timezone.utc)
 
     with freeze_time("2024-05-08T10:32:00+00:00"):
         # Then we switch the order to completed few minutes later
@@ -278,9 +267,7 @@ def test_switch_order_status_from_draft_to_delivered(
         order.refresh_from_db()
 
         assert order.status == OrderStatusEnum.COMPLETED.value
-        assert order.completed_date == datetime(
-            2024, 5, 8, 10, 32, 0, tzinfo=timezone.utc
-        )
+        assert order.completed_date == datetime(2024, 5, 8, 10, 32, 0, tzinfo=timezone.utc)
 
     with freeze_time("2024-05-08T10:35:00+00:00"):
         # Then we switch the order to in delivery few minutes later
@@ -299,9 +286,7 @@ def test_switch_order_status_from_draft_to_delivered(
         order.refresh_from_db()
 
         assert order.status == OrderStatusEnum.IN_DELIVERY.value
-        assert order.delivery_in_progress_date == datetime(
-            2024, 5, 8, 10, 35, 0, tzinfo=timezone.utc
-        )
+        assert order.delivery_in_progress_date == datetime(2024, 5, 8, 10, 35, 0, tzinfo=timezone.utc)
 
     with freeze_time("2024-05-08T10:47:00+00:00"):
         # Then we switch the order to delivered few minutes later
@@ -320,9 +305,7 @@ def test_switch_order_status_from_draft_to_delivered(
         order.refresh_from_db()
 
         assert order.status == OrderStatusEnum.DELIVERED.value
-        assert order.delivered_date == datetime(
-            2024, 5, 8, 10, 47, 0, tzinfo=timezone.utc
-        )
+        assert order.delivered_date == datetime(2024, 5, 8, 10, 47, 0, tzinfo=timezone.utc)
 
     mock_googlemaps_distance_matrix.assert_called_once_with(
         origins=["13 rue des Mazières 91000 Evry"],
@@ -933,7 +916,6 @@ def test_update_order_success_with_asap_delivery(
     mock_stripe_payment_intent_update: MagicMock,
     mock_stripe_create_ephemeral_key: MagicMock,
 ) -> None:
-
     with freeze_time("2024-05-08T10:16:00+00:00"):
         response = client.post(
             customer_order_path,
@@ -1029,12 +1011,8 @@ def test_update_order_success_with_asap_delivery(
             "is_deleted": False,
         }
 
-        order_dish_item_query = OrderDishItemModel.objects.filter(
-            order__id=last_order.id
-        )
-        order_drink_item_query = OrderDrinkItemModel.objects.filter(
-            order__id=last_order.id
-        )
+        order_dish_item_query = OrderDishItemModel.objects.filter(order__id=last_order.id)
+        order_drink_item_query = OrderDrinkItemModel.objects.filter(order__id=last_order.id)
 
         # Now we update the order with new items
         update_response = client.put(
@@ -1183,7 +1161,6 @@ def test_update_order_after_successful_stripe_payment(
     mock_stripe_create_ephemeral_key: MagicMock,
     mock_stripe_webhook_construct_event_success: MagicMock,
 ) -> None:
-
     with freeze_time("2024-05-08T10:16:00+00:00"):
         response = client.post(
             customer_order_path,
@@ -1292,7 +1269,6 @@ def test_update_order_after_successful_stripe_payment_but_event_failed_to_be_ver
     mock_stripe_create_ephemeral_key: MagicMock,
     mock_stripe_webhook_construct_event_failed: MagicMock,
 ) -> None:
-
     with freeze_time("2024-05-08T10:16:00+00:00"):
         response = client.post(
             customer_order_path,
@@ -1471,9 +1447,7 @@ def test_cancel_order_when_initiated_by_customer_and_order_is_still_pending(
         assert order.status == OrderStatusEnum.DRAFT.value
 
         # Then we post the payment intent success webhook
-        stripe_payment_intent_success_webhook_data[
-            "created"
-        ] = datetime.now().timestamp()
+        stripe_payment_intent_success_webhook_data["created"] = datetime.now().timestamp()
         webhook_response = client.post(
             "/api/v1/stripe/webhook/",
             json.dumps(stripe_payment_intent_success_webhook_data),
@@ -1610,9 +1584,7 @@ def test_cancel_order_when_initiated_by_customer_but_order_is_in_processing_stat
         assert order.status == OrderStatusEnum.DRAFT.value
 
         # Then we post the payment intent success webhook
-        stripe_payment_intent_success_webhook_data[
-            "created"
-        ] = datetime.now().timestamp()
+        stripe_payment_intent_success_webhook_data["created"] = datetime.now().timestamp()
         webhook_response = client.post(
             "/api/v1/stripe/webhook/",
             json.dumps(stripe_payment_intent_success_webhook_data),
@@ -1752,9 +1724,7 @@ def test_cancel_order_when_initiated_by_customer_but_order_is_in_completed_state
         assert order.status == OrderStatusEnum.DRAFT.value
 
         # Then we post the payment intent success webhook
-        stripe_payment_intent_success_webhook_data[
-            "created"
-        ] = datetime.now().timestamp()
+        stripe_payment_intent_success_webhook_data["created"] = datetime.now().timestamp()
         webhook_response = client.post(
             "/api/v1/stripe/webhook/",
             json.dumps(stripe_payment_intent_success_webhook_data),
@@ -1832,7 +1802,6 @@ def test_update_order_but_unexpected_exception_raises_on_customer_app(
     mock_stripe_webhook_construct_event_success: MagicMock,
     mock_stripe_webhook_construct_event_failed: MagicMock,
 ) -> None:
-
     with freeze_time("2024-05-08T10:16:00+00:00"):
         response = client.post(
             customer_order_path,

@@ -49,7 +49,6 @@ class TestListDishesForCustomerNoResultsWithQueryParameterGivenByUser:
         query_parameter: dict,
         mock_googlemaps_distance_matrix: MagicMock,
     ) -> None:
-
         response = client.get(
             f"{customer_dish_path}",
             follow=False,
@@ -276,7 +275,6 @@ class TestListDishesForCustomerSuccessWithQueryParameterGivenByUser:
         expected_data: list[dict],
         expected_data_when_name_in_query_parameter: list[dict],
     ) -> None:
-
         response = client.get(
             f"{customer_dish_path}",
             follow=False,
@@ -313,7 +311,6 @@ class TestListDishesForCustomerWithMissingSearchAddressId:
         client: APIClient,
         customer_dish_path: str,
     ) -> None:
-
         response = client.get(
             f"{customer_dish_path}",
             follow=False,
@@ -518,20 +515,12 @@ class TestListDishesOnlyReturnNonDeletedItems:
         query_parameter: dict,
         mock_googlemaps_distance_matrix: MagicMock,
     ) -> None:
-
         assert (
-            DishModel.objects.filter(category="dish")
-            .filter(cooker__id=cooker_id)
-            .filter(is_enabled=True)
-            .count()
-            > 0
+            DishModel.objects.filter(category="dish").filter(cooker__id=cooker_id).filter(is_enabled=True).count() > 0
         )
 
         first_item = (
-            DishModel.objects.filter(category="dish")
-            .filter(cooker__id=cooker_id)
-            .filter(is_enabled=True)
-            .first()
+            DishModel.objects.filter(category="dish").filter(cooker__id=cooker_id).filter(is_enabled=True).first()
         )
         if first_item is not None:
             first_item.is_deleted = True

@@ -44,9 +44,7 @@ class CustomerCustomRendererWithData(JSONRenderer):
                             "firstname": data["firstname"],
                             "lastname": data["lastname"],
                             "phone": phonenumbers.format_number(
-                                phonenumbers.parse(
-                                    data["phone"], settings.PHONE_REGION
-                                ),
+                                phonenumbers.parse(data["phone"], settings.PHONE_REGION),
                                 phonenumbers.PhoneNumberFormat.NATIONAL,
                             ).replace(" ", ""),
                         },
@@ -105,9 +103,7 @@ class DeliverCustomRendererWithData(JSONRenderer):
                             "delivery_radius": data["delivery_radius"],
                             "siret": data["siret"],
                             "phone": phonenumbers.format_number(
-                                phonenumbers.parse(
-                                    data["phone"], settings.PHONE_REGION
-                                ),
+                                phonenumbers.parse(data["phone"], settings.PHONE_REGION),
                                 phonenumbers.PhoneNumberFormat.NATIONAL,
                             ).replace(" ", ""),
                         },
@@ -128,9 +124,7 @@ class CustomRendererWithData(JSONRenderer):
         """
         Adding cooker info in each dish, drink and dessert
         """
-        if (
-            "cooker" in response and "country" in response
-        ):  # To be sure to deal with DrinkModel or DishModel
+        if "cooker" in response and "country" in response:  # To be sure to deal with DrinkModel or DishModel
             cooker: CookerModel = CookerModel.objects.get(id=response["cooker"])
             response["cooker"] = {
                 "id": cooker.id,
@@ -160,11 +154,7 @@ class CustomRendererWithData(JSONRenderer):
                 {
                     "data": [
                         {
-                            k: (
-                                get_pre_signed_url(v)
-                                if k == "photo"
-                                else (str(v) if not isinstance(v, bool) else v)
-                            )
+                            k: (get_pre_signed_url(v) if k == "photo" else (str(v) if not isinstance(v, bool) else v))
                             for k, v in item.items()
                         }
                         for item in data
@@ -299,9 +289,7 @@ class OrderCustomRendererWithData(JSONRenderer):
         """
         if "customer" in response:
             try:
-                customer: CustomerModel = CustomerModel.objects.get(
-                    id=response["customer"]["id"]
-                )
+                customer: CustomerModel = CustomerModel.objects.get(id=response["customer"]["id"])
             except TypeError as err:
                 logger.error(err)
                 customer = CustomerModel.objects.get(id=response["customer"])
@@ -340,13 +328,9 @@ class OrderCustomRendererWithData(JSONRenderer):
             if isinstance(data, list):
                 for order_item in data:
                     for order_dish_item in order_item["dishes_items"]:
-                        order_dish_item["dish"]["photo"] = get_pre_signed_url(
-                            order_dish_item["dish"]["photo"]
-                        )
+                        order_dish_item["dish"]["photo"] = get_pre_signed_url(order_dish_item["dish"]["photo"])
                     for order_drink_item in order_item["drinks_items"]:
-                        order_drink_item["drink"]["photo"] = get_pre_signed_url(
-                            order_drink_item["drink"]["photo"]
-                        )
+                        order_drink_item["drink"]["photo"] = get_pre_signed_url(order_drink_item["drink"]["photo"])
                 response = {
                     "ok": True,
                     "status_code": status.HTTP_200_OK,

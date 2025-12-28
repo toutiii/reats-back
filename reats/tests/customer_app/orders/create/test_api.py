@@ -63,7 +63,6 @@ def test_create_order_success_with_asap_delivery(
     mock_stripe_payment_intent_create: MagicMock,
     mock_stripe_create_ephemeral_key: MagicMock,
 ) -> None:
-
     with freeze_time("2024-05-08T10:16:00+00:00"):
         response = client.post(
             customer_order_path,
@@ -156,12 +155,8 @@ def test_create_order_success_with_asap_delivery(
             "is_deleted": False,
         }
 
-        order_dish_item_query = OrderDishItemModel.objects.filter(
-            order__id=OrderModel.objects.latest("pk").pk
-        )
-        order_drink_item_query = OrderDrinkItemModel.objects.filter(
-            order__id=OrderModel.objects.latest("pk").pk
-        )
+        order_dish_item_query = OrderDishItemModel.objects.filter(order__id=OrderModel.objects.latest("pk").pk)
+        order_drink_item_query = OrderDrinkItemModel.objects.filter(order__id=OrderModel.objects.latest("pk").pk)
 
         assert order_dish_item_query.count() == 1
         assert order_drink_item_query.count() == 1
@@ -225,7 +220,6 @@ def test_create_order_success_with_scheduled_delivery(
     mock_stripe_payment_intent_create: MagicMock,
     mock_stripe_create_ephemeral_key: MagicMock,
 ) -> None:
-
     with freeze_time("2024-05-09T10:16:00+00:00"):
         response = client.post(
             customer_order_path,
@@ -308,21 +302,15 @@ def test_create_order_success_with_scheduled_delivery(
             "processing_date": None,
             "rating": 0.0,
             "comment": None,
-            "scheduled_delivery_date": datetime(
-                2024, 5, 10, 12, 30, tzinfo=timezone.utc
-            ),
+            "scheduled_delivery_date": datetime(2024, 5, 10, 12, 30, tzinfo=timezone.utc),
             "status": OrderStatusEnum.DRAFT.value,
             "stripe_payment_intent_id": "pi_3Q6VU7EEYeaFww1W0xCZEUxw",
             "stripe_payment_intent_secret": "pi_3Q6VU7EEYeaFww1W0xCZEUxw_secret_OJqlWW9QRZZuSmAwUBklpxUf4",
             "is_deleted": False,
         }
 
-        order_dish_item_query = OrderDishItemModel.objects.filter(
-            order__id=OrderModel.objects.latest("pk").pk
-        )
-        order_drink_item_query = OrderDrinkItemModel.objects.filter(
-            order__id=OrderModel.objects.latest("pk").pk
-        )
+        order_dish_item_query = OrderDishItemModel.objects.filter(order__id=OrderModel.objects.latest("pk").pk)
+        order_drink_item_query = OrderDrinkItemModel.objects.filter(order__id=OrderModel.objects.latest("pk").pk)
 
         assert order_dish_item_query.count() == 1
         assert order_drink_item_query.count() == 1
@@ -384,7 +372,6 @@ def test_create_scheduled_order_failed_with_wrong_delivery_infos(
     expected_status_code: int,
     mock_stripe_payment_intent_create: MagicMock,
 ) -> None:
-
     scheduled_order_data: dict = {
         "addressID": address_id,
         "customerID": customer_id,

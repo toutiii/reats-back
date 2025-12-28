@@ -72,9 +72,7 @@ class OrderGETSerializer(ModelSerializer):
 
         data["sub_total"] = compute_order_items_total_amount(instance)
         data["service_fees"] = round(data["sub_total"] * settings.SERVICE_FEES_RATE, 2)
-        data["total_amount"] = round(
-            data["sub_total"] + data["service_fees"] + instance.delivery_fees, 2
-        )
+        data["total_amount"] = round(data["sub_total"] + data["service_fees"] + instance.delivery_fees, 2)
 
         return data
 
@@ -109,9 +107,7 @@ class OrderSerializer(ModelSerializer):
 
         data["sub_total"] = compute_order_items_total_amount(instance)
         data["service_fees"] = round(data["sub_total"] * settings.SERVICE_FEES_RATE, 2)
-        data["total_amount"] = round(
-            data["sub_total"] + data["service_fees"] + instance.delivery_fees, 2
-        )
+        data["total_amount"] = round(data["sub_total"] + data["service_fees"] + instance.delivery_fees, 2)
 
         return data
 
@@ -125,13 +121,9 @@ class OrderSerializer(ModelSerializer):
         # Dealing with delivery datetime
         if data.get("date") and data.get("time"):
             delivery_datetime_string = f"{data.get('date')} {data.get('time')}"
-            delivery_datetime_object_naive = datetime.strptime(
-                delivery_datetime_string, "%m/%d/%Y %H:%M:%S"
-            )
+            delivery_datetime_object_naive = datetime.strptime(delivery_datetime_string, "%m/%d/%Y %H:%M:%S")
             local_timezone = pytz.timezone("Europe/Paris")
-            local_delivery_datetime = local_timezone.localize(
-                delivery_datetime_object_naive
-            )
+            local_delivery_datetime = local_timezone.localize(delivery_datetime_object_naive)
             utc_delivery_datetime = local_delivery_datetime.astimezone(pytz.UTC)
 
             # Check if utc_delivery_datetime is in the past and return a 400 response
@@ -143,9 +135,7 @@ class OrderSerializer(ModelSerializer):
             # Check if utc_delivery_datetime is at least one hour in the future
             if utc_delivery_datetime < datetime.now(pytz.UTC) + timedelta(hours=1):
                 raise serializers.ValidationError(
-                    {
-                        "date": "Scheduled delivery date must be at least one hour in the future"
-                    },
+                    {"date": "Scheduled delivery date must be at least one hour in the future"},
                 )
 
             data_to_validate["scheduled_delivery_date"] = utc_delivery_datetime
@@ -153,8 +143,7 @@ class OrderSerializer(ModelSerializer):
         # We extract the dishes items from the request
         clean_order_dishes_items = []
         dishes_order_items = [
-            ast.literal_eval(item)
-            for item in self.context["request"].POST.getlist("dishes_items")
+            ast.literal_eval(item) for item in self.context["request"].POST.getlist("dishes_items")
         ]  # This will return a list of list
         for dish_order_item in dishes_order_items[0]:
             temp_data = {}
@@ -167,8 +156,7 @@ class OrderSerializer(ModelSerializer):
         # Then we extract the drinks items from the request
         clean_order_drinks_items = []
         drinks_order_items = [
-            ast.literal_eval(item)
-            for item in self.context["request"].POST.getlist("drinks_items")
+            ast.literal_eval(item) for item in self.context["request"].POST.getlist("drinks_items")
         ]  # This will return a list of list
 
         for drink_order_item in drinks_order_items[0]:
@@ -204,7 +192,6 @@ class OrderSerializer(ModelSerializer):
         OrderDrinkItemModel.objects.filter(order=instance).delete()
 
         with transaction.atomic():
-
             for dish_item_data in order_dishes_items_data:
                 OrderDishItemModel.objects.create(order=instance, **dish_item_data)
 
@@ -246,13 +233,9 @@ class BulkDishRatingSerializer(serializers.Serializer):
         comments = attrs.get("comments", [])
 
         if len(dishes_ids) != len(ratings):
-            raise serializers.ValidationError(
-                "The number of dishes_ids and ratings must match."
-            )
+            raise serializers.ValidationError("The number of dishes_ids and ratings must match.")
         if comments and len(dishes_ids) != len(comments):
-            raise serializers.ValidationError(
-                "The number of dishes_ids and comments must match."
-            )
+            raise serializers.ValidationError("The number of dishes_ids and comments must match.")
         return attrs
 
     def create(self, validated_data):
@@ -299,13 +282,9 @@ class BulkDrinkRatingSerializer(serializers.Serializer):
         comments = attrs.get("comments", [])
 
         if len(drink_ids) != len(ratings):
-            raise serializers.ValidationError(
-                "The number of drink_ids and ratings must match."
-            )
+            raise serializers.ValidationError("The number of drink_ids and ratings must match.")
         if comments and len(drink_ids) != len(comments):
-            raise serializers.ValidationError(
-                "The number of drink_ids and comments must match."
-            )
+            raise serializers.ValidationError("The number of drink_ids and comments must match.")
         return attrs
 
     def create(self, validated_data):

@@ -67,7 +67,7 @@ def test_create_cooker_success(
         encode_multipart(BOUNDARY, post_data),
         content_type=MULTIPART_CONTENT,
         follow=False,
-        **cooker_api_key_header
+        **cooker_api_key_header,
     )
     assert response.status_code == status.HTTP_201_CREATED
     new_count = CookerModel.objects.count()
@@ -133,7 +133,7 @@ class TestActivateCookerSuccessful:
             encode_multipart(BOUNDARY, otp_data),
             content_type=MULTIPART_CONTENT,
             follow=False,
-            **cooker_api_key_header
+            **cooker_api_key_header,
         )
 
         assert response.status_code == status.HTTP_200_OK
@@ -175,7 +175,7 @@ class TestActivateCookerFailed:
             encode_multipart(BOUNDARY, otp_data),
             content_type=MULTIPART_CONTENT,
             follow=False,
-            **cooker_api_key_header
+            **cooker_api_key_header,
         )
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
@@ -217,7 +217,7 @@ class TestCreateSameCookerTwice:
             encode_multipart(BOUNDARY, post_data),
             content_type=MULTIPART_CONTENT,
             follow=False,
-            **cooker_api_key_header
+            **cooker_api_key_header,
         )
         assert response.status_code == status.HTTP_201_CREATED
         new_count = CookerModel.objects.count()
@@ -229,7 +229,7 @@ class TestCreateSameCookerTwice:
             encode_multipart(BOUNDARY, post_data),
             content_type=MULTIPART_CONTENT,
             follow=False,
-            **cooker_api_key_header
+            **cooker_api_key_header,
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert CookerModel.objects.count() == new_count
@@ -280,7 +280,7 @@ def test_failed_create_cooker_wrong_data(
         encode_multipart(BOUNDARY, post_data),
         content_type=MULTIPART_CONTENT,
         follow=False,
-        **cooker_api_key_header
+        **cooker_api_key_header,
     )
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     new_count = CookerModel.objects.count()
@@ -323,7 +323,7 @@ class TestCookerAuth:
             encode_multipart(BOUNDARY, auth_data),
             content_type=MULTIPART_CONTENT,
             follow=False,
-            **cooker_api_key_header
+            **cooker_api_key_header,
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         send_otp_message_success.assert_not_called()
@@ -350,7 +350,7 @@ class TestCookerAuth:
             encode_multipart(BOUNDARY, {"phone": phone}),
             content_type=MULTIPART_CONTENT,
             follow=False,
-            **cooker_api_key_header
+            **cooker_api_key_header,
         )
 
         assert response.status_code == expected_status_code
@@ -370,7 +370,7 @@ class TestCookerAuth:
             encode_multipart(BOUNDARY, auth_data),
             content_type=MULTIPART_CONTENT,
             follow=False,
-            **cooker_api_key_header
+            **cooker_api_key_header,
         )
         assert response.status_code == status.HTTP_200_OK
         send_otp_message_success.assert_called_once_with(
@@ -423,7 +423,7 @@ class TestCookerAskNewOTP:
             encode_multipart(BOUNDARY, data),
             content_type=MULTIPART_CONTENT,
             follow=False,
-            **cooker_api_key_header
+            **cooker_api_key_header,
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         send_otp_message_success.assert_not_called()
@@ -442,7 +442,7 @@ class TestCookerAskNewOTP:
             encode_multipart(BOUNDARY, data),
             content_type=MULTIPART_CONTENT,
             follow=False,
-            **cooker_api_key_header
+            **cooker_api_key_header,
         )
         assert response.status_code == status.HTTP_200_OK
         send_otp_message_success.assert_called_once_with(
@@ -488,7 +488,7 @@ class TestTokenFetch:
             encode_multipart(BOUNDARY, data),
             content_type=MULTIPART_CONTENT,
             follow=False,
-            **cooker_api_key_header
+            **cooker_api_key_header,
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         secrets_manager_get_secret.assert_not_called()
@@ -511,7 +511,7 @@ class TestTokenFetch:
             encode_multipart(BOUNDARY, data),
             content_type=MULTIPART_CONTENT,
             follow=False,
-            **cooker_api_key_header
+            **cooker_api_key_header,
         )
         assert response.status_code == status.HTTP_200_OK
         assert response.json().get("success") is True

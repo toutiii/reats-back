@@ -12,9 +12,7 @@ def cooker_id() -> int:
 
 
 @pytest.mark.django_db
-def test_empty_query_params(
-    auth_headers: dict, client: APIClient, path: str, cooker_id: int
-) -> None:
+def test_empty_query_params(auth_headers: dict, client: APIClient, path: str, cooker_id: int) -> None:
     response = client.get(
         path,
         follow=False,
@@ -26,9 +24,7 @@ def test_empty_query_params(
     assert response.json().get("data") is not None
     assert (
         len(response.json().get("data"))
-        == DrinkModel.objects.filter(is_enabled=True)
-        .filter(cooker_id=cooker_id)
-        .count()
+        == DrinkModel.objects.filter(is_enabled=True).filter(cooker_id=cooker_id).count()
     )
 
 

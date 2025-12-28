@@ -51,8 +51,7 @@ def create_orders(custom_counts: dict):
                     customer=CustomerModel.objects.get(id=customer_id),
                     address=AddressModel.objects.get(id=address_id),
                     status=state,
-                    scheduled_delivery_date=datetime.now(timezone.utc)
-                    + timedelta(days=random.randint(1, 10)),
+                    scheduled_delivery_date=datetime.now(timezone.utc) + timedelta(days=random.randint(1, 10)),
                     delivery_fees=random.uniform(5.0, 20.0),
                     delivery_distance=random.uniform(1.0, 10.0),
                 )

@@ -64,14 +64,8 @@ class TestListDrinksForCustomerSuccess:
         customer_drink_path: str,
         expected_data: list[dict],
     ) -> None:
-
         # we check that the cooker has some drinks
-        assert (
-            DrinkModel.objects.filter(cooker__id=cooker_id)
-            .filter(is_enabled=True)
-            .count()
-            > 0
-        )
+        assert DrinkModel.objects.filter(cooker__id=cooker_id).filter(is_enabled=True).count() > 0
 
         # Then we list the drinks
         response = client.get(
@@ -99,7 +93,6 @@ class TestListDrinksForCustomeFailedWithUnknownCookerId:
         cooker_id: int,
         customer_drink_path: str,
     ) -> None:
-
         # we assert that no drinks are associated with the cooker
         assert DrinkModel.objects.filter(cooker__id=cooker_id).count() == 0
 
@@ -125,7 +118,6 @@ class TestListDrinksForCustomerFailedWithoutCookerId:
         client: APIClient,
         customer_drink_path: str,
     ) -> None:
-
         response = client.get(
             customer_drink_path,
             follow=False,
@@ -152,19 +144,9 @@ class TestListDrinksOnlyReturnNonDeletedItems:
         cooker_id: int,
         customer_drink_path: str,
     ) -> None:
+        assert DrinkModel.objects.filter(cooker__id=cooker_id).filter(is_enabled=True).count() > 0
 
-        assert (
-            DrinkModel.objects.filter(cooker__id=cooker_id)
-            .filter(is_enabled=True)
-            .count()
-            > 0
-        )
-
-        first_item = (
-            DrinkModel.objects.filter(cooker__id=cooker_id)
-            .filter(is_enabled=True)
-            .first()
-        )
+        first_item = DrinkModel.objects.filter(cooker__id=cooker_id).filter(is_enabled=True).first()
         if first_item is not None:
             first_item.is_deleted = True
             first_item.save()

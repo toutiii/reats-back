@@ -340,14 +340,8 @@ def test_delivery_orders_history_list_success(
     delivery_history_path: str,
     expected_data: list[dict],
 ) -> None:
-
     # we check that the delivery man has some orders
-    assert (
-        OrderModel.objects.filter(status="delivered")
-        .filter(delivery_man__id=deliver_id)
-        .count()
-        > 0
-    )
+    assert OrderModel.objects.filter(status="delivered").filter(delivery_man__id=deliver_id).count() > 0
 
     # Then we list delivery man orders history
     response = client.get(
@@ -578,7 +572,6 @@ def test_get_latest_deliveries(
     delivery_history_path: str,
     expected_data_for_latest_deliveries: list[dict],
 ) -> None:
-
     response = client.get(
         delivery_history_path,
         {

@@ -72,7 +72,4 @@ class TestCookerDeleteFailedWithExpiredToken:
             )
             assert response.status_code == status.HTTP_401_UNAUTHORIZED
             assert response.json().get("success") is False
-            assert (
-                response.json().get("error").get("code")
-                == ErrorCodeEnum.TOKEN_NOT_VALID
-            )
+            assert response.json().get("error").get("code") == ErrorCodeEnum.TOKEN_NOT_VALID

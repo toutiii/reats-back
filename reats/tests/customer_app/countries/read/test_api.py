@@ -44,7 +44,6 @@ class TestGetDishesCountriesFailedWithExpiredToken:
         data: dict,
         customer_dishes_countries_path: str,
     ) -> None:
-
         with freeze_time("2024-01-20T17:05:45+00:00"):
             token_response = client.post(
                 "/api/v1/token/",

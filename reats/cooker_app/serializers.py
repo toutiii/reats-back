@@ -51,9 +51,9 @@ class CookerGETSerializer(ModelSerializer):
 
         try:
             parsed_phone = phonenumbers.parse(data["phone"], settings.PHONE_REGION)
-            formatted_phone = phonenumbers.format_number(
-                parsed_phone, phonenumbers.PhoneNumberFormat.NATIONAL
-            ).replace(" ", "")
+            formatted_phone = phonenumbers.format_number(parsed_phone, phonenumbers.PhoneNumberFormat.NATIONAL).replace(
+                " ", ""
+            )
         except NumberParseException:
             formatted_phone = data["phone"]
 
@@ -129,24 +129,18 @@ class TokenObtainPairWithoutPasswordSerializer(TokenObtainPairSerializer):
             raise ValidationError(f"Unknown App-Origin header value {app_origin}")
 
         try:
-            cooker_user: Union[CookerModel, None] = CookerModel.objects.get(
-                phone=formatted_phone
-            )
+            cooker_user: Union[CookerModel, None] = CookerModel.objects.get(phone=formatted_phone)
         except CookerModel.DoesNotExist:
             cooker_user = None
 
         try:
-            customer_user: Union[CustomerModel, None] = CustomerModel.objects.get(
-                phone=formatted_phone
-            )
+            customer_user: Union[CustomerModel, None] = CustomerModel.objects.get(phone=formatted_phone)
 
         except CustomerModel.DoesNotExist:
             customer_user = None
 
         try:
-            deliver_user: Union[DeliverModel, None] = DeliverModel.objects.get(
-                phone=formatted_phone
-            )
+            deliver_user: Union[DeliverModel, None] = DeliverModel.objects.get(phone=formatted_phone)
         except DeliverModel.DoesNotExist:
             deliver_user = None
 
@@ -236,8 +230,6 @@ class CookerOrderGETSerializer(ModelSerializer):
 
         data["sub_total"] = compute_order_items_total_amount(instance)
         data["service_fees"] = round(data["sub_total"] * settings.SERVICE_FEES_RATE, 2)
-        data["total_amount"] = round(
-            data["sub_total"] + data["service_fees"] + instance.delivery_fees, 2
-        )
+        data["total_amount"] = round(data["sub_total"] + data["service_fees"] + instance.delivery_fees, 2)
 
         return data

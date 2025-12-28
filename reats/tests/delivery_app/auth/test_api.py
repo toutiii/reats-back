@@ -252,7 +252,4 @@ class TestTokenFetchWhenUserIsPresentOnMultipleTables:
         assert response.json().get("data").get("user_id") is not None
 
         secrets_manager_get_secret.assert_not_called()
-        assert (
-            response.json().get("data").get("user_id")
-            == CustomerModel.objects.get(phone="+33700000006").pk
-        )
+        assert response.json().get("data").get("user_id") == CustomerModel.objects.get(phone="+33700000006").pk

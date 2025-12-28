@@ -65,9 +65,7 @@ def get_closest_cookers_ids_from_customer_search_address(
         f"{cooker[0]} {cooker[1]} {cooker[2]}, {cooker[3]} {cooker[4]}, {settings.DEFAULT_SEARCH_COUNTRY}"
         for cooker in cookers_adresses_queryset
     ]
-    cookers_ids_addresses_dict: dict[int, str] = dict(
-        zip(cookers_ids, cookers_adresses)
-    )
+    cookers_ids_addresses_dict: dict[int, str] = dict(zip(cookers_ids, cookers_adresses))
 
     distance_dict: dict[str, Any] = compute_distance(
         origins=[customer_address + f", {settings.DEFAULT_SEARCH_COUNTRY}"],
@@ -76,10 +74,7 @@ def get_closest_cookers_ids_from_customer_search_address(
 
     logger.debug(distance_dict)
 
-    for cooker_id, distance in zip(
-        cookers_ids_addresses_dict.keys(), distance_dict["rows"][0]["elements"]
-    ):
-
+    for cooker_id, distance in zip(cookers_ids_addresses_dict.keys(), distance_dict["rows"][0]["elements"]):
         if distance["status"] != "OK":
             continue
 

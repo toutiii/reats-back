@@ -188,9 +188,7 @@ PHONE_BLACK_LIST = ("0000000000",)  # Check if we need to add more numbers
 REST_FRAMEWORK = {
     "EXCEPTION_HANDLER": "utils.custom_middlewares.custom_exception_handler",
     "TEST_REQUEST_DEFAULT_FORMAT": "json",
-    "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTStatelessUserAuthentication",
-    ),
+    "DEFAULT_AUTHENTICATION_CLASSES": ("rest_framework_simplejwt.authentication.JWTStatelessUserAuthentication",),
     "DEFAULT_PERMISSION_CLASSES": ("utils.custom_permissions.UserPermission",),
 }
 

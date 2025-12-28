@@ -56,7 +56,6 @@ class TestUpdateDeliverAccountInfoWithoutPhoto:
         post_data_without_photo: dict,
         upload_fileobj: MagicMock,
     ) -> None:
-
         with freeze_time("2023-10-14T22:00:00+00:00"):
             response = client.patch(
                 f"{path}{deliver_id}/",
@@ -355,9 +354,7 @@ ct4oFdWCTtEg1i4CV0LS43lOnu1Gv168nOvqc-WFXqMMNJnT88Ruz1St96KbpPw0m6K
         path: str,
         data: dict,
     ) -> None:
-        expired_auth_header = {
-            "HTTP_AUTHORIZATION": expired_access_token.replace("\n", "")
-        }
+        expired_auth_header = {"HTTP_AUTHORIZATION": expired_access_token.replace("\n", "")}
         response = client.patch(
             f"{path}{deliver_id}/",
             encode_multipart(BOUNDARY, data),
