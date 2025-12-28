@@ -102,12 +102,12 @@ WSGI_APPLICATION = "source.wsgi.application"
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
 
 secret_data = fetch_aws_secrets(os.environ["AWS_SECRET_NAME"])
+public_key = fetch_aws_secrets(os.environ["AWS_PUBLIC_KEY"], is_json=False)
+private_key = fetch_aws_secrets(os.environ["AWS_PRIVATE_KEY"], is_json=False)
 
 if secret_data:
     print("Secrets loaded successfully")
 
-    RSA_PRIVATE_KEY_PATH = secret_data["RSA_PRIVATE_KEY_PATH"]
-    RSA_PUBLIC_KEY_PATH = secret_data["RSA_PUBLIC_KEY_PATH"]
     COOKER_APP_API_KEY = secret_data["COOKER_APP_API_KEY"]
     CUSTOMER_APP_API_KEY = secret_data["CUSTOMER_APP_API_KEY"]
     DELIVERY_APP_API_KEY = secret_data["DELIVERY_APP_API_KEY"]
@@ -117,6 +117,12 @@ if secret_data:
     SECRET_KEY = secret_data["DJANGO_SECRET_KEY"]
 else:
     raise RuntimeError("Failed to load secrets from AWS Secrets Manager")
+
+if not public_key:
+    raise RuntimeError("Failed to load public key from AWS Secrets Manager")
+
+if not private_key:
+    raise RuntimeError("Failed to load private key from AWS Secrets Manager")
 
 
 DATABASES = {
@@ -198,8 +204,8 @@ IDLE_CANCEL_TIME_FOR_SCHEDULED_DELIVERY = 60  # in minutes
 
 SIMPLE_JWT = {
     "ALGORITHM": os.getenv("DJANGO_SIMPLE_JWT_ALGORITHM"),
-    "SIGNING_KEY": RSA_PRIVATE_KEY_PATH,
-    "VERIFYING_KEY": RSA_PUBLIC_KEY_PATH,
+    "SIGNING_KEY": private_key,
+    "VERIFYING_KEY": public_key,
     "TOKEN_OBTAIN_SERIALIZER": "cookers_app.serializers.TokenObtainPairWithoutPasswordSerializer",
 }
 
