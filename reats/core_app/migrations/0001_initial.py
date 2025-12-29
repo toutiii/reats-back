@@ -7,7 +7,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = []
@@ -51,9 +50,7 @@ class Migration(migrations.Migration):
                     models.CharField(
                         db_index=True,
                         max_length=5,
-                        validators=[
-                            django.core.validators.RegexValidator(regex="[0-9]{5}")
-                        ],
+                        validators=[django.core.validators.RegexValidator(regex="[0-9]{5}")],
                     ),
                 ),
                 (
@@ -61,9 +58,7 @@ class Migration(migrations.Migration):
                     models.CharField(
                         max_length=14,
                         unique=True,
-                        validators=[
-                            django.core.validators.RegexValidator(regex="[0-9]{14}")
-                        ],
+                        validators=[django.core.validators.RegexValidator(regex="[0-9]{14}")],
                     ),
                 ),
                 ("street_name", models.CharField(max_length=100)),
@@ -161,9 +156,7 @@ class Migration(migrations.Migration):
                     models.CharField(
                         max_length=14,
                         unique=True,
-                        validators=[
-                            django.core.validators.RegexValidator(regex="[0-9]{14}")
-                        ],
+                        validators=[django.core.validators.RegexValidator(regex="[0-9]{14}")],
                     ),
                 ),
                 ("is_online", models.BooleanField(default=False)),

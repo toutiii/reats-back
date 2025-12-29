@@ -64,7 +64,6 @@ def test_update_order_from_pending_to_cancelled_by_cooker_status(
     mock_stripe_payment_intent_create: MagicMock,
     mock_stripe_create_refund_success: MagicMock,
 ) -> None:
-
     with freeze_time("2024-05-08T10:16:00+00:00"):
         # First we create a draft order
         response = client.post(
@@ -105,9 +104,7 @@ def test_update_order_from_pending_to_cancelled_by_cooker_status(
         order.refresh_from_db()
 
         assert order.status == OrderStatusEnum.CANCELLED_BY_COOKER.value
-        assert order.cancelled_date == datetime(
-            2024, 5, 8, 10, 41, 0, tzinfo=timezone.utc
-        )
+        assert order.cancelled_date == datetime(2024, 5, 8, 10, 41, 0, tzinfo=timezone.utc)
         assert order
 
     mock_googlemaps_distance_matrix.assert_called_once_with(
@@ -137,7 +134,6 @@ def test_update_order_from_processing_to_cancelled_by_cooker_status(
     mock_stripe_payment_intent_create: MagicMock,
     mock_stripe_create_refund_success: MagicMock,
 ) -> None:
-
     with freeze_time("2024-05-08T10:16:00+00:00"):
         # First we create a draft order
         response = client.post(
@@ -245,7 +241,6 @@ def test_update_order_from_pending_to_processing_state(
     mock_stripe_payment_intent_create: MagicMock,
     mock_stripe_create_refund_success: MagicMock,
 ) -> None:
-
     with freeze_time("2024-05-08T10:16:00+00:00"):
         # First we create a draft order
         response = client.post(
@@ -313,7 +308,6 @@ def test_update_order_from_pending_to_completed_state(
     mock_stripe_payment_intent_create: MagicMock,
     mock_stripe_create_refund_success: MagicMock,
 ) -> None:
-
     with freeze_time("2024-05-08T10:16:00+00:00"):
         # First we create a draft order
         response = client.post(
@@ -423,7 +417,6 @@ def test_update_order_but_unexpected_exception_raises_on_cooker_app(
     mock_stripe_webhook_construct_event_failed: MagicMock,
     new_status: OrderStatusEnum,
 ) -> None:
-
     with freeze_time("2024-05-08T10:16:00+00:00"):
         response = client.post(
             customer_order_path,
@@ -493,7 +486,6 @@ def test_update_cooker_acceptance_rate(
     cooker_id: int,
     new_status: OrderStatusEnum,
 ) -> None:
-
     # To start with a clean state we have to remove cookers orders
     # except the delivered ones
 
@@ -555,9 +547,7 @@ def test_update_cooker_acceptance_rate(
     if new_status == OrderStatusEnum.CANCELLED_BY_COOKER:
         assert Decimal(str(order.cooker.acceptance_rate)) == Decimal("90.0")
 
-    assert order.cooker.last_acceptance_rate_update_date == datetime(
-        2024, 5, 8, 10, 41, 0, tzinfo=timezone.utc
-    )
+    assert order.cooker.last_acceptance_rate_update_date == datetime(2024, 5, 8, 10, 41, 0, tzinfo=timezone.utc)
 
     mock_googlemaps_distance_matrix.assert_called_once_with(
         origins=["13 rue des Mazières 91000 Evry"],

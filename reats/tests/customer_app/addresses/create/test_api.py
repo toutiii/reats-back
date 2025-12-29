@@ -56,8 +56,6 @@ def test_create_address_success(
         "customer": customer_id,
     }
     assert CustomerModel.objects.get(pk=customer_id).addresses.count() == 1
-    assert CustomerModel.objects.get(
-        pk=customer_id
-    ).addresses.first() == AddressModel.objects.latest("pk")
+    assert CustomerModel.objects.get(pk=customer_id).addresses.first() == AddressModel.objects.latest("pk")
 
     assert response.json() == {"ok": True, "status_code": 201}

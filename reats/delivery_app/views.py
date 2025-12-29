@@ -95,13 +95,7 @@ class DeliverView(ModelViewSet):
             pass
         else:
             new_photo_key = (
-                "delivers"
-                + "/"
-                + str(customer.pk)
-                + "/"
-                + "profile_pics"
-                + "/"
-                + self.request.FILES["photo"].name
+                "delivers" + "/" + str(customer.pk) + "/" + "profile_pics" + "/" + self.request.FILES["photo"].name
             )
 
         if new_photo_key is not None:
@@ -190,31 +184,21 @@ class DeliverView(ModelViewSet):
             return Response(status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
         otp_response_status_code = (
-            otp_response.get("MessageResponse", {})
-            .get("Result", {})
-            .get(e164_phone_format, {})
-            .get("StatusCode")
+            otp_response.get("MessageResponse", {}).get("Result", {}).get(e164_phone_format, {}).get("StatusCode")
         )
 
         if otp_response_status_code != status.HTTP_200_OK:
             logger.error(f"Failed to send an OTP to {e164_phone_format}")
-            logger.error(
-                f"Expected {status.HTTP_200_OK} but got {otp_response_status_code} in otp response"
-            )
+            logger.error(f"Expected {status.HTTP_200_OK} but got {otp_response_status_code} in otp response")
             return Response(status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
         otp_response_delivery_status = (
-            otp_response.get("MessageResponse", {})
-            .get("Result", {})
-            .get(e164_phone_format, {})
-            .get("DeliveryStatus")
+            otp_response.get("MessageResponse", {}).get("Result", {}).get(e164_phone_format, {}).get("DeliveryStatus")
         )
 
         if otp_response_delivery_status != "SUCCESSFUL":
             logger.error(f"Failed to send an OTP to {e164_phone_format}")
-            logger.error(
-                f"Expected SUCCESSFUL but got {otp_response_delivery_status} in otp elivery status"
-            )
+            logger.error(f"Expected SUCCESSFUL but got {otp_response_delivery_status} in otp elivery status")
             return Response(status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
         return Response(status=status.HTTP_200_OK)
@@ -262,22 +246,14 @@ class DeliveryOrderStatsView(GenericViewSet, ListModelMixin):
         stats["total_delivery_distance"] = 0.0
 
         for order in self.queryset:
-            stats["total_delivery_fees"] += (
-                order.delivery_fees + order.delivery_fees_bonus
-            )
-            stats["total_delivery_time"] += (
-                order.delivered_date - order.delivery_in_progress_date
-            ).total_seconds()
-            stats["total_delivery_distance"] += (
-                order.delivery_distance + order.delivery_initial_distance
-            )
+            stats["total_delivery_fees"] += order.delivery_fees + order.delivery_fees_bonus
+            stats["total_delivery_time"] += (order.delivered_date - order.delivery_in_progress_date).total_seconds()
+            stats["total_delivery_distance"] += order.delivery_distance + order.delivery_initial_distance
 
         stats["total_delivery_fees"] = round(stats["total_delivery_fees"], 2)
         stats["total_delivery_distance"] = round(stats["total_delivery_distance"], 2)
         stats["total_number_of_deliveries"] = self.queryset.count()
-        stats["delivery_mean_time"] = round(
-            stats["total_delivery_time"] / stats["total_number_of_deliveries"], 2
-        )
+        stats["delivery_mean_time"] = round(stats["total_delivery_time"] / stats["total_number_of_deliveries"], 2)
         del stats["total_delivery_time"]
 
         return Response(

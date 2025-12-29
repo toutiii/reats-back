@@ -35,11 +35,7 @@ class TestCreateDrinkSuccess:
         pre_create_count = DrinkModel.objects.count()
 
         response = client.post(
-            path,
-            encode_multipart(BOUNDARY, post_data),
-            content_type=MULTIPART_CONTENT,
-            follow=False,
-            **auth_headers
+            path, encode_multipart(BOUNDARY, post_data), content_type=MULTIPART_CONTENT, follow=False, **auth_headers
         )
 
         assert response.status_code == status.HTTP_201_CREATED

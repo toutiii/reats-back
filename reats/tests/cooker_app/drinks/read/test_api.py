@@ -12,9 +12,7 @@ def cooker_id() -> int:
 
 
 @pytest.mark.django_db
-def test_empty_query_params(
-    auth_headers: dict, client: APIClient, path: str, cooker_id: int
-) -> None:
+def test_empty_query_params(auth_headers: dict, client: APIClient, path: str, cooker_id: int) -> None:
     response = client.get(
         path,
         follow=False,
@@ -22,13 +20,11 @@ def test_empty_query_params(
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json().get("ok") is True
-    assert response.json().get("status_code") == status.HTTP_200_OK
+    assert response.json().get("success") is True
+    assert response.json().get("data") is not None
     assert (
         len(response.json().get("data"))
-        == DrinkModel.objects.filter(is_enabled=True)
-        .filter(cooker_id=cooker_id)
-        .count()
+        == DrinkModel.objects.filter(is_enabled=True).filter(cooker_id=cooker_id).count()
     )
 
 
@@ -46,8 +42,7 @@ def test_get_enabled_drinks(
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json().get("ok") is True
-    assert response.json().get("status_code") == status.HTTP_200_OK
+    assert response.json().get("success") is True
     assert response.json().get("data") is not None
 
     for item in response.json().get("data"):
@@ -68,8 +63,7 @@ def test_get_disabled_drinks(
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json().get("ok") is True
-    assert response.json().get("status_code") == status.HTTP_200_OK
+    assert response.json().get("success") is True
     assert response.json().get("data") is not None
 
     for item in response.json().get("data"):
@@ -101,7 +95,11 @@ class TestOneCookerCantSeeOtherCookerDrinks:
             )
 
             assert token_response.status_code == status.HTTP_200_OK
-            access_token = token_response.json().get("token").get("access")
+            assert token_response.json().get("success") is True
+            assert token_response.json().get("data") is not None
+
+            access_token = token_response.json().get("data").get("token").get("access")
+            assert access_token is not None
             access_auth_header = {"HTTP_AUTHORIZATION": f"Bearer {access_token}"}
 
             # Then we can ask for some dishes

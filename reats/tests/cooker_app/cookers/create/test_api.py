@@ -67,7 +67,7 @@ def test_create_cooker_success(
         encode_multipart(BOUNDARY, post_data),
         content_type=MULTIPART_CONTENT,
         follow=False,
-        **cooker_api_key_header
+        **cooker_api_key_header,
     )
     assert response.status_code == status.HTTP_201_CREATED
     new_count = CookerModel.objects.count()
@@ -133,7 +133,7 @@ class TestActivateCookerSuccessful:
             encode_multipart(BOUNDARY, otp_data),
             content_type=MULTIPART_CONTENT,
             follow=False,
-            **cooker_api_key_header
+            **cooker_api_key_header,
         )
 
         assert response.status_code == status.HTTP_200_OK
@@ -166,6 +166,8 @@ class TestActivateCookerFailed:
     ) -> None:
         phone = "+33600000002"
         user = CookerModel.objects.get(phone=phone)
+
+        assert user is not None
         assert user.is_activated is False
 
         response = client.post(
@@ -173,7 +175,7 @@ class TestActivateCookerFailed:
             encode_multipart(BOUNDARY, otp_data),
             content_type=MULTIPART_CONTENT,
             follow=False,
-            **cooker_api_key_header
+            **cooker_api_key_header,
         )
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
@@ -215,7 +217,7 @@ class TestCreateSameCookerTwice:
             encode_multipart(BOUNDARY, post_data),
             content_type=MULTIPART_CONTENT,
             follow=False,
-            **cooker_api_key_header
+            **cooker_api_key_header,
         )
         assert response.status_code == status.HTTP_201_CREATED
         new_count = CookerModel.objects.count()
@@ -227,7 +229,7 @@ class TestCreateSameCookerTwice:
             encode_multipart(BOUNDARY, post_data),
             content_type=MULTIPART_CONTENT,
             follow=False,
-            **cooker_api_key_header
+            **cooker_api_key_header,
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert CookerModel.objects.count() == new_count
@@ -278,7 +280,7 @@ def test_failed_create_cooker_wrong_data(
         encode_multipart(BOUNDARY, post_data),
         content_type=MULTIPART_CONTENT,
         follow=False,
-        **cooker_api_key_header
+        **cooker_api_key_header,
     )
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     new_count = CookerModel.objects.count()
@@ -301,18 +303,14 @@ class TestCookerAuth:
         [
             {},
             {"phone": "this_is_not_a_phone_number"},
-            {"phone": "0600000000"},
-            {"phone": "0600000002"},
         ],
         ids=[
             "missing_phone_number",
             "invalid_phone_number",
-            "unknown_user",
-            "known_but_non_activated_user",
         ],
     )
     @pytest.mark.django_db
-    def test_cooker_auth_failed(
+    def test_cooker_auth_failed_bad_request(
         self,
         cooker_api_key_header: dict,
         auth_data: dict,
@@ -325,9 +323,37 @@ class TestCookerAuth:
             encode_multipart(BOUNDARY, auth_data),
             content_type=MULTIPART_CONTENT,
             follow=False,
-            **cooker_api_key_header
+            **cooker_api_key_header,
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
+        send_otp_message_success.assert_not_called()
+
+    @pytest.mark.parametrize(
+        "phone, expected_status_code",
+        [
+            ("0700000001", status.HTTP_404_NOT_FOUND),
+            ("0600000002", status.HTTP_403_FORBIDDEN),
+        ],
+    )
+    @pytest.mark.django_db
+    def test_cooker_auth_failed(
+        self,
+        cooker_api_key_header: dict,
+        client: APIClient,
+        auth_path: str,
+        phone: str,
+        expected_status_code: int,
+        send_otp_message_success: MagicMock,
+    ) -> None:
+        response = client.post(
+            auth_path,
+            encode_multipart(BOUNDARY, {"phone": phone}),
+            content_type=MULTIPART_CONTENT,
+            follow=False,
+            **cooker_api_key_header,
+        )
+
+        assert response.status_code == expected_status_code
         send_otp_message_success.assert_not_called()
 
     @pytest.mark.django_db
@@ -344,7 +370,7 @@ class TestCookerAuth:
             encode_multipart(BOUNDARY, auth_data),
             content_type=MULTIPART_CONTENT,
             follow=False,
-            **cooker_api_key_header
+            **cooker_api_key_header,
         )
         assert response.status_code == status.HTTP_200_OK
         send_otp_message_success.assert_called_once_with(
@@ -397,7 +423,7 @@ class TestCookerAskNewOTP:
             encode_multipart(BOUNDARY, data),
             content_type=MULTIPART_CONTENT,
             follow=False,
-            **cooker_api_key_header
+            **cooker_api_key_header,
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         send_otp_message_success.assert_not_called()
@@ -416,7 +442,7 @@ class TestCookerAskNewOTP:
             encode_multipart(BOUNDARY, data),
             content_type=MULTIPART_CONTENT,
             follow=False,
-            **cooker_api_key_header
+            **cooker_api_key_header,
         )
         assert response.status_code == status.HTTP_200_OK
         send_otp_message_success.assert_called_once_with(
@@ -462,7 +488,7 @@ class TestTokenFetch:
             encode_multipart(BOUNDARY, data),
             content_type=MULTIPART_CONTENT,
             follow=False,
-            **cooker_api_key_header
+            **cooker_api_key_header,
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         secrets_manager_get_secret.assert_not_called()
@@ -485,16 +511,10 @@ class TestTokenFetch:
             encode_multipart(BOUNDARY, data),
             content_type=MULTIPART_CONTENT,
             follow=False,
-            **cooker_api_key_header
+            **cooker_api_key_header,
         )
         assert response.status_code == status.HTTP_200_OK
-        assert response.json() == {
-            "ok": True,
-            "status_code": status.HTTP_200_OK,
-            "token": {
-                "access": ANY,
-                "refresh": ANY,
-            },
-            "user_id": ANY,
-        }
+        assert response.json().get("success") is True
+        assert response.json().get("data").get("token") is not None
+        assert response.json().get("data").get("user_id") is not None
         secrets_manager_get_secret.assert_not_called()

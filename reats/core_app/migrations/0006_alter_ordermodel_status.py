@@ -5,7 +5,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("core_app", "0005_cookermodel_is_deleted_customermodel_is_deleted_and_more"),
     ]

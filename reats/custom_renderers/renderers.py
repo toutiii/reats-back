@@ -12,77 +12,6 @@ from utils.enums import OrderStatusEnum
 logger = logging.getLogger("watchtower-logger")
 
 
-class CookerCustomRendererWithData(JSONRenderer):
-    def render(self, data, accepted_media_type=None, renderer_context=None):
-        status_code = renderer_context["response"].status_code
-
-        try:
-            data["detail"].code
-        except KeyError:
-            status_code = status.HTTP_200_OK
-        except Exception as err:
-            logger.error(err)
-            status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
-
-        if not data and status_code == status.HTTP_200_OK:
-            response = {
-                "ok": True,
-                "data": [],
-                "status_code": status_code,
-            }
-            return super().render(response)
-
-        if status_code == status.HTTP_200_OK:
-            response = {
-                "ok": True,
-                "status_code": status_code,
-                "data": {
-                    "personal_infos_section": {
-                        "title": "personal_infos",
-                        "data": {
-                            "photo": get_pre_signed_url(data["photo"]),
-                            "siret": data["siret"],
-                            "firstname": data["firstname"],
-                            "lastname": data["lastname"],
-                            "phone": phonenumbers.format_number(
-                                phonenumbers.parse(
-                                    data["phone"], settings.PHONE_REGION
-                                ),
-                                phonenumbers.PhoneNumberFormat.NATIONAL,
-                            ).replace(" ", ""),
-                            "max_order_number": str(data["max_order_number"]),
-                            "is_online": data["is_online"],
-                            "acceptance_rate": data["acceptance_rate"],
-                        },
-                    },
-                    "address_section": {
-                        "title": "address",
-                        "data": {
-                            "street_number": data["street_number"],
-                            "street_name": data["street_name"],
-                            "address_complement": data["address_complement"],
-                            "postal_code": data["postal_code"],
-                            "town": data["town"],
-                        },
-                    },
-                },
-            }
-        else:
-            response = {
-                "ok": False,
-                "status_code": status_code,
-            }
-
-        if status_code == status.HTTP_401_UNAUTHORIZED:
-            try:
-                response["error_code"] = data["detail"].code
-            except KeyError:
-                pass
-
-        logger.info(response)
-        return super().render(response)
-
-
 class CustomerCustomRendererWithData(JSONRenderer):
     def render(self, data, accepted_media_type=None, renderer_context=None):
         status_code = renderer_context["response"].status_code
@@ -115,9 +44,7 @@ class CustomerCustomRendererWithData(JSONRenderer):
                             "firstname": data["firstname"],
                             "lastname": data["lastname"],
                             "phone": phonenumbers.format_number(
-                                phonenumbers.parse(
-                                    data["phone"], settings.PHONE_REGION
-                                ),
+                                phonenumbers.parse(data["phone"], settings.PHONE_REGION),
                                 phonenumbers.PhoneNumberFormat.NATIONAL,
                             ).replace(" ", ""),
                         },
@@ -176,9 +103,7 @@ class DeliverCustomRendererWithData(JSONRenderer):
                             "delivery_radius": data["delivery_radius"],
                             "siret": data["siret"],
                             "phone": phonenumbers.format_number(
-                                phonenumbers.parse(
-                                    data["phone"], settings.PHONE_REGION
-                                ),
+                                phonenumbers.parse(data["phone"], settings.PHONE_REGION),
                                 phonenumbers.PhoneNumberFormat.NATIONAL,
                             ).replace(" ", ""),
                         },
@@ -199,9 +124,7 @@ class CustomRendererWithData(JSONRenderer):
         """
         Adding cooker info in each dish, drink and dessert
         """
-        if (
-            "cooker" in response and "country" in response
-        ):  # To be sure to deal with DrinkModel or DishModel
+        if "cooker" in response and "country" in response:  # To be sure to deal with DrinkModel or DishModel
             cooker: CookerModel = CookerModel.objects.get(id=response["cooker"])
             response["cooker"] = {
                 "id": cooker.id,
@@ -231,11 +154,7 @@ class CustomRendererWithData(JSONRenderer):
                 {
                     "data": [
                         {
-                            k: (
-                                get_pre_signed_url(v)
-                                if k == "photo"
-                                else (str(v) if not isinstance(v, bool) else v)
-                            )
+                            k: (get_pre_signed_url(v) if k == "photo" else (str(v) if not isinstance(v, bool) else v))
                             for k, v in item.items()
                         }
                         for item in data
@@ -370,9 +289,7 @@ class OrderCustomRendererWithData(JSONRenderer):
         """
         if "customer" in response:
             try:
-                customer: CustomerModel = CustomerModel.objects.get(
-                    id=response["customer"]["id"]
-                )
+                customer: CustomerModel = CustomerModel.objects.get(id=response["customer"]["id"])
             except TypeError as err:
                 logger.error(err)
                 customer = CustomerModel.objects.get(id=response["customer"])
@@ -411,13 +328,9 @@ class OrderCustomRendererWithData(JSONRenderer):
             if isinstance(data, list):
                 for order_item in data:
                     for order_dish_item in order_item["dishes_items"]:
-                        order_dish_item["dish"]["photo"] = get_pre_signed_url(
-                            order_dish_item["dish"]["photo"]
-                        )
+                        order_dish_item["dish"]["photo"] = get_pre_signed_url(order_dish_item["dish"]["photo"])
                     for order_drink_item in order_item["drinks_items"]:
-                        order_drink_item["drink"]["photo"] = get_pre_signed_url(
-                            order_drink_item["drink"]["photo"]
-                        )
+                        order_drink_item["drink"]["photo"] = get_pre_signed_url(order_drink_item["drink"]["photo"])
                 response = {
                     "ok": True,
                     "status_code": status.HTTP_200_OK,

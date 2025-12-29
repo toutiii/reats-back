@@ -17,7 +17,6 @@ class TestReadAddressesSuccess:
         customer_id: int,
         customer_address_path: str,
     ) -> None:
-
         # we check that the customer has some addresses
         assert CustomerModel.objects.get(pk=customer_id).addresses.count() == 2
 

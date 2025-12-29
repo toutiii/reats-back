@@ -580,7 +580,6 @@ def test_orders_history_list_success_for_customers(
     customer_order_history_path: str,
     expected_data: list[dict],
 ) -> None:
-
     # we check that the customer has some orders
     assert OrderModel.objects.filter(customer__id=customer_id).count() > 0
 
@@ -619,7 +618,6 @@ def test_orders_list_success_with_order_status_filter(
     customer_order_history_path: str,
     order_status: OrderStatusEnum,
 ) -> None:
-
     # we check that the cooker has some orders
     assert OrderModel.objects.filter(customer__id=customer_id).count() > 0
 
@@ -647,7 +645,6 @@ def test_orders_list_success_with_dates_filter_when_some_orders_exist(
     customer_id: int,
     customer_order_history_path: str,
 ) -> None:
-
     # we check that the cooker has some orders
     assert OrderModel.objects.filter(customer__id=customer_id).count() > 0
 
@@ -676,7 +673,6 @@ def test_orders_list_success_with_dates_filter_when_no_orders_exist(
     customer_id: int,
     customer_order_history_path: str,
 ) -> None:
-
     # we check that the cooker has some orders
     assert OrderModel.objects.filter(customer__id=customer_id).count() > 0
 
@@ -950,7 +946,6 @@ def test_orders_list_success_with_multiple_filters(
     end_date: str,
     expected_data: list[dict],
 ) -> None:
-
     # we check that the cooker has some orders
     assert OrderModel.objects.filter(customer__id=customer_id).count() > 0
 

@@ -5,6 +5,7 @@ from core_app.models import CustomerModel
 from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from rest_framework import status
 from rest_framework.test import APIClient
+from utils.enums import SuccessMessageEnum
 
 
 class TestCustomerAuth:
@@ -213,15 +214,12 @@ class TestTokenFetch:
         )
 
         assert response.status_code == status.HTTP_200_OK
-        assert response.json() == {
-            "ok": True,
-            "status_code": status.HTTP_200_OK,
-            "token": {
-                "access": ANY,
-                "refresh": ANY,
-            },
-            "user_id": ANY,
-        }
+        assert isinstance(response.json().get("data"), dict)
+        assert isinstance(response.json().get("data").get("token"), dict)
+        assert response.json().get("data").get("token").get("refresh") is not None
+        assert response.json().get("data").get("token").get("access") is not None
+        assert response.json().get("data").get("user_id") is not None
+
         secrets_manager_get_secret.assert_not_called()
 
 
@@ -248,17 +246,13 @@ class TestTokenFetchWhenUserIsPresentOnMultipleTables:
         )
 
         assert response.status_code == status.HTTP_200_OK
-        assert response.json() == {
-            "ok": True,
-            "status_code": status.HTTP_200_OK,
-            "token": {
-                "access": ANY,
-                "refresh": ANY,
-            },
-            "user_id": ANY,
-        }
+        assert response.json().get("success") is True
+        assert response.json().get("message") == SuccessMessageEnum.TOKEN_GENERATED
+        assert isinstance(response.json().get("data"), dict)
+        assert isinstance(response.json().get("data").get("token"), dict)
+        assert response.json().get("data").get("token").get("refresh") is not None
+        assert response.json().get("data").get("token").get("access") is not None
+        assert response.json().get("data").get("user_id") is not None
+
         secrets_manager_get_secret.assert_not_called()
-        assert (
-            response.json()["user_id"]
-            == CustomerModel.objects.get(phone="+33700000006").pk
-        )
+        assert response.json().get("data").get("user_id") == CustomerModel.objects.get(phone="+33700000006").pk

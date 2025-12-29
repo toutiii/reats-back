@@ -47,10 +47,7 @@ class TestCreateDishSuccess:
         )
 
         assert response.status_code == status.HTTP_201_CREATED
-        assert (
-            DishModel.objects.latest("pk").photo
-            == f"cookers/1/dishes/{post_data.get('category')}/test.jpg"
-        )
+        assert DishModel.objects.latest("pk").photo == f"cookers/1/dishes/{post_data.get('category')}/test.jpg"
         upload_fileobj.assert_called_once()
         post_create_count = DishModel.objects.count()
 

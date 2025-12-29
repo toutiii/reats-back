@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("core_app", "0003_orderdishitemmodel_orderdrinkitemmodel_and_more"),
     ]

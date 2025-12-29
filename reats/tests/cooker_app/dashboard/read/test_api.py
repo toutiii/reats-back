@@ -4,7 +4,7 @@ import pytest
 from core_app.models import OrderModel
 from rest_framework import status
 from rest_framework.test import APIClient
-from utils.enums import OrderStatusEnum
+from utils.enums import ErrorCodeEnum, OrderStatusEnum
 
 
 @pytest.fixture
@@ -26,25 +26,20 @@ def test_get_dashboard_data_when_cooker_has_orders(
     create_orders: Callable,
     custom_counts: dict,
 ) -> None:
-
     response = client.get(
         dashboard_path,
         {"start_date": "2024-01-01", "end_date": "2099-12-31"},
         follow=False,
         **auth_headers,
     )
-
-    assert response.json() == {
-        "ok": True,
-        "status_code": 200,
-        "data": {
-            OrderStatusEnum.CANCELLED_BY_COOKER.value: 3,
-            OrderStatusEnum.CANCELLED_BY_CUSTOMER.value: 1,
-            OrderStatusEnum.COMPLETED.value: 5,
-            OrderStatusEnum.PENDING.value: 5,
-            OrderStatusEnum.DELIVERED.value: 4,
-            OrderStatusEnum.PROCESSING.value: 3,
-        },
+    assert response.json().get("success") is True
+    assert response.json().get("data") == {
+        OrderStatusEnum.CANCELLED_BY_COOKER.value: 3,
+        OrderStatusEnum.CANCELLED_BY_CUSTOMER.value: 1,
+        OrderStatusEnum.COMPLETED.value: 5,
+        OrderStatusEnum.PENDING.value: 5,
+        OrderStatusEnum.DELIVERED.value: 4,
+        OrderStatusEnum.PROCESSING.value: 3,
     }
 
 
@@ -54,10 +49,6 @@ def test_get_dashboard_data_when_cooker_has_no_orders(
     client: APIClient,
     dashboard_path: str,
 ) -> None:
-
-    # First we delete all orders for cooker_id=1 to ensure
-    # that the cooker has no orders.
-
     OrderModel.objects.filter(cooker_id=1).delete()
 
     assert OrderModel.objects.filter(cooker_id=1).count() == 0
@@ -69,11 +60,8 @@ def test_get_dashboard_data_when_cooker_has_no_orders(
         **auth_headers,
     )
 
-    assert response.json() == {
-        "ok": True,
-        "status_code": status.HTTP_200_OK,
-        "data": {},
-    }
+    assert response.json().get("success") is True
+    assert response.json().get("data") == {}
 
 
 @pytest.mark.django_db
@@ -96,7 +84,6 @@ def test_get_dashboard_data_fails_when_a_date_is_missing(
     dashboard_path: str,
     query_parameter: dict,
 ) -> None:
-
     response = client.get(
         dashboard_path,
         query_parameter,
@@ -104,7 +91,6 @@ def test_get_dashboard_data_fails_when_a_date_is_missing(
         **auth_headers,
     )
 
-    assert response.json() == {
-        "ok": False,
-        "status_code": status.HTTP_400_BAD_REQUEST,
-    }
+    assert response.json().get("success") is False
+    assert response.json().get("error").get("code") == ErrorCodeEnum.MISSING_PARAMETERS
+    assert response.status_code == status.HTTP_400_BAD_REQUEST

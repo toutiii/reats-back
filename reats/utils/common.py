@@ -14,6 +14,7 @@ from core_app.models import CookerModel, CustomerModel, DeliverModel, OrderModel
 from django.conf import settings
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from phonenumbers.phonenumberutil import NumberParseException
+
 from utils.enums import OrderStatusEnum
 
 logger = logging.getLogger("watchtower-logger")
@@ -155,9 +156,7 @@ def is_otp_valid(data: dict) -> bool:
     return response["VerificationResponse"]["Valid"]
 
 
-def activate_user(
-    model: Type[Union[CookerModel, CustomerModel, DeliverModel]], data: dict
-) -> None:
+def activate_user(model: Type[Union[CookerModel, CustomerModel, DeliverModel]], data: dict) -> None:
     user = model.objects.get(phone=format_phone(data["phone"]))
 
     if not user.is_activated:
@@ -186,9 +185,7 @@ def create_stripe_customer(
     customer: Union[str, None] = get_stripe_customer_by_email(customer_default_email)
 
     if customer:
-        logger.info(
-            f"Stripe customer with email {customer_default_email} already exists"
-        )
+        logger.info(f"Stripe customer with email {customer_default_email} already exists")
         return
 
     max_retries = 3
@@ -207,12 +204,9 @@ def create_stripe_customer(
             stripe.APIConnectionError,
             stripe.RateLimitError,
         ) as e:  # These exceptions are retryable
-
             logger.warning(f"Attempt {attempt} failed: {e}")
             if attempt == max_retries:
-                logger.error(
-                    f"Max retries exceeded. Unable to create Stripe customer {customer_name}"
-                )
+                logger.error(f"Max retries exceeded. Unable to create Stripe customer {customer_name}")
                 raise
             else:
                 # Exponential backoff before the next retry
@@ -226,9 +220,7 @@ def create_stripe_customer(
             logger.error(f"An unexpected error occurred: {e}")
             raise
         else:
-            logger.info(
-                f"Stripe customer {customer_default_email} created successfully"
-            )
+            logger.info(f"Stripe customer {customer_default_email} created successfully")
             logger.debug("Updating user's stripe_id...")
             user: CustomerModel = CustomerModel.objects.get(phone=user_data["phone"])
             user.stripe_id = customer_response["id"]
@@ -292,21 +284,15 @@ def update_payment_intent(
             amount=order_total_amount_in_cents,
         )
     except stripe.StripeError as e:
-        logger.error(
-            f"Failed to update payment intent {order.stripe_payment_intent_id}"
-        )
+        logger.error(f"Failed to update payment intent {order.stripe_payment_intent_id}")
         logger.error(f"Stripe error: {e}")
         raise
     except Exception as e:
-        logger.error(
-            f"Failed to update payment intent {order.stripe_payment_intent_id}"
-        )
+        logger.error(f"Failed to update payment intent {order.stripe_payment_intent_id}")
         logger.error(f"An unexpected error occurred: {e}")
         raise
     else:
-        logger.info(
-            f"Payment intent {order.stripe_payment_intent_id} updated successfully"
-        )
+        logger.info(f"Payment intent {order.stripe_payment_intent_id} updated successfully")
         logger.debug(response)
 
 
@@ -378,9 +364,7 @@ def create_stripe_refund(amount: int, payment_intent_id: str) -> None:
         logger.error(f"An unexpected error occurred: {e}")
         raise
     else:
-        logger.info(
-            f"Refund for payment intent {payment_intent_id} created successfully"
-        )
+        logger.info(f"Refund for payment intent {payment_intent_id} created successfully")
         logger.debug(response)
 
 
@@ -416,13 +400,9 @@ def update_cooker_acceptance_rate(
     """
 
     if new_status == OrderStatusEnum.CANCELLED_BY_COOKER:
-        new_value = (
-            instance.cooker.acceptance_rate - settings.ACCEPTANCE_RATE_DECREASE_VALUE
-        )
+        new_value = instance.cooker.acceptance_rate - settings.ACCEPTANCE_RATE_DECREASE_VALUE
     elif new_status == OrderStatusEnum.DELIVERED:
-        new_value = (
-            instance.cooker.acceptance_rate + settings.ACCEPTANCE_RATE_INCREASE_VALUE
-        )
+        new_value = instance.cooker.acceptance_rate + settings.ACCEPTANCE_RATE_INCREASE_VALUE
     else:
         logger.info(f"Status {new_status} is not taken into account")
         return

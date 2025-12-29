@@ -17,6 +17,12 @@ from PIL import Image
 from rest_framework.test import APIClient
 
 
+@pytest.fixture(autouse=True)
+def mock_env_vars():
+    with patch.dict(os.environ, {"ENV": "test"}):
+        yield
+
+
 @pytest.fixture(scope="session")
 def client():
     return APIClient()
@@ -29,9 +35,7 @@ def image() -> InMemoryUploadedFile:
     im.save(im_io, "JPEG")  # save the image to im_io
     im_io.seek(0)  # seek to the beginning
 
-    image = InMemoryUploadedFile(
-        im_io, None, "test.jpg", "image/jpeg", len(im_io.getvalue()), None
-    )
+    image = InMemoryUploadedFile(im_io, None, "test.jpg", "image/jpeg", len(im_io.getvalue()), None)
 
     return image
 
@@ -131,9 +135,7 @@ def secrets_manager_get_secret() -> Iterator:
 
     # Mock AWS Secrets Manager behavior
     mock_secrets_manager = mock_client.return_value
-    mock_secrets_manager.get_secret_value.side_effect = lambda SecretId: {
-        "SecretString": "mocked_secret_value"
-    }
+    mock_secrets_manager.get_secret_value.side_effect = lambda SecretId: {"SecretString": "mocked_secret_value"}
 
     yield mock_secrets_manager
     patcher.stop()
@@ -291,12 +293,8 @@ def mock_googlemaps_distance_matrix() -> Iterator:
     patcher = patch(
         "utils.distance_computer.google_map_client.distance_matrix",
         return_value={
-            "destination_addresses": [
-                "1 Rue André Lalande, 91000 Évry-Courcouronnes, " "France"
-            ],
-            "origin_addresses": [
-                "13 Rue des Mazières, 91000 Évry-Courcouronnes, France"
-            ],
+            "destination_addresses": ["1 Rue André Lalande, 91000 Évry-Courcouronnes, " "France"],
+            "origin_addresses": ["13 Rue des Mazières, 91000 Évry-Courcouronnes, France"],
             "rows": [
                 {
                     "elements": [
@@ -495,9 +493,7 @@ def mock_stripe_webhook_construct_event_success(
 ) -> Iterator:
     pather = patch(
         "stripe.Webhook.construct_event",
-        return_value=stripe.util.convert_to_dict(
-            stripe_payment_intent_success_webhook_data
-        ),
+        return_value=stripe.util.convert_to_dict(stripe_payment_intent_success_webhook_data),
     )
     yield pather.start()
     pather.stop()

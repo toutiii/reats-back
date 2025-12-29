@@ -94,7 +94,7 @@ def test_create_customer_success(
         encode_multipart(BOUNDARY, post_data),
         content_type=MULTIPART_CONTENT,
         follow=False,
-        **customer_api_key_header
+        **customer_api_key_header,
     )
     assert response.status_code == status.HTTP_201_CREATED
     new_count = CustomerModel.objects.count()
@@ -161,7 +161,7 @@ class TestActivateCustomerSuccess:
             encode_multipart(BOUNDARY, post_data),
             content_type=MULTIPART_CONTENT,
             follow=False,
-            **customer_api_key_header
+            **customer_api_key_header,
         )
 
         assert create_response.status_code == status.HTTP_201_CREATED
@@ -175,7 +175,7 @@ class TestActivateCustomerSuccess:
             encode_multipart(BOUNDARY, otp_data),
             content_type=MULTIPART_CONTENT,
             follow=False,
-            **customer_api_key_header
+            **customer_api_key_header,
         )
 
         assert activate_response.status_code == status.HTTP_200_OK
@@ -215,7 +215,7 @@ class TestActivateCustomerFailedInCaseOfFailingOTPValidation:
             encode_multipart(BOUNDARY, post_data),
             content_type=MULTIPART_CONTENT,
             follow=False,
-            **customer_api_key_header
+            **customer_api_key_header,
         )
 
         assert create_response.status_code == status.HTTP_201_CREATED
@@ -229,7 +229,7 @@ class TestActivateCustomerFailedInCaseOfFailingOTPValidation:
             encode_multipart(BOUNDARY, otp_data),
             content_type=MULTIPART_CONTENT,
             follow=False,
-            **customer_api_key_header
+            **customer_api_key_header,
         )
 
         assert activate_response.status_code == status.HTTP_400_BAD_REQUEST
@@ -273,7 +273,7 @@ class TestCreateSameCustomerTwice:
             encode_multipart(BOUNDARY, post_data),
             content_type=MULTIPART_CONTENT,
             follow=False,
-            **customer_api_key_header
+            **customer_api_key_header,
         )
         assert create_response.status_code == status.HTTP_201_CREATED
         new_count = CustomerModel.objects.count()
@@ -285,7 +285,7 @@ class TestCreateSameCustomerTwice:
             encode_multipart(BOUNDARY, post_data),
             content_type=MULTIPART_CONTENT,
             follow=False,
-            **customer_api_key_header
+            **customer_api_key_header,
         )
         assert duplicate_create_response.status_code == status.HTTP_400_BAD_REQUEST
         assert CustomerModel.objects.count() == new_count
@@ -331,7 +331,7 @@ def test_failed_create_customer_wrong_data(
         encode_multipart(BOUNDARY, post_data),
         content_type=MULTIPART_CONTENT,
         follow=False,
-        **customer_api_key_header
+        **customer_api_key_header,
     )
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     new_count = CustomerModel.objects.count()

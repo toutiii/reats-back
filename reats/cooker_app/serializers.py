@@ -1,5 +1,6 @@
 from typing import Any, Dict, Union
 
+import phonenumbers
 from core_app.models import (
     AddressModel,
     CookerModel,
@@ -19,7 +20,11 @@ from rest_framework_simplejwt.serializers import (
     TokenObtainPairSerializer,
     TokenRefreshSerializer,
 )
-from utils.common import compute_order_items_total_amount, format_phone
+from utils.common import (
+    compute_order_items_total_amount,
+    format_phone,
+    get_pre_signed_url,
+)
 
 
 class CookerSerializer(ModelSerializer):
@@ -40,6 +45,37 @@ class CookerGETSerializer(ModelSerializer):
     class Meta:
         model = CookerModel
         exclude = ("created", "modified")
+
+    def to_representation(self, instance: CookerModel) -> dict:
+        data = super().to_representation(instance)
+
+        try:
+            parsed_phone = phonenumbers.parse(data["phone"], settings.PHONE_REGION)
+            formatted_phone = phonenumbers.format_number(parsed_phone, phonenumbers.PhoneNumberFormat.NATIONAL).replace(
+                " ", ""
+            )
+        except NumberParseException:
+            formatted_phone = data["phone"]
+
+        return {
+            "personal_infos_section": {
+                "photo": get_pre_signed_url(data["photo"]),
+                "siret": data["siret"],
+                "firstname": data["firstname"],
+                "lastname": data["lastname"],
+                "phone": formatted_phone,
+                "max_order_number": str(data["max_order_number"]),
+                "is_online": data["is_online"],
+                "acceptance_rate": data["acceptance_rate"],
+            },
+            "address_section": {
+                "street_number": data.get("street_number"),
+                "street_name": data.get("street_name"),
+                "address_complement": data.get("address_complement"),
+                "postal_code": data["postal_code"],
+                "town": data["town"],
+            },
+        }
 
 
 class DishSerializer(ModelSerializer):
@@ -84,7 +120,6 @@ class TokenObtainPairWithoutPasswordSerializer(TokenObtainPairSerializer):
     phone = serializers.CharField()
 
     def validate(self, attrs) -> dict:
-
         phone = attrs["phone"]
         request_headers = self.context.get("request").headers
         app_origin = request_headers.get("App-Origin")
@@ -94,24 +129,18 @@ class TokenObtainPairWithoutPasswordSerializer(TokenObtainPairSerializer):
             raise ValidationError(f"Unknown App-Origin header value {app_origin}")
 
         try:
-            cooker_user: Union[CookerModel, None] = CookerModel.objects.get(
-                phone=formatted_phone
-            )
+            cooker_user: Union[CookerModel, None] = CookerModel.objects.get(phone=formatted_phone)
         except CookerModel.DoesNotExist:
             cooker_user = None
 
         try:
-            customer_user: Union[CustomerModel, None] = CustomerModel.objects.get(
-                phone=formatted_phone
-            )
+            customer_user: Union[CustomerModel, None] = CustomerModel.objects.get(phone=formatted_phone)
 
         except CustomerModel.DoesNotExist:
             customer_user = None
 
         try:
-            deliver_user: Union[DeliverModel, None] = DeliverModel.objects.get(
-                phone=formatted_phone
-            )
+            deliver_user: Union[DeliverModel, None] = DeliverModel.objects.get(phone=formatted_phone)
         except DeliverModel.DoesNotExist:
             deliver_user = None
 
@@ -165,7 +194,17 @@ class CookerOrderCustomerGETSerializer(ModelSerializer):
             "id",
             "firstname",
             "lastname",
-            "is_deleted",
+        )
+
+
+class CookerOrderCookerGETSerializer(ModelSerializer):
+    class Meta:
+        model = CookerModel
+        fields = (
+            "id",
+            "firstname",
+            "lastname",
+            "acceptance_rate",
         )
 
 
@@ -174,6 +213,7 @@ class CookerOrderGETSerializer(ModelSerializer):
     dishes_items = OrderDishItemGETSerializer(many=True)
     drinks_items = OrderDrinkItemGETSerializer(many=True)
     customer = CookerOrderCustomerGETSerializer()
+    cooker = CookerOrderCookerGETSerializer()
 
     class Meta:
         model = OrderModel
@@ -190,8 +230,6 @@ class CookerOrderGETSerializer(ModelSerializer):
 
         data["sub_total"] = compute_order_items_total_amount(instance)
         data["service_fees"] = round(data["sub_total"] * settings.SERVICE_FEES_RATE, 2)
-        data["total_amount"] = round(
-            data["sub_total"] + data["service_fees"] + instance.delivery_fees, 2
-        )
+        data["total_amount"] = round(data["sub_total"] + data["service_fees"] + instance.delivery_fees, 2)
 
         return data

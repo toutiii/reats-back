@@ -1,5 +1,3 @@
-version: "3.7"
-
 services:
   web:
     build:
@@ -22,7 +20,7 @@ services:
     container_name: django_app
 
   db:
-    image: postgres:16
+    image: postgres:16-bookworm
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
@@ -31,7 +29,8 @@ services:
       - POSTGRES_DB=reats_local_db
       - POSTGRES_USER=dev
       - POSTGRES_PASSWORD=devpassword
-    container_name: postgres_db
+      - POSTGRES_INITDB_ARGS=--locale-provider=icu --icu-locale=und
+    container_name: db
 
 volumes:
   postgres_data:

@@ -44,7 +44,6 @@ def test_update_address_success(
     post_payload: dict,
     update_payload: dict,
 ) -> None:
-
     # Fist create an address
 
     response = client.post(

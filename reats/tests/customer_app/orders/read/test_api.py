@@ -482,7 +482,6 @@ def test_orders_list_success(
     expected_status_code: int,
     ok_value: bool,
 ) -> None:
-
     # we check that the customer has some orders
     assert OrderModel.objects.filter(customer__id=customer_id).count() > 0
 

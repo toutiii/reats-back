@@ -32,10 +32,7 @@ class TestCustomerDeleteSuccess:
             )
 
             assert response.status_code == status.HTTP_200_OK
-            assert response.json() == {
-                "ok": True,
-                "status_code": status.HTTP_200_OK,
-            }
+            assert response.json().get("ok") is True
 
             CustomerModel.objects.get(phone=data.get("phone")).is_deleted is True
             CustomerModel.objects.get(pk=customer_id).is_deleted is True
@@ -71,7 +68,9 @@ class TestCustomerDeleteFailedWithExpiredToken:
             )
 
             assert token_response.status_code == status.HTTP_200_OK
-            access_token = token_response.json().get("token").get("access")
+            assert token_response.json().get("success") is True
+            assert isinstance(token_response.json().get("data").get("token"), dict)
+            access_token = token_response.json().get("data").get("token").get("access")
             access_auth_header = {"HTTP_AUTHORIZATION": f"Bearer {access_token}"}
 
         # Then we skip 15 minutes in the future to make the token expired

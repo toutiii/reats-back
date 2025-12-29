@@ -119,13 +119,9 @@ class TestListDessertsForCustomerSuccess:
         customer_dessert_path: str,
         expected_data: list[dict],
     ) -> None:
-
         # we check that the cooker has some desserts
         assert (
-            DishModel.objects.filter(category="dessert")
-            .filter(cooker__id=cooker_id)
-            .filter(is_enabled=True)
-            .count()
+            DishModel.objects.filter(category="dessert").filter(cooker__id=cooker_id).filter(is_enabled=True).count()
             > 0
         )
 
@@ -157,7 +153,6 @@ class TestListDessertsForCustomeFailedWithUnknownCookerId:
         cooker_id: int,
         customer_dessert_path: str,
     ) -> None:
-
         # we assert that no dessert is linked to the unknown cooker
         assert DishModel.objects.filter(cooker__id=cooker_id).count() == 0
 
@@ -183,7 +178,6 @@ class TestListDessertsForCustomerFailedWithoutCookerId:
         client: APIClient,
         customer_dessert_path: str,
     ) -> None:
-
         # Then we list the desserts without specifying the cooker_id
         response = client.get(
             customer_dessert_path,
@@ -211,20 +205,13 @@ class TestListDessertsOnlyReturnNonDeletedItems:
         cooker_id: int,
         customer_dessert_path: str,
     ) -> None:
-
         assert (
-            DishModel.objects.filter(category="dessert")
-            .filter(cooker__id=cooker_id)
-            .filter(is_enabled=True)
-            .count()
+            DishModel.objects.filter(category="dessert").filter(cooker__id=cooker_id).filter(is_enabled=True).count()
             > 0
         )
 
         first_item = (
-            DishModel.objects.filter(category="dessert")
-            .filter(cooker__id=cooker_id)
-            .filter(is_enabled=True)
-            .first()
+            DishModel.objects.filter(category="dessert").filter(cooker__id=cooker_id).filter(is_enabled=True).first()
         )
         if first_item is not None:
             first_item.is_deleted = True

@@ -10,13 +10,6 @@ from core_app.serializers import (
     DrinkGETSerializer,
     OrderPATCHSerializer,
 )
-from custom_renderers.renderers import (
-    CookerCustomRendererWithData,
-    CustomJSONRendererWithData,
-    CustomRendererWithData,
-    CustomRendererWithoutData,
-    OrderCustomRendererWithData,
-)
 from django.db import IntegrityError
 from django.db.models import Count
 from phonenumbers.phonenumberutil import NumberParseException
@@ -25,7 +18,7 @@ from rest_framework.decorators import action
 from rest_framework.mixins import ListModelMixin, UpdateModelMixin
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import BasePermission
-from rest_framework.renderers import BaseRenderer
+from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
@@ -41,8 +34,14 @@ from utils.common import (
     update_cooker_acceptance_rate,
     upload_image_to_s3,
 )
+from utils.custom_api_reponse import StandardizedResponseMixin
 from utils.custom_permissions import CustomAPIKeyPermission, UserPermission
-from utils.enums import OrderStatusEnum
+from utils.enums import (
+    ErrorCodeEnum,
+    ErrorMessageEnum,
+    OrderStatusEnum,
+    SuccessMessageEnum,
+)
 
 from .serializers import (
     CookerGETSerializer,
@@ -59,7 +58,7 @@ from .serializers import (
 logger = logging.getLogger("watchtower-logger")
 
 
-class CookerView(ModelViewSet):
+class CookerView(StandardizedResponseMixin, ModelViewSet):
     parser_classes = [MultiPartParser]
     queryset = CookerModel.objects.all()
 
@@ -86,6 +85,14 @@ class CookerView(ModelViewSet):
 
         return super().get_serializer_class()
 
+    def list(self, request, *args, **kwargs):
+        response = super().list(request, *args, **kwargs)
+        return self.success(response.data)
+
+    def retrieve(self, request, *args, **kwargs):
+        response = super().retrieve(request, *args, **kwargs)
+        return self.success(response.data)
+
     def perform_create(self, serializer: BaseSerializer) -> None:
         try:
             super().perform_create(serializer)
@@ -94,15 +101,6 @@ class CookerView(ModelViewSet):
             return
 
         send_otp(serializer.validated_data.get("phone"))
-
-    def get_renderers(self) -> list[BaseRenderer]:
-        if self.request.method in ("POST", "PATCH", "DELETE"):
-            self.renderer_classes = [CustomRendererWithoutData]
-
-        if self.request.method == "GET":
-            self.renderer_classes = [CookerCustomRendererWithData]
-
-        return super().get_renderers()
 
     def partial_update(self, request, *args, **kwargs) -> Response:
         kwargs.pop("pk")  # pk is unexpected in parent's partial_update method
@@ -115,15 +113,7 @@ class CookerView(ModelViewSet):
         except KeyError:
             pass
         else:
-            photo = (
-                "cookers"
-                + "/"
-                + str(cooker.pk)
-                + "/"
-                + "profile_pics"
-                + "/"
-                + self.request.FILES["photo"].name
-            )
+            photo = "cookers" + "/" + str(cooker.pk) + "/" + "profile_pics" + "/" + self.request.FILES["photo"].name
 
         if photo is not None:
             upload_image_to_s3(self.request.FILES["photo"], photo)
@@ -139,13 +129,7 @@ class CookerView(ModelViewSet):
         instance: CookerModel = self.get_object()
         instance.is_deleted = True
         instance.save()
-
-        return Response(
-            {
-                "ok": True,
-                "status_code": status.HTTP_200_OK,
-            }
-        )
+        return self.success(message=SuccessMessageEnum.ACCOUNT_DELETED)
 
     @action(methods=["post"], detail=False, url_path="otp-verify")
     def otp_verify(self, request) -> Response:
@@ -153,56 +137,85 @@ class CookerView(ModelViewSet):
 
         if result:
             activate_user(CookerModel, request.data)
-            return Response(status=status.HTTP_200_OK)
+            return self.success(message=SuccessMessageEnum.ACCOUNT_ACTIVATED)
 
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+        return self.error(
+            message=ErrorMessageEnum.INVALID_OTP_CODE,
+            code=ErrorCodeEnum.OTP_INVALID,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
 
     @action(methods=["post"], detail=False)
     def auth(self, request) -> Response:
         phone = request.data.get("phone")
 
         if phone is None:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return self.error(
+                ErrorMessageEnum.PHONE_REQUIRED,
+                code=ErrorCodeEnum.PHONE_REQUIRED,
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
 
         try:
             e164_phone_format = format_phone(phone)
         except NumberParseException:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return self.error(
+                ErrorMessageEnum.PHONE_INVALID_FORMAT,
+                code=ErrorCodeEnum.PHONE_INVALID_FORMAT,
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
 
         try:
             cooker: CookerModel = CookerModel.objects.get(phone=e164_phone_format)
         except CookerModel.DoesNotExist:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return self.error(
+                ErrorMessageEnum.USER_NOT_FOUND,
+                code=ErrorCodeEnum.USER_NOT_FOUND,
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
 
         if not cooker.is_activated:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return self.error(
+                ErrorMessageEnum.ACCOUNT_NOT_ACTIVATED,
+                code=ErrorCodeEnum.ACCOUNT_NOT_ACTIVATED,
+                status_code=status.HTTP_403_FORBIDDEN,
+            )
 
         otp_response: Union[dict, None] = send_otp(e164_phone_format)
 
         if otp_response is None:
-            return Response(status=status.HTTP_503_SERVICE_UNAVAILABLE)
+            return self.error(
+                ErrorMessageEnum.OTP_SEND_FAILED,
+                code=ErrorCodeEnum.OTP_SEND_FAILED,
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        # Simplified success check (assuming previous logic was detailed but basic success is mostly what matters)
+        # Keeping previous logic structure but wrapping response
 
         otp_response_status_code = (
-            otp_response.get("MessageResponse", {})
-            .get("Result", {})
-            .get(e164_phone_format, {})
-            .get("StatusCode")
+            otp_response.get("MessageResponse", {}).get("Result", {}).get(e164_phone_format, {}).get("StatusCode")
         )
 
         if otp_response_status_code != status.HTTP_200_OK:
-            return Response(status=status.HTTP_503_SERVICE_UNAVAILABLE)
+            return self.error(
+                ErrorMessageEnum.OTP_PROVIDER_ERROR,
+                code=ErrorCodeEnum.OTP_PROVIDER_ERROR,
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
 
         otp_response_delivery_status = (
-            otp_response.get("MessageResponse", {})
-            .get("Result", {})
-            .get(e164_phone_format, {})
-            .get("DeliveryStatus")
+            otp_response.get("MessageResponse", {}).get("Result", {}).get(e164_phone_format, {}).get("DeliveryStatus")
         )
 
         if otp_response_delivery_status != "SUCCESSFUL":
-            return Response(status=status.HTTP_503_SERVICE_UNAVAILABLE)
+            return self.error(
+                ErrorMessageEnum.OTP_DELIVERY_FAILED,
+                code=ErrorCodeEnum.OTP_DELIVERY_FAILED,
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
 
-        return Response(status=status.HTTP_200_OK)
+        return self.success(message=SuccessMessageEnum.OTP_SENT)
 
     @action(methods=["post"], detail=False, url_path="otp/ask")
     def ask_otp(self, request) -> Response:
@@ -211,39 +224,39 @@ class CookerView(ModelViewSet):
         try:
             e164_phone_format = format_phone(phone)
         except NumberParseException:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return self.error(
+                message=ErrorMessageEnum.PHONE_INVALID_FORMAT,
+                code=ErrorCodeEnum.PHONE_INVALID_FORMAT,
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
 
         send_otp(e164_phone_format)
 
-        return Response(status=status.HTTP_200_OK)
+        return self.success(message=SuccessMessageEnum.OTP_SENT_FR)
 
 
-class DashboardView(GenericViewSet):
+class DashboardView(StandardizedResponseMixin, GenericViewSet):
     permission_classes = [UserPermission]
-    renderer_classes = [CustomJSONRendererWithData]
 
     def list(self, request) -> Response:
         start_date_str: Union[str, None] = request.query_params.get("start_date")
         end_date_str: Union[str, None] = request.query_params.get("end_date")
 
         if start_date_str is None or end_date_str is None:
-            return Response(
-                {
-                    "ok": False,
-                    "status_code": status.HTTP_400_BAD_REQUEST,
-                }
+            return self.error(
+                message=ErrorMessageEnum.MISSING_PARAMETERS,
+                code=ErrorCodeEnum.MISSING_PARAMETERS,
+                status_code=status.HTTP_400_BAD_REQUEST,
             )
 
         try:
             start_date = datetime.fromisoformat(start_date_str.replace("Z", "+00:00"))
             end_date = datetime.fromisoformat(end_date_str.replace("Z", "+00:00"))
         except ValueError:
-            return Response(
-                {
-                    "ok": False,
-                    "status_code": status.HTTP_400_BAD_REQUEST,
-                    "error": "Invalid date format. ISO 8601 format is expected. Ex: 2024-01-01T00:00:00Z",
-                }
+            return self.error(
+                message=ErrorMessageEnum.INVALID_DATE_FORMAT,
+                code=ErrorCodeEnum.INVALID_DATE_FORMAT,
+                status_code=status.HTTP_400_BAD_REQUEST,
             )
 
         orders = (
@@ -257,16 +270,10 @@ class DashboardView(GenericViewSet):
         )
         orders_dict = {status: count for status, count in orders}
 
-        return Response(
-            {
-                "ok": True,
-                "status_code": status.HTTP_200_OK,
-                "data": orders_dict,
-            }
-        )
+        return self.success(data=orders_dict)
 
 
-class DishView(ModelViewSet):
+class DishView(StandardizedResponseMixin, ModelViewSet):
     parser_classes = [MultiPartParser]
     queryset = DishModel.objects.filter(is_deleted=False).all()
 
@@ -281,15 +288,6 @@ class DishView(ModelViewSet):
             self.serializer_class = DishGETSerializer
 
         return super().get_serializer_class()
-
-    def get_renderers(self) -> list[BaseRenderer]:
-        if self.request.method in ("POST", "PUT", "PATCH", "DELETE"):
-            self.renderer_classes = [CustomRendererWithoutData]
-
-        if self.request.method == "GET":
-            self.renderer_classes = [CustomRendererWithData]
-
-        return super().get_renderers()
 
     def perform_create(self, serializer: BaseSerializer) -> None:
         photo = (
@@ -307,6 +305,18 @@ class DishView(ModelViewSet):
         upload_image_to_s3(self.request.FILES["photo"], photo)
         serializer.validated_data["photo"] = photo
         super().perform_create(serializer)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if not serializer.is_valid():
+            return self.error(
+                message="Invalid data",
+                code="INVALID_DATA",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return self.success(data=serializer.data, status_code=status.HTTP_201_CREATED, headers=headers)
 
     def perform_update(self, serializer: BaseSerializer) -> None:
         current_object = self.get_object()
@@ -337,12 +347,27 @@ class DishView(ModelViewSet):
 
         super().perform_update(serializer)
 
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop("partial", False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        if getattr(instance, "_prefetched_objects_cache", None):
+            instance._prefetched_objects_cache = {}
+
+        return self.success(data=serializer.data)
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return self.success(data=serializer.data)
+
     def list(self, request, *args, **kwargs) -> Response:
         request_name: Union[str, None] = self.request.query_params.get("name")
         request_category: Union[str, None] = self.request.query_params.get("category")
-        request_status: Union[str, None] = self.request.query_params.get(
-            "is_enabled", "true"
-        )
+        request_status: Union[str, None] = self.request.query_params.get("is_enabled", "true")
 
         self.queryset = self.queryset.filter(cooker__id=request.user.pk)
 
@@ -350,9 +375,7 @@ class DishView(ModelViewSet):
             self.queryset = self.queryset.filter(name__icontains=request_name)
 
         if request_category is not None:
-            self.queryset = self.queryset.filter(
-                category__in=request_category.split(",")
-            )
+            self.queryset = self.queryset.filter(category__in=request_category.split(","))
 
         if request_status is not None:
             self.queryset = self.queryset.filter(is_enabled=json.loads(request_status))
@@ -362,22 +385,25 @@ class DishView(ModelViewSet):
 
         self.queryset = self.queryset.order_by("name")
 
-        return super().list(request, *args, **kwargs)
+        queryset = self.filter_queryset(self.get_queryset())
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return self.success(data=serializer.data)
 
     def destroy(self, request, *args, **kwargs) -> Response:
         instance: DishModel = self.get_object()
         instance.is_deleted = True
         instance.save()
 
-        return Response(
-            {
-                "ok": True,
-                "status_code": status.HTTP_200_OK,
-            }
-        )
+        return self.success(message=SuccessMessageEnum.DISH_DELETED)
 
 
-class DrinkView(ModelViewSet):
+class DrinkView(StandardizedResponseMixin, ModelViewSet):
     parser_classes = [MultiPartParser]
     queryset = DrinkModel.objects.filter(is_deleted=False).all()
 
@@ -393,14 +419,17 @@ class DrinkView(ModelViewSet):
 
         return super().get_serializer_class()
 
-    def get_renderers(self) -> list[BaseRenderer]:
-        if self.request.method in ("POST", "PUT", "PATCH", "DELETE"):
-            self.renderer_classes = [CustomRendererWithoutData]
-
-        if self.request.method == "GET":
-            self.renderer_classes = [CustomRendererWithData]
-
-        return super().get_renderers()
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if not serializer.is_valid():
+            return self.error(
+                message="Invalid data",
+                code="INVALID_DATA",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return self.success(data=serializer.data, status_code=status.HTTP_201_CREATED, headers=headers)
 
     def perform_create(self, serializer: BaseSerializer) -> None:
         photo = (
@@ -416,6 +445,30 @@ class DrinkView(ModelViewSet):
         upload_image_to_s3(self.request.FILES["photo"], photo)
         serializer.validated_data["photo"] = photo
         super().perform_create(serializer)
+
+    def partial_update(self, request, *args, **kwargs):
+        serializer = self.get_serializer(self.get_object(), data=request.data, partial=True)
+        if not serializer.is_valid():
+            return self.error(
+                message="Invalid data",
+                code="INVALID_DATA",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+        self.perform_update(serializer)
+        return self.success(data=serializer.data, status_code=status.HTTP_200_OK)
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop("partial", False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        if not serializer.is_valid():
+            return self.error(
+                message="Invalid data",
+                code="INVALID_DATA",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+        self.perform_update(serializer)
+        return self.success(data=serializer.data, status_code=status.HTTP_200_OK)
 
     def perform_update(self, serializer: BaseSerializer) -> None:
         current_object = self.get_object()
@@ -446,9 +499,7 @@ class DrinkView(ModelViewSet):
 
     def list(self, request, *args, **kwargs) -> Response:
         request_name: Union[str, None] = self.request.query_params.get("name")
-        request_status: Union[str, None] = self.request.query_params.get(
-            "is_enabled", "true"
-        )
+        request_status: Union[str, None] = self.request.query_params.get("is_enabled", "true")
 
         self.queryset = self.queryset.filter(cooker__id=request.user.pk)
 
@@ -462,34 +513,67 @@ class DrinkView(ModelViewSet):
             self.queryset = DrinkModel.objects.all()
 
         self.queryset = self.queryset.order_by("name")
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
 
-        return super().list(request, *args, **kwargs)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return self.success(data=serializer.data, status_code=status.HTTP_200_OK)
 
     def destroy(self, request, *args, **kwargs) -> Response:
         instance: DrinkModel = self.get_object()
         instance.is_deleted = True
         instance.save()
 
-        return Response(
-            {
-                "ok": True,
-                "status_code": status.HTTP_200_OK,
-            }
+        return self.success(
+            message=SuccessMessageEnum.DRINK_DELETED,
         )
 
 
-class TokenObtainPairWithoutPasswordView(TokenViewBase):
+class TokenObtainPairWithoutPasswordView(StandardizedResponseMixin, TokenViewBase):
     serializer_class = TokenObtainPairWithoutPasswordSerializer
-    renderer_classes = [CustomRendererWithoutData]
     permission_classes = [CustomAPIKeyPermission]
+    renderer_classes = [JSONRenderer]
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+
+        try:
+            serializer.is_valid(raise_exception=True)
+        except Exception:
+            raise
+
+        validated_data = serializer.validated_data
+        if isinstance(validated_data, dict) and validated_data.get("status") == status.HTTP_400_BAD_REQUEST:
+            return self.error(
+                ErrorMessageEnum.INVALID_USER,
+                code=ErrorCodeEnum.USER_NOT_FOUND,
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return self.success(data=validated_data, message=SuccessMessageEnum.TOKEN_GENERATED)
 
 
-class TokenObtainRefreshWithoutPasswordView(TokenViewBase):
+class TokenObtainRefreshWithoutPasswordView(StandardizedResponseMixin, TokenViewBase):
     serializer_class = TokenObtainRefreshWithoutPasswordSerializer
-    renderer_classes = [CustomRendererWithoutData]
+    renderer_classes = [JSONRenderer]
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+
+        try:
+            serializer.is_valid(raise_exception=True)
+        except Exception:
+            raise
+
+        return self.success(data=serializer.validated_data, message=SuccessMessageEnum.TOKEN_REFRESHED)
 
 
 class CookerOrderView(
+    StandardizedResponseMixin,
     ListModelMixin,
     UpdateModelMixin,
     GenericViewSet,
@@ -505,9 +589,10 @@ class CookerOrderView(
         if new_status == OrderStatusEnum.PENDING:
             error_message = f"Cookers orders are not supposed to be in the {OrderStatusEnum.PENDING.value} state"
             logger.error(error_message)
-            return Response(
-                {"error": error_message},
-                status=status.HTTP_400_BAD_REQUEST,
+            return self.error(
+                message=error_message,
+                code=ErrorCodeEnum.INVALID_ORDER_STATUS,
+                status_code=status.HTTP_400_BAD_REQUEST,
             )
 
         if new_status:
@@ -515,34 +600,32 @@ class CookerOrderView(
                 instance.transition_to(new_status)
             except ValueError as e:
                 logger.error(e)
-                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+                return self.error(
+                    message=str(e),
+                    code=ErrorCodeEnum.TRANSITION_ERROR,
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                )
             except Exception as e:
                 logger.error(e)
-                return Response(
-                    {"error": "An error occurred"},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                return self.error(
+                    message=ErrorMessageEnum.INTERNAL_SERVER_ERROR,
+                    code=ErrorCodeEnum.INTERNAL_SERVER_ERROR,
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
 
         if new_status == OrderStatusEnum.CANCELLED_BY_COOKER:
             amount_to_refund_in_cents = Decimal(
                 str(compute_order_items_total_amount(instance) + instance.delivery_fees)
             ) * Decimal("100")
-            create_stripe_refund(
-                int(amount_to_refund_in_cents), instance.stripe_payment_intent_id
-            )
+            create_stripe_refund(int(amount_to_refund_in_cents), instance.stripe_payment_intent_id)
 
         update_cooker_acceptance_rate(instance, new_status)
 
-        return super().partial_update(request, *args, **kwargs)
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
 
-    def get_renderers(self) -> list[BaseRenderer]:
-        if self.request.method == "PATCH":
-            self.renderer_classes = [CustomRendererWithoutData]
-
-        if self.request.method == "GET":
-            self.renderer_classes = [OrderCustomRendererWithData]
-
-        return super().get_renderers()
+        return self.success(serializer.data)
 
     def get_serializer_class(self) -> type[BaseSerializer]:
         if self.request.method == "GET":
@@ -554,7 +637,7 @@ class CookerOrderView(
         return super().get_serializer_class()
 
     def list(self, request, *args, **kwargs) -> Response:
-        self.queryset = self.queryset.filter(customer__id=request.user.pk)
+        self.queryset = self.queryset.filter(cooker__id=request.user.pk)
         request_status: Union[str, None] = self.request.query_params.get("status")
 
         if request_status is None or request_status not in [
@@ -562,18 +645,24 @@ class CookerOrderView(
             OrderStatusEnum.PROCESSING,
             OrderStatusEnum.COMPLETED,
         ]:
-            logger.error(f"Invalid status {request_status}")
+            if request_status is not None:
+                logger.error(f"Invalid status {request_status}")
             self.queryset = OrderModel.objects.none()
 
         if request_status is not None:
-            self.queryset = self.queryset.filter(status=request_status).order_by(
-                "-modified"
-            )
+            self.queryset = self.queryset.filter(status=request_status).order_by("-modified")
 
-        return super().list(request, *args, **kwargs)
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return self.success(serializer.data)
 
 
-class CookerOrderHistoryView(ListModelMixin, GenericViewSet):
+class CookerOrderHistoryView(StandardizedResponseMixin, ListModelMixin, GenericViewSet):
     permission_classes = [UserPermission]
     queryset = OrderModel.objects.all().filter(
         status__in=[
@@ -583,21 +672,16 @@ class CookerOrderHistoryView(ListModelMixin, GenericViewSet):
         ]
     )
     parser_classes = [MultiPartParser]
-    renderer_classes = [OrderCustomRendererWithData]
     serializer_class = CookerOrderGETSerializer
 
     def list(self, request, *args, **kwargs) -> Response:
         order_status: Union[str, None] = self.request.query_params.get("status")
         start_date: Union[str, None] = self.request.query_params.get("start_date")
         end_date: Union[str, None] = self.request.query_params.get("end_date")
-        self.queryset = self.queryset.filter(cooker__id=request.user.pk).order_by(
-            "-modified"
-        )
+        self.queryset = self.queryset.filter(cooker__id=request.user.pk).order_by("-modified")
 
         if start_date and end_date:
-            start_date_object = datetime.fromisoformat(
-                start_date.replace("Z", "+00:00")
-            )
+            start_date_object = datetime.fromisoformat(start_date.replace("Z", "+00:00"))
             end_date_object = datetime.fromisoformat(end_date.replace("Z", "+00:00"))
             if start_date_object > end_date_object:
                 return Response(
@@ -614,4 +698,10 @@ class CookerOrderHistoryView(ListModelMixin, GenericViewSet):
         if order_status:
             self.queryset = self.queryset.filter(status=order_status)
 
-        return super().list(request, *args, **kwargs)
+        page = self.paginate_queryset(self.queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(self.queryset, many=True)
+        return self.success(serializer.data, status_code=status.HTTP_200_OK)
