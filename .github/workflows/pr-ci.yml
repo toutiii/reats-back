@@ -50,8 +50,8 @@ jobs:
       AWS_SENDER_ID: "REATS-DEV"
       AWS_LOG_GROUP_NAME: "reats-dev"
       AWS_SECRET_NAME: ${{ secrets.AWS_SECRET_NAME }}
-      AWS_PUBLIC_KEY: ${{ secrets.AWS_PUBLIC_KEY }}
-      AWS_PRIVATE_KEY: ${{ secrets.AWS_PRIVATE_KEY }}
+      AWS_PUBLIC_KEY: "reats-dev-public-key"
+      AWS_PRIVATE_KEY: "reats-dev-private-key"
 
     steps:
       - name: Checkout Code
