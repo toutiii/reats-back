@@ -30,7 +30,7 @@ services:
       - POSTGRES_USER=dev
       - POSTGRES_PASSWORD=devpassword
       - POSTGRES_INITDB_ARGS=--locale-provider=icu --icu-locale=und
-    container_name: postgres_db
+    container_name: db
 
 volumes:
   postgres_data:
