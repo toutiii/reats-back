@@ -59,27 +59,21 @@ class CookerGETSerializer(ModelSerializer):
 
         return {
             "personal_infos_section": {
-                "title": "personal_infos",
-                "data": {
-                    "photo": get_pre_signed_url(data["photo"]),
-                    "siret": data["siret"],
-                    "firstname": data["firstname"],
-                    "lastname": data["lastname"],
-                    "phone": formatted_phone,
-                    "max_order_number": str(data["max_order_number"]),
-                    "is_online": data["is_online"],
-                    "acceptance_rate": data["acceptance_rate"],
-                },
+                "photo": get_pre_signed_url(data["photo"]),
+                "siret": data["siret"],
+                "firstname": data["firstname"],
+                "lastname": data["lastname"],
+                "phone": formatted_phone,
+                "max_order_number": str(data["max_order_number"]),
+                "is_online": data["is_online"],
+                "acceptance_rate": data["acceptance_rate"],
             },
             "address_section": {
-                "title": "address",
-                "data": {
-                    "street_number": data.get("street_number"),
-                    "street_name": data.get("street_name"),
-                    "address_complement": data.get("address_complement"),
-                    "postal_code": data["postal_code"],
-                    "town": data["town"],
-                },
+                "street_number": data.get("street_number"),
+                "street_name": data.get("street_name"),
+                "address_complement": data.get("address_complement"),
+                "postal_code": data["postal_code"],
+                "town": data["town"],
             },
         }
 
