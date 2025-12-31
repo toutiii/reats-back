@@ -5,6 +5,7 @@ from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from freezegun import freeze_time
 from rest_framework import status
 from rest_framework.test import APIClient
+from utils.enums import ErrorCodeEnum, ErrorMessageEnum
 
 
 @pytest.fixture
@@ -116,8 +117,8 @@ def test_delete_address_failed_not_existing(
     )
     assert delete_response.status_code == status.HTTP_404_NOT_FOUND
     assert delete_response.json().get("success") is False
-    assert delete_response.json().get("error").get("code") == "not_found"
-    assert delete_response.json().get("error").get("message") == "Not found."
+    assert delete_response.json().get("error").get("code") == ErrorCodeEnum.NOT_FOUND
+    assert delete_response.json().get("error").get("message") == ErrorMessageEnum.NOT_FOUND
 
 
 @pytest.mark.django_db
@@ -140,7 +141,7 @@ def test_delete_customer_will_also_delete_his_addresses(
         **auth_headers,
     )
     assert first_create_response.status_code == status.HTTP_201_CREATED
-    assert first_create_response.json() == {"ok": True, "status_code": 201}
+    assert first_create_response.json().get("ok") is True
 
     first_address = AddressModel.objects.latest("pk")
 
@@ -152,7 +153,7 @@ def test_delete_customer_will_also_delete_his_addresses(
         **auth_headers,
     )
     assert second_create_response.status_code == status.HTTP_201_CREATED
-    assert second_create_response.json() == {"ok": True, "status_code": 201}
+    assert second_create_response.json().get("ok") is True
 
     second_address = AddressModel.objects.latest("pk")
 
@@ -166,7 +167,7 @@ def test_delete_customer_will_also_delete_his_addresses(
         **auth_headers,
     )
     assert delete_response.status_code == status.HTTP_200_OK
-    assert delete_response.json() == {"ok": True, "status_code": 200}
+    assert delete_response.json().get("success") is True
 
     # As we don't really delete customers for now, the addresses will not be deleted in DB.
 

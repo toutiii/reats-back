@@ -40,6 +40,10 @@ class CustomerGETSerializer(ModelSerializer):
         model = CustomerModel
         exclude = ("created", "modified")
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        return {"personal_infos_section": data}
+
 
 class AddressSerializer(ModelSerializer):
     class Meta:

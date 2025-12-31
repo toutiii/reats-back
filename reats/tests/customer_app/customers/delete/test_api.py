@@ -6,6 +6,7 @@ from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from freezegun import freeze_time
 from rest_framework import status
 from rest_framework.test import APIClient
+from utils.enums import ErrorCodeEnum, ErrorMessageEnum, SuccessMessageEnum
 
 
 @pytest.mark.django_db
@@ -32,10 +33,11 @@ class TestCustomerDeleteSuccess:
             )
 
             assert response.status_code == status.HTTP_200_OK
-            assert response.json().get("ok") is True
+            assert response.json().get("success") is True
+            assert response.json().get("message") == SuccessMessageEnum.ACCOUNT_DELETED
 
-            CustomerModel.objects.get(phone=data.get("phone")).is_deleted is True
-            CustomerModel.objects.get(pk=customer_id).is_deleted is True
+            assert CustomerModel.objects.get(phone=data.get("phone")).is_deleted is True
+            assert CustomerModel.objects.get(pk=customer_id).is_deleted is True
 
             mock_stripe_customer_delete.assert_called_once_with("cus_QyZ76Ae0W5KeqP")
 
@@ -82,7 +84,10 @@ class TestCustomerDeleteFailedWithExpiredToken:
             )
 
             assert response.status_code == status.HTTP_401_UNAUTHORIZED
-            assert response.json().get("error_code") == "token_not_valid"
+            assert response.json().get("success") is False
+            assert response.json().get("error").get("message") == ErrorMessageEnum.TOKEN_NOT_VALID
+            assert response.json().get("error").get("code") == ErrorCodeEnum.TOKEN_NOT_VALID
+
             mock_stripe_customer_delete.assert_not_called()
 
 
@@ -105,6 +110,8 @@ class TestCustomerDeleteUnknownId:
             )
 
             assert response.status_code == status.HTTP_404_NOT_FOUND
-            assert response.json() == {"ok": False, "status_code": 404}
+            assert response.json().get("success") is False
+            assert response.json().get("error").get("message") == ErrorMessageEnum.NOT_FOUND
+            assert response.json().get("error").get("code") == ErrorCodeEnum.NOT_FOUND
 
             mock_stripe_customer_delete.assert_not_called()

@@ -6,6 +6,7 @@ from django.forms.models import model_to_dict
 from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from rest_framework import status
 from rest_framework.test import APIClient
+from utils.enums import ErrorCodeEnum, ErrorMessageEnum, SuccessMessageEnum
 
 
 @pytest.fixture
@@ -137,6 +138,8 @@ class TestActivateCookerSuccessful:
         )
 
         assert response.status_code == status.HTTP_200_OK
+        assert response.json().get("success") is True
+        assert response.json().get("message") == SuccessMessageEnum.ACCOUNT_ACTIVATED
 
         user = CookerModel.objects.get(phone=phone)
         assert user.is_activated is True
@@ -179,6 +182,9 @@ class TestActivateCookerFailed:
         )
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.json().get("success") is False
+        assert response.json().get("error").get("code") == ErrorCodeEnum.OTP_INVALID
+        assert response.json().get("error").get("message") == ErrorMessageEnum.INVALID_OTP_CODE
 
         user = CookerModel.objects.get(phone=phone)
         assert user.is_activated is False

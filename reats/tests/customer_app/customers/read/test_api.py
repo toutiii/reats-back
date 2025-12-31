@@ -29,19 +29,20 @@ def test_get_existing_customer_data(
     )
     assert response.status_code == status.HTTP_200_OK
     assert response.json() == {
+        "success": True,
         "data": {
             "personal_infos_section": {
-                "data": {
-                    "firstname": "Adam",
-                    "lastname": "Smith",
-                    "phone": "0700000003",
-                    "photo": ANY,
-                },
-                "title": "personal_infos",
+                "id": 3,
+                "firstname": "Adam",
+                "lastname": "Smith",
+                "phone": "+33700000003",
+                "photo": ANY,
+                "is_activated": True,
+                "stripe_id": ANY,
+                "is_deleted": False,
             }
         },
-        "ok": True,
-        "status_code": 200,
+        "message": "Operation successful",
     }
 
 
@@ -58,5 +59,5 @@ def test_get_missing_customer_data(
         **auth_headers,
     )
     assert response.status_code == status.HTTP_404_NOT_FOUND
-    assert response.json().get("ok") is False
+    assert response.json().get("success") is False
     assert response.json().get("data") is None

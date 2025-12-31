@@ -188,6 +188,10 @@ class StandardizedResponseMixin:
             if message == "Given token not valid for any token type":
                 message = ErrorMessageEnum.TOKEN_NOT_VALID
 
+        if response.status_code == status.HTTP_404_NOT_FOUND:
+            code = ErrorCodeEnum.NOT_FOUND
+            message = ErrorMessageEnum.NOT_FOUND
+
         if response.status_code == status.HTTP_400_BAD_REQUEST:
             code = ErrorCodeEnum.VALIDATION_ERROR
             message = ErrorMessageEnum.VALIDATION_FAILED

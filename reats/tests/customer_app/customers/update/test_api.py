@@ -15,6 +15,7 @@ from freezegun import freeze_time
 from PIL import Image
 from rest_framework import status
 from rest_framework.test import APIClient
+from utils.enums import ErrorCodeEnum
 
 
 @pytest.fixture
@@ -323,7 +324,7 @@ FhxtAirMySNzId/rIu6k6wPIqyziXjh0DBu0eI4flX3CJe1In0UfX9oqcFuw+VbY
                 **wrong_auth_header,
             )
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
-        assert response.json().get("error_code") == "token_not_valid"
+        assert response.json().get("error").get("code") == ErrorCodeEnum.TOKEN_NOT_VALID
 
 
 @pytest.mark.django_db
@@ -366,4 +367,4 @@ ct4oFdWCTtEg1i4CV0LS43lOnu1Gv168nOvqc-WFXqMMNJnT88Ruz1St96KbpPw0m6K
             **expired_auth_header,
         )
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
-        assert response.json().get("error_code") == "token_not_valid"
+        assert response.json().get("error").get("code") == ErrorCodeEnum.TOKEN_NOT_VALID
