@@ -2,6 +2,7 @@ import pytest
 from core_app.models import CustomerModel
 from rest_framework import status
 from rest_framework.test import APIClient
+from utils.enums import SuccessMessageEnum
 
 
 class TestReadAddressesSuccess:
@@ -29,8 +30,8 @@ class TestReadAddressesSuccess:
 
         assert response.status_code == status.HTTP_200_OK
         assert response.json() == {
-            "ok": True,
-            "status_code": 200,
+            "success": True,
+            "message": SuccessMessageEnum.OPERATION_SUCCESSFUL,
             "data": [
                 {
                     "id": 1,

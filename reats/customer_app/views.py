@@ -317,12 +317,36 @@ class AddressView(StandardizedResponseMixin, ModelViewSet):
         instance: AddressModel = self.get_object()
         instance.is_enabled = False
         instance.save()
-
-        return self.success(message="Address deleted successfully")
+        return self.success(message=SuccessMessageEnum.OPERATION_SUCCESSFUL, status_code=status.HTTP_200_OK)
 
     def list(self, request, *args, **kwargs) -> Response:
         self.queryset = self.queryset.filter(customer__id=request.user.pk).filter(is_enabled=True)
-        return super().list(request, *args, **kwargs)
+        response = super().list(request, *args, **kwargs)
+        return self.success(response.data)
+
+    def create(self, request, *args, **kwargs):
+        try:
+            response = super().create(request, *args, **kwargs)
+            return self.success(response.data, status_code=status.HTTP_201_CREATED)
+        except IntegrityError as err:
+            logger.error(f"Address creation failed- duplicate address: {err}")
+            return self.error(
+                message=ErrorMessageEnum.ADDRESS_ALREADY_EXISTS,
+                code=ErrorCodeEnum.ALREADY_EXISTS,
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+    def update(self, request, *args, **kwargs) -> Response:
+        try:
+            response = super().update(request, *args, **kwargs)
+            return self.success(response.data, status_code=status.HTTP_200_OK)
+        except IntegrityError as err:
+            logger.error(f"Address update failed- duplicate address: {err}")
+            return self.error(
+                message=ErrorMessageEnum.OPERATION_FAILED,
+                code=ErrorCodeEnum.UPDATE_FAILED,
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
 
 
 class DishView(ListModelMixin, GenericViewSet):

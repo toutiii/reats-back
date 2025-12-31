@@ -54,7 +54,8 @@ def test_update_address_success(
         **auth_headers,
     )
     assert response.status_code == status.HTTP_201_CREATED
-    assert response.json() == {"ok": True, "status_code": 201}
+    assert response.json().get("success") is True
+    assert isinstance(response.json().get("data"), dict)
 
     # Then update the address
     update_response = client.put(
@@ -66,7 +67,8 @@ def test_update_address_success(
     )
 
     assert update_response.status_code == status.HTTP_200_OK
-    assert update_response.json() == {"ok": True, "status_code": 200}
+    assert update_response.json().get("success") is True
+    assert isinstance(update_response.json().get("data"), dict)
 
     new_address = model_to_dict(AddressModel.objects.latest("pk"))
     del new_address["id"]

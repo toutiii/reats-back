@@ -5,7 +5,7 @@ from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from freezegun import freeze_time
 from rest_framework import status
 from rest_framework.test import APIClient
-from utils.enums import ErrorCodeEnum, ErrorMessageEnum
+from utils.enums import ErrorCodeEnum, ErrorMessageEnum, SuccessMessageEnum
 
 
 @pytest.fixture
@@ -56,7 +56,8 @@ def test_delete_address_success(
         **auth_headers,
     )
     assert first_create_response.status_code == status.HTTP_201_CREATED
-    assert first_create_response.json().get("ok") is True
+    assert first_create_response.json().get("success") is True
+    assert isinstance(first_create_response.json().get("data"), dict)
 
     first_address = AddressModel.objects.latest("pk")
 
@@ -68,7 +69,9 @@ def test_delete_address_success(
         **auth_headers,
     )
     assert second_create_response.status_code == status.HTTP_201_CREATED
-    assert second_create_response.json().get("ok") is True
+    assert second_create_response.json().get("success") is True
+    assert isinstance(second_create_response.json().get("data"), dict)
+
     second_address = AddressModel.objects.latest("pk")
 
     # Then we check that the customer has both addresses
@@ -82,6 +85,7 @@ def test_delete_address_success(
     )
     assert delete_response.status_code == status.HTTP_200_OK
     assert delete_response.json().get("success") is True
+    assert delete_response.json().get("message") == SuccessMessageEnum.OPERATION_SUCCESSFUL
 
     # Then we check that the 2nd address is not in the database anymore
     second_address_dict = model_to_dict(AddressModel.objects.get(pk=second_address.pk))
@@ -141,7 +145,8 @@ def test_delete_customer_will_also_delete_his_addresses(
         **auth_headers,
     )
     assert first_create_response.status_code == status.HTTP_201_CREATED
-    assert first_create_response.json().get("ok") is True
+    assert first_create_response.json().get("success") is True
+    assert isinstance(first_create_response.json().get("data"), dict)
 
     first_address = AddressModel.objects.latest("pk")
 
@@ -153,7 +158,8 @@ def test_delete_customer_will_also_delete_his_addresses(
         **auth_headers,
     )
     assert second_create_response.status_code == status.HTTP_201_CREATED
-    assert second_create_response.json().get("ok") is True
+    assert second_create_response.json().get("success") is True
+    assert isinstance(second_create_response.json().get("data"), dict)
 
     second_address = AddressModel.objects.latest("pk")
 
@@ -213,4 +219,5 @@ class TestDeleteAddressFailedWithExpiredToken:
             )
             assert response.status_code == status.HTTP_401_UNAUTHORIZED
             assert response.json().get("success") is False
-            assert response.json().get("error").get("code") == "token_not_valid"
+            assert response.json().get("error").get("code") == ErrorCodeEnum.TOKEN_NOT_VALID
+            assert response.json().get("error").get("message") == ErrorMessageEnum.TOKEN_NOT_VALID

@@ -56,7 +56,10 @@ class ErrorCodeEnum(str, Enum):
     USER_LOGIN_FAILED = "USER_LOGIN_FAILED"
     TOKEN_NOT_VALID = "token_not_valid"
     UNAUTHORIZED = "UNAUTHORIZED"
+    ALREADY_EXISTS = "ALREADY_EXISTS"
     USER_ALREADY_EXISTS = "USER_ALREADY_EXISTS"
+    UPDATE_FAILED = "UPDATE_FAILED"
+
     NOT_FOUND = "NOT_FOUND"
     PERMISSION_DENIED = "PERMISSION_DENIED"
 
@@ -80,3 +83,5 @@ class ErrorMessageEnum(str, Enum):
     PERMISSION_DENIED = _("Permission denied")
     NOT_FOUND = _("Resource not found")
     CUSTOMER_ALREADY_EXISTS = _("Customer already exists")
+    ADDRESS_ALREADY_EXISTS = _("Address already exists")
+    OPERATION_FAILED = _("Operation failed")
