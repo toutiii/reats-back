@@ -4,49 +4,58 @@ on:
   push:
     branches:
       - develop
+      - infra/improve-fix-dev-deployment-issues
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
 
     env:
       AWS_REGION: ${{ secrets.AWS_REGION }}
-      AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
       AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
-      ECR_REPOSITORY: "reats/django"
-      ECS_CLUSTER: "reats-dev-cluster"
-      ECS_SERVICE: "reats-dev-ecs-service"
-      ECS_TASK_DEFINITION: "reats-dev-task"
-      CONTAINER_NAME: "django_app"
+      ECR_REPOSITORY: reats/django
+      ECS_CLUSTER: reats-dev-cluster
+      ECS_SERVICE: reats-dev-ecs-service
+      TASKDEF_TEMPLATE: .aws/ecs/task-definition-dev.json
+      CONTAINER_NAME: django_app
 
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: ${{ env.AWS_REGION }}
 
-      - name: Log in to Amazon ECR
-        run: |
-          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+      - name: Login to ECR
+        uses: aws-actions/amazon-ecr-login@v2
+        id: ecr
 
-      - name: Build and Tag Docker Image
+      - name: Build, tag, and push image (immutable tag)
+        id: build
         run: |
-          IMAGE_TAG=$(date +'%Y%m%d-%H%M%S')
-          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
-          docker build -t $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:$IMAGE_TAG .
-          docker tag $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:$IMAGE_TAG \
-                     $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:latest
+          IMAGE_TAG=${GITHUB_SHA}
+          IMAGE_URI=${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${IMAGE_TAG}
 
-      - name: Push Docker Image to ECR
-        run: |
-          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:$IMAGE_TAG
-          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:latest
+          docker build -t "$IMAGE_URI" .
+          docker push "$IMAGE_URI"
 
-      - name: Deploy to ECS
-        run: |
-          aws ecs update-service --cluster $ECS_CLUSTER --service $ECS_SERVICE --force-new-deployment
+          echo "image=$IMAGE_URI" >> $GITHUB_OUTPUT
+
+      - name: Render task definition (inject new image)
+        id: render
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ${{ env.TASKDEF_TEMPLATE }}
+          container-name: ${{ env.CONTAINER_NAME }}
+          image: ${{ steps.build.outputs.image }}
+
+      - name: Deploy task definition to ECS service
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.render.outputs.task-definition }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          service: ${{ env.ECS_SERVICE }}
+          wait-for-service-stability: true
