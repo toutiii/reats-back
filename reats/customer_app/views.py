@@ -349,9 +349,9 @@ class AddressView(StandardizedResponseMixin, ModelViewSet):
             )
 
 
-class DishView(ListModelMixin, GenericViewSet):
+class DishView(StandardizedResponseMixin, ListModelMixin, GenericViewSet):
     serializer_class = DishGETSerializer
-    renderer_classes = [CustomRendererWithData]
+    # renderer_classes = [CustomRendererWithData]
     parser_classes = [MultiPartParser]
     queryset = DishModel.objects.filter(category="dish").filter(is_deleted=False).all()
 
@@ -371,11 +371,10 @@ class DishView(ListModelMixin, GenericViewSet):
 
         if request_address_id is None:
             logger.error("search_address_id is mandatory to run a search")
-            return Response(
-                {
-                    "error": "search_address_id is mandatory to run a search",
-                },
-                status=status.HTTP_400_BAD_REQUEST,
+            return self.error(
+                message="search_address_id is mandatory to run a search",
+                code=ErrorCodeEnum.MISSING_PARAMETERS,
+                status_code=status.HTTP_400_BAD_REQUEST,
             )
 
         if request_name is not None:
@@ -407,7 +406,8 @@ class DishView(ListModelMixin, GenericViewSet):
 
         if not closest_cookers_ids:
             self.queryset = DishModel.objects.none()
-            return super().list(request, *args, **kwargs)
+            response = super().list(request, *args, **kwargs)
+            return self.success(response.data)
 
         if request_delivery_mode is not None:
             if request_delivery_mode == "now":
@@ -440,7 +440,8 @@ class DishView(ListModelMixin, GenericViewSet):
         else:
             self.queryset = self.queryset.order_by("-cooker__acceptance_rate")
 
-        return super().list(request, *args, **kwargs)
+        response = super().list(request, *args, **kwargs)
+        return self.success(response.data)
 
 
 class DrinkView(ListModelMixin, GenericViewSet):

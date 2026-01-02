@@ -4,6 +4,7 @@ from rest_framework.serializers import CharField, ModelSerializer
 from utils.enums import OrderStatusEnum
 
 from .models import (
+    CookerModel,
     DishModel,
     DishRatingModel,
     DrinkModel,
@@ -26,8 +27,15 @@ class DrinkRatingSerializer(ModelSerializer):
         fields = ("rating", "comment")
 
 
+class SimpleCustomerSerializer(ModelSerializer):
+    class Meta:
+        model = CookerModel
+        fields = ("id", "firstname", "lastname", "acceptance_rate")
+
+
 class DishGETSerializer(ModelSerializer):
     ratings = DishRatingSerializer(many=True, read_only=True)
+    cooker = SimpleCustomerSerializer(read_only=True)
 
     class Meta:
         model = DishModel

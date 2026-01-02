@@ -22,7 +22,7 @@ from rest_framework.test import APIClient
             "search_address_id": "1",
         },
         {
-            "search_radius": "2",
+            "search_radius": 2,
             "search_address_id": "1",
         },
         {
@@ -57,9 +57,17 @@ class TestListDishesForCustomerNoResultsWithQueryParameterGivenByUser:
         )
         assert response.status_code == status.HTTP_200_OK
         mock_googlemaps_distance_matrix.assert_called_once()
-        if query_parameter.get("search_radius") == "2":
-            assert response.json().get("ok") is True
-            assert response.json().get("status_code") == status.HTTP_200_OK
+        if query_parameter.get("search_radius") == 2:
+            assert response.json().get("success") is True
+            # StandardizedResponseMixin doesn't send status_code in body for success usually, or does it?
+            # Based on CookerView tests, it sends {success: true, message: ..., data: ...}
+            # The existing tests checked for status_code in body.
+            # I will remove checks for status_code in body if they are there, or update them.
+            # Let's verify what StandardizedResponseMixin does.
+            # For now I will assume it DOES NOT send status_code in body for success, only for error maybe?
+            # Actually CookerView tests:
+            # assert response.json() == { "success": True, "message": ..., "data": ... }
+            # So I should remove status_code from expected results.
             assert response.json().get("data") == []
 
 
@@ -87,14 +95,14 @@ class TestListDishesForCustomerSuccessWithQueryParameterGivenByUser:
     def expected_data_when_name_in_query_parameter(self) -> list[dict]:
         return [
             {
-                "id": "5",
-                "ratings": "[]",
+                "id": 5,
+                "ratings": [],
                 "category": "dish",
                 "country": "Cameroun",
                 "description": "Test",
                 "name": "Poulet braisé",
-                "price": "11.0",
-                "photo": "https://some-url.com",
+                "price": 11.0,
+                "photo": "cookers/1/dishes/dish/poulet-braise.jpg",
                 "is_enabled": True,
                 "is_suitable_for_quick_delivery": False,
                 "is_suitable_for_scheduled_delivery": True,
@@ -106,14 +114,14 @@ class TestListDishesForCustomerSuccessWithQueryParameterGivenByUser:
                 },
             },
             {
-                "id": "6",
-                "ratings": "[]",
+                "id": 6,
+                "ratings": [],
                 "category": "dish",
                 "country": "Cameroun",
                 "description": "Test",
                 "name": "Poulet DG",
-                "price": "11.0",
-                "photo": "https://some-url.com",
+                "price": 11.0,
+                "photo": "cookers/1/dishes/dish/poulet-dg.jpg",
                 "is_enabled": True,
                 "is_suitable_for_quick_delivery": False,
                 "is_suitable_for_scheduled_delivery": False,
@@ -130,14 +138,14 @@ class TestListDishesForCustomerSuccessWithQueryParameterGivenByUser:
     def expected_data(self) -> list[dict]:
         return [
             {
-                "id": "8",
-                "ratings": "[]",
+                "id": 8,
+                "ratings": [],
                 "category": "dish",
                 "country": "Cameroun",
                 "description": "Test",
                 "name": "Ndolé Riz",
-                "price": "11.0",
-                "photo": "https://some-url.com",
+                "price": 11.0,
+                "photo": "cookers/1/dishes/dish/ndole-riz.jpg",
                 "is_enabled": True,
                 "is_suitable_for_quick_delivery": False,
                 "is_suitable_for_scheduled_delivery": False,
@@ -149,14 +157,14 @@ class TestListDishesForCustomerSuccessWithQueryParameterGivenByUser:
                 },
             },
             {
-                "id": "7",
-                "ratings": "[]",
+                "id": 7,
+                "ratings": [],
                 "category": "dish",
                 "country": "Nigeria",
                 "description": "Test",
                 "name": "Koki patate douce",
-                "price": "11.0",
-                "photo": "https://some-url.com",
+                "price": 11.0,
+                "photo": "cookers/1/dishes/dish/koki-patate-douce.jpg",
                 "is_enabled": True,
                 "is_suitable_for_quick_delivery": False,
                 "is_suitable_for_scheduled_delivery": False,
@@ -168,14 +176,14 @@ class TestListDishesForCustomerSuccessWithQueryParameterGivenByUser:
                 },
             },
             {
-                "id": "6",
-                "ratings": "[]",
+                "id": 6,
+                "ratings": [],
                 "category": "dish",
                 "country": "Cameroun",
                 "description": "Test",
                 "name": "Poulet DG",
-                "price": "11.0",
-                "photo": "https://some-url.com",
+                "price": 11.0,
+                "photo": "cookers/1/dishes/dish/poulet-dg.jpg",
                 "is_enabled": True,
                 "is_suitable_for_quick_delivery": False,
                 "is_suitable_for_scheduled_delivery": False,
@@ -187,14 +195,14 @@ class TestListDishesForCustomerSuccessWithQueryParameterGivenByUser:
                 },
             },
             {
-                "id": "5",
-                "ratings": "[]",
+                "id": 5,
+                "ratings": [],
                 "category": "dish",
                 "country": "Cameroun",
                 "description": "Test",
                 "name": "Poulet braisé",
-                "price": "11.0",
-                "photo": "https://some-url.com",
+                "price": 11.0,
+                "photo": "cookers/1/dishes/dish/poulet-braise.jpg",
                 "is_enabled": True,
                 "is_suitable_for_quick_delivery": False,
                 "is_suitable_for_scheduled_delivery": True,
@@ -206,14 +214,14 @@ class TestListDishesForCustomerSuccessWithQueryParameterGivenByUser:
                 },
             },
             {
-                "id": "4",
-                "ratings": "[]",
+                "id": 4,
+                "ratings": [],
                 "category": "dish",
                 "country": "Benin",
                 "description": "Test",
                 "name": "Okok manioc",
-                "price": "15.0",
-                "photo": "https://some-url.com",
+                "price": 15.0,
+                "photo": "cookers/1/dishes/dish/okok-manioc.jpg",
                 "is_enabled": True,
                 "is_suitable_for_quick_delivery": False,
                 "is_suitable_for_scheduled_delivery": False,
@@ -225,14 +233,14 @@ class TestListDishesForCustomerSuccessWithQueryParameterGivenByUser:
                 },
             },
             {
-                "id": "3",
-                "ratings": "[]",
+                "id": 3,
+                "ratings": [],
                 "category": "dish",
                 "country": "Cameroun",
                 "description": "Test",
                 "name": "Eru fufu",
-                "price": "15.0",
-                "photo": "https://some-url.com",
+                "price": 15.0,
+                "photo": "cookers/1/dishes/dish/eru-fufu.jpg",
                 "is_enabled": True,
                 "is_suitable_for_quick_delivery": True,
                 "is_suitable_for_scheduled_delivery": False,
@@ -244,14 +252,14 @@ class TestListDishesForCustomerSuccessWithQueryParameterGivenByUser:
                 },
             },
             {
-                "id": "2",
-                "ratings": "[]",
+                "id": 2,
+                "ratings": [],
                 "category": "dish",
                 "country": "Congo",
                 "description": "Test",
                 "name": "Gombo porc riz",
-                "price": "13.0",
-                "photo": "https://some-url.com",
+                "price": 13.0,
+                "photo": "cookers/1/dishes/dish/gombo-porc-riz.jpg",
                 "is_enabled": True,
                 "is_suitable_for_quick_delivery": False,
                 "is_suitable_for_scheduled_delivery": False,
@@ -284,8 +292,8 @@ class TestListDishesForCustomerSuccessWithQueryParameterGivenByUser:
         assert response.status_code == status.HTTP_200_OK
         mock_googlemaps_distance_matrix.assert_called_once()
 
-        assert response.json().get("ok") is True
-        assert response.json().get("status_code") == 200
+        assert response.json().get("success") is True
+        # assert response.json().get("status_code") == 200
 
         if "name" in query_parameter and "country" in query_parameter:
             diff = DeepDiff(
@@ -318,8 +326,12 @@ class TestListDishesForCustomerWithMissingSearchAddressId:
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert response.json() == {
-            "ok": False,
-            "status_code": status.HTTP_400_BAD_REQUEST,
+            "success": False,
+            "error": {
+                "message": "search_address_id is mandatory to run a search",
+                "code": "MISSING_PARAMETERS",
+                "details": {},
+            },
         }
 
 
@@ -332,18 +344,18 @@ class TestListDishesForCustomerWithMissingSearchAddressId:
                 "search_address_id": "1",
             },
             {
-                "ok": True,
-                "status_code": 200,
+                "success": True,
+                "message": "Operation successful",
                 "data": [
                     {
-                        "id": "3",
+                        "id": 3,
                         "category": "dish",
                         "country": "Cameroun",
                         "description": "Test",
                         "name": "Eru fufu",
-                        "price": "15.0",
-                        "ratings": "[]",
-                        "photo": "https://some-url.com",
+                        "price": 15.0,
+                        "ratings": [],
+                        "photo": "cookers/1/dishes/dish/eru-fufu.jpg",
                         "cooker": {
                             "acceptance_rate": 100.0,
                             "firstname": "toutii",
@@ -363,17 +375,17 @@ class TestListDishesForCustomerWithMissingSearchAddressId:
                 "search_address_id": "1",
             },
             {
-                "ok": True,
-                "status_code": 200,
+                "success": True,
+                "message": "Operation successful",
                 "data": [
                     {
-                        "id": "5",
+                        "id": 5,
                         "category": "dish",
                         "country": "Cameroun",
                         "description": "Test",
                         "name": "Poulet braisé",
-                        "price": "11.0",
-                        "photo": "https://some-url.com",
+                        "price": 11.0,
+                        "photo": "cookers/1/dishes/dish/poulet-braise.jpg",
                         "cooker": {
                             "acceptance_rate": 100.0,
                             "firstname": "test",
@@ -383,7 +395,7 @@ class TestListDishesForCustomerWithMissingSearchAddressId:
                         "is_enabled": True,
                         "is_suitable_for_quick_delivery": False,
                         "is_suitable_for_scheduled_delivery": True,
-                        "ratings": "[]",
+                        "ratings": [],
                     }
                 ],
             },
@@ -439,18 +451,18 @@ class TestListDishesWithDeliveryModeFilter:
                         },
                         "country": "Cameroun",
                         "description": "Test",
-                        "id": "5",
+                        "id": 5,
                         "is_enabled": True,
                         "is_suitable_for_quick_delivery": False,
                         "is_suitable_for_scheduled_delivery": True,
                         "name": "Poulet braisé",
-                        "photo": "https://some-url.com",
-                        "price": "11.0",
-                        "ratings": "[]",
+                        "photo": "cookers/1/dishes/dish/poulet-braise.jpg",
+                        "price": 11.0,
+                        "ratings": [],
                     }
                 ],
-                "ok": True,
-                "status_code": 200,
+                "success": True,
+                "message": "Operation successful",
             },
         ),
     ],
@@ -535,8 +547,8 @@ class TestListDishesOnlyReturnNonDeletedItems:
             data=query_parameter,
         )
         assert response.status_code == status.HTTP_200_OK
-        assert response.json().get("ok") is True
-        assert response.json().get("status_code") == status.HTTP_200_OK
+        assert response.json().get("success") is True
+        # assert response.json().get("status_code") == status.HTTP_200_OK
 
         for item in response.json().get("data"):
             assert item.get("is_enabled") is True
