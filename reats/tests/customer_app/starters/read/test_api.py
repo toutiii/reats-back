@@ -31,6 +31,8 @@ class TestListStartersForCustomerSuccess:
         )
         assert response.status_code == status.HTTP_200_OK
         assert response.json() == {
+            "success": True,
+            "message": "Operation successful",
             "data": [
                 {
                     "category": "starter",
@@ -42,18 +44,16 @@ class TestListStartersForCustomerSuccess:
                     },
                     "country": "Cameroun",
                     "description": "Test",
-                    "id": "1",
+                    "id": 1,
                     "is_enabled": True,
                     "name": "Beignets haricots",
-                    "photo": "https://some-url.com",
-                    "price": "10.0",
+                    "photo": "cookers/1/dishes/starter/beignets-haricots.jpg",
+                    "price": 10.0,
                     "is_suitable_for_quick_delivery": False,
                     "is_suitable_for_scheduled_delivery": False,
-                    "ratings": "[]",
+                    "ratings": [],
                 }
             ],
-            "ok": True,
-            "status_code": 200,
         }
 
 
@@ -81,8 +81,8 @@ class TestListStartersForCustomeFailedWithUnknownCookerId:
         )
         assert response.status_code == status.HTTP_200_OK
         assert response.json() == {
-            "ok": True,
-            "status_code": status.HTTP_200_OK,
+            "success": True,
+            "message": "Operation successful",
             "data": [],
         }
 
@@ -103,8 +103,8 @@ class TestListStartersForCustomerFailedWithoutCookerId:
         )
         assert response.status_code == status.HTTP_200_OK
         assert response.json() == {
-            "ok": True,
-            "status_code": status.HTTP_200_OK,
+            "success": True,
+            "message": "Operation successful",
             "data": [],
         }
 
@@ -142,8 +142,8 @@ class TestListStartersOnlyReturnNonDeletedItems:
             **auth_headers,
         )
         assert response.status_code == status.HTTP_200_OK
-        assert response.json().get("ok") is True
-        assert response.json().get("status_code") == status.HTTP_200_OK
+        assert response.json().get("success") is True
+        assert response.json().get("message") == "Operation successful"
 
         for item in response.json().get("data"):
             assert item.get("is_enabled") is True

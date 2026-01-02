@@ -3,6 +3,7 @@ from core_app.models import DishModel
 from deepdiff import DeepDiff
 from rest_framework import status
 from rest_framework.test import APIClient
+from utils.enums import SuccessMessageEnum
 
 
 class TestListDessertsForCustomerSuccess:
@@ -14,14 +15,14 @@ class TestListDessertsForCustomerSuccess:
     def expected_data(self) -> list[dict]:
         return [
             {
-                "id": "13",
-                "ratings": "[]",
+                "id": 13,
+                "ratings": [],
                 "category": "dessert",
                 "country": "France",
                 "description": "Gateau moelleux au chocolat",
                 "name": "part de gâteau au chocolat",
-                "price": "2.5",
-                "photo": "https://some-url.com",
+                "price": 2.5,
+                "photo": "cookers/1/dishes/dessert/gateau-chocolat.jpg",
                 "is_enabled": True,
                 "is_suitable_for_quick_delivery": False,
                 "is_suitable_for_scheduled_delivery": False,
@@ -33,14 +34,14 @@ class TestListDessertsForCustomerSuccess:
                 },
             },
             {
-                "id": "14",
-                "ratings": "[]",
+                "id": 14,
+                "ratings": [],
                 "category": "dessert",
                 "country": "France",
                 "description": "Recette maison de pain perdu au lait",
                 "name": "pain perdu",
-                "price": "2.5",
-                "photo": "https://some-url.com",
+                "price": 2.5,
+                "photo": "cookers/1/dishes/dessert/pain-perdu.jpeg",
                 "is_enabled": True,
                 "is_suitable_for_quick_delivery": False,
                 "is_suitable_for_scheduled_delivery": False,
@@ -52,14 +53,14 @@ class TestListDessertsForCustomerSuccess:
                 },
             },
             {
-                "id": "15",
-                "ratings": "[]",
+                "id": 15,
+                "ratings": [],
                 "category": "dessert",
                 "country": "France",
                 "description": "Cupcakes vanille vendu par 6",
                 "name": "Cupcakes vanille",
-                "price": "5.0",
-                "photo": "https://some-url.com",
+                "price": 5.0,
+                "photo": "cookers/1/dishes/dessert/cupcakes.jpeg",
                 "is_enabled": True,
                 "is_suitable_for_quick_delivery": False,
                 "is_suitable_for_scheduled_delivery": False,
@@ -71,14 +72,14 @@ class TestListDessertsForCustomerSuccess:
                 },
             },
             {
-                "id": "11",
-                "ratings": "[]",
+                "id": 11,
+                "ratings": [],
                 "category": "dessert",
                 "country": "Italie",
                 "description": "Tiramisu maison au spéculos",
                 "name": "Tiramisu spéculos",
-                "price": "5.0",
-                "photo": "https://some-url.com",
+                "price": 5.0,
+                "photo": "cookers/1/dishes/dessert/tiramisu-speculoos.jpg",
                 "is_enabled": True,
                 "is_suitable_for_quick_delivery": False,
                 "is_suitable_for_scheduled_delivery": False,
@@ -90,14 +91,14 @@ class TestListDessertsForCustomerSuccess:
                 },
             },
             {
-                "id": "12",
-                "ratings": "[]",
+                "id": 12,
+                "ratings": [],
                 "category": "dessert",
                 "country": "France",
                 "description": "Crème catalane",
                 "name": "Crème catalane",
-                "price": "6.0",
-                "photo": "https://some-url.com",
+                "price": 6.0,
+                "photo": "cookers/1/dishes/dessert/creme-catalane.jpg",
                 "is_enabled": True,
                 "is_suitable_for_quick_delivery": False,
                 "is_suitable_for_scheduled_delivery": False,
@@ -132,8 +133,8 @@ class TestListDessertsForCustomerSuccess:
             **auth_headers,
         )
         assert response.status_code == status.HTTP_200_OK
-        assert response.json().get("ok") is True
-        assert response.json().get("status_code") == status.HTTP_200_OK
+        assert response.json().get("success") is True
+        assert response.json().get("message") == SuccessMessageEnum.OPERATION_SUCCESSFUL.value
 
         diff = DeepDiff(response.json().get("data"), expected_data, ignore_order=True)
 
@@ -164,8 +165,8 @@ class TestListDessertsForCustomeFailedWithUnknownCookerId:
         )
         assert response.status_code == status.HTTP_200_OK
         assert response.json() == {
-            "ok": True,
-            "status_code": status.HTTP_200_OK,
+            "success": True,
+            "message": SuccessMessageEnum.OPERATION_SUCCESSFUL.value,
             "data": [],
         }
 
@@ -186,8 +187,8 @@ class TestListDessertsForCustomerFailedWithoutCookerId:
         )
         assert response.status_code == status.HTTP_200_OK
         assert response.json() == {
-            "ok": True,
-            "status_code": status.HTTP_200_OK,
+            "success": True,
+            "message": SuccessMessageEnum.OPERATION_SUCCESSFUL.value,
             "data": [],
         }
 
@@ -225,8 +226,8 @@ class TestListDessertsOnlyReturnNonDeletedItems:
             **auth_headers,
         )
         assert response.status_code == status.HTTP_200_OK
-        assert response.json().get("ok") is True
-        assert response.json().get("status_code") == status.HTTP_200_OK
+        assert response.json().get("success") is True
+        assert response.json().get("message") == SuccessMessageEnum.OPERATION_SUCCESSFUL.value
 
         for item in response.json().get("data"):
             assert item.get("is_enabled") is True

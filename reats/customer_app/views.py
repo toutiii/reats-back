@@ -21,7 +21,6 @@ from core_app.serializers import (
     OrderRatingSerializer,
 )
 from custom_renderers.renderers import (
-    CustomRendererWithData,
     CustomRendererWithoutData,
     DishesCountriesCustomRendererWithData,
     OrderCustomRendererWithData,
@@ -458,9 +457,8 @@ class DrinkView(StandardizedResponseMixin, ListModelMixin, GenericViewSet):
         return self.success(response.data)
 
 
-class DessertView(ListModelMixin, GenericViewSet):
+class DessertView(StandardizedResponseMixin, ListModelMixin, GenericViewSet):
     serializer_class = DishGETSerializer
-    renderer_classes = [CustomRendererWithData]
     parser_classes = [MultiPartParser]
     queryset = DishModel.objects.filter(category="dessert").filter(is_deleted=False).all()
 
@@ -482,12 +480,13 @@ class DessertView(ListModelMixin, GenericViewSet):
         else:
             self.queryset = self.queryset.order_by("-cooker__acceptance_rate")
 
-        return super().list(request, *args, **kwargs)
+        response = super().list(request, *args, **kwargs)
+        return self.success(response.data)
 
 
-class StarterView(ListModelMixin, GenericViewSet):
+class StarterView(StandardizedResponseMixin, ListModelMixin, GenericViewSet):
     serializer_class = DishGETSerializer
-    renderer_classes = [CustomRendererWithData]
+    # renderer_classes = [CustomRendererWithData]
     parser_classes = [MultiPartParser]
     queryset = DishModel.objects.filter(category="starter").filter(is_deleted=False).all()
 
@@ -507,7 +506,8 @@ class StarterView(ListModelMixin, GenericViewSet):
         if request_cooker_id is None and not request_cooker_ids:
             self.queryset = DishModel.objects.none()
 
-        return super().list(request, *args, **kwargs)
+        response = super().list(request, *args, **kwargs)
+        return self.success(response.data)
 
 
 class OrderView(
