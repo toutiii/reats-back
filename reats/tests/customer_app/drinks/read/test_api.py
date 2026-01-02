@@ -3,6 +3,7 @@ from core_app.models import DrinkModel
 from deepdiff import DeepDiff
 from rest_framework import status
 from rest_framework.test import APIClient
+from utils.enums import SuccessMessageEnum
 
 
 class TestListDrinksForCustomerSuccess:
@@ -14,7 +15,7 @@ class TestListDrinksForCustomerSuccess:
     def expected_data(self) -> list[dict]:
         return [
             {
-                "capacity": "1",
+                "capacity": 1,
                 "cooker": {
                     "acceptance_rate": 100.0,
                     "firstname": "test",
@@ -23,18 +24,18 @@ class TestListDrinksForCustomerSuccess:
                 },
                 "country": "Sénégal",
                 "description": "Bissap maison",
-                "id": "1",
+                "id": 1,
                 "is_enabled": True,
                 "name": "Bissap",
-                "photo": "https://some-url.com",
-                "price": "3.5",
+                "photo": "cookers/1/drinks/bissap.jpg",
+                "price": 3.5,
                 "unit": "liter",
                 "is_suitable_for_quick_delivery": False,
                 "is_suitable_for_scheduled_delivery": False,
-                "ratings": "[]",
+                "ratings": [],
             },
             {
-                "capacity": "75",
+                "capacity": 75,
                 "cooker": {
                     "acceptance_rate": 100.0,
                     "firstname": "test",
@@ -43,15 +44,15 @@ class TestListDrinksForCustomerSuccess:
                 },
                 "country": "Cameroun",
                 "description": "Gingembre maison",
-                "id": "2",
+                "id": 2,
                 "is_enabled": True,
                 "name": "Gingembre",
-                "photo": "https://some-url.com",
-                "price": "5.0",
+                "photo": "cookers/1/drinks/gingembre.jpg",
+                "price": 5.0,
                 "unit": "centiliters",
                 "is_suitable_for_quick_delivery": False,
                 "is_suitable_for_scheduled_delivery": False,
-                "ratings": "[]",
+                "ratings": [],
             },
         ]
 
@@ -74,8 +75,8 @@ class TestListDrinksForCustomerSuccess:
             **auth_headers,
         )
         assert response.status_code == status.HTTP_200_OK
-        assert response.json().get("ok") is True
-        assert response.json().get("status_code") == status.HTTP_200_OK
+        assert response.json().get("success") is True
+        assert response.json().get("message") == SuccessMessageEnum.OPERATION_SUCCESSFUL.value
         diff = DeepDiff(response.json().get("data"), expected_data, ignore_order=True)
         assert not diff
 
@@ -104,8 +105,8 @@ class TestListDrinksForCustomeFailedWithUnknownCookerId:
         )
         assert response.status_code == status.HTTP_200_OK
         assert response.json() == {
-            "ok": True,
-            "status_code": status.HTTP_200_OK,
+            "success": True,
+            "message": SuccessMessageEnum.OPERATION_SUCCESSFUL.value,
             "data": [],
         }
 
@@ -125,9 +126,9 @@ class TestListDrinksForCustomerFailedWithoutCookerId:
         )
         assert response.status_code == status.HTTP_200_OK
         assert response.json() == {
-            "ok": True,
-            "status_code": status.HTTP_200_OK,
+            "success": True,
             "data": [],
+            "message": SuccessMessageEnum.OPERATION_SUCCESSFUL.value,
         }
 
 
@@ -159,8 +160,8 @@ class TestListDrinksOnlyReturnNonDeletedItems:
             **auth_headers,
         )
         assert response.status_code == status.HTTP_200_OK
-        assert response.json().get("ok") is True
-        assert response.json().get("status_code") == status.HTTP_200_OK
+        assert response.json().get("success") is True
+        assert response.json().get("message") == SuccessMessageEnum.OPERATION_SUCCESSFUL.value
 
         for item in response.json().get("data"):
             assert item.get("is_enabled") is True

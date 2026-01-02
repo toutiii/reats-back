@@ -48,6 +48,7 @@ class DishGETSerializer(ModelSerializer):
 
 class DrinkGETSerializer(ModelSerializer):
     ratings = DrinkRatingSerializer(many=True, read_only=True)
+    cooker = SimpleCustomerSerializer(read_only=True)
 
     class Meta:
         model = DrinkModel

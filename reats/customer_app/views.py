@@ -292,18 +292,6 @@ class AddressView(StandardizedResponseMixin, ModelViewSet):
     parser_classes = [MultiPartParser]
     permission_classes = [UserPermission]
 
-    # def get_renderers(self) -> list[BaseRenderer]:
-    #     if self.request.method in (
-    #         "POST",
-    #         "PUT",
-    #     ):
-    #         self.renderer_classes = [CustomRendererWithoutData]
-
-    #     if self.request.method == "GET":
-    #         self.renderer_classes = [AddressCustomRendererWithData]
-
-    #     return super().get_renderers()
-
     def get_serializer_class(self) -> type[BaseSerializer]:
         if self.request.method in ("POST", "PUT"):
             self.serializer_class = AddressSerializer
@@ -351,7 +339,6 @@ class AddressView(StandardizedResponseMixin, ModelViewSet):
 
 class DishView(StandardizedResponseMixin, ListModelMixin, GenericViewSet):
     serializer_class = DishGETSerializer
-    # renderer_classes = [CustomRendererWithData]
     parser_classes = [MultiPartParser]
     queryset = DishModel.objects.filter(category="dish").filter(is_deleted=False).all()
 
@@ -444,9 +431,8 @@ class DishView(StandardizedResponseMixin, ListModelMixin, GenericViewSet):
         return self.success(response.data)
 
 
-class DrinkView(ListModelMixin, GenericViewSet):
+class DrinkView(StandardizedResponseMixin, ListModelMixin, GenericViewSet):
     serializer_class = DrinkGETSerializer
-    renderer_classes = [CustomRendererWithData]
     parser_classes = [MultiPartParser]
     queryset = DrinkModel.objects.filter(is_deleted=False).all()
 
@@ -468,7 +454,8 @@ class DrinkView(ListModelMixin, GenericViewSet):
         else:
             self.queryset = self.queryset.order_by("-cooker__acceptance_rate")
 
-        return super().list(request, *args, **kwargs)
+        response = super().list(request, *args, **kwargs)
+        return self.success(response.data)
 
 
 class DessertView(ListModelMixin, GenericViewSet):
