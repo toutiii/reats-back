@@ -16,7 +16,7 @@ from phonenumbers.phonenumberutil import NumberParseException
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.mixins import ListModelMixin, UpdateModelMixin
-from rest_framework.parsers import MultiPartParser
+from rest_framework.parsers import JSONParser, MultiPartParser
 from rest_framework.permissions import BasePermission
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
@@ -59,7 +59,7 @@ logger = logging.getLogger("watchtower-logger")
 
 
 class CookerView(StandardizedResponseMixin, ModelViewSet):
-    parser_classes = [MultiPartParser]
+    parser_classes = [JSONParser, MultiPartParser]
     queryset = CookerModel.objects.all()
 
     def get_permissions(self) -> list:
