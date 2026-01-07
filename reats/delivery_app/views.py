@@ -6,7 +6,6 @@ from custom_renderers.renderers import (
     CustomRendererWithoutData,
     DeliverCustomRendererWithData,
     DeliveryStatsCustomRendererWithData,
-    OrderCustomRendererWithData,
 )
 from customer_app.serializers import OrderGETSerializer
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -30,6 +29,7 @@ from utils.common import (
     send_otp,
     upload_image_to_s3,
 )
+from utils.custom_api_reponse import StandardizedResponseMixin
 from utils.custom_permissions import CustomAPIKeyPermission, UserPermission
 from utils.enums import OrderStatusEnum
 
@@ -265,11 +265,10 @@ class DeliveryOrderStatsView(GenericViewSet, ListModelMixin):
         )
 
 
-class DeliveryHistoryView(ListModelMixin, GenericViewSet):
+class DeliveryHistoryView(StandardizedResponseMixin, ListModelMixin, GenericViewSet):
     permission_classes = [UserPermission]
     queryset = OrderModel.objects.all().filter(status=OrderStatusEnum.DELIVERED)
     parser_classes = [MultiPartParser]
-    renderer_classes = [OrderCustomRendererWithData]
     serializer_class = OrderGETSerializer
 
     def list(self, request, *args, **kwargs) -> Response:
@@ -283,4 +282,8 @@ class DeliveryHistoryView(ListModelMixin, GenericViewSet):
                 logger.error(err)
                 self.queryset = OrderModel.objects.none()
 
-        return super().list(request, *args, **kwargs)
+        response = super().list(request, *args, **kwargs)
+        return self.success(
+            data=response.data,
+            status_code=status.HTTP_200_OK,
+        )

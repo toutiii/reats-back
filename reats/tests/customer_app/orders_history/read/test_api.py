@@ -4,7 +4,7 @@ from deepdiff import DeepDiff
 from freezegun import freeze_time
 from rest_framework import status
 from rest_framework.test import APIClient
-from utils.enums import OrderStatusEnum
+from utils.enums import OrderStatusEnum, SuccessMessageEnum
 
 
 @pytest.fixture
@@ -680,8 +680,8 @@ def test_orders_list_success_with_order_status_filter(
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json().get("ok") is True
-    assert response.json().get("status_code") == status.HTTP_200_OK
+    assert response.json().get("success") is True
+    assert response.json().get("message") == SuccessMessageEnum.OPERATION_SUCCESSFUL.value
 
     for order_item in response.json().get("data"):
         assert order_item.get("status") == order_status.value
@@ -710,8 +710,8 @@ def test_orders_list_success_with_dates_filter_when_some_orders_exist(
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json().get("ok") is True
-    assert response.json().get("status_code") == status.HTTP_200_OK
+    assert response.json().get("success") is True
+    assert response.json().get("message") == SuccessMessageEnum.OPERATION_SUCCESSFUL.value
     assert len(response.json().get("data")) > 0
 
 
@@ -738,8 +738,8 @@ def test_orders_list_success_with_dates_filter_when_no_orders_exist(
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json().get("ok") is True
-    assert response.json().get("status_code") == status.HTTP_200_OK
+    assert response.json().get("success") is True
+    assert response.json().get("message") == SuccessMessageEnum.OPERATION_SUCCESSFUL.value
     assert len(response.json().get("data")) == 0
 
 
@@ -1012,8 +1012,8 @@ def test_orders_list_success_with_multiple_filters(
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json().get("ok") is True
-    assert response.json().get("status_code") == status.HTTP_200_OK
+    assert response.json().get("success") is True
+    assert response.json().get("message") == SuccessMessageEnum.OPERATION_SUCCESSFUL.value
 
     diff = DeepDiff(response.json().get("data"), expected_data, ignore_order=True)
 

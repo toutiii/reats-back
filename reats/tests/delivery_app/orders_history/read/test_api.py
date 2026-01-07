@@ -3,6 +3,7 @@ from core_app.models import OrderModel
 from deepdiff import DeepDiff
 from rest_framework import status
 from rest_framework.test import APIClient
+from utils.enums import SuccessMessageEnum
 
 
 @pytest.fixture
@@ -380,8 +381,8 @@ def test_delivery_orders_history_list_success(
         **auth_headers,
     )
     assert response.status_code == status.HTTP_200_OK
-    assert response.json().get("ok") is True
-    assert response.json().get("status_code") == status.HTTP_200_OK
+    assert response.json().get("success") is True
+    assert response.json().get("message") == SuccessMessageEnum.OPERATION_SUCCESSFUL.value
     diff = DeepDiff(response.json().get("data"), expected_data, ignore_order=True)
     assert not diff
 

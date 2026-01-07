@@ -648,7 +648,7 @@ class OrderView(
         )
 
 
-class CustomerOrderHistoryView(ListModelMixin, GenericViewSet):
+class CustomerOrderHistoryView(StandardizedResponseMixin, ListModelMixin, GenericViewSet):
     permission_classes = [UserPermission]
     queryset = OrderModel.objects.all().filter(
         status__in=[
@@ -658,7 +658,6 @@ class CustomerOrderHistoryView(ListModelMixin, GenericViewSet):
         ]
     )
     parser_classes = [MultiPartParser]
-    renderer_classes = [OrderCustomRendererWithData]
     serializer_class = OrderGETSerializer
 
     def list(self, request, *args, **kwargs) -> Response:
@@ -668,16 +667,23 @@ class CustomerOrderHistoryView(ListModelMixin, GenericViewSet):
         self.queryset = self.queryset.filter(customer__id=request.user.pk).order_by("-modified")
 
         if start_date and end_date:
-            start_date_object = datetime.fromisoformat(start_date.replace("Z", "+00:00"))
-            end_date_object = datetime.fromisoformat(end_date.replace("Z", "+00:00"))
-            if start_date_object > end_date_object:
-                return Response(
-                    {
-                        "ok": False,
-                        "status_code": status.HTTP_400_BAD_REQUEST,
-                        "error": "Start date cannot be greater than end date",
-                    }
+            try:
+                start_date_object = datetime.fromisoformat(start_date.replace("Z", "+00:00"))
+                end_date_object = datetime.fromisoformat(end_date.replace("Z", "+00:00"))
+            except ValueError:
+                return self.error(
+                    message="Invalid date format",
+                    code=ErrorCodeEnum.VALIDATION_ERROR,
+                    status_code=status.HTTP_400_BAD_REQUEST,
                 )
+
+            if start_date_object > end_date_object:
+                return self.error(
+                    message="Start date cannot be greater than end date",
+                    code=ErrorCodeEnum.VALIDATION_ERROR,
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                )
+
             self.queryset = self.queryset.filter(
                 created__gte=start_date_object,
                 created__lte=end_date_object,
@@ -685,7 +691,12 @@ class CustomerOrderHistoryView(ListModelMixin, GenericViewSet):
         if order_status:
             self.queryset = self.queryset.filter(status=order_status)
 
-        return super().list(request, *args, **kwargs)
+        response = super().list(request, *args, **kwargs)
+
+        return self.success(
+            data=response.data,
+            status_code=status.HTTP_200_OK,
+        )
 
 
 class DishCountriesView(ListModelMixin, GenericViewSet):
