@@ -59,15 +59,6 @@ class TestListDishesForCustomerNoResultsWithQueryParameterGivenByUser:
         mock_googlemaps_distance_matrix.assert_called_once()
         if query_parameter.get("search_radius") == 2:
             assert response.json().get("success") is True
-            # StandardizedResponseMixin doesn't send status_code in body for success usually, or does it?
-            # Based on CookerView tests, it sends {success: true, message: ..., data: ...}
-            # The existing tests checked for status_code in body.
-            # I will remove checks for status_code in body if they are there, or update them.
-            # Let's verify what StandardizedResponseMixin does.
-            # For now I will assume it DOES NOT send status_code in body for success, only for error maybe?
-            # Actually CookerView tests:
-            # assert response.json() == { "success": True, "message": ..., "data": ... }
-            # So I should remove status_code from expected results.
             assert response.json().get("data") == []
 
 
