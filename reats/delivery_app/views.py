@@ -3,8 +3,6 @@ from typing import Type, Union
 
 from core_app.models import DeliverModel, OrderModel
 from custom_renderers.renderers import (
-    CustomRendererWithoutData,
-    DeliverCustomRendererWithData,
     DeliveryStatsCustomRendererWithData,
 )
 from customer_app.serializers import OrderGETSerializer
@@ -17,7 +15,6 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.mixins import ListModelMixin
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import BasePermission
-from rest_framework.renderers import BaseRenderer
 from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
@@ -31,14 +28,14 @@ from utils.common import (
 )
 from utils.custom_api_reponse import StandardizedResponseMixin
 from utils.custom_permissions import CustomAPIKeyPermission, UserPermission
-from utils.enums import OrderStatusEnum
+from utils.enums import ErrorCodeEnum, ErrorMessageEnum, OrderStatusEnum
 
 from .serializers import DeliverGETSerializer, DeliverSerializer
 
 logger = logging.getLogger("watchtower-logger")
 
 
-class DeliverView(ModelViewSet):
+class DeliverView(StandardizedResponseMixin, ModelViewSet):
     parser_classes = [MultiPartParser]
     queryset = DeliverModel.objects.all()
 
@@ -50,15 +47,6 @@ class DeliverView(ModelViewSet):
             self.serializer_class = DeliverGETSerializer
 
         return super().get_serializer_class()
-
-    def get_renderers(self) -> list[BaseRenderer]:
-        if self.request.method in ("POST", "PATCH", "DELETE"):
-            self.renderer_classes = [CustomRendererWithoutData]
-
-        if self.request.method == "GET":
-            self.renderer_classes = [DeliverCustomRendererWithData]
-
-        return super().get_renderers()
 
     def get_permissions(self) -> list:
         permission_classes: list[Type[BasePermission]] = []
@@ -75,51 +63,70 @@ class DeliverView(ModelViewSet):
         return [permission() for permission in permission_classes]
 
     def perform_create(self, serializer: BaseSerializer) -> None:
-        try:
-            super().perform_create(serializer)
-        except IntegrityError as err:
-            logger.error(err)
-            raise ValidationError("Integrity error occurred during customer creation.")
-
+        super().perform_create(serializer)
         send_otp(serializer.validated_data.get("phone"))
 
-    def partial_update(self, request, *args, **kwargs) -> Response:
-        kwargs.pop("pk")  # pk is unexpected in parent's partial_update method
-        customer: DeliverModel = self.get_object()
-        old_photo_key: str = customer.photo
-        new_photo_key = None
-
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
         try:
-            self.request.FILES["photo"]
-        except KeyError:
-            pass
-        else:
-            new_photo_key = (
-                "delivers" + "/" + str(customer.pk) + "/" + "profile_pics" + "/" + self.request.FILES["photo"].name
+            self.perform_create(serializer)
+            headers = self.get_success_headers(serializer.data)
+            return self.success(data=serializer.data, status_code=status.HTTP_201_CREATED, headers=headers)
+        except IntegrityError as err:
+            logger.error(f"Deliver creation failed - duplicate phone number: {err}")
+            return self.error(
+                message=ErrorMessageEnum.CUSTOMER_ALREADY_EXISTS,
+                code=ErrorCodeEnum.USER_ALREADY_EXISTS,
+                status_code=status.HTTP_400_BAD_REQUEST,
             )
 
-        if new_photo_key is not None:
-            upload_image_to_s3(self.request.FILES["photo"], new_photo_key)
-            customer.photo = new_photo_key
-            customer.save()
+    def partial_update(self, request, *args, **kwargs) -> Response:
+        try:
+            instance = self.get_object()
+            old_photo_key = instance.photo
+            new_photo_key = None
 
-            if not old_photo_key.endswith("default-profile-pic.jpg"):
-                if old_photo_key != new_photo_key:
+            # Gestion de la photo
+            if "photo" in request.FILES:
+                new_photo_key = f"delivers/{instance.pk}/profile_pics/{request.FILES['photo'].name}"
+                upload_image_to_s3(request.FILES["photo"], new_photo_key)
+                instance.photo = new_photo_key
+                instance.save()
+
+                if not old_photo_key.endswith("default-profile-pic.jpg") and old_photo_key != new_photo_key:
                     delete_s3_object(old_photo_key)
 
-        return super().partial_update(request, *args, **kwargs)
+            # Validation et mise à jour
+            serializer = self.get_serializer(instance, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            self.perform_update(serializer)
+
+            # Réponse standardisée
+            output_serializer = self.get_serializer(instance)
+            return self.success(data=output_serializer.data, status_code=status.HTTP_200_OK)
+
+        except ValidationError as e:
+            return self.error(
+                message=ErrorMessageEnum.VALIDATION_FAILED,
+                code=ErrorCodeEnum.VALIDATION_ERROR,
+                details=e.detail,
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+        except Exception as e:
+            logger.error(f"Error in partial_update: {e}")
+            return self.error(
+                message=ErrorMessageEnum.INTERNAL_SERVER_ERROR,
+                code=ErrorCodeEnum.INTERNAL_SERVER_ERROR,
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
     def destroy(self, request, *args, **kwargs) -> Response:
         instance: DeliverModel = self.get_object()
         instance.is_deleted = True
         instance.save()
 
-        return Response(
-            {
-                "ok": True,
-                "status_code": status.HTTP_200_OK,
-            }
-        )
+        return self.success(status_code=status.HTTP_200_OK)
 
     @action(methods=["post"], detail=False, url_path="otp-verify")
     def otp_verify(self, request) -> Response:
@@ -202,6 +209,12 @@ class DeliverView(ModelViewSet):
             return Response(status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
         return Response(status=status.HTTP_200_OK)
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+
+        return self.success(data=serializer.data, status_code=status.HTTP_200_OK)
 
 
 class DeliveryOrderStatsView(GenericViewSet, ListModelMixin):

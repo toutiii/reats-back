@@ -1,6 +1,7 @@
 import pytest
 from rest_framework import status
 from rest_framework.test import APIClient
+from utils.enums import SuccessMessageEnum
 
 
 @pytest.fixture
@@ -28,22 +29,20 @@ def test_get_existing_deliver_data(
     assert response.status_code == status.HTTP_200_OK
     assert response.json() == {
         "data": {
-            "personal_infos_section": {
-                "data": {
-                    "delivery_radius": 15,
-                    "town": "Evry-Courcouronnes",
-                    "delivery_vehicle": "bike",
-                    "firstname": "John test delivery " "man",
-                    "lastname": "DOE",
-                    "phone": "0700000001",
-                    "photo": "https://some-url.com",
-                    "siret": "00000000000000",
-                },
-                "title": "personal_infos",
-            }
+            "id": 1,
+            "delivery_radius": 15,
+            "town": "Evry-Courcouronnes",
+            "delivery_vehicle": "bike",
+            "firstname": "John test delivery " "man",
+            "lastname": "DOE",
+            "phone": "0700000001",
+            "photo": "https://some-url.com",
+            "siret": "00000000000000",
+            "is_deleted": False,
+            "is_online": False,
         },
-        "ok": True,
-        "status_code": 200,
+        "success": True,
+        "message": SuccessMessageEnum.OPERATION_SUCCESSFUL.value,
     }
 
 
@@ -60,5 +59,5 @@ def test_get_missing_deliver_data(
         **auth_headers,
     )
     assert response.status_code == status.HTTP_404_NOT_FOUND
-    assert response.json().get("ok") is False
+    assert response.json().get("success") is False
     assert response.json().get("data") is None
