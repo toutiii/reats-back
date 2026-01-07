@@ -4,7 +4,7 @@ from deepdiff import DeepDiff
 from freezegun import freeze_time
 from rest_framework import status
 from rest_framework.test import APIClient
-from utils.enums import OrderStatusEnum
+from utils.enums import OrderStatusEnum, SuccessMessageEnum
 
 
 @pytest.fixture
@@ -529,8 +529,8 @@ def test_orders_list_success(
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json().get("ok") == ok_value
-    assert response.json().get("status_code") == expected_status_code
+    assert response.json().get("success") == ok_value
+    assert response.json().get("message") == SuccessMessageEnum.OPERATION_SUCCESSFUL.value
 
     diff = DeepDiff(response.json().get("data"), expected_data, ignore_order=True)
 

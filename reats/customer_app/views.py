@@ -34,7 +34,6 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.mixins import CreateModelMixin, ListModelMixin, UpdateModelMixin
 from rest_framework.parsers import JSONParser, MultiPartParser
 from rest_framework.permissions import BasePermission
-from rest_framework.renderers import BaseRenderer
 from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
@@ -486,7 +485,6 @@ class DessertView(StandardizedResponseMixin, ListModelMixin, GenericViewSet):
 
 class StarterView(StandardizedResponseMixin, ListModelMixin, GenericViewSet):
     serializer_class = DishGETSerializer
-    # renderer_classes = [CustomRendererWithData]
     parser_classes = [MultiPartParser]
     queryset = DishModel.objects.filter(category="starter").filter(is_deleted=False).all()
 
@@ -511,6 +509,7 @@ class StarterView(StandardizedResponseMixin, ListModelMixin, GenericViewSet):
 
 
 class OrderView(
+    StandardizedResponseMixin,
     CreateModelMixin,
     ListModelMixin,
     UpdateModelMixin,
@@ -547,6 +546,13 @@ class OrderView(
         order_instance.stripe_payment_intent_secret = stripe_response["client_secret"]
         order_instance.save()
 
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return self.success(data=serializer.data, status_code=status.HTTP_201_CREATED, headers=headers)
+
     def perform_update(self, serializer: BaseSerializer) -> None:
         super().perform_update(serializer)
         order_instance: OrderModel = serializer.instance  # type: ignore
@@ -555,6 +561,17 @@ class OrderView(
         if current_order_instance.status == OrderStatusEnum.DRAFT:
             # We can update a payment intent only if it has not been paid yet.
             update_payment_intent(order_instance)
+
+    def update(self, request, *args, **kwargs):
+        super().update(request, *args, **kwargs)
+        instance = self.get_object()
+
+        if instance.status == OrderStatusEnum.DRAFT:
+            serializer = OrderSerializer(instance)
+        else:
+            serializer = OrderGETSerializer(instance)
+
+        return self.success(data=serializer.data)
 
     def partial_update(self, request, *args, **kwargs):
         instance: OrderModel = self.get_object()
@@ -572,17 +589,23 @@ class OrderView(
                 instance.transition_to(new_status)
             except ValueError as e:
                 logger.error(e)
-                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+                return self.error(
+                    message=str(e), code=ErrorCodeEnum.VALIDATION_ERROR, status_code=status.HTTP_400_BAD_REQUEST
+                )
             except Exception as e:
                 logger.error(e)
-                return Response(
-                    {"error": "An error occurred"},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                return self.error(
+                    message="An error occurred during status transition",
+                    code=ErrorCodeEnum.INTERNAL_SERVER_ERROR,
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
 
-        return super().partial_update(request, *args, **kwargs)
+        super().partial_update(request, *args, **kwargs)
+        instance.refresh_from_db()
+        serializer = OrderGETSerializer(instance)
 
-    def get_renderers(self) -> list[BaseRenderer]:
+        return self.success(data=serializer.data, message=SuccessMessageEnum.OPERATION_SUCCESSFUL)
+
         if self.request.method == "DELETE":
             self.renderer_classes = [CustomRendererWithoutData]
 
@@ -614,11 +637,15 @@ class OrderView(
         ]:
             logger.error(f"Invalid status {request_status}")
             self.queryset = OrderModel.objects.none()
-
-        if request_status is not None:
+        else:
             self.queryset = self.queryset.filter(status=request_status).order_by("-modified")
 
-        return super().list(request, *args, **kwargs)
+        queryset = self.filter_queryset(self.get_queryset())
+        serializer = self.get_serializer(queryset, many=True)
+
+        return self.success(
+            data=serializer.data, message=SuccessMessageEnum.OPERATION_SUCCESSFUL, status_code=status.HTTP_200_OK
+        )
 
 
 class CustomerOrderHistoryView(ListModelMixin, GenericViewSet):
@@ -693,10 +720,9 @@ class StripeWebhookView(GenericViewSet):
         return Response(status=status.HTTP_200_OK)
 
 
-class CustomerDishRatingView(CreateModelMixin, GenericViewSet):
+class CustomerDishRatingView(StandardizedResponseMixin, GenericViewSet):
     permission_classes = [UserPermission]
     parser_classes = [JSONParser]
-    renderer_classes = [CustomRendererWithoutData]
     serializer_class = BulkDishRatingSerializer
 
     def get_queryset(self):
@@ -707,33 +733,16 @@ class CustomerDishRatingView(CreateModelMixin, GenericViewSet):
         return DishRatingModel.objects.all()
 
     def create(self, request, *args, **kwargs):
-        """
-        Override create to handle custom logic from the serializer.
-        """
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
-        # Call the custom `create` method from the serializer
-        self.perform_create(serializer)
-
-        # Return a suitable response
-        return Response(
-            {"detail": "Dish ratings created successfully."},
-            status=status.HTTP_201_CREATED,
-        )
-
-    def perform_create(self, serializer):
-        """
-        Call the serializer's create method to handle data creation.
-        """
-        serializer.save()
+        serializer.save()  # Cela appelle create(), mais on ignore le retour
+        return self.success(message=SuccessMessageEnum.OPERATION_SUCCESSFUL, status_code=status.HTTP_201_CREATED)
 
 
-class CustomerDrinkRatingView(CreateModelMixin, GenericViewSet):
+class CustomerDrinkRatingView(StandardizedResponseMixin, GenericViewSet):
     permission_classes = [UserPermission]
     queryset = DrinkRatingModel.objects.all()
     parser_classes = [JSONParser]
-    renderer_classes = [CustomRendererWithoutData]
     serializer_class = BulkDrinkRatingSerializer
 
     def get_queryset(self):
@@ -744,31 +753,19 @@ class CustomerDrinkRatingView(CreateModelMixin, GenericViewSet):
         return DrinkRatingModel.objects.all()
 
     def create(self, request, *args, **kwargs):
-        """
-        Override create to handle custom logic from the serializer.
-        """
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
-        # Call the custom `create` method from the serializer
-        self.perform_create(serializer)
-
-        # Return a suitable response
-        return Response(
-            {"detail": "Dish ratings created successfully."},
-            status=status.HTTP_201_CREATED,
-        )
-
-    def perform_create(self, serializer):
-        """
-        Call the serializer's create method to handle data creation.
-        """
         serializer.save()
 
+        return self.success(message=SuccessMessageEnum.OPERATION_SUCCESSFUL, status_code=status.HTTP_201_CREATED)
 
-class CustomerOrderRatingView(UpdateModelMixin, GenericViewSet):
+
+class CustomerOrderRatingView(StandardizedResponseMixin, UpdateModelMixin, GenericViewSet):
     permission_classes = [UserPermission]
     queryset = OrderModel.objects.all()
     parser_classes = [JSONParser]
-    renderer_classes = [CustomRendererWithoutData]
     serializer_class = OrderRatingSerializer
+
+    def update(self, request, *args, **kwargs):
+        super().update(request, *args, **kwargs)
+        return self.success(message=SuccessMessageEnum.OPERATION_SUCCESSFUL)

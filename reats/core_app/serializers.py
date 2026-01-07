@@ -5,6 +5,7 @@ from utils.enums import OrderStatusEnum
 
 from .models import (
     CookerModel,
+    CustomerModel,
     DishModel,
     DishRatingModel,
     DrinkModel,
@@ -29,13 +30,19 @@ class DrinkRatingSerializer(ModelSerializer):
 
 class SimpleCustomerSerializer(ModelSerializer):
     class Meta:
+        model = CustomerModel
+        fields = ("id", "firstname", "lastname", "stripe_id")
+
+
+class SimpleCookerSerializer(ModelSerializer):
+    class Meta:
         model = CookerModel
         fields = ("id", "firstname", "lastname", "acceptance_rate")
 
 
 class DishGETSerializer(ModelSerializer):
     ratings = DishRatingSerializer(many=True, read_only=True)
-    cooker = SimpleCustomerSerializer(read_only=True)
+    cooker = SimpleCookerSerializer(read_only=True)
 
     class Meta:
         model = DishModel
@@ -48,7 +55,7 @@ class DishGETSerializer(ModelSerializer):
 
 class DrinkGETSerializer(ModelSerializer):
     ratings = DrinkRatingSerializer(many=True, read_only=True)
-    cooker = SimpleCustomerSerializer(read_only=True)
+    cooker = SimpleCookerSerializer(read_only=True)
 
     class Meta:
         model = DrinkModel
