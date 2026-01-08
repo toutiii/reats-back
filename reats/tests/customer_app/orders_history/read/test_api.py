@@ -4,7 +4,7 @@ from deepdiff import DeepDiff
 from freezegun import freeze_time
 from rest_framework import status
 from rest_framework.test import APIClient
-from utils.enums import OrderStatusEnum
+from utils.enums import OrderStatusEnum, SuccessMessageEnum
 
 
 @pytest.fixture
@@ -241,7 +241,12 @@ def expected_data() -> list[dict]:
                         "is_enabled": True,
                         "is_suitable_for_quick_delivery": False,
                         "is_suitable_for_scheduled_delivery": False,
-                        "cooker": 4,
+                        "cooker": {
+                            "id": 4,
+                            "firstname": "toutii",
+                            "lastname": "N",
+                            "acceptance_rate": 100.0,
+                        },
                     },
                     "dish_quantity": 2,
                 },
@@ -258,7 +263,12 @@ def expected_data() -> list[dict]:
                         "is_enabled": True,
                         "is_suitable_for_quick_delivery": False,
                         "is_suitable_for_scheduled_delivery": False,
-                        "cooker": 4,
+                        "cooker": {
+                            "id": 4,
+                            "firstname": "toutii",
+                            "lastname": "N",
+                            "acceptance_rate": 100.0,
+                        },
                     },
                     "dish_quantity": 1,
                 },
@@ -318,7 +328,12 @@ def expected_data() -> list[dict]:
                         "is_enabled": True,
                         "is_suitable_for_quick_delivery": False,
                         "is_suitable_for_scheduled_delivery": False,
-                        "cooker": 4,
+                        "cooker": {
+                            "id": 4,
+                            "firstname": "toutii",
+                            "lastname": "N",
+                            "acceptance_rate": 100.0,
+                        },
                     },
                     "dish_quantity": 2,
                 },
@@ -335,7 +350,12 @@ def expected_data() -> list[dict]:
                         "is_enabled": True,
                         "is_suitable_for_quick_delivery": False,
                         "is_suitable_for_scheduled_delivery": False,
-                        "cooker": 4,
+                        "cooker": {
+                            "id": 4,
+                            "firstname": "toutii",
+                            "lastname": "N",
+                            "acceptance_rate": 100.0,
+                        },
                     },
                     "dish_quantity": 1,
                 },
@@ -352,7 +372,12 @@ def expected_data() -> list[dict]:
                         "is_enabled": True,
                         "is_suitable_for_quick_delivery": False,
                         "is_suitable_for_scheduled_delivery": False,
-                        "cooker": 1,
+                        "cooker": {
+                            "id": 1,
+                            "firstname": "test",
+                            "lastname": "test",
+                            "acceptance_rate": 100.0,
+                        },
                     },
                     "dish_quantity": 1,
                 },
@@ -372,7 +397,12 @@ def expected_data() -> list[dict]:
                         "capacity": 75,
                         "is_suitable_for_quick_delivery": False,
                         "is_suitable_for_scheduled_delivery": False,
-                        "cooker": 1,
+                        "cooker": {
+                            "id": 1,
+                            "firstname": "test",
+                            "lastname": "test",
+                            "acceptance_rate": 100.0,
+                        },
                     },
                     "drink_quantity": 4,
                 }
@@ -431,7 +461,12 @@ def expected_data() -> list[dict]:
                         "is_enabled": True,
                         "is_suitable_for_quick_delivery": False,
                         "is_suitable_for_scheduled_delivery": False,
-                        "cooker": 4,
+                        "cooker": {
+                            "id": 4,
+                            "firstname": "toutii",
+                            "lastname": "N",
+                            "acceptance_rate": 100.0,
+                        },
                     },
                     "dish_quantity": 2,
                 },
@@ -448,7 +483,12 @@ def expected_data() -> list[dict]:
                         "is_enabled": True,
                         "is_suitable_for_quick_delivery": False,
                         "is_suitable_for_scheduled_delivery": False,
-                        "cooker": 4,
+                        "cooker": {
+                            "id": 4,
+                            "firstname": "toutii",
+                            "lastname": "N",
+                            "acceptance_rate": 100.0,
+                        },
                     },
                     "dish_quantity": 1,
                 },
@@ -508,7 +548,12 @@ def expected_data() -> list[dict]:
                         "is_enabled": True,
                         "is_suitable_for_quick_delivery": False,
                         "is_suitable_for_scheduled_delivery": False,
-                        "cooker": 4,
+                        "cooker": {
+                            "id": 4,
+                            "firstname": "toutii",
+                            "lastname": "N",
+                            "acceptance_rate": 100.0,
+                        },
                     },
                     "dish_quantity": 2,
                 },
@@ -525,7 +570,12 @@ def expected_data() -> list[dict]:
                         "is_enabled": True,
                         "is_suitable_for_quick_delivery": False,
                         "is_suitable_for_scheduled_delivery": False,
-                        "cooker": 4,
+                        "cooker": {
+                            "id": 4,
+                            "firstname": "toutii",
+                            "lastname": "N",
+                            "acceptance_rate": 100.0,
+                        },
                     },
                     "dish_quantity": 1,
                 },
@@ -630,8 +680,8 @@ def test_orders_list_success_with_order_status_filter(
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json().get("ok") is True
-    assert response.json().get("status_code") == status.HTTP_200_OK
+    assert response.json().get("success") is True
+    assert response.json().get("message") == SuccessMessageEnum.OPERATION_SUCCESSFUL.value
 
     for order_item in response.json().get("data"):
         assert order_item.get("status") == order_status.value
@@ -660,8 +710,8 @@ def test_orders_list_success_with_dates_filter_when_some_orders_exist(
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json().get("ok") is True
-    assert response.json().get("status_code") == status.HTTP_200_OK
+    assert response.json().get("success") is True
+    assert response.json().get("message") == SuccessMessageEnum.OPERATION_SUCCESSFUL.value
     assert len(response.json().get("data")) > 0
 
 
@@ -688,8 +738,8 @@ def test_orders_list_success_with_dates_filter_when_no_orders_exist(
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json().get("ok") is True
-    assert response.json().get("status_code") == status.HTTP_200_OK
+    assert response.json().get("success") is True
+    assert response.json().get("message") == SuccessMessageEnum.OPERATION_SUCCESSFUL.value
     assert len(response.json().get("data")) == 0
 
 
@@ -962,8 +1012,8 @@ def test_orders_list_success_with_multiple_filters(
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json().get("ok") is True
-    assert response.json().get("status_code") == status.HTTP_200_OK
+    assert response.json().get("success") is True
+    assert response.json().get("message") == SuccessMessageEnum.OPERATION_SUCCESSFUL.value
 
     diff = DeepDiff(response.json().get("data"), expected_data, ignore_order=True)
 

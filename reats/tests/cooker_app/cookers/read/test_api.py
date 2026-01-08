@@ -1,7 +1,7 @@
 import pytest
 from rest_framework import status
 from rest_framework.test import APIClient
-from utils.enums import SuccessMessageEnum
+from utils.enums import ErrorCodeEnum, ErrorMessageEnum, SuccessMessageEnum
 
 
 @pytest.fixture
@@ -65,7 +65,8 @@ def test_get_missing_cooker_data(
         follow=False,
         **auth_headers,
     )
-    assert response.status_code == status.HTTP_404_NOT_FOUND
+
     assert response.status_code == status.HTTP_404_NOT_FOUND
     assert response.json().get("success") is False
-    assert response.json().get("error").get("code") == "not_found"
+    assert response.json().get("error").get("code") == ErrorCodeEnum.NOT_FOUND
+    assert response.json().get("error").get("message") == ErrorMessageEnum.NOT_FOUND

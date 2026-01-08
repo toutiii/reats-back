@@ -21,9 +21,6 @@ from core_app.serializers import (
     OrderRatingSerializer,
 )
 from custom_renderers.renderers import (
-    AddressCustomRendererWithData,
-    CustomerCustomRendererWithData,
-    CustomRendererWithData,
     CustomRendererWithoutData,
     DishesCountriesCustomRendererWithData,
     OrderCustomRendererWithData,
@@ -37,7 +34,6 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.mixins import CreateModelMixin, ListModelMixin, UpdateModelMixin
 from rest_framework.parsers import JSONParser, MultiPartParser
 from rest_framework.permissions import BasePermission
-from rest_framework.renderers import BaseRenderer
 from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
@@ -67,7 +63,7 @@ from utils.distance_computer import (
     compute_distance,
     get_closest_cookers_ids_from_customer_search_address,
 )
-from utils.enums import OrderStatusEnum
+from utils.enums import ErrorCodeEnum, ErrorMessageEnum, OrderStatusEnum, SuccessMessageEnum
 
 from .serializers import (
     AddressGETSerializer,
@@ -84,7 +80,7 @@ from .serializers import (
 logger = logging.getLogger("watchtower-logger")
 
 
-class CustomerView(ModelViewSet):
+class CustomerView(StandardizedResponseMixin, ModelViewSet):
     parser_classes = [MultiPartParser]
     queryset = CustomerModel.objects.all()
 
@@ -96,15 +92,6 @@ class CustomerView(ModelViewSet):
             self.serializer_class = CustomerGETSerializer
 
         return super().get_serializer_class()
-
-    def get_renderers(self) -> list[BaseRenderer]:
-        if self.request.method in ("POST", "PATCH", "DELETE"):
-            self.renderer_classes = [CustomRendererWithoutData]
-
-        if self.request.method == "GET":
-            self.renderer_classes = [CustomerCustomRendererWithData]
-
-        return super().get_renderers()
 
     def get_permissions(self) -> list:
         permission_classes: list[Type[BasePermission]] = []
@@ -120,15 +107,30 @@ class CustomerView(ModelViewSet):
 
         return [permission() for permission in permission_classes]
 
-    def perform_create(self, serializer: BaseSerializer) -> None:
-        try:
-            super().perform_create(serializer)
-        except IntegrityError as err:
-            logger.error(err)
-            raise ValidationError("Integrity error occurred during customer creation.")
+    def list(self, request, *args, **kwargs):
+        response = super().list(request, *args, **kwargs)
+        return self.success(data=response.data, status_code=status.HTTP_200_OK)
 
+    def retrieve(self, request, *args, **kwargs):
+        response = super().retrieve(request, *args, **kwargs)
+        return self.success(data=response.data, status_code=status.HTTP_200_OK)
+
+    def perform_create(self, serializer: BaseSerializer) -> None:
+        super().perform_create(serializer)
         send_otp(serializer.validated_data.get("phone"))
         create_stripe_customer(serializer.validated_data, "@customer-app.com")
+
+    def create(self, request, *args, **kwargs):
+        try:
+            response = super().create(request, *args, **kwargs)
+            return self.success(data=response.data, status_code=status.HTTP_201_CREATED)
+        except IntegrityError as err:
+            logger.error(f"Customer creation failed- duplicate phone number: {err}")
+            return self.error(
+                message=ErrorMessageEnum.CUSTOMER_ALREADY_EXISTS,
+                code=ErrorCodeEnum.USER_ALREADY_EXISTS,
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
 
     def partial_update(self, request, *args, **kwargs) -> Response:
         kwargs.pop("pk")  # pk is unexpected in parent's partial_update method
@@ -161,12 +163,7 @@ class CustomerView(ModelViewSet):
         instance.is_deleted = True
         instance.save()
         delete_stripe_customer(instance.stripe_id)
-        return Response(
-            {
-                "ok": True,
-                "status_code": status.HTTP_200_OK,
-            }
-        )
+        return self.success(message=SuccessMessageEnum.ACCOUNT_DELETED, status_code=status.HTTP_200_OK)
 
     @action(methods=["post"], detail=False, url_path="otp-verify")
     def otp_verify(self, request) -> Response:
@@ -174,9 +171,13 @@ class CustomerView(ModelViewSet):
 
         if result:
             activate_user(CustomerModel, request.data)
-            return Response(status=status.HTTP_200_OK)
+            return self.success(message=SuccessMessageEnum.ACCOUNT_ACTIVATED, status_code=status.HTTP_200_OK)
 
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+        return self.error(
+            message=ErrorMessageEnum.INVALID_OTP_CODE,
+            code=ErrorCodeEnum.OTP_INVALID,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
 
     @action(methods=["post"], detail=False, url_path="otp/ask")
     def ask_otp(self, request) -> Response:
@@ -185,17 +186,25 @@ class CustomerView(ModelViewSet):
         try:
             e164_phone_format = format_phone(phone)
         except NumberParseException:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return self.error(
+                message=ErrorMessageEnum.PHONE_INVALID_FORMAT,
+                code=ErrorCodeEnum.PHONE_INVALID_FORMAT,
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
 
         try:
             CustomerModel.objects.get(phone=e164_phone_format)
         except CustomerModel.DoesNotExist:
             logger.error(f"Customer with phone {e164_phone_format} does not exist.")
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return self.error(
+                message=ErrorMessageEnum.USER_NOT_FOUND,
+                code=ErrorCodeEnum.USER_NOT_FOUND,
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
 
         send_otp(e164_phone_format)
 
-        return Response(status=status.HTTP_200_OK)
+        return self.success(message=SuccessMessageEnum.OTP_SENT, status_code=status.HTTP_200_OK)
 
     @action(methods=["post"], detail=False)
     def auth(self, request) -> Response:
@@ -203,29 +212,49 @@ class CustomerView(ModelViewSet):
 
         if phone is None:
             logger.info("Missing phone number")
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return self.error(
+                message=ErrorMessageEnum.PHONE_REQUIRED,
+                code=ErrorCodeEnum.PHONE_REQUIRED,
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
 
         try:
             e164_phone_format = format_phone(phone)
         except NumberParseException:
             logger.error("Wrong format for phone number")
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return self.error(
+                message=ErrorMessageEnum.PHONE_INVALID_FORMAT,
+                code=ErrorCodeEnum.PHONE_INVALID_FORMAT,
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
 
         try:
             customer: CustomerModel = CustomerModel.objects.get(phone=e164_phone_format)
         except CustomerModel.DoesNotExist:
             logger.error(f"Customer with phone {e164_phone_format} does not exist.")
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return self.error(
+                message=ErrorMessageEnum.USER_NOT_FOUND,
+                code=ErrorCodeEnum.USER_NOT_FOUND,
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
 
         if not customer.is_activated:
             logger.error(f"Customer with phone {e164_phone_format} is not activated.")
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return self.error(
+                message=ErrorMessageEnum.ACCOUNT_NOT_ACTIVATED,
+                code=ErrorCodeEnum.ACCOUNT_NOT_ACTIVATED,
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
 
         otp_response: Union[dict, None] = send_otp(e164_phone_format)
 
         if otp_response is None:
             logger.error(f"Failed to send an OTP to {e164_phone_format}")
-            return Response(status=status.HTTP_503_SERVICE_UNAVAILABLE)
+            return self.error(
+                message=ErrorMessageEnum.OTP_SEND_FAILED,
+                code=ErrorCodeEnum.OTP_SEND_FAILED,
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
 
         otp_response_status_code = (
             otp_response.get("MessageResponse", {}).get("Result", {}).get(e164_phone_format, {}).get("StatusCode")
@@ -234,7 +263,11 @@ class CustomerView(ModelViewSet):
         if otp_response_status_code != status.HTTP_200_OK:
             logger.error(f"Failed to send an OTP to {e164_phone_format}")
             logger.error(f"Expected {status.HTTP_200_OK} but got {otp_response_status_code} in otp response")
-            return Response(status=status.HTTP_503_SERVICE_UNAVAILABLE)
+            return self.error(
+                message=ErrorMessageEnum.OTP_SEND_FAILED,
+                code=ErrorCodeEnum.OTP_SEND_FAILED,
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
 
         otp_response_delivery_status = (
             otp_response.get("MessageResponse", {}).get("Result", {}).get(e164_phone_format, {}).get("DeliveryStatus")
@@ -243,27 +276,19 @@ class CustomerView(ModelViewSet):
         if otp_response_delivery_status != "SUCCESSFUL":
             logger.error(f"Failed to send an OTP to {e164_phone_format}")
             logger.error(f"Expected SUCCESSFUL but got {otp_response_delivery_status} in otp elivery status")
-            return Response(status=status.HTTP_503_SERVICE_UNAVAILABLE)
+            return self.error(
+                message=ErrorMessageEnum.OTP_SEND_FAILED,
+                code=ErrorCodeEnum.OTP_SEND_FAILED,
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
 
-        return Response(status=status.HTTP_200_OK)
+        return self.success(message=SuccessMessageEnum.OTP_SENT, status_code=status.HTTP_200_OK)
 
 
 class AddressView(StandardizedResponseMixin, ModelViewSet):
     queryset = AddressModel.objects.all()
     parser_classes = [MultiPartParser]
     permission_classes = [UserPermission]
-
-    def get_renderers(self) -> list[BaseRenderer]:
-        if self.request.method in (
-            "POST",
-            "PUT",
-        ):
-            self.renderer_classes = [CustomRendererWithoutData]
-
-        if self.request.method == "GET":
-            self.renderer_classes = [AddressCustomRendererWithData]
-
-        return super().get_renderers()
 
     def get_serializer_class(self) -> type[BaseSerializer]:
         if self.request.method in ("POST", "PUT"):
@@ -278,17 +303,40 @@ class AddressView(StandardizedResponseMixin, ModelViewSet):
         instance: AddressModel = self.get_object()
         instance.is_enabled = False
         instance.save()
-
-        return self.success(message="Address deleted successfully")
+        return self.success(message=SuccessMessageEnum.OPERATION_SUCCESSFUL, status_code=status.HTTP_200_OK)
 
     def list(self, request, *args, **kwargs) -> Response:
         self.queryset = self.queryset.filter(customer__id=request.user.pk).filter(is_enabled=True)
-        return super().list(request, *args, **kwargs)
+        response = super().list(request, *args, **kwargs)
+        return self.success(response.data)
+
+    def create(self, request, *args, **kwargs):
+        try:
+            response = super().create(request, *args, **kwargs)
+            return self.success(response.data, status_code=status.HTTP_201_CREATED)
+        except IntegrityError as err:
+            logger.error(f"Address creation failed- duplicate address: {err}")
+            return self.error(
+                message=ErrorMessageEnum.ADDRESS_ALREADY_EXISTS,
+                code=ErrorCodeEnum.ALREADY_EXISTS,
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+    def update(self, request, *args, **kwargs) -> Response:
+        try:
+            response = super().update(request, *args, **kwargs)
+            return self.success(response.data, status_code=status.HTTP_200_OK)
+        except IntegrityError as err:
+            logger.error(f"Address update failed- duplicate address: {err}")
+            return self.error(
+                message=ErrorMessageEnum.OPERATION_FAILED,
+                code=ErrorCodeEnum.UPDATE_FAILED,
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
 
 
-class DishView(ListModelMixin, GenericViewSet):
+class DishView(StandardizedResponseMixin, ListModelMixin, GenericViewSet):
     serializer_class = DishGETSerializer
-    renderer_classes = [CustomRendererWithData]
     parser_classes = [MultiPartParser]
     queryset = DishModel.objects.filter(category="dish").filter(is_deleted=False).all()
 
@@ -308,11 +356,10 @@ class DishView(ListModelMixin, GenericViewSet):
 
         if request_address_id is None:
             logger.error("search_address_id is mandatory to run a search")
-            return Response(
-                {
-                    "error": "search_address_id is mandatory to run a search",
-                },
-                status=status.HTTP_400_BAD_REQUEST,
+            return self.error(
+                message="search_address_id is mandatory to run a search",
+                code=ErrorCodeEnum.MISSING_PARAMETERS,
+                status_code=status.HTTP_400_BAD_REQUEST,
             )
 
         if request_name is not None:
@@ -344,7 +391,8 @@ class DishView(ListModelMixin, GenericViewSet):
 
         if not closest_cookers_ids:
             self.queryset = DishModel.objects.none()
-            return super().list(request, *args, **kwargs)
+            response = super().list(request, *args, **kwargs)
+            return self.success(response.data)
 
         if request_delivery_mode is not None:
             if request_delivery_mode == "now":
@@ -377,12 +425,12 @@ class DishView(ListModelMixin, GenericViewSet):
         else:
             self.queryset = self.queryset.order_by("-cooker__acceptance_rate")
 
-        return super().list(request, *args, **kwargs)
+        response = super().list(request, *args, **kwargs)
+        return self.success(response.data)
 
 
-class DrinkView(ListModelMixin, GenericViewSet):
+class DrinkView(StandardizedResponseMixin, ListModelMixin, GenericViewSet):
     serializer_class = DrinkGETSerializer
-    renderer_classes = [CustomRendererWithData]
     parser_classes = [MultiPartParser]
     queryset = DrinkModel.objects.filter(is_deleted=False).all()
 
@@ -404,12 +452,12 @@ class DrinkView(ListModelMixin, GenericViewSet):
         else:
             self.queryset = self.queryset.order_by("-cooker__acceptance_rate")
 
-        return super().list(request, *args, **kwargs)
+        response = super().list(request, *args, **kwargs)
+        return self.success(response.data)
 
 
-class DessertView(ListModelMixin, GenericViewSet):
+class DessertView(StandardizedResponseMixin, ListModelMixin, GenericViewSet):
     serializer_class = DishGETSerializer
-    renderer_classes = [CustomRendererWithData]
     parser_classes = [MultiPartParser]
     queryset = DishModel.objects.filter(category="dessert").filter(is_deleted=False).all()
 
@@ -431,12 +479,12 @@ class DessertView(ListModelMixin, GenericViewSet):
         else:
             self.queryset = self.queryset.order_by("-cooker__acceptance_rate")
 
-        return super().list(request, *args, **kwargs)
+        response = super().list(request, *args, **kwargs)
+        return self.success(response.data)
 
 
-class StarterView(ListModelMixin, GenericViewSet):
+class StarterView(StandardizedResponseMixin, ListModelMixin, GenericViewSet):
     serializer_class = DishGETSerializer
-    renderer_classes = [CustomRendererWithData]
     parser_classes = [MultiPartParser]
     queryset = DishModel.objects.filter(category="starter").filter(is_deleted=False).all()
 
@@ -456,10 +504,12 @@ class StarterView(ListModelMixin, GenericViewSet):
         if request_cooker_id is None and not request_cooker_ids:
             self.queryset = DishModel.objects.none()
 
-        return super().list(request, *args, **kwargs)
+        response = super().list(request, *args, **kwargs)
+        return self.success(response.data)
 
 
 class OrderView(
+    StandardizedResponseMixin,
     CreateModelMixin,
     ListModelMixin,
     UpdateModelMixin,
@@ -496,6 +546,13 @@ class OrderView(
         order_instance.stripe_payment_intent_secret = stripe_response["client_secret"]
         order_instance.save()
 
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return self.success(data=serializer.data, status_code=status.HTTP_201_CREATED, headers=headers)
+
     def perform_update(self, serializer: BaseSerializer) -> None:
         super().perform_update(serializer)
         order_instance: OrderModel = serializer.instance  # type: ignore
@@ -504,6 +561,17 @@ class OrderView(
         if current_order_instance.status == OrderStatusEnum.DRAFT:
             # We can update a payment intent only if it has not been paid yet.
             update_payment_intent(order_instance)
+
+    def update(self, request, *args, **kwargs):
+        super().update(request, *args, **kwargs)
+        instance = self.get_object()
+
+        if instance.status == OrderStatusEnum.DRAFT:
+            serializer = OrderSerializer(instance)
+        else:
+            serializer = OrderGETSerializer(instance)
+
+        return self.success(data=serializer.data)
 
     def partial_update(self, request, *args, **kwargs):
         instance: OrderModel = self.get_object()
@@ -521,17 +589,23 @@ class OrderView(
                 instance.transition_to(new_status)
             except ValueError as e:
                 logger.error(e)
-                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+                return self.error(
+                    message=str(e), code=ErrorCodeEnum.VALIDATION_ERROR, status_code=status.HTTP_400_BAD_REQUEST
+                )
             except Exception as e:
                 logger.error(e)
-                return Response(
-                    {"error": "An error occurred"},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                return self.error(
+                    message="An error occurred during status transition",
+                    code=ErrorCodeEnum.INTERNAL_SERVER_ERROR,
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
 
-        return super().partial_update(request, *args, **kwargs)
+        super().partial_update(request, *args, **kwargs)
+        instance.refresh_from_db()
+        serializer = OrderGETSerializer(instance)
 
-    def get_renderers(self) -> list[BaseRenderer]:
+        return self.success(data=serializer.data, message=SuccessMessageEnum.OPERATION_SUCCESSFUL)
+
         if self.request.method == "DELETE":
             self.renderer_classes = [CustomRendererWithoutData]
 
@@ -563,14 +637,18 @@ class OrderView(
         ]:
             logger.error(f"Invalid status {request_status}")
             self.queryset = OrderModel.objects.none()
-
-        if request_status is not None:
+        else:
             self.queryset = self.queryset.filter(status=request_status).order_by("-modified")
 
-        return super().list(request, *args, **kwargs)
+        queryset = self.filter_queryset(self.get_queryset())
+        serializer = self.get_serializer(queryset, many=True)
+
+        return self.success(
+            data=serializer.data, message=SuccessMessageEnum.OPERATION_SUCCESSFUL, status_code=status.HTTP_200_OK
+        )
 
 
-class CustomerOrderHistoryView(ListModelMixin, GenericViewSet):
+class CustomerOrderHistoryView(StandardizedResponseMixin, ListModelMixin, GenericViewSet):
     permission_classes = [UserPermission]
     queryset = OrderModel.objects.all().filter(
         status__in=[
@@ -580,7 +658,6 @@ class CustomerOrderHistoryView(ListModelMixin, GenericViewSet):
         ]
     )
     parser_classes = [MultiPartParser]
-    renderer_classes = [OrderCustomRendererWithData]
     serializer_class = OrderGETSerializer
 
     def list(self, request, *args, **kwargs) -> Response:
@@ -590,16 +667,23 @@ class CustomerOrderHistoryView(ListModelMixin, GenericViewSet):
         self.queryset = self.queryset.filter(customer__id=request.user.pk).order_by("-modified")
 
         if start_date and end_date:
-            start_date_object = datetime.fromisoformat(start_date.replace("Z", "+00:00"))
-            end_date_object = datetime.fromisoformat(end_date.replace("Z", "+00:00"))
-            if start_date_object > end_date_object:
-                return Response(
-                    {
-                        "ok": False,
-                        "status_code": status.HTTP_400_BAD_REQUEST,
-                        "error": "Start date cannot be greater than end date",
-                    }
+            try:
+                start_date_object = datetime.fromisoformat(start_date.replace("Z", "+00:00"))
+                end_date_object = datetime.fromisoformat(end_date.replace("Z", "+00:00"))
+            except ValueError:
+                return self.error(
+                    message="Invalid date format",
+                    code=ErrorCodeEnum.VALIDATION_ERROR,
+                    status_code=status.HTTP_400_BAD_REQUEST,
                 )
+
+            if start_date_object > end_date_object:
+                return self.error(
+                    message="Start date cannot be greater than end date",
+                    code=ErrorCodeEnum.VALIDATION_ERROR,
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                )
+
             self.queryset = self.queryset.filter(
                 created__gte=start_date_object,
                 created__lte=end_date_object,
@@ -607,7 +691,12 @@ class CustomerOrderHistoryView(ListModelMixin, GenericViewSet):
         if order_status:
             self.queryset = self.queryset.filter(status=order_status)
 
-        return super().list(request, *args, **kwargs)
+        response = super().list(request, *args, **kwargs)
+
+        return self.success(
+            data=response.data,
+            status_code=status.HTTP_200_OK,
+        )
 
 
 class DishCountriesView(ListModelMixin, GenericViewSet):
@@ -642,10 +731,9 @@ class StripeWebhookView(GenericViewSet):
         return Response(status=status.HTTP_200_OK)
 
 
-class CustomerDishRatingView(CreateModelMixin, GenericViewSet):
+class CustomerDishRatingView(StandardizedResponseMixin, GenericViewSet):
     permission_classes = [UserPermission]
     parser_classes = [JSONParser]
-    renderer_classes = [CustomRendererWithoutData]
     serializer_class = BulkDishRatingSerializer
 
     def get_queryset(self):
@@ -656,33 +744,16 @@ class CustomerDishRatingView(CreateModelMixin, GenericViewSet):
         return DishRatingModel.objects.all()
 
     def create(self, request, *args, **kwargs):
-        """
-        Override create to handle custom logic from the serializer.
-        """
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
-        # Call the custom `create` method from the serializer
-        self.perform_create(serializer)
-
-        # Return a suitable response
-        return Response(
-            {"detail": "Dish ratings created successfully."},
-            status=status.HTTP_201_CREATED,
-        )
-
-    def perform_create(self, serializer):
-        """
-        Call the serializer's create method to handle data creation.
-        """
-        serializer.save()
+        serializer.save()  # Cela appelle create(), mais on ignore le retour
+        return self.success(message=SuccessMessageEnum.OPERATION_SUCCESSFUL, status_code=status.HTTP_201_CREATED)
 
 
-class CustomerDrinkRatingView(CreateModelMixin, GenericViewSet):
+class CustomerDrinkRatingView(StandardizedResponseMixin, GenericViewSet):
     permission_classes = [UserPermission]
     queryset = DrinkRatingModel.objects.all()
     parser_classes = [JSONParser]
-    renderer_classes = [CustomRendererWithoutData]
     serializer_class = BulkDrinkRatingSerializer
 
     def get_queryset(self):
@@ -693,31 +764,19 @@ class CustomerDrinkRatingView(CreateModelMixin, GenericViewSet):
         return DrinkRatingModel.objects.all()
 
     def create(self, request, *args, **kwargs):
-        """
-        Override create to handle custom logic from the serializer.
-        """
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
-        # Call the custom `create` method from the serializer
-        self.perform_create(serializer)
-
-        # Return a suitable response
-        return Response(
-            {"detail": "Dish ratings created successfully."},
-            status=status.HTTP_201_CREATED,
-        )
-
-    def perform_create(self, serializer):
-        """
-        Call the serializer's create method to handle data creation.
-        """
         serializer.save()
 
+        return self.success(message=SuccessMessageEnum.OPERATION_SUCCESSFUL, status_code=status.HTTP_201_CREATED)
 
-class CustomerOrderRatingView(UpdateModelMixin, GenericViewSet):
+
+class CustomerOrderRatingView(StandardizedResponseMixin, UpdateModelMixin, GenericViewSet):
     permission_classes = [UserPermission]
     queryset = OrderModel.objects.all()
     parser_classes = [JSONParser]
-    renderer_classes = [CustomRendererWithoutData]
     serializer_class = OrderRatingSerializer
+
+    def update(self, request, *args, **kwargs):
+        super().update(request, *args, **kwargs)
+        return self.success(message=SuccessMessageEnum.OPERATION_SUCCESSFUL)

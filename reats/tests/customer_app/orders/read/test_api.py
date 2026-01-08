@@ -4,7 +4,7 @@ from deepdiff import DeepDiff
 from freezegun import freeze_time
 from rest_framework import status
 from rest_framework.test import APIClient
-from utils.enums import OrderStatusEnum
+from utils.enums import OrderStatusEnum, SuccessMessageEnum
 
 
 @pytest.fixture
@@ -119,7 +119,12 @@ def customer_id() -> int:
                                 "is_enabled": True,
                                 "is_suitable_for_quick_delivery": False,
                                 "is_suitable_for_scheduled_delivery": False,
-                                "cooker": 4,
+                                "cooker": {
+                                    "id": 4,
+                                    "firstname": "toutii",
+                                    "lastname": "N",
+                                    "acceptance_rate": 100.0,
+                                },
                             },
                             "dish_quantity": 2,
                         },
@@ -136,7 +141,12 @@ def customer_id() -> int:
                                 "is_enabled": True,
                                 "is_suitable_for_quick_delivery": False,
                                 "is_suitable_for_scheduled_delivery": False,
-                                "cooker": 4,
+                                "cooker": {
+                                    "id": 4,
+                                    "firstname": "toutii",
+                                    "lastname": "N",
+                                    "acceptance_rate": 100.0,
+                                },
                             },
                             "dish_quantity": 1,
                         },
@@ -153,7 +163,12 @@ def customer_id() -> int:
                                 "is_enabled": True,
                                 "is_suitable_for_quick_delivery": False,
                                 "is_suitable_for_scheduled_delivery": False,
-                                "cooker": 1,
+                                "cooker": {
+                                    "id": 1,
+                                    "firstname": "test",
+                                    "lastname": "test",
+                                    "acceptance_rate": 100.0,
+                                },
                             },
                             "dish_quantity": 1,
                         },
@@ -173,7 +188,12 @@ def customer_id() -> int:
                                 "capacity": 75,
                                 "is_suitable_for_quick_delivery": False,
                                 "is_suitable_for_scheduled_delivery": False,
-                                "cooker": 1,
+                                "cooker": {
+                                    "id": 1,
+                                    "firstname": "test",
+                                    "lastname": "test",
+                                    "acceptance_rate": 100.0,
+                                },
                             },
                             "drink_quantity": 4,
                         }
@@ -281,7 +301,12 @@ def customer_id() -> int:
                                 "is_enabled": True,
                                 "is_suitable_for_quick_delivery": False,
                                 "is_suitable_for_scheduled_delivery": False,
-                                "cooker": 4,
+                                "cooker": {
+                                    "id": 4,
+                                    "firstname": "toutii",
+                                    "lastname": "N",
+                                    "acceptance_rate": 100.0,
+                                },
                             },
                             "dish_quantity": 2,
                         }
@@ -390,7 +415,12 @@ def customer_id() -> int:
                                 "is_enabled": True,
                                 "is_suitable_for_quick_delivery": False,
                                 "is_suitable_for_scheduled_delivery": False,
-                                "cooker": 4,
+                                "cooker": {
+                                    "id": 4,
+                                    "firstname": "toutii",
+                                    "lastname": "N",
+                                    "acceptance_rate": 100.0,
+                                },
                             },
                             "dish_quantity": 2,
                         },
@@ -407,7 +437,12 @@ def customer_id() -> int:
                                 "is_enabled": True,
                                 "is_suitable_for_quick_delivery": False,
                                 "is_suitable_for_scheduled_delivery": False,
-                                "cooker": 4,
+                                "cooker": {
+                                    "id": 4,
+                                    "firstname": "toutii",
+                                    "lastname": "N",
+                                    "acceptance_rate": 100.0,
+                                },
                             },
                             "dish_quantity": 1,
                         },
@@ -494,8 +529,8 @@ def test_orders_list_success(
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json().get("ok") == ok_value
-    assert response.json().get("status_code") == expected_status_code
+    assert response.json().get("success") == ok_value
+    assert response.json().get("message") == SuccessMessageEnum.OPERATION_SUCCESSFUL.value
 
     diff = DeepDiff(response.json().get("data"), expected_data, ignore_order=True)
 

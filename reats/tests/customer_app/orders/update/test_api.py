@@ -9,7 +9,7 @@ from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from freezegun import freeze_time
 from rest_framework import status
 from rest_framework.test import APIClient
-from utils.enums import OrderStatusEnum
+from utils.enums import OrderStatusEnum, SuccessMessageEnum
 
 # Add this line to ignore E501 errors
 # flake8: noqa: E501
@@ -932,8 +932,8 @@ def test_update_order_success_with_asap_delivery(
         order_id = api_response["data"].pop("id")
         assert order_id is not None
         assert response.json() == {
-            "ok": True,
-            "status_code": 200,
+            "success": True,
+            "message": SuccessMessageEnum.OPERATION_SUCCESSFUL.value,
             "data": {
                 "dishes_items": [
                     {
@@ -1084,8 +1084,8 @@ def test_update_order_success_with_asap_delivery(
                 "rating": 0.0,
                 "comment": None,
             },
-            "ok": True,
-            "status_code": 200,
+            "success": True,
+            "message": SuccessMessageEnum.OPERATION_SUCCESSFUL.value,
         }
 
         updated_order_dict = model_to_dict(last_order)
@@ -1175,8 +1175,8 @@ def test_update_order_after_successful_stripe_payment(
         assert response.status_code == status.HTTP_201_CREATED
         order_id = response.json()["data"].pop("id")
         assert response.json() == {
-            "ok": True,
-            "status_code": 200,
+            "success": True,
+            "message": SuccessMessageEnum.OPERATION_SUCCESSFUL.value,
             "data": {
                 "dishes_items": [
                     {
@@ -1283,8 +1283,8 @@ def test_update_order_after_successful_stripe_payment_but_event_failed_to_be_ver
         assert response.status_code == status.HTTP_201_CREATED
         order_id = response.json()["data"].pop("id")
         assert response.json() == {
-            "ok": True,
-            "status_code": 200,
+            "success": True,
+            "message": SuccessMessageEnum.OPERATION_SUCCESSFUL.value,
             "data": {
                 "dishes_items": [
                     {

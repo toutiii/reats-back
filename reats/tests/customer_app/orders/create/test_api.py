@@ -9,7 +9,7 @@ from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from freezegun import freeze_time
 from rest_framework import status
 from rest_framework.test import APIClient
-from utils.enums import OrderStatusEnum
+from utils.enums import OrderStatusEnum, SuccessMessageEnum
 
 # Add this line to ignore E501 errors
 # flake8: noqa: E501
@@ -77,8 +77,8 @@ def test_create_order_success_with_asap_delivery(
         api_response: dict = response.json()
         assert api_response["data"].pop("id") is not None
         assert api_response == {
-            "ok": True,
-            "status_code": 200,
+            "success": True,
+            "message": SuccessMessageEnum.OPERATION_SUCCESSFUL.value,
             "data": {
                 "dishes_items": [
                     {
@@ -279,8 +279,8 @@ def test_create_order_success_with_scheduled_delivery(
                 "processing_date": None,
                 "scheduled_delivery_date": "2024-05-10T12:30:00Z",
             },
-            "ok": True,
-            "status_code": 200,
+            "success": True,
+            "message": SuccessMessageEnum.OPERATION_SUCCESSFUL.value,
         }
         order_dict = model_to_dict(OrderModel.objects.latest("pk"))
         del order_dict["id"]

@@ -6,6 +6,7 @@ from django.forms.models import model_to_dict
 from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from rest_framework import status
 from rest_framework.test import APIClient
+from utils.enums import SuccessMessageEnum
 
 
 @pytest.fixture
@@ -96,7 +97,11 @@ def test_create_customer_success(
         follow=False,
         **customer_api_key_header,
     )
+
     assert response.status_code == status.HTTP_201_CREATED
+    assert response.json().get("success") is True
+    assert isinstance(response.json().get("data"), dict)
+
     new_count = CustomerModel.objects.count()
 
     assert new_count - old_count == 1
@@ -165,6 +170,8 @@ class TestActivateCustomerSuccess:
         )
 
         assert create_response.status_code == status.HTTP_201_CREATED
+        assert create_response.json().get("success") is True
+        assert create_response.json().get("message") == SuccessMessageEnum.OPERATION_SUCCESSFUL
 
         user = CustomerModel.objects.latest("pk")
 

@@ -12,13 +12,19 @@ from core_app.models import (
     OrderDrinkItemModel,
     OrderModel,
 )
-from core_app.serializers import OrderDishItemGETSerializer, OrderDrinkItemGETSerializer
+from core_app.serializers import (
+    OrderDishItemGETSerializer,
+    OrderDrinkItemGETSerializer,
+    SimpleCookerSerializer,
+    SimpleCustomerSerializer,
+)
 from django.conf import settings
 from django.db import transaction
 from phonenumbers.phonenumberutil import NumberParseException
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
-from utils.common import compute_order_items_total_amount, format_phone
+from utils.common import compute_order_items_total_amount, create_stripe_ephemeral_key, format_phone, get_pre_signed_url
+from utils.enums import OrderStatusEnum
 
 
 class CustomerSerializer(ModelSerializer):
@@ -40,6 +46,10 @@ class CustomerGETSerializer(ModelSerializer):
         model = CustomerModel
         exclude = ("created", "modified")
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        return {"personal_infos_section": data}
+
 
 class AddressSerializer(ModelSerializer):
     class Meta:
@@ -57,6 +67,7 @@ class OrderGETSerializer(ModelSerializer):
     dishes_items = OrderDishItemGETSerializer(many=True)
     drinks_items = OrderDrinkItemGETSerializer(many=True)
     address = AddressGETSerializer()
+    # cooker = SimpleCookerSerializer()
 
     class Meta:
         model = OrderModel
@@ -73,6 +84,24 @@ class OrderGETSerializer(ModelSerializer):
         data["sub_total"] = compute_order_items_total_amount(instance)
         data["service_fees"] = round(data["sub_total"] * settings.SERVICE_FEES_RATE, 2)
         data["total_amount"] = round(data["sub_total"] + data["service_fees"] + instance.delivery_fees, 2)
+
+        for item in data.get("dishes_items", []):
+            if item["dish"].get("photo"):
+                item["dish"]["photo"] = get_pre_signed_url(item["dish"]["photo"])
+
+        for item in data.get("drinks_items", []):
+            if item["drink"].get("photo"):
+                item["drink"]["photo"] = get_pre_signed_url(item["drink"]["photo"])
+
+        order_status = data.get("status")
+
+        if order_status is None or order_status == OrderStatusEnum.DRAFT:
+            customer = instance.customer
+            data["ephemeral_key"] = create_stripe_ephemeral_key(customer)
+
+        if instance.cooker:
+            cooker = instance.cooker
+            data["cooker"] = SimpleCookerSerializer(cooker).data
 
         return data
 
@@ -100,6 +129,7 @@ class OrderSerializer(ModelSerializer):
             "modified",
             "delivery_fees_bonus",
             "status",
+            "is_deleted",
         )
 
     def to_representation(self, instance: OrderModel):
@@ -109,6 +139,14 @@ class OrderSerializer(ModelSerializer):
         data["service_fees"] = round(data["sub_total"] * settings.SERVICE_FEES_RATE, 2)
         data["total_amount"] = round(data["sub_total"] + data["service_fees"] + instance.delivery_fees, 2)
 
+        if instance.cooker:
+            data["cooker"] = SimpleCookerSerializer(instance.cooker).data
+
+        if instance.customer:
+            data["customer"] = SimpleCustomerSerializer(instance.customer).data
+
+        if instance.status == OrderStatusEnum.DRAFT:
+            data["ephemeral_key"] = create_stripe_ephemeral_key(instance.customer)
         return data
 
     def to_internal_value(self, data):

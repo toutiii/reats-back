@@ -130,7 +130,6 @@ def send_otp(phone: str) -> Union[dict, None]:
                 "ReferenceId": generate_ref_id(phone),
             },
         )
-
     except ClientError as e:
         logger.info(e.response)
         return None

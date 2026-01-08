@@ -16,7 +16,7 @@ from phonenumbers.phonenumberutil import NumberParseException
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.mixins import ListModelMixin, UpdateModelMixin
-from rest_framework.parsers import MultiPartParser
+from rest_framework.parsers import JSONParser, MultiPartParser
 from rest_framework.permissions import BasePermission
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
@@ -59,7 +59,7 @@ logger = logging.getLogger("watchtower-logger")
 
 
 class CookerView(StandardizedResponseMixin, ModelViewSet):
-    parser_classes = [MultiPartParser]
+    parser_classes = [JSONParser, MultiPartParser]
     queryset = CookerModel.objects.all()
 
     def get_permissions(self) -> list:
@@ -94,13 +94,23 @@ class CookerView(StandardizedResponseMixin, ModelViewSet):
         return self.success(response.data)
 
     def perform_create(self, serializer: BaseSerializer) -> None:
-        try:
-            super().perform_create(serializer)
-        except IntegrityError as err:
-            logger.error(err)
-            return
-
+        super().perform_create(serializer)
+        logger.info("Cooker model created, sending OTP...")
         send_otp(serializer.validated_data.get("phone"))
+
+    def create(self, request, *args, **kwargs):
+        logger.info(f"Received cooker creation request: {request.data}")
+        try:
+            response = super().create(request, *args, **kwargs)
+            logger.info("Cooker creation successful")
+            return self.success(data=response.data, status_code=status.HTTP_201_CREATED)
+        except IntegrityError as err:
+            logger.error(f"Customer creation failed- duplicate phone number: {err}")
+            return self.error(
+                message=ErrorMessageEnum.CUSTOMER_ALREADY_EXISTS,
+                code=ErrorCodeEnum.USER_ALREADY_EXISTS,
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
 
     def partial_update(self, request, *args, **kwargs) -> Response:
         kwargs.pop("pk")  # pk is unexpected in parent's partial_update method

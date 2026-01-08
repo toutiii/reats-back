@@ -7,7 +7,7 @@ from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from freezegun import freeze_time
 from rest_framework import status
 from rest_framework.test import APIClient
-from utils.enums import OrderStatusEnum
+from utils.enums import OrderStatusEnum, SuccessMessageEnum
 
 
 @pytest.fixture
@@ -115,11 +115,13 @@ def test_add_rates_to_orders_and_orders_items(
         follow=False,
         **auth_headers,
     )
-    assert update_order_response.status_code == status.HTTP_200_OK
-    assert update_order_response.json() == {
-        "ok": True,
-        "status_code": 200,
+    expected_rating_response = {
+        "success": True,
+        "data": {},
+        "message": SuccessMessageEnum.OPERATION_SUCCESSFUL.value,
     }
+    assert update_order_response.status_code == status.HTTP_200_OK
+    assert update_order_response.json() == expected_rating_response
 
     order.refresh_from_db()
     assert order.rating == order_rating_data["rating"]
@@ -141,10 +143,7 @@ def test_add_rates_to_orders_and_orders_items(
     )
 
     assert create_dish_rating_response.status_code == status.HTTP_201_CREATED
-    assert create_dish_rating_response.json() == {
-        "ok": True,
-        "status_code": 201,
-    }
+    assert create_dish_rating_response.json() == expected_rating_response
 
     for idx in range(len(dish_rating_data["dishes_ids"])):
         dish_rating_instance: DishRatingModel = DishRatingModel.objects.get(dish_id=dish_rating_data["dishes_ids"][idx])
@@ -166,10 +165,7 @@ def test_add_rates_to_orders_and_orders_items(
         **auth_headers,
     )
     assert create_drink_rating_response.status_code == status.HTTP_201_CREATED
-    assert create_drink_rating_response.json() == {
-        "ok": True,
-        "status_code": 201,
-    }
+    assert create_drink_rating_response.json() == expected_rating_response
 
     for idx in range(len(drink_rating_data["drink_ids"])):
         drink_rating_instance: DrinkRatingModel = DrinkRatingModel.objects.get(
