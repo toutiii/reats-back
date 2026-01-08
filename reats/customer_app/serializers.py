@@ -67,7 +67,6 @@ class OrderGETSerializer(ModelSerializer):
     dishes_items = OrderDishItemGETSerializer(many=True)
     drinks_items = OrderDrinkItemGETSerializer(many=True)
     address = AddressGETSerializer()
-    # cooker = SimpleCookerSerializer()
 
     class Meta:
         model = OrderModel
