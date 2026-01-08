@@ -2,9 +2,6 @@ import logging
 from typing import Type, Union
 
 from core_app.models import DeliverModel, OrderModel
-from custom_renderers.renderers import (
-    DeliveryStatsCustomRendererWithData,
-)
 from customer_app.serializers import OrderGETSerializer
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import IntegrityError
@@ -217,11 +214,10 @@ class DeliverView(StandardizedResponseMixin, ModelViewSet):
         return self.success(data=serializer.data, status_code=status.HTTP_200_OK)
 
 
-class DeliveryOrderStatsView(GenericViewSet, ListModelMixin):
+class DeliveryOrderStatsView(StandardizedResponseMixin, GenericViewSet, ListModelMixin):
     permission_classes = [UserPermission]
     queryset = OrderModel.objects.all().filter(status=OrderStatusEnum.DELIVERED)
     parser_classes = [MultiPartParser]
-    renderer_classes = [DeliveryStatsCustomRendererWithData]
 
     def list(self, request, *args, **kwargs) -> Response:
         self.queryset = self.queryset.filter(delivery_man__id=request.user.pk)
@@ -231,27 +227,17 @@ class DeliveryOrderStatsView(GenericViewSet, ListModelMixin):
         if not all([start_date, end_date]):
             self.queryset = OrderModel.objects.none()
 
-        if start_date:
-            try:
+        try:
+            if start_date:
                 self.queryset = self.queryset.filter(created__gte=start_date)
-            except DjangoValidationError as err:
-                logger.error(err)
-                self.queryset = OrderModel.objects.none()
-
-        if end_date:
-            try:
+            if end_date:
                 self.queryset = self.queryset.filter(created__lte=end_date)
-            except DjangoValidationError as err:
-                logger.error(err)
-                self.queryset = OrderModel.objects.none()
+        except (DjangoValidationError, ValueError) as err:
+            logger.error(f"Invalid date format: {err}")
+            return self.success(data={}, status_code=status.HTTP_200_OK)
 
         if self.queryset.count() == 0:
-            return Response(
-                {
-                    "ok": False,
-                    "status_code": status.HTTP_404_NOT_FOUND,
-                }
-            )
+            return self.success(data={}, status_code=status.HTTP_200_OK)
 
         stats = {}
         stats["total_delivery_fees"] = 0.0
@@ -269,13 +255,7 @@ class DeliveryOrderStatsView(GenericViewSet, ListModelMixin):
         stats["delivery_mean_time"] = round(stats["total_delivery_time"] / stats["total_number_of_deliveries"], 2)
         del stats["total_delivery_time"]
 
-        return Response(
-            {
-                "data": stats,
-                "ok": True,
-                "status_code": status.HTTP_200_OK,
-            }
-        )
+        return self.success(data=stats, status_code=status.HTTP_200_OK)
 
 
 class DeliveryHistoryView(StandardizedResponseMixin, ListModelMixin, GenericViewSet):
