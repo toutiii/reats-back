@@ -3,6 +3,7 @@ cryptography==41.0.7
 deepdiff==7.0.1 
 django==4.1
 django-extensions==3.2.3
+django-filter==25.2
 django-phonenumber-field[phonenumberslite]==7.1.0
 djangorestframework-simplejwt[crypto]==5.3.1
 django-stubs[compatible-mypy]==4.2.3
