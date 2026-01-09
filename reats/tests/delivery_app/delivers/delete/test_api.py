@@ -5,7 +5,7 @@ from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from freezegun import freeze_time
 from rest_framework import status
 from rest_framework.test import APIClient
-from utils.enums import ErrorCodeEnum
+from utils.enums import ErrorCodeEnum, SuccessMessageEnum
 
 
 @pytest.fixture
@@ -104,10 +104,9 @@ def test_delete_deliver_success(
         )
 
         assert response.status_code == status.HTTP_200_OK
-        assert response.json() == {
-            "ok": True,
-            "status_code": status.HTTP_200_OK,
-        }
+        assert response.json().get("success") is True
+        assert response.json().get("message") == SuccessMessageEnum.OPERATION_SUCCESSFUL
+
         created_deliver = DeliverModel.objects.get(phone=e164_phone)
         assert model_to_dict(created_deliver, fields=post_data_keys) == {
             "firstname": "John",
@@ -162,5 +161,6 @@ class TestDeliverDeleteFailedWithExpiredToken:
             )
 
             assert response.status_code == status.HTTP_401_UNAUTHORIZED
-            assert response.json().get("ok") is False
-            assert response.json().get("error_code") == ErrorCodeEnum.TOKEN_NOT_VALID
+            assert response.json().get("success") is False
+            assert isinstance(response.json().get("error"), dict)
+            assert response.json().get("error").get("code") == ErrorCodeEnum.TOKEN_NOT_VALID.value

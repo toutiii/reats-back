@@ -37,8 +37,8 @@ def test_delivery_orders_stats_with_right_dates(
             "total_delivery_fees": 9.7,
             "total_number_of_deliveries": 2,
         },
-        "ok": True,
-        "status_code": 200,
+        "success": True,
+        "message": "Operation successful",
     }
 
 
@@ -83,9 +83,9 @@ def test_delivery_orders_stats_with_wrong_dates(
 
     assert response.status_code == status.HTTP_200_OK
     assert response.json() == {
-        "ok": True,
-        "status_code": status.HTTP_200_OK,
-        "data": [],
+        "success": True,
+        "message": "Operation successful",
+        "data": {},
     }
 
 
@@ -126,5 +126,6 @@ class TestDeliveryOrdersStatsFailedWithExpiredToken:
             )
 
             assert response.status_code == status.HTTP_401_UNAUTHORIZED
-            assert response.json().get("ok") is False
-            assert response.json().get("error_code") == ErrorCodeEnum.TOKEN_NOT_VALID
+            assert response.json().get("success") is False
+            assert isinstance(response.json().get("error"), dict)
+            assert response.json().get("error").get("code") == ErrorCodeEnum.TOKEN_NOT_VALID
