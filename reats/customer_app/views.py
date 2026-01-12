@@ -54,6 +54,7 @@ from utils.common import (
     upload_image_to_s3,
 )
 from utils.custom_api_reponse import StandardizedResponseMixin
+from utils.paginations import StandardizedResultsSetPagination
 from utils.custom_permissions import (
     AnonymousPermission,
     CustomAPIKeyPermission,
@@ -517,7 +518,8 @@ class OrderView(
 ):
     permission_classes = [UserPermission]
     queryset = OrderModel.objects.all()
-    parser_classes = [MultiPartParser]
+    parser_classes = [MultiPartParser, JSONParser]
+    pagination_class = StandardizedResultsSetPagination
 
     def perform_create(self, serializer: BaseSerializer) -> None:
         distance_dict: dict = compute_distance(
@@ -606,13 +608,6 @@ class OrderView(
 
         return self.success(data=serializer.data, message=SuccessMessageEnum.OPERATION_SUCCESSFUL)
 
-        if self.request.method == "DELETE":
-            self.renderer_classes = [CustomRendererWithoutData]
-
-        if self.request.method in ("GET", "POST", "PUT"):
-            self.renderer_classes = [OrderCustomRendererWithData]
-
-        return super().get_renderers()
 
     def get_serializer_class(self) -> type[BaseSerializer]:
         if self.request.method in ("POST", "PUT"):
@@ -641,8 +636,13 @@ class OrderView(
             self.queryset = self.queryset.filter(status=request_status).order_by("-modified")
 
         queryset = self.filter_queryset(self.get_queryset())
-        serializer = self.get_serializer(queryset, many=True)
 
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
         return self.success(
             data=serializer.data, message=SuccessMessageEnum.OPERATION_SUCCESSFUL, status_code=status.HTTP_200_OK
         )
