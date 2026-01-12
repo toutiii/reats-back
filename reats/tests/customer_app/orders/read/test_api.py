@@ -531,7 +531,17 @@ def test_orders_list_success(
     assert response.status_code == status.HTTP_200_OK
     assert response.json().get("success") == ok_value
     assert response.json().get("message") == SuccessMessageEnum.OPERATION_SUCCESSFUL.value
+    
+    response_data = response.json().get("data", {})
 
-    diff = DeepDiff(response.json().get("data"), expected_data, ignore_order=True)
+    if isinstance(response_data, dict) and "results" in response_data:
+        actual_results = response_data['results']
+    else:
+        actual_results = response_data
+        
+    assert isinstance(actual_results, list)
+    assert isinstance(response_data.get("pagination"), dict)
 
-    assert not diff
+    diff = DeepDiff(actual_results, expected_data, ignore_order=True)
+
+    assert not diff, f"Differences found: {diff}"

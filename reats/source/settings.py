@@ -61,7 +61,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
 
     "rest_framework",
-    "django_filters"
+    "django_filters",
 
     "customer_app",
     "cooker_app",
