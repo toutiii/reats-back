@@ -15,70 +15,6 @@ from utils.enums import OrderStatusEnum, SuccessMessageEnum
 
 
 @pytest.fixture
-def authenticated_user_id(auth_headers):
-    return auth_headers.get('user_id', 1)
-
-
-@pytest.fixture
-def create_test_cooker():
-    cooker, created = CookerModel.objects.get_or_create(
-        firstname="Test",
-        lastname="Cooker",
-        phone="0600000001",
-        postal_code="75001",
-        siret="12345678901234",
-        street_name="Rue de test",
-        street_number="1",
-        town="Paris",
-        max_order_number=10,
-        is_activated=True,
-        defaults={
-            'acceptance_rate': 100.0,
-            'photo': 'cookers/1/profile_pics/default-profile-pic.jpg'
-        }
-    )
-    return cooker
-
-
-@pytest.fixture
-def create_authenticated_customer(authenticated_user_id):
-    try:
-        return CustomerModel.objects.get(id=authenticated_user_id)
-    except CustomerModel.DoesNotExist:
-        return CustomerModel.objects.create(
-            id=authenticated_user_id,
-            firstname="Test",
-            lastname="Customer",
-            phone=f"0600000{authenticated_user_id:03d}",
-            is_activated=True,
-            photo='customers/1/profile_pics/default-profile-pic.jpg'
-        )
-
-
-@pytest.fixture
-def create_test_address(create_authenticated_customer):
-    customer = create_authenticated_customer
-    address, created = AddressModel.objects.get_or_create(
-        street_name="Rue de test",
-        street_number="1",
-        town="Paris",
-        postal_code="75001",
-        customer=customer,
-        defaults={
-            'is_enabled': True
-        }
-    )
-    return address
-
-
-@pytest.fixture
-def clean_authenticated_user_orders(create_authenticated_customer):
-    customer = create_authenticated_customer
-    OrderModel.objects.filter(customer=customer).delete()
-    return customer
-
-
-@pytest.fixture
 def customer_with_30_orders(
     clean_authenticated_user_orders, 
     create_test_cooker, 
@@ -133,9 +69,7 @@ def customer_with_few_orders(
     return customer, orders
 
 
-@pytest.fixture
-def customer_order_path():
-    return reverse("orders-list")
+
 
 
 @pytest.mark.django_db
@@ -355,7 +289,7 @@ class TestOrdersPaginationScenarios:
             customer_order_path,
             follow=False,
             **auth_headers,
-            data={"status": OrderStatusEnum.PENDING, "page": page, "page_size": page_size}
+            data={"status": OrderStatusEnum.PENDING, "page": page, "page_size": page_size, "ordering": "-modified"}
         )
         
         if response.status_code == status.HTTP_404_NOT_FOUND:
@@ -397,7 +331,7 @@ class TestOrdersPaginationScenarios:
                 customer_order_path,
                 follow=False,
                 **auth_headers,
-                data={"status": OrderStatusEnum.PENDING, "page": page, "page_size": page_size}
+                data={"status": OrderStatusEnum.PENDING, "page": page, "page_size": page_size, "ordering": "-modified"}
             )
             
             if response.status_code == status.HTTP_404_NOT_FOUND:
