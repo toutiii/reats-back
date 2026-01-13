@@ -37,6 +37,8 @@ from rest_framework.permissions import BasePermission
 from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
+from django_filters import rest_framework as filters
+
 from utils.common import (
     activate_user,
     compute_order_items_total_amount,
@@ -65,6 +67,7 @@ from utils.distance_computer import (
     get_closest_cookers_ids_from_customer_search_address,
 )
 from utils.enums import ErrorCodeEnum, ErrorMessageEnum, OrderStatusEnum, SuccessMessageEnum
+from utils.filters import OrderFilter
 
 from .serializers import (
     AddressGETSerializer,
@@ -520,6 +523,8 @@ class OrderView(
     queryset = OrderModel.objects.all()
     parser_classes = [MultiPartParser, JSONParser]
     pagination_class = StandardizedResultsSetPagination
+    filter_backends = [filters.DjangoFilterBackend]
+    filterset_class = OrderFilter
 
     def perform_create(self, serializer: BaseSerializer) -> None:
         distance_dict: dict = compute_distance(
@@ -623,18 +628,14 @@ class OrderView(
 
     def list(self, request, *args, **kwargs) -> Response:
         self.queryset = self.queryset.filter(customer__id=request.user.pk)
-        request_status: Union[str, None] = self.request.query_params.get("status")
-
-        if request_status is None or request_status not in [
+        
+        # Only return active orders
+        self.queryset = self.queryset.filter(status__in=[
             OrderStatusEnum.PENDING,
             OrderStatusEnum.PROCESSING,
             OrderStatusEnum.COMPLETED,
-        ]:
-            logger.error(f"Invalid status {request_status}")
-            self.queryset = OrderModel.objects.none()
-        else:
-            self.queryset = self.queryset.filter(status=request_status).order_by("-modified")
-
+        ])
+        
         queryset = self.filter_queryset(self.get_queryset())
 
         page = self.paginate_queryset(queryset)
@@ -644,7 +645,9 @@ class OrderView(
 
         serializer = self.get_serializer(queryset, many=True)
         return self.success(
-            data=serializer.data, message=SuccessMessageEnum.OPERATION_SUCCESSFUL, status_code=status.HTTP_200_OK
+            data=serializer.data, 
+            message=SuccessMessageEnum.OPERATION_SUCCESSFUL, 
+            status_code=status.HTTP_200_OK
         )
 
 

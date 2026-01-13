@@ -22,7 +22,10 @@ def create_test_cooker():
         town="Paris",
         max_order_number=10,
         is_activated=True,
-        defaults={"acceptance_rate": 100.0, "photo": "cookers/1/profile_pics/default-profile-pic.jpg"},
+        defaults={
+            "acceptance_rate": 100.0,
+            "photo": "cookers/1/profile_pics/default-profile-pic.jpg",
+        },
     )
     return cooker
 
