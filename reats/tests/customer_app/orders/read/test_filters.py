@@ -10,8 +10,6 @@ from utils.enums import OrderStatusEnum
 
 
 
-
-
 @pytest.fixture
 def setup_filter_test_data(
     create_authenticated_customer, 
