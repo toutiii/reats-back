@@ -659,8 +659,7 @@ def test_orders_history_list_success_for_customers(
         **auth_headers,
     )
     assert response.status_code == status.HTTP_200_OK
-
-    diff = DeepDiff(response.json().get("data"), expected_data, ignore_order=True)
+    diff = DeepDiff(response.json().get("data").get("results"), expected_data, ignore_order=True)
 
     assert not diff
 
@@ -702,7 +701,7 @@ def test_orders_list_success_with_order_status_filter(
     assert response.json().get("success") is True
     assert response.json().get("message") == SuccessMessageEnum.OPERATION_SUCCESSFUL.value
 
-    for order_item in response.json().get("data"):
+    for order_item in response.json().get("data").get("results"):
         assert order_item.get("status") == order_status.value
 
 
@@ -731,7 +730,7 @@ def test_orders_list_success_with_dates_filter_when_some_orders_exist(
     assert response.status_code == status.HTTP_200_OK
     assert response.json().get("success") is True
     assert response.json().get("message") == SuccessMessageEnum.OPERATION_SUCCESSFUL.value
-    assert len(response.json().get("data")) > 0
+    assert len(response.json().get("data").get("results")) > 0
 
 
 @pytest.mark.django_db
@@ -759,7 +758,7 @@ def test_orders_list_success_with_dates_filter_when_no_orders_exist(
     assert response.status_code == status.HTTP_200_OK
     assert response.json().get("success") is True
     assert response.json().get("message") == SuccessMessageEnum.OPERATION_SUCCESSFUL.value
-    assert len(response.json().get("data")) == 0
+    assert len(response.json().get("data").get("results")) == 0
 
 
 @pytest.mark.django_db
@@ -1039,6 +1038,6 @@ def test_orders_list_success_with_multiple_filters(
     assert response.json().get("success") is True
     assert response.json().get("message") == SuccessMessageEnum.OPERATION_SUCCESSFUL.value
 
-    diff = DeepDiff(response.json().get("data"), expected_data, ignore_order=True)
+    diff = DeepDiff(response.json().get("data").get("results"), expected_data, ignore_order=True)
 
     assert not diff

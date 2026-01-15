@@ -1,6 +1,7 @@
 import django_filters
 from django_filters import rest_framework as filters
-from core_app.models import OrderModel
+from core_app.models import DishModel, OrderModel
+from django.db.models import Q
 from utils.enums import OrderStatusEnum
 
 
@@ -86,12 +87,7 @@ class OrderFilter(filters.FilterSet):
         }
     
     def filter_status(self, queryset, name, value):
-        """
-        Filtre personnalisé pour le statut
-        Gère les statuts invalides en retournant un queryset vide
-        """
         if value not in dict(OrderStatusEnum.choices()):
-            # Si le statut est invalide, retourne un queryset vide
             return queryset.none()
         
         return queryset.filter(status=value)
@@ -101,20 +97,28 @@ class OrderFilter(filters.FilterSet):
         Filtre par montant total minimum
         Le montant total est calculé (delivery_fees + items)
         """
-        # Ici tu dois calculer le total pour chaque commande
-        # C'est plus complexe car le total n'est pas stocké en base
-        # On peut annoter le queryset avec le total calculé
-        from django.db.models import F, Sum
-        from core_app.models import OrderDishItemModel, OrderDrinkItemModel
+        from django.db.models import F, Sum, Value, FloatField
+        from django.db.models.functions import Coalesce
+
+        queryset = queryset.annotate(
+            dishes_total=Coalesce(
+                Sum(F('dishes_items__dish__price') * F('dishes_items__dish_quantity')),
+                Value(0.0, output_field=FloatField())
+            ),
+            drinks_total=Coalesce(
+                Sum(F('drinks_items__drink__price') * F('drinks_items__drink_quantity')),
+                Value(0.0, output_field=FloatField())
+            ),
+        ).annotate(
+            items_total=F('dishes_total') + F('drinks_total'),
+            total_amount=F('items_total') + Coalesce(F('delivery_fees'), Value(0.0, output_field=FloatField()))
+        )
         
-        # Annotation complexe - à adapter selon ton modèle
-        # Pour l'exemple, on suppose que tu as une méthode pour calculer
-        return queryset
+        return queryset.filter(total_amount__gte=value)
     
     def filter_max_total(self, queryset, name, value):
         """Filtre par montant total maximum"""
-        # Même logique que filter_min_total
-        return queryset
+        return self.filter_min_total(queryset, name, 0).filter(total_amount__lte=value)
     
     def filter_by_dish(self, queryset, name, value):
         """Filtre les commandes contenant un plat spécifique"""
@@ -127,3 +131,250 @@ class OrderFilter(filters.FilterSet):
     def filter_search(self, queryset, name, value):
         """Recherche texte dans les commentaires"""
         return queryset.filter(comment__icontains=value)
+    
+
+class OrderHistoryFilter(filters.FilterSet):
+    status = django_filters.CharFilter(
+        field_name='status',
+        lookup_expr='exact',
+    )
+    
+    status_in = CharInFilter(
+        field_name='status',
+        lookup_expr='in',
+    )
+    
+    created_after = django_filters.DateTimeFilter(
+        field_name='created',
+        lookup_expr='gte',
+    )
+    
+    created_before = django_filters.DateTimeFilter(
+        field_name='created',
+        lookup_expr='lte',
+    )
+
+    start_date = django_filters.DateTimeFilter(
+        field_name='created',
+        lookup_expr='gte',
+    )
+    
+    end_date = django_filters.DateTimeFilter(
+        field_name='created',
+        lookup_expr='lte',
+    )
+    
+    updated_after = django_filters.DateTimeFilter(
+        field_name='modified',
+        lookup_expr='gte',
+    )
+    
+    updated_before = django_filters.DateTimeFilter(
+        field_name='modified',
+        lookup_expr='lte',
+    )
+    
+    scheduled_date_after = django_filters.DateTimeFilter(
+        field_name='scheduled_delivery_date',
+        lookup_expr='gte',
+    )
+    
+    scheduled_date_before = django_filters.DateTimeFilter(
+        field_name='scheduled_delivery_date',
+        lookup_expr='lte',
+    )
+    
+    min_total_amount = django_filters.NumberFilter(
+        method='filter_min_total_amount',
+        label='Montant total minimum'
+    )
+    
+    max_total_amount = django_filters.NumberFilter(
+        method='filter_max_total_amount',
+        label='Montant total maximum'
+    )
+    
+    customer_id = django_filters.NumberFilter(
+        field_name='customer__id',
+        label='ID du client'
+    )
+    
+    cooker_id = django_filters.NumberFilter(
+        field_name='cooker__id',
+        label='ID du cuisinier'
+    )
+    
+    deliver_id = django_filters.NumberFilter(
+        field_name='delivery_man__id',
+        label='ID du livreur'
+    )
+    
+    min_rating = django_filters.NumberFilter(
+        field_name='rating',
+        lookup_expr='gte',
+        label='Note minimum'
+    )
+    
+    max_rating = django_filters.NumberFilter(
+        field_name='rating',
+        lookup_expr='lte',
+        label='Note maximum'
+    )
+    
+    has_rating = django_filters.BooleanFilter(
+        method='filter_has_rating',
+        label='A une note'
+    )
+    
+    has_comment = django_filters.BooleanFilter(
+        method='filter_has_comment',
+        label='A un commentaire'
+    )
+    
+    is_scheduled = django_filters.BooleanFilter(
+        field_name='is_scheduled',
+        label='Commande programmée'
+    )
+    
+    period = django_filters.CharFilter(
+        method='filter_period',
+        label='Période'
+    )
+    
+    search = django_filters.CharFilter(
+        method='filter_search',
+        label='Recherche'
+    )
+    
+    ordering = django_filters.OrderingFilter(
+        fields=(
+            ('created', 'created'),
+            ('modified', 'modified'),
+            ('scheduled_delivery_date', 'scheduled_date'),
+            ('delivery_fees', 'delivery_fees'),
+            ('rating', 'rating'),
+        ),
+        field_labels={
+            'created': 'Date de création',
+            'modified': 'Date de modification',
+            'scheduled_delivery_date': 'Date de livraison programmée',
+            'delivery_fees': 'Frais de livraison',
+            'rating': 'Note',
+        }
+    )
+    
+    class Meta:
+        model = OrderModel
+        fields = {
+            'status': ['exact', 'in'],
+            'created': ['gte', 'lte', 'gt', 'lt'],
+            'modified': ['gte', 'lte'],
+            'scheduled_delivery_date': ['gte', 'lte'],
+            'rating': ['gte', 'lte', 'exact'],
+            'delivery_fees': ['gte', 'lte'],
+        }
+    
+    def filter_min_total_amount(self, queryset, name, value):
+        """
+        Filtre par montant total minimum
+        Montant total = sum(items) + delivery_fees
+        """
+        from django.db.models import Sum, F, FloatField, Value
+        from django.db.models.functions import Coalesce
+        
+        queryset = queryset.annotate(
+            dishes_total=Coalesce(
+                Sum(F('dishes_items__dish__price') * F('dishes_items__dish_quantity')),
+                Value(0.0, output_field=FloatField())
+            ),
+            drinks_total=Coalesce(
+                Sum(F('drinks_items__drink__price') * F('drinks_items__drink_quantity')),
+                Value(0.0, output_field=FloatField())
+            ),
+        ).annotate(
+            items_total=F('dishes_total') + F('drinks_total'),
+            total_amount=F('items_total') + Coalesce(F('delivery_fees'), Value(0.0, output_field=FloatField()))
+        )
+        
+        return queryset.filter(total_amount__gte=value)
+    
+    def filter_max_total_amount(self, queryset, name, value):
+        """
+        Filtre par montant total maximum
+        """
+        return self.filter_min_total_amount(queryset, name, 0).filter(total_amount__lte=value)
+    
+    def filter_has_rating(self, queryset, name, value):
+        """
+        Filtre les commandes avec/sans note
+        """
+        if value:
+            return queryset.filter(rating__gt=0)
+        else:
+            return queryset.filter(rating=0)
+    
+    def filter_has_comment(self, queryset, name, value):
+        """
+        Filtre les commandes avec/sans commentaire
+        """
+        if value:
+            return queryset.filter(comment__isnull=False).exclude(comment='')
+        else:
+            return queryset.filter(Q(comment__isnull=True) | Q(comment=''))
+    
+    def filter_period(self, queryset, name, value):
+        """
+        Filtre par période prédéfinie
+        """
+        now = timezone.now()
+        
+        if value == 'today':
+            start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
+            return queryset.filter(created__gte=start_date)
+        
+        elif value == 'yesterday':
+            start_date = (now - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+            end_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
+            return queryset.filter(created__gte=start_date, created__lt=end_date)
+        
+        elif value == 'last_7_days':
+            start_date = now - timedelta(days=7)
+            return queryset.filter(created__gte=start_date)
+        
+        elif value == 'last_30_days':
+            start_date = now - timedelta(days=30)
+            return queryset.filter(created__gte=start_date)
+        
+        elif value == 'this_month':
+            start_date = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            return queryset.filter(created__gte=start_date)
+        
+        elif value == 'last_month':
+            first_day_of_current_month = now.replace(day=1)
+            last_day_of_last_month = first_day_of_current_month - timedelta(days=1)
+            first_day_of_last_month = last_day_of_last_month.replace(day=1)
+            
+            return queryset.filter(
+                created__gte=first_day_of_last_month,
+                created__lte=last_day_of_last_month
+            )
+        
+        elif value == 'this_year':
+            start_date = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+            return queryset.filter(created__gte=start_date)
+        
+        return queryset
+    
+    def filter_search(self, queryset, name, value):
+        """
+        Recherche dans les commentaires, noms des plats/boissons, etc.
+        """
+        return queryset.filter(
+            Q(comment__icontains=value) |
+            Q(dishes_items__dish__name__icontains=value) |
+            Q(drinks_items__drink__name__icontains=value) |
+            Q(customer__firstname__icontains=value) |
+            Q(customer__lastname__icontains=value) |
+            Q(cooker__firstname__icontains=value) |
+            Q(cooker__lastname__icontains=value)
+        ).distinct()

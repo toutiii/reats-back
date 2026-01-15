@@ -67,7 +67,7 @@ from utils.distance_computer import (
     get_closest_cookers_ids_from_customer_search_address,
 )
 from utils.enums import ErrorCodeEnum, ErrorMessageEnum, OrderStatusEnum, SuccessMessageEnum
-from utils.filters import OrderFilter
+from utils.filters import OrderFilter, OrderHistoryFilter
 
 from .serializers import (
     AddressGETSerializer,
@@ -663,16 +663,25 @@ class CustomerOrderHistoryView(StandardizedResponseMixin, ListModelMixin, Generi
     parser_classes = [MultiPartParser]
     serializer_class = OrderGETSerializer
 
+    pagination_class = StandardizedResultsSetPagination
+    filter_backends = [filters.DjangoFilterBackend]
+    filterset_class = OrderHistoryFilter
+
     def list(self, request, *args, **kwargs) -> Response:
-        order_status: Union[str, None] = self.request.query_params.get("status")
         start_date: Union[str, None] = self.request.query_params.get("start_date")
         end_date: Union[str, None] = self.request.query_params.get("end_date")
-        self.queryset = self.queryset.filter(customer__id=request.user.pk).order_by("-modified")
 
         if start_date and end_date:
             try:
                 start_date_object = datetime.fromisoformat(start_date.replace("Z", "+00:00"))
                 end_date_object = datetime.fromisoformat(end_date.replace("Z", "+00:00"))
+                
+                if start_date_object > end_date_object:
+                    return self.error(
+                        message="Start date cannot be greater than end date",
+                        code=ErrorCodeEnum.VALIDATION_ERROR,
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                    )
             except ValueError:
                 return self.error(
                     message="Invalid date format",
@@ -680,26 +689,14 @@ class CustomerOrderHistoryView(StandardizedResponseMixin, ListModelMixin, Generi
                     status_code=status.HTTP_400_BAD_REQUEST,
                 )
 
-            if start_date_object > end_date_object:
-                return self.error(
-                    message="Start date cannot be greater than end date",
-                    code=ErrorCodeEnum.VALIDATION_ERROR,
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                )
-
-            self.queryset = self.queryset.filter(
-                created__gte=start_date_object,
-                created__lte=end_date_object,
-            )
-        if order_status:
-            self.queryset = self.queryset.filter(status=order_status)
-
+        self.queryset = self.queryset.filter(customer__id=request.user.pk).order_by("-modified")
         response = super().list(request, *args, **kwargs)
-
-        return self.success(
-            data=response.data,
-            status_code=status.HTTP_200_OK,
-        )
+    
+        data = response.data
+        if isinstance(data, dict) and 'success' in data:
+            data = data.get('data')
+            
+        return self.success(data=data, status_code=status.HTTP_200_OK)
 
 
 class DishCountriesView(ListModelMixin, GenericViewSet):
