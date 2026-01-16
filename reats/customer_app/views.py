@@ -780,3 +780,5 @@ class CustomerOrderRatingView(StandardizedResponseMixin, UpdateModelMixin, Gener
     def update(self, request, *args, **kwargs):
         super().update(request, *args, **kwargs)
         return self.success(message=SuccessMessageEnum.OPERATION_SUCCESSFUL)
+
+
