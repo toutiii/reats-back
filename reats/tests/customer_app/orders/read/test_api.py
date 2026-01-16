@@ -531,14 +531,14 @@ def test_orders_list_success(
     assert response.status_code == status.HTTP_200_OK
     assert response.json().get("success") == ok_value
     assert response.json().get("message") == SuccessMessageEnum.OPERATION_SUCCESSFUL.value
-    
+
     response_data = response.json().get("data", {})
 
     if isinstance(response_data, dict) and "results" in response_data:
-        actual_results = response_data['results']
+        actual_results = response_data["results"]
     else:
         actual_results = response_data
-        
+
     assert isinstance(actual_results, list)
     assert isinstance(response_data.get("pagination"), dict)
 

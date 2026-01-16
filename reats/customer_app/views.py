@@ -21,12 +21,11 @@ from core_app.serializers import (
     OrderRatingSerializer,
 )
 from custom_renderers.renderers import (
-    CustomRendererWithoutData,
     DishesCountriesCustomRendererWithData,
-    OrderCustomRendererWithData,
 )
 from django.conf import settings
 from django.db import IntegrityError
+from django_filters import rest_framework as filters
 from phonenumbers.phonenumberutil import NumberParseException
 from rest_framework import status
 from rest_framework.decorators import action
@@ -37,8 +36,6 @@ from rest_framework.permissions import BasePermission
 from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
-from django_filters import rest_framework as filters
-
 from utils.common import (
     activate_user,
     compute_order_items_total_amount,
@@ -56,7 +53,6 @@ from utils.common import (
     upload_image_to_s3,
 )
 from utils.custom_api_reponse import StandardizedResponseMixin
-from utils.paginations import StandardizedResultsSetPagination
 from utils.custom_permissions import (
     AnonymousPermission,
     CustomAPIKeyPermission,
@@ -68,6 +64,7 @@ from utils.distance_computer import (
 )
 from utils.enums import ErrorCodeEnum, ErrorMessageEnum, OrderStatusEnum, SuccessMessageEnum
 from utils.filters import OrderFilter, OrderHistoryFilter
+from utils.paginations import StandardizedResultsSetPagination
 
 from .serializers import (
     AddressGETSerializer,
@@ -613,7 +610,6 @@ class OrderView(
 
         return self.success(data=serializer.data, message=SuccessMessageEnum.OPERATION_SUCCESSFUL)
 
-
     def get_serializer_class(self) -> type[BaseSerializer]:
         if self.request.method in ("POST", "PUT"):
             self.serializer_class = OrderSerializer
@@ -628,14 +624,16 @@ class OrderView(
 
     def list(self, request, *args, **kwargs) -> Response:
         self.queryset = self.queryset.filter(customer__id=request.user.pk)
-        
+
         # Only return active orders
-        self.queryset = self.queryset.filter(status__in=[
-            OrderStatusEnum.PENDING,
-            OrderStatusEnum.PROCESSING,
-            OrderStatusEnum.COMPLETED,
-        ])
-        
+        self.queryset = self.queryset.filter(
+            status__in=[
+                OrderStatusEnum.PENDING,
+                OrderStatusEnum.PROCESSING,
+                OrderStatusEnum.COMPLETED,
+            ]
+        )
+
         queryset = self.filter_queryset(self.get_queryset())
 
         page = self.paginate_queryset(queryset)
@@ -645,9 +643,7 @@ class OrderView(
 
         serializer = self.get_serializer(queryset, many=True)
         return self.success(
-            data=serializer.data, 
-            message=SuccessMessageEnum.OPERATION_SUCCESSFUL, 
-            status_code=status.HTTP_200_OK
+            data=serializer.data, message=SuccessMessageEnum.OPERATION_SUCCESSFUL, status_code=status.HTTP_200_OK
         )
 
 
@@ -675,7 +671,7 @@ class CustomerOrderHistoryView(StandardizedResponseMixin, ListModelMixin, Generi
             try:
                 start_date_object = datetime.fromisoformat(start_date.replace("Z", "+00:00"))
                 end_date_object = datetime.fromisoformat(end_date.replace("Z", "+00:00"))
-                
+
                 if start_date_object > end_date_object:
                     return self.error(
                         message="Start date cannot be greater than end date",
@@ -691,11 +687,11 @@ class CustomerOrderHistoryView(StandardizedResponseMixin, ListModelMixin, Generi
 
         self.queryset = self.queryset.filter(customer__id=request.user.pk).order_by("-modified")
         response = super().list(request, *args, **kwargs)
-    
+
         data = response.data
-        if isinstance(data, dict) and 'success' in data:
-            data = data.get('data')
-            
+        if isinstance(data, dict) and "success" in data:
+            data = data.get("data")
+
         return self.success(data=data, status_code=status.HTTP_200_OK)
 
 

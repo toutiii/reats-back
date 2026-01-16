@@ -1,6 +1,7 @@
-from utils.enums import SuccessMessageEnum
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
+
+from utils.enums import SuccessMessageEnum
 
 
 class StandardizedResultsSetPagination(PageNumberPagination):
@@ -14,7 +15,7 @@ class StandardizedResultsSetPagination(PageNumberPagination):
             return min(size, self.max_page_size)
         except (KeyError, ValueError):
             return self.page_size
-    
+
     def get_paginated_response(self, results, sumary_data=None):
         pagination: dict = {
             "current_page": self.page.number,
@@ -22,7 +23,7 @@ class StandardizedResultsSetPagination(PageNumberPagination):
             "total_items": self.page.paginator.count,
             "items_per_page": self.get_page_size(self.request),
         }
-        
+
         data: dict = {
             "results": results,
             "pagination": pagination,
@@ -30,9 +31,11 @@ class StandardizedResultsSetPagination(PageNumberPagination):
 
         if sumary_data is not None:
             data["summary"] = sumary_data
-        
-        return Response({
-            "success": True,
-            "message": SuccessMessageEnum.OPERATION_SUCCESSFUL,
-            "data": data,
-        })
+
+        return Response(
+            {
+                "success": True,
+                "message": SuccessMessageEnum.OPERATION_SUCCESSFUL,
+                "data": data,
+            }
+        )
