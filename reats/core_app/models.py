@@ -5,11 +5,14 @@ from django.db.models import (
     BooleanField,
     CharField,
     DateTimeField,
+    EmailField,
     FloatField,
     ForeignKey,
+    Index,
     IntegerField,
     Manager,
     TextField,
+    constraints,
 )
 from utils.enums import OrderStatusEnum
 from utils.models import ReatsModel
@@ -20,6 +23,7 @@ class CookerModel(ReatsModel):
     firstname: CharField = CharField(max_length=100)
     lastname: CharField = CharField(max_length=100)
     phone: CharField = CharField(unique=True, max_length=17, validators=[MinLengthValidator(10)])
+    email: EmailField = EmailField(max_length=254, null=True, blank=True)
     postal_code: CharField = CharField(
         max_length=5,
         validators=[RegexValidator(regex=r"[0-9]{5}")],
@@ -54,6 +58,18 @@ class CookerModel(ReatsModel):
 
     class Meta:
         db_table = "cookers"
+        indexes = [
+            Index(fields=["email"], name="cooker_email_idx"),
+            Index(fields=["phone"], name="cooker_phone_idx"),
+            Index(fields=["is_deleted"], name="cooker_is_deleted_idx"),
+            Index(fields=["is_online"], name="cooker_is_online_idx"),
+        ]
+        constraints = [
+            constraints.UniqueConstraint(
+                fields=["email"],
+                name="unique_cooker_email",
+            ),
+        ]
 
     objects: Manager = Manager()  # For linting purposes
 
