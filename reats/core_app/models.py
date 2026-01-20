@@ -23,7 +23,7 @@ class CookerModel(ReatsModel):
     firstname: CharField = CharField(max_length=100)
     lastname: CharField = CharField(max_length=100)
     phone: CharField = CharField(unique=True, max_length=17, validators=[MinLengthValidator(10)])
-    email: EmailField = EmailField(max_length=254, null=True, blank=True)
+    email: EmailField = EmailField(max_length=254)
     postal_code: CharField = CharField(
         max_length=5,
         validators=[RegexValidator(regex=r"[0-9]{5}")],

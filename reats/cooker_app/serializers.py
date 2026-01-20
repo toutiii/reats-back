@@ -67,6 +67,7 @@ class CookerGETSerializer(ModelSerializer):
                 "max_order_number": str(data["max_order_number"]),
                 "is_online": data["is_online"],
                 "acceptance_rate": data["acceptance_rate"],
+                "email": data["email"],
             },
             "address_section": {
                 "street_number": data.get("street_number"),
@@ -205,6 +206,7 @@ class CookerOrderCookerGETSerializer(ModelSerializer):
             "firstname",
             "lastname",
             "acceptance_rate",
+            "email",
         )
 
 
