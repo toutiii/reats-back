@@ -14,6 +14,7 @@ def create_test_cooker():
         firstname="Test",
         lastname="Cooker",
         phone="0600000001",
+        email="test_fixture@gmail.com",
         postal_code="75001",
         siret="12345678901234",
         street_name="Rue de test",
