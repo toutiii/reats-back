@@ -664,35 +664,19 @@ class CustomerOrderHistoryView(StandardizedResponseMixin, ListModelMixin, Generi
     filterset_class = OrderHistoryFilter
 
     def list(self, request, *args, **kwargs) -> Response:
-        start_date: Union[str, None] = self.request.query_params.get("start_date")
-        end_date: Union[str, None] = self.request.query_params.get("end_date")
-
-        if start_date and end_date:
-            try:
-                start_date_object = datetime.fromisoformat(start_date.replace("Z", "+00:00"))
-                end_date_object = datetime.fromisoformat(end_date.replace("Z", "+00:00"))
-
-                if start_date_object > end_date_object:
-                    return self.error(
-                        message="Start date cannot be greater than end date",
-                        code=ErrorCodeEnum.VALIDATION_ERROR,
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                    )
-            except ValueError:
-                return self.error(
-                    message="Invalid date format",
-                    code=ErrorCodeEnum.VALIDATION_ERROR,
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                )
-
         self.queryset = self.queryset.filter(customer__id=request.user.pk).order_by("-modified")
-        response = super().list(request, *args, **kwargs)
 
-        data = response.data
-        if isinstance(data, dict) and "success" in data:
-            data = data.get("data")
+        # DjangoFilterBackend handles validation errors and returns 400 automatically
+        # if FilterSet.clean() raises ValidationError
+        queryset = self.filter_queryset(self.get_queryset())
 
-        return self.success(data=data, status_code=status.HTTP_200_OK)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return self.success(data=serializer.data, status_code=status.HTTP_200_OK)
 
 
 class DishCountriesView(ListModelMixin, GenericViewSet):
