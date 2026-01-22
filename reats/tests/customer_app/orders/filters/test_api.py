@@ -14,66 +14,50 @@ def setup_filter_test_data(create_authenticated_customer, create_test_cooker, cr
     cooker = create_test_cooker
     address = create_test_address
 
-    # Nettoyer les données existantes
+    # Nettoyer toutes les commandes existantes pour ce client
     OrderModel.objects.filter(customer=customer).delete()
 
-    # Créer des commandes avec différentes caractéristiques
-    orders_data = [
-        # Commande 1: PENDING, créée il y a 5 jours, avec plat 1
-        {
-            "status": OrderStatusEnum.PENDING,
-            "created": timezone.now() - timedelta(days=5),
-            "delivery_fees": 2.0,
-            "rating": 4.5,
-            "comment": "Excellente commande",
-        },
-        # Commande 2: PROCESSING, créée il y a 3 jours, avec boisson 1
-        {
-            "status": OrderStatusEnum.PROCESSING,
-            "created": timezone.now() - timedelta(days=3),
-            "delivery_fees": 3.5,
-            "rating": 3.0,
-            "comment": "Commande standard",
-        },
-        # Commande 3: COMPLETED, créée hier, livraison programmée demain
-        {
-            "status": OrderStatusEnum.COMPLETED,
-            "created": timezone.now() - timedelta(days=1),
-            "delivery_fees": 5.0,
-            "rating": 5.0,
-            "comment": "Parfait !",
-            "scheduled_delivery_date": timezone.now() + timedelta(days=1),
-        },
-        # Commande 4: PENDING, créée aujourd'hui
-        {
-            "status": OrderStatusEnum.PENDING,
-            "created": timezone.now(),
-            "delivery_fees": 1.5,
-            "rating": 0.0,  # Pas encore noté
-            "comment": None,
-        },
+    # Créer 4 commandes de test en utilisant les objets de fixtures
+    orders = []
+
+    order_configs = [
+        {"status": OrderStatusEnum.PENDING, "created_delta": 5, "fees": 2.0, "rating": 4.5},
+        {"status": OrderStatusEnum.PROCESSING, "created_delta": 3, "fees": 3.5, "rating": 3.0},
+        {"status": OrderStatusEnum.COMPLETED, "created_delta": 1, "fees": 5.0, "rating": 5.0, "scheduled": 1},
+        {"status": OrderStatusEnum.PENDING, "created_delta": 0, "fees": 1.5, "rating": 0.0},
     ]
 
-    orders = []
-    for i, order_data in enumerate(orders_data):
-        # Extraire la date de création pour l'appliquer après (car auto_now_add=True)
-        created_date = order_data.pop("created")
+    for config in order_configs:
+        created_date = timezone.now() - timedelta(days=config["created_delta"])
 
-        order = OrderModel.objects.create(customer=customer, cooker=cooker, address=address, **order_data)
-        # Forcer la date de création
+        order_data = {
+            "customer": customer,
+            "cooker": cooker,
+            "address": address,
+            "status": config["status"],
+            "delivery_fees": config["fees"],
+            "rating": config["rating"],
+        }
+
+        if "scheduled" in config:
+            order_data["scheduled_delivery_date"] = timezone.now() + timedelta(days=config["scheduled"])
+
+        order = OrderModel.objects.create(**order_data)
+        # Forcer la date de création (car auto_now_add=True)
         OrderModel.objects.filter(id=order.id).update(created=created_date)
-
-        if i == 0:
-            DishModel.objects.create(
-                name=f"Plat Test {i}",
-                price=10.0,
-                cooker=cooker,
-                category="dish",
-                country="France",
-                photo="test.jpg",
-                is_enabled=True,
-            )
+        order.refresh_from_db()
         orders.append(order)
+
+    # Création du plat pour la première commande (pour tests Dish)
+    DishModel.objects.get_or_create(
+        name="Plat Test 0",
+        price=10.0,
+        cooker=cooker,
+        category="dish",
+        country="France",
+        photo="test.jpg",
+        is_enabled=True,
+    )
 
     return customer, orders
 
@@ -219,41 +203,88 @@ class TestOrderFiltersEdgeCases:
 
             assert response.status_code == status.HTTP_200_OK
 
-    def test_special_characters_in_search(self, auth_headers, client, customer_order_path, setup_filter_test_data):
-        """Test avec caractères spéciaux dans la recherche"""
+    def test_special_characters_rejected_in_search(
+        self, auth_headers, client, customer_order_path, setup_filter_test_data
+    ):
+        """Test que les caractères spéciaux dangereux sont rejetés avec HTTP 400"""
         customer, orders = setup_filter_test_data
 
-        test_cases = [
+        invalid_test_cases = [
             "excellente!",  # Point d'exclamation
             "commande&test",  # Esperluette
             "parfait@livraison",  # Arobase
             "test#123",  # Dièse
+            "test<script>",  # Balise HTML
+            "test;DROP",  # Point-virgule (SQL-like)
+            "test|command",  # Pipe
+            "test$variable",  # Dollar
         ]
 
-        for search_term in test_cases:
+        for search_term in invalid_test_cases:
             response = client.get(customer_order_path, follow=False, **auth_headers, data={"search": search_term})
 
-            assert response.status_code == status.HTTP_200_OK
-            # Ne devrait pas planter avec des caractères spéciaux
+            assert (
+                response.status_code == status.HTTP_400_BAD_REQUEST
+            ), f"Expected 400 for '{search_term}', got {response.status_code}"
+            # Vérifier que l'erreur concerne bien le champ 'search'
+            response_data = response.json()
+            assert not response_data.get("success", True), "Success should be False for invalid input"
 
-    def test_very_large_date_range(self, auth_headers, client, customer_order_path, setup_filter_test_data):
-        """Test avec une très large plage de dates"""
+    def test_valid_characters_accepted_in_search(
+        self, auth_headers, client, customer_order_path, setup_filter_test_data
+    ):
+        """Test que les caractères valides sont acceptés avec HTTP 200"""
         customer, orders = setup_filter_test_data
 
+        valid_test_cases = [
+            "excellente",  # Lettres simples
+            "très bon",  # Accents français
+            "commande-test",  # Tiret
+            "l'ordre",  # Apostrophe
+            "test 123",  # Chiffres et espaces
+        ]
+
+        for search_term in valid_test_cases:
+            response = client.get(customer_order_path, follow=False, **auth_headers, data={"search": search_term})
+
+            assert (
+                response.status_code == status.HTTP_200_OK
+            ), f"Expected 200 for '{search_term}', got {response.status_code}"
+
+    def test_created_after_too_old_rejected(self, auth_headers, client, customer_order_path, setup_filter_test_data):
+        """Test qu'une date trop ancienne (3 ans) est rejetée avec HTTP 400"""
+        customer, orders = setup_filter_test_data
+
+        # 3 ans en arrière
+        three_years_ago = (timezone.now() - timedelta(days=365 * 3)).strftime("%Y-%m-%d")
+
         response = client.get(
-            customer_order_path,
-            follow=False,
-            **auth_headers,
-            data={
-                "created_after": "2000-01-01",
-                "created_before": "2030-12-31",
-            },
+            customer_order_path, follow=False, **auth_headers, data={"created_after": three_years_ago}
         )
 
-        assert response.status_code == status.HTTP_200_OK
-        data = response.json()["data"]
+        assert (
+            response.status_code == status.HTTP_400_BAD_REQUEST
+        ), f"Expected 400 for date older than 2 years ({three_years_ago}), got {response.status_code}"
 
-        assert data["pagination"]["total_items"] == len(orders)
+        response_data = response.json()
+
+        errors = response_data.get("error", {}).get("details", {})
+        if not errors:
+            errors = response_data
+
+        assert "created_after" in errors, f"Error details should contain 'created_after', got: {response_data}"
+
+    def test_created_after_recent_accepted(self, auth_headers, client, customer_order_path, setup_filter_test_data):
+        """Test qu'une date récente (1 an) est acceptée avec HTTP 200"""
+        customer, orders = setup_filter_test_data
+
+        one_year_ago = (timezone.now() - timedelta(days=365)).strftime("%Y-%m-%d")
+
+        response = client.get(customer_order_path, follow=False, **auth_headers, data={"created_after": one_year_ago})
+
+        assert (
+            response.status_code == status.HTTP_200_OK
+        ), f"Expected 200 for recent date ({one_year_ago}), got {response.status_code}"
 
 
 @pytest.mark.django_db
@@ -456,7 +487,7 @@ class TestOrderFiltersTotalAmount:
         # Commande 1: delivery=2.0, plat 1 (prix 10.0) -> total = 12.0
         # Nous allons tricher un peu et créer des OrderDishItem pour ces commandes pour avoir des totaux
 
-        dish = DishModel.objects.first()
+        dish = DishModel.objects.get(name="Plat Test 0")
 
         # Commande 1 (index 0): Total = 2.0 (installé) + 10.0 (plat) = 12.0
         OrderDishItemModel.objects.create(order=orders[0], dish=dish, dish_quantity=1)
@@ -479,7 +510,8 @@ class TestOrderFiltersTotalAmount:
         """Test filtre par montant maximum"""
         customer, orders = setup_filter_test_data
 
-        dish = DishModel.objects.first()
+        dish = DishModel.objects.get(name="Plat Test 0")
+        print(f"DEBUG: Dish Price = {dish.price}")
 
         # Commande 1: Total 12.0
         OrderDishItemModel.objects.create(order=orders[0], dish=dish, dish_quantity=1)
@@ -491,6 +523,7 @@ class TestOrderFiltersTotalAmount:
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()["data"]
+        print(f"DEBUG: Response Results = {data['results']}")
 
         # Résultats attendus : Commande 1 (12.0), Commande 3 (5.0), Commande 4 (1.5)
         # La Commande 2 (23.5) doit être exclue
@@ -502,7 +535,7 @@ class TestOrderFiltersTotalAmount:
         """Test filtre combiné min et max"""
         customer, orders = setup_filter_test_data
 
-        dish = DishModel.objects.first()
+        dish = DishModel.objects.get(name="Plat Test 0")
 
         # Commande 1: Total 12.0
         OrderDishItemModel.objects.create(order=orders[0], dish=dish, dish_quantity=1)
@@ -534,7 +567,7 @@ class TestOrderHistoryFilter:
 
         customer, orders = setup_filter_test_data
 
-        dish = DishModel.objects.first()
+        dish = DishModel.objects.get(name="Plat Test 0")
         # Commande 1: Total 12.0
         OrderDishItemModel.objects.create(order=orders[0], dish=dish, dish_quantity=1)
 
@@ -573,21 +606,19 @@ class TestOrderHistoryFilter:
 
     def test_history_filter_validation_error(self, auth_headers, client, customer_order_history_path):
         """Test que la validation explicite des dates retourne bien une erreur 400"""
-        # Note: customer_order_history_path doit être défini ou on utilise une URL connue
-        # On suppose que l'URL est /api/customer/orders/history/
 
         # Cas 1: start > end
         response = client.get(
-            "/api/customer/orders/history/",  # URL probable
+            customer_order_history_path,
             follow=False,
             **auth_headers,
             data={"start_date": "2024-01-02", "end_date": "2024-01-01"},
         )
 
-        # Si le path n'est pas bon, on skip ou on utilise un path générique
-        if response.status_code == 404:
-            pytest.skip("URL d'historique non trouvée pour le test de validation")
-
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         data = response.json()
-        assert data["code"] == ErrorCodeEnum.VALIDATION_ERROR
+
+        # Gestion du format d'erreur standardisé {"error": {"code": ...}}
+        assert "error" in data
+        assert "code" in data.get("error", {})
+        assert data.get("error", {}).get("code") == ErrorCodeEnum.VALIDATION_ERROR
