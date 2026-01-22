@@ -548,13 +548,14 @@ def test_orders_list_success(
 
     response_data = response.json().get("data", {})
 
-    if isinstance(response_data, dict) and "results" in response_data:
-        actual_results = response_data["results"]
-    else:
-        actual_results = response_data
+    # Ensure response has the expected paginated structure
+    assert isinstance(response_data, dict), "Response data should be a dictionary"
+    assert "results" in response_data, "Response data should contain 'results' key"
+    assert "pagination" in response_data, "Response data should contain 'pagination' key"
 
-    assert isinstance(actual_results, list)
-    assert isinstance(response_data.get("pagination"), dict)
+    actual_results = response_data["results"]
+    assert isinstance(actual_results, list), "Results should be a list"
+    assert isinstance(response_data["pagination"], dict), "Pagination should be a dictionary"
 
     diff = DeepDiff(actual_results, expected_data, ignore_order=True)
 
