@@ -203,13 +203,9 @@ class TestOrderFiltersEdgeCases:
 
             assert response.status_code == status.HTTP_200_OK
 
-    def test_special_characters_rejected_in_search(
-        self, auth_headers, client, customer_order_path, setup_filter_test_data
-    ):
-        """Test que les caractères spéciaux dangereux sont rejetés avec HTTP 400"""
-        customer, orders = setup_filter_test_data
-
-        invalid_test_cases = [
+    @pytest.mark.parametrize(
+        "search_term",
+        [
             "excellente!",  # Point d'exclamation
             "commande&test",  # Esperluette
             "parfait@livraison",  # Arobase
@@ -218,38 +214,66 @@ class TestOrderFiltersEdgeCases:
             "test;DROP",  # Point-virgule (SQL-like)
             "test|command",  # Pipe
             "test$variable",  # Dollar
-        ]
-
-        for search_term in invalid_test_cases:
-            response = client.get(customer_order_path, follow=False, **auth_headers, data={"search": search_term})
-
-            assert (
-                response.status_code == status.HTTP_400_BAD_REQUEST
-            ), f"Expected 400 for '{search_term}', got {response.status_code}"
-            # Vérifier que l'erreur concerne bien le champ 'search'
-            response_data = response.json()
-            assert not response_data.get("success", True), "Success should be False for invalid input"
-
-    def test_valid_characters_accepted_in_search(
-        self, auth_headers, client, customer_order_path, setup_filter_test_data
+        ],
+        ids=[
+            "exclamation",
+            "ampersand",
+            "at_sign",
+            "hash",
+            "html_tag",
+            "semicolon_sql_like",
+            "pipe",
+            "dollar",
+        ],
+    )
+    def test_special_characters_rejected_in_search(
+        self, auth_headers, client, customer_order_path, setup_filter_test_data, search_term
     ):
-        """Test que les caractères valides sont acceptés avec HTTP 200"""
-        customer, orders = setup_filter_test_data
+        """Test que les caractères spéciaux (rejetés) retournent bien HTTP 400"""
+        setup_filter_test_data  # ensures data exists (even if not used directly)
 
-        valid_test_cases = [
+        response = client.get(
+            customer_order_path,
+            follow=False,
+            **auth_headers,
+            data={"search": search_term},
+        )
+
+        assert (
+            response.status_code == status.HTTP_400_BAD_REQUEST
+        ), f"Expected 400 for '{search_term}', got {response.status_code}"
+
+        response_data = response.json()
+        assert not response_data.get("success", True), "Success should be False for invalid input"
+
+    @pytest.mark.parametrize(
+        "search_term",
+        [
             "excellente",  # Lettres simples
             "très bon",  # Accents français
             "commande-test",  # Tiret
             "l'ordre",  # Apostrophe
             "test 123",  # Chiffres et espaces
-        ]
+        ],
+        ids=[
+            "simple_letters",
+            "french_accents",
+            "dash",
+            "apostrophe",
+            "digits_and_spaces",
+        ],
+    )
+    def test_valid_characters_accepted_in_search(
+        self, auth_headers, client, customer_order_path, setup_filter_test_data, search_term
+    ):
+        """Test que les caractères valides sont acceptés avec HTTP 200"""
+        setup_filter_test_data  # ensures data exists (even if not used directly)
 
-        for search_term in valid_test_cases:
-            response = client.get(customer_order_path, follow=False, **auth_headers, data={"search": search_term})
+        response = client.get(customer_order_path, follow=False, **auth_headers, data={"search": search_term})
 
-            assert (
-                response.status_code == status.HTTP_200_OK
-            ), f"Expected 200 for '{search_term}', got {response.status_code}"
+        assert (
+            response.status_code == status.HTTP_200_OK
+        ), f"Expected 200 for '{search_term}', got {response.status_code}"
 
     def test_created_after_too_old_rejected(self, auth_headers, client, customer_order_path, setup_filter_test_data):
         """Test qu'une date trop ancienne (3 ans) est rejetée avec HTTP 400"""
