@@ -6,6 +6,7 @@ from django.core.validators import RegexValidator
 from django.db.models import Q
 from django.utils import timezone
 from django_filters import rest_framework as filters
+from rest_framework.exceptions import ValidationError
 
 from utils.enums import OrderStatusEnum
 
@@ -110,8 +111,6 @@ class OrderFilter(filters.FilterSet):
             return value
         limit_date = timezone.now() - timedelta(days=365 * 2)
         if value < limit_date:
-            from rest_framework.exceptions import ValidationError
-
             raise ValidationError(
                 {field_name: f"La date ne peut pas remonter à plus de 2 ans (limite: {limit_date.date()})."}
             )
