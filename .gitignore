@@ -1,7 +1,5 @@
 *.pyc
 !*-tpl
-*.vscode
-*.idea
 *.venv
 
 # Elastic Beanstalk Files
