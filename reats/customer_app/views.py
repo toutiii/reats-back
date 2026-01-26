@@ -666,8 +666,6 @@ class CustomerOrderHistoryView(StandardizedResponseMixin, ListModelMixin, Generi
     def list(self, request, *args, **kwargs) -> Response:
         self.queryset = self.queryset.filter(customer__id=request.user.pk).order_by("-modified")
 
-        # DjangoFilterBackend handles validation errors and returns 400 automatically
-        # if FilterSet.clean() raises ValidationError
         queryset = self.filter_queryset(self.get_queryset())
 
         page = self.paginate_queryset(queryset)
