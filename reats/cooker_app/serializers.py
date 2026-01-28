@@ -233,3 +233,33 @@ class CookerOrderGETSerializer(ModelSerializer):
         data["total_amount"] = round(data["sub_total"] + data["service_fees"] + instance.delivery_fees, 2)
 
         return data
+
+
+class RecentReviewSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    customerName = serializers.CharField()
+    rating = serializers.IntegerField()
+    comment = serializers.CharField(allow_null=True)
+    date = serializers.DateTimeField()
+    orderNumber = serializers.CharField()
+
+
+class PopularItemSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    name = serializers.CharField()
+    soldToday = serializers.IntegerField()
+    revenue = serializers.DecimalField(max_digits=10, decimal_places=2)
+    image = serializers.CharField(allow_blank=True, allow_null=True)
+
+
+class RevenueChartSerializer(serializers.Serializer):
+    labels = serializers.ListField(child=serializers.CharField())
+    data = serializers.ListField(child=serializers.FloatField())  # type: ignore[assignment]
+
+
+class DashboardStatsSerializer(serializers.Serializer):
+    period = serializers.CharField()
+    stats = serializers.DictField()
+    revenueChart = RevenueChartSerializer()
+    recentReviews = RecentReviewSerializer(many=True)
+    popularItems = PopularItemSerializer(many=True)
