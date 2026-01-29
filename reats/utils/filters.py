@@ -2,13 +2,14 @@ from datetime import timedelta
 
 import django_filters
 from core_app.models import OrderModel
+from django.conf import settings
 from django.core.validators import RegexValidator
 from django.db.models import Q
 from django.utils import timezone
 from django_filters import rest_framework as filters
 from rest_framework.exceptions import ValidationError
 
-from utils.enums import OrderStatusEnum
+from utils.enums import ErrorMessageEnum, OrderStatusEnum
 
 
 class CharInFilter(filters.BaseInFilter, filters.CharFilter):
@@ -64,8 +65,7 @@ class OrderFilter(filters.FilterSet):
         validators=[
             RegexValidator(
                 regex=r"^[\w\sàâäéèêëïîôùûüÿçÀÂÄÉÈÊËÏÎÔÙÛÜŸÇ\'-]+$",
-                message="Le champ de recherche contient des caractères non autorisés. "
-                "Seuls les lettres, chiffres, espaces, tirets et apostrophes sont acceptés.",
+                message=ErrorMessageEnum.SEARCH_INVALID_CHARACTERS,
             )
         ],
     )
@@ -101,7 +101,7 @@ class OrderFilter(filters.FilterSet):
         if after and before and after > before:
             from rest_framework.exceptions import ValidationError
 
-            raise ValidationError({"created_after": "La date de début ne peut pas être supérieure à la date de fin."})
+            raise ValidationError({"created_after": ErrorMessageEnum.INVALID_DATE_RANGE})
 
         return cleaned_data
 
@@ -109,7 +109,7 @@ class OrderFilter(filters.FilterSet):
         """Valide que la date ne remonte pas à plus de 2 ans."""
         if not value:
             return value
-        limit_date = timezone.now() - timedelta(days=365 * 2)
+        limit_date = timezone.now() - timedelta(days=settings.ORDER_HISTORY_LIMIT_DAYS)
         if value < limit_date:
             raise ValidationError(
                 {field_name: f"La date ne peut pas remonter à plus de 2 ans (limite: {limit_date.date()})."}
@@ -199,7 +199,3 @@ class OrderFilter(filters.FilterSet):
             | Q(cooker__firstname__icontains=value)
             | Q(cooker__lastname__icontains=value)
         ).distinct()
-
-
-# Alias pour compatibilité descendante
-OrderHistoryFilter = OrderFilter
