@@ -35,9 +35,7 @@
 }
 ```
 
-> [!IMPORTANT]
-> **Pour l'équipe Frontend :**
-> Veuillez implémenter une validation similaire côté client pour améliorer l'expérience utilisateur et éviter des appels API inutiles.
+
 
 ## Filtres de Date
 
@@ -57,26 +55,7 @@
 }
 ```
 
-> [!TIP]
-> **Pour l'équipe Frontend :**
-> Voici un exemple de validation en TypeScript pour anticiper les erreurs :
->
-> ```typescript
-> const validateOrderDates = (after: Date, before?: Date) => {
->   const twoYearsAgo = new Date();
->   twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
->
->   if (after < twoYearsAgo) {
->     return "La date ne peut pas remonter à plus de 2 ans.";
->   }
->
->   if (before && after > before) {
->     return "La date de début ne peut pas être supérieure à la date de fin.";
->   }
->
->   return null;
-> };
-> ```
+
 
 ## Liste Exhaustive des Filtres (Backend)
 
