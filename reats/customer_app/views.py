@@ -63,7 +63,7 @@ from utils.distance_computer import (
     get_closest_cookers_ids_from_customer_search_address,
 )
 from utils.enums import ErrorCodeEnum, ErrorMessageEnum, OrderStatusEnum, SuccessMessageEnum
-from utils.filters import OrderFilter, OrderHistoryFilter
+from utils.filters import OrderFilter
 from utils.paginations import StandardizedResultsSetPagination
 
 from .serializers import (
@@ -661,7 +661,7 @@ class CustomerOrderHistoryView(StandardizedResponseMixin, ListModelMixin, Generi
 
     pagination_class = StandardizedResultsSetPagination
     filter_backends = [filters.DjangoFilterBackend]
-    filterset_class = OrderHistoryFilter
+    filterset_class = OrderFilter
 
     def list(self, request, *args, **kwargs) -> Response:
         self.queryset = self.queryset.filter(customer__id=request.user.pk).order_by("-modified")

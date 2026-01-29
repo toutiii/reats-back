@@ -1,3 +1,4 @@
+import time
 from datetime import timedelta
 
 import pytest
@@ -315,17 +316,14 @@ class TestOrderFiltersEdgeCases:
 class TestOrderFiltersWithPagination:
     """Tests combinant filtres et pagination"""
 
-    def test_filter_pagination_integration(
+    @pytest.fixture
+    def setup_pagination_data(
         self,
-        auth_headers,
-        client,
-        customer_order_path,
         create_authenticated_customer,
         create_test_cooker,
         create_test_address,
     ):
-        """Test l'intégration filtres + pagination"""
-        # Créer plus de données pour tester la pagination
+        """Fixture pour créer les données de pagination"""
         customer = create_authenticated_customer
         cooker = create_test_cooker
         address = create_test_address
@@ -341,7 +339,16 @@ class TestOrderFiltersWithPagination:
                 delivery_fees=2.0 + (i * 0.1),
             )
             OrderModel.objects.filter(id=order.id).update(created=created_date)
+        return customer
 
+    def test_filter_pagination_default(
+        self,
+        auth_headers,
+        client,
+        customer_order_path,
+        setup_pagination_data,
+    ):
+        """Test filtre + pagination par défaut"""
         # Test 1: Filtre + pagination par défaut
         response = client.get(
             customer_order_path, follow=False, **auth_headers, data={"status": OrderStatusEnum.PENDING}
@@ -355,6 +362,14 @@ class TestOrderFiltersWithPagination:
         assert pagination["items_per_page"] == 10
         assert pagination["total_pages"] == 3
 
+    def test_filter_pagination_custom(
+        self,
+        auth_headers,
+        client,
+        customer_order_path,
+        setup_pagination_data,
+    ):
+        """Test filtre + pagination custom"""
         response = client.get(
             customer_order_path,
             follow=False,
@@ -387,15 +402,17 @@ class TestOrderFiltersWithPagination:
         OrderModel.objects.filter(customer=customer).delete()
 
         fees = [1.0, 5.0, 3.0, 4.0, 2.0, 6.0]
-        for fee in fees:
-            order = OrderModel.objects.create(
+        orders = [
+            OrderModel(
                 customer=customer,
                 cooker=cooker,
                 address=address,
                 status=OrderStatusEnum.PENDING,
                 delivery_fees=fee,
             )
-            OrderModel.objects.filter(id=order.id).update(created=timezone.now())
+            for fee in fees
+        ]
+        OrderModel.objects.bulk_create(orders)
 
         # Filtre PENDING + tri par frais décroissant + pagination
         response = client.get(
@@ -454,18 +471,21 @@ class TestOrderFiltersPerformance:
         address = create_test_address
 
         total_orders = 1000
+        orders = []
         for i in range(total_orders):
             created_date = timezone.now() - timedelta(days=i % 30)
-            order = OrderModel.objects.create(
-                customer=customer,
-                cooker=cooker,
-                address=address,
-                status=OrderStatusEnum.PENDING if i % 2 == 0 else OrderStatusEnum.COMPLETED,
-                delivery_fees=2.0 + (i % 10 * 0.5),
+            orders.append(
+                OrderModel(
+                    customer=customer,
+                    cooker=cooker,
+                    address=address,
+                    status=OrderStatusEnum.PENDING if i % 2 == 0 else OrderStatusEnum.COMPLETED,
+                    delivery_fees=2.0 + (i % 10 * 0.5),
+                    created=created_date,
+                    modified=created_date,
+                )
             )
-            OrderModel.objects.filter(id=order.id).update(created=created_date)
-
-        import time
+        OrderModel.objects.bulk_create(orders)
 
         start_time = time.time()
 
@@ -488,15 +508,6 @@ class TestOrderFiltersPerformance:
         assert execution_time < 2.0, f"Filtre trop lent: {execution_time:.2f} secondes"
 
         print(f"Performance test: {execution_time:.2f} seconds for filtering 1000 orders")
-
-    def test_index_usage(self, auth_headers, client, customer_order_path):
-        """Vérifie que les bons indexes sont utilisés"""
-
-        response = client.get(
-            customer_order_path, follow=False, **auth_headers, data={"status": OrderStatusEnum.PENDING}
-        )
-
-        assert response.status_code == status.HTTP_200_OK
 
 
 @pytest.mark.django_db
@@ -587,7 +598,7 @@ class TestOrderHistoryFilter:
         """Test le filtre de montant total spécifiquement pour l'historique"""
 
         from core_app.models import DishModel, OrderModel
-        from utils.filters import OrderHistoryFilter
+        from utils.filters import OrderFilter
 
         customer, orders = setup_filter_test_data
 
@@ -598,7 +609,7 @@ class TestOrderHistoryFilter:
         qs = OrderModel.objects.all()
 
         # Test direct du FilterSet pour être sûr de tester la correction du bug
-        f = OrderHistoryFilter(data={"min_total_amount": 10.0}, queryset=qs)
+        f = OrderFilter(data={"min_total_amount": 10.0}, queryset=qs)
         result_qs = f.qs
 
         assert result_qs.count() >= 1
@@ -610,7 +621,7 @@ class TestOrderHistoryFilter:
 
         from core_app.models import OrderModel
         from django.utils import timezone
-        from utils.filters import OrderHistoryFilter
+        from utils.filters import OrderFilter
 
         customer, orders = setup_filter_test_data
 
@@ -619,12 +630,12 @@ class TestOrderHistoryFilter:
         yesterday = (timezone.now() - timedelta(days=1)).strftime("%Y-%m-%d")
 
         # Test start_date (created_after)
-        f = OrderHistoryFilter(data={"start_date": yesterday}, queryset=qs)
+        f = OrderFilter(data={"start_date": yesterday}, queryset=qs)
         # Devrait inclure la commande d'aujourd'hui et celle d'hier, exclure celle d'il y a 5 jours
         assert f.qs.count() >= 2
 
         # Test end_date (created_before)
-        f = OrderHistoryFilter(data={"end_date": yesterday}, queryset=qs)
+        f = OrderFilter(data={"end_date": yesterday}, queryset=qs)
         # Devrait inclure les vieilles commandes
         assert f.qs.count() >= 1
 
