@@ -30,7 +30,7 @@ def test_get_existing_cooker_data(
     assert response.json().get("success") is True
     assert response.json() == {
         "success": True,
-        "message": SuccessMessageEnum.OPERATION_SUCCESSFUL,
+        "message": SuccessMessageEnum.OPERATION_SUCCESSFUL.value,
         "data": {
             "address_section": {
                 "address_complement": None,
@@ -48,6 +48,7 @@ def test_get_existing_cooker_data(
                 "phone": "0766964170",
                 "photo": "https://some-url.com",
                 "siret": "00000000000001",
+                "email": "test@gmail.com",
             },
         },
     }
