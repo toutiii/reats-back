@@ -25,11 +25,11 @@ class TestDashboardStatsAPI:
 
         assert response.status_code == status.HTTP_200_OK
         assert isinstance(response.json(), dict)
-        assert getattr(response.json(), "data")
+        assert "data" in response.json()
         data = response.json()["data"]
 
         assert isinstance(data, dict)
-        assert getattr(data, "period")
+        assert "period" in data
         assert data["period"] == "today"
         assert "stats" in data
         assert "revenueChart" in data
@@ -58,7 +58,12 @@ class TestDashboardStatsAPI:
         )
 
         assert response.status_code == status.HTTP_200_OK
+        assert isinstance(response.json(), dict)
+        assert "data" in response.json()
         data = response.json()["data"]
+
+        assert isinstance(data, dict)
+        assert "period" in data
         assert data["period"] == "week"
         assert len(data["revenueChart"]["labels"]) == 7  # 7 jours
 
@@ -77,7 +82,12 @@ class TestDashboardStatsAPI:
         )
 
         assert response.status_code == status.HTTP_200_OK
+        assert isinstance(response.json(), dict)
+        assert "data" in response.json()
         data = response.json()["data"]
+
+        assert isinstance(data, dict)
+        assert "period" in data
         assert data["period"] == "month"
         assert len(data["revenueChart"]["labels"]) == 4  # 4 semaines
 
@@ -96,7 +106,12 @@ class TestDashboardStatsAPI:
         )
 
         assert response.status_code == status.HTTP_200_OK
+        assert isinstance(response.json(), dict)
+        assert "data" in response.json()
         data = response.json()["data"]
+
+        assert isinstance(data, dict)
+        assert "period" in data
         assert data["period"] == "year"
         assert len(data["revenueChart"]["labels"]) == 12  # 12 mois
 
@@ -114,7 +129,12 @@ class TestDashboardStatsAPI:
         )
 
         assert response.status_code == status.HTTP_200_OK
+        assert isinstance(response.json(), dict)
+        assert "data" in response.json()
         data = response.json()["data"]
+
+        assert isinstance(data, dict)
+        assert "period" in data
         assert data["period"] == "today"
 
     def test_revenue_chart_structure(
@@ -131,7 +151,15 @@ class TestDashboardStatsAPI:
             **auth_headers,
         )
 
-        chart = response.json()["data"]["revenueChart"]
+        assert response.status_code == status.HTTP_200_OK
+        assert isinstance(response.json(), dict)
+        assert "data" in response.json()
+        data = response.json()["data"]
+
+        assert isinstance(data, dict)
+        assert "revenueChart" in data
+        chart = data["revenueChart"]
+
         assert "labels" in chart
         assert "data" in chart
         assert len(chart["labels"]) == 6  # 6 intervalles de 4h
@@ -150,7 +178,14 @@ class TestDashboardStatsAPI:
             **auth_headers,
         )
 
-        reviews = response.json()["data"]["recentReviews"]
+        assert response.status_code == status.HTTP_200_OK
+        assert isinstance(response.json(), dict)
+        assert "data" in response.json()
+        data = response.json()["data"]
+
+        assert isinstance(data, dict)
+        assert "recentReviews" in data
+        reviews = data["recentReviews"]
         assert isinstance(reviews, list)
 
         if len(reviews) > 0:
@@ -175,7 +210,14 @@ class TestDashboardStatsAPI:
             **auth_headers,
         )
 
-        items = response.json()["data"]["popularItems"]
+        assert response.status_code == status.HTTP_200_OK
+        assert isinstance(response.json(), dict)
+        assert "data" in response.json()
+        data = response.json()["data"]
+
+        assert isinstance(data, dict)
+        assert "popularItems" in data
+        items = data["popularItems"]
         assert isinstance(items, list)
 
         if len(items) > 0:
@@ -199,7 +241,14 @@ class TestDashboardStatsAPI:
             **auth_headers,
         )
 
-        stats = response.json()["data"]["stats"]
+        assert response.status_code == status.HTTP_200_OK
+        assert isinstance(response.json(), dict)
+        assert "data" in response.json()
+        data = response.json()["data"]
+
+        assert isinstance(data, dict)
+        assert "stats" in data
+        stats = data["stats"]
 
         # Commandes actives = PENDING + PROCESSING + COMPLETED
         assert stats["activeOrders"]["count"] >= 2  # Au moins PENDING et PROCESSING
@@ -218,7 +267,16 @@ class TestDashboardStatsAPI:
             **auth_headers,
         )
 
-        revenue = response.json()["data"]["stats"]["revenue"]
+        assert response.status_code == status.HTTP_200_OK
+        assert isinstance(response.json(), dict)
+        assert "data" in response.json()
+        data = response.json()["data"]
+
+        assert isinstance(data, dict)
+        assert "stats" in data
+        stats = data["stats"]
+
+        revenue = stats["revenue"]
         assert "amount" in revenue
         assert "currency" in revenue
         assert revenue["currency"] == "EUR"
