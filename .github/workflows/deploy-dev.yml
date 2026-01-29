@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - develop
-      - debug-sms-sending
 
 jobs:
   deploy:
