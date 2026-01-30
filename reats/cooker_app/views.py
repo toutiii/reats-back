@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import json
 import logging
 from datetime import datetime, timedelta
 from decimal import Decimal
-from typing import Type, Union
+from typing import Any, List, Type, TypedDict, Union
 
 from core_app.models import CookerModel, DishModel, DrinkModel, OrderDishItemModel, OrderModel
 from core_app.serializers import (
@@ -10,8 +12,9 @@ from core_app.serializers import (
     DrinkGETSerializer,
     OrderPATCHSerializer,
 )
+from django.conf import settings
 from django.db import IntegrityError
-from django.db.models import Count, Sum
+from django.db.models import Count, QuerySet, Sum
 from django.utils import timezone
 from phonenumbers.phonenumberutil import NumberParseException
 from rest_framework import status
@@ -60,6 +63,13 @@ from .serializers import (
 )
 
 logger = logging.getLogger("watchtower-logger")
+
+
+class DateRangeDict(TypedDict):
+    start: datetime
+    end: datetime
+    prev_start: datetime
+    prev_end: datetime
 
 
 class CookerView(StandardizedResponseMixin, ModelViewSet):
@@ -309,8 +319,9 @@ class DashboardView(StandardizedResponseMixin, GenericViewSet):
         serializer.is_valid(raise_exception=True)
         return self.success(data=serializer.data)
 
-    def _get_date_range(self, period):
+    def _get_date_range(self, period: str) -> DateRangeDict:
         now = timezone.now()
+
         if period == "today":
             start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
             prev_start = start_date - timedelta(days=1)
@@ -326,7 +337,6 @@ class DashboardView(StandardizedResponseMixin, GenericViewSet):
         elif period == "year":
             start_date = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
             prev_end = start_date
-            # Simple previous year
             prev_start = start_date.replace(year=start_date.year - 1)
         else:
             start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -335,41 +345,45 @@ class DashboardView(StandardizedResponseMixin, GenericViewSet):
 
         return {"start": start_date, "end": now, "prev_start": prev_start, "prev_end": prev_end}
 
-    def _calculate_stats(self, cooker_id, date_range):
-        current_orders = OrderModel.objects.filter(
-            cooker_id=cooker_id, created__gte=date_range["start"]
-        ).prefetch_related("dishes_items__dish", "drinks_items__drink")
-        prev_orders = OrderModel.objects.filter(
-            cooker_id=cooker_id, created__gte=date_range["prev_start"], created__lt=date_range["prev_end"]
-        ).prefetch_related("dishes_items__dish", "drinks_items__drink")
-
-        # Active orders (current total regardless of period for the count, but let's stick to spec if it implies period)
-        # Spec says "Active orders", usually means currently in progress.
+    def _get_order_counts(self, cooker_id: int) -> dict[str, int]:
+        """Get active and pending order counts for a cooker."""
         active_count = OrderModel.objects.filter(
             cooker_id=cooker_id,
             status__in=[OrderStatusEnum.PENDING, OrderStatusEnum.PROCESSING, OrderStatusEnum.COMPLETED],
         ).count()
-
         pending_count = OrderModel.objects.filter(cooker_id=cooker_id, status=OrderStatusEnum.PENDING).count()
+        return {"active": active_count, "pending": pending_count}
 
-        # Revenue for the period
-        current_revenue = sum(
-            compute_order_total_amount(o) for o in current_orders.filter(status=OrderStatusEnum.DELIVERED)
-        )
-        prev_revenue = sum(compute_order_total_amount(o) for o in prev_orders.filter(status=OrderStatusEnum.DELIVERED))
+    def _get_revenue_for_orders(self, orders: QuerySet[OrderModel]) -> float:
+        """Calculate total revenue from a queryset of orders."""
+        delivered_orders = list(orders.filter(status=OrderStatusEnum.DELIVERED))
+        return sum(compute_order_total_amount(o) for o in delivered_orders)
 
-        # Customers served in the period
-        current_customers = (
-            current_orders.filter(status=OrderStatusEnum.DELIVERED).values("customer").distinct().count()
-        )
-        prev_customers = prev_orders.filter(status=OrderStatusEnum.DELIVERED).values("customer").distinct().count()
+    def _get_customers_served(self, orders: QuerySet[OrderModel]) -> int:
+        """Get distinct customer count from delivered orders."""
+        return orders.filter(status=OrderStatusEnum.DELIVERED).values("customer").distinct().count()
+
+    def _calculate_stats(self, cooker_id: int, date_range: DateRangeDict) -> dict[str, Any]:
+        current_orders = OrderModel.objects.filter(
+            cooker_id=cooker_id, created__gte=date_range["start"]
+        ).prefetch_related("dishes_items__dish", "drinks_items__drink")
+
+        prev_orders = OrderModel.objects.filter(
+            cooker_id=cooker_id, created__gte=date_range["prev_start"], created__lt=date_range["prev_end"]
+        ).prefetch_related("dishes_items__dish", "drinks_items__drink")
+
+        order_counts = self._get_order_counts(cooker_id)
+        current_revenue = self._get_revenue_for_orders(current_orders)
+        prev_revenue = self._get_revenue_for_orders(prev_orders)
+        current_customers = self._get_customers_served(current_orders)
+        prev_customers = self._get_customers_served(prev_orders)
 
         return {
-            "activeOrders": {"count": active_count, "trend": None},  # Trend for active orders is usually less relevant
-            "pendingOrders": {"count": pending_count, "trend": None},
+            "activeOrders": {"count": order_counts["active"], "trend": None},
+            "pendingOrders": {"count": order_counts["pending"], "trend": None},
             "revenue": {
                 "amount": current_revenue,
-                "currency": "EUR",
+                "currency": settings.DEFAULT_CURRENCY,
                 "trend": self._calculate_trend(current_revenue, prev_revenue),
             },
             "customersServed": {
@@ -378,11 +392,11 @@ class DashboardView(StandardizedResponseMixin, GenericViewSet):
             },
         }
 
-    def _generate_revenue_chart(self, cooker_id, period, date_range):
-        labels = []
-        data = []
+    def _generate_revenue_chart(self, cooker_id: int, period: str, date_range: DateRangeDict) -> dict[str, List[Any]]:
+        labels: List[str] = []
+        data: List[float] = []
 
-        orders = (
+        orders = list(
             OrderModel.objects.filter(
                 cooker_id=cooker_id, created__gte=date_range["start"], status=OrderStatusEnum.DELIVERED
             )
@@ -391,48 +405,54 @@ class DashboardView(StandardizedResponseMixin, GenericViewSet):
         )
 
         if period == "today":
-            # 6 intervals of 4 hours
             intervals = [0, 4, 8, 12, 16, 20, 24]
             labels = ["00h-04h", "04h-08h", "08h-12h", "12h-16h", "16h-20h", "20h-24h"]
             for i in range(len(intervals) - 1):
                 interval_total = sum(
-                    compute_order_total_amount(o)
-                    for o in orders.filter(created__hour__gte=intervals[i], created__hour__lt=intervals[i + 1])
+                    compute_order_total_amount(o) for o in orders if intervals[i] <= o.created.hour < intervals[i + 1]
                 )
                 data.append(float(interval_total))
 
         elif period == "week":
-            days = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"]
-            labels = days
-            # Sunday in weekday is 6, Monday is 0.
+            labels = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"]
+            # Django week_day: 1=Sunday, 2=Monday, ..., 7=Saturday
+            # We want: Lun(i=0)->2, Mar(i=1)->3, Mer(i=2)->4, Jeu(i=3)->5,
+            #          Ven(i=4)->6, Sam(i=5)->7, Dim(i=6)->1
             for i in range(7):
-                # ISO weekday starts 1 (Mon) to 7 (Sun)
-                day_total = sum(compute_order_total_amount(o) for o in orders.filter(created__week_day=(i + 2) % 7 + 1))
-                # Note: Django created__week_day is 1 (Sun) to 7 (Sat)
-                # Map Lun(0) -> 2, Mar(1) -> 3... Dim(6) -> 1
+                day_total = sum(
+                    compute_order_total_amount(o)
+                    for o in orders
+                    if o.created.weekday() == i  # Python weekday: 0=Monday, 6=Sunday
+                )
                 data.append(float(day_total))
 
         elif period == "month":
-            # 4 weeks
             labels = ["Sem 1", "Sem 2", "Sem 3", "Sem 4"]
             for i in range(4):
                 start = date_range["start"] + timedelta(days=i * 7)
                 end = start + timedelta(days=7)
-                week_total = sum(
-                    compute_order_total_amount(o) for o in orders.filter(created__gte=start, created__lt=end)
-                )
+                week_total = sum(compute_order_total_amount(o) for o in orders if start <= o.created < end)
                 data.append(float(week_total))
 
         elif period == "year":
             labels = ["Jan", "Fév", "Mar", "Avr", "Mai", "Jun", "Jul", "Aoû", "Sep", "Oct", "Nov", "Déc"]
-            for i in range(1, 13):
-                month_total = sum(compute_order_total_amount(o) for o in orders.filter(created__month=i))
+            for month in range(1, 13):
+                month_total = sum(compute_order_total_amount(o) for o in orders if o.created.month == month)
                 data.append(float(month_total))
+
+        else:
+            # Default to 'today' behavior for invalid periods
+            intervals = [0, 4, 8, 12, 16, 20, 24]
+            labels = ["00h-04h", "04h-08h", "08h-12h", "12h-16h", "16h-20h", "20h-24h"]
+            for i in range(len(intervals) - 1):
+                interval_total = sum(
+                    compute_order_total_amount(o) for o in orders if intervals[i] <= o.created.hour < intervals[i + 1]
+                )
+                data.append(float(interval_total))
 
         return {"labels": labels, "data": data}
 
-    def _get_recent_reviews(self, cooker_id, limit=5):
-        # Using OrderModel.rating and comment as per Option A
+    def _get_recent_reviews(self, cooker_id: int, limit: int = 5) -> List[dict[str, Any]]:
         orders_with_reviews = (
             OrderModel.objects.filter(cooker_id=cooker_id, rating__gt=0)
             .exclude(comment__isnull=True)
@@ -441,7 +461,7 @@ class DashboardView(StandardizedResponseMixin, GenericViewSet):
             .order_by("-modified")[:limit]
         )
 
-        reviews = []
+        reviews: List[dict[str, Any]] = []
         for o in orders_with_reviews:
             reviews.append(
                 {
@@ -455,9 +475,7 @@ class DashboardView(StandardizedResponseMixin, GenericViewSet):
             )
         return reviews
 
-    def _get_popular_items(self, cooker_id, date_range, limit=5):
-        # Aggregate dish items
-
+    def _get_popular_items(self, cooker_id: int, date_range: DateRangeDict, limit: int = 5) -> List[dict[str, Any]]:
         dish_items = (
             OrderDishItemModel.objects.filter(
                 order__cooker_id=cooker_id,
@@ -469,23 +487,22 @@ class DashboardView(StandardizedResponseMixin, GenericViewSet):
             .order_by("-total_sold")[:limit]
         )
 
-        popular = []
+        popular: List[dict[str, Any]] = []
         for item in dish_items:
+            photo_url = get_pre_signed_url(item["dish__photo"]) if item["dish__photo"] else None
             popular.append(
                 {
                     "id": str(item["dish__id"]),
                     "name": item["dish__name"],
                     "soldToday": item["total_sold"],
                     "revenue": Decimal(str(item["dish__price"])) * item["total_sold"],
-                    "image": get_pre_signed_url(item["dish__photo"]),
+                    "image": photo_url,
                 }
             )
 
-        # Note: Ideally we would also include drinks and merge/sort, but for now we focus on dishes as per common logic
-        # and to stay within limit. If drinks are needed, we would merge and sort the list.
         return popular[:limit]
 
-    def _calculate_trend(self, current, previous):
+    def _calculate_trend(self, current: float, previous: float) -> Union[str, None]:
         if not previous or previous == 0:
             return None
         change = ((current - previous) / previous) * 100

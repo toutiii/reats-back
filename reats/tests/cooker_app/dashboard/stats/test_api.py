@@ -280,3 +280,81 @@ class TestDashboardStatsAPI:
         assert "amount" in revenue
         assert "currency" in revenue
         assert revenue["currency"] == "EUR"
+
+    def test_stats_unauthenticated_returns_401(
+        self,
+        client: APIClient,
+        dashboard_stats_path: str,
+    ) -> None:
+        """Test que l'accès sans authentification retourne 401."""
+        response = client.get(
+            dashboard_stats_path,
+            follow=False,
+        )
+
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_stats_invalid_period_defaults_to_today(
+        self,
+        auth_headers: dict,
+        client: APIClient,
+        dashboard_stats_path: str,
+    ) -> None:
+        """Test qu'une période invalide retourne les stats 'today' par défaut."""
+        response = client.get(
+            dashboard_stats_path,
+            {"period": "invalid_period"},
+            follow=False,
+            **auth_headers,
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert isinstance(response.json(), dict)
+        assert "data" in response.json()
+        data = response.json()["data"]
+
+        # Une période invalide devrait être traitée comme 'today'
+        assert data["period"] == "invalid_period"  # Le period retourné est celui passé
+        # Mais les données sont calculées avec la logique 'today' (6 intervalles)
+        assert len(data["revenueChart"]["labels"]) == 6
+
+    def test_stats_empty_reviews_returns_empty_list(
+        self,
+        auth_headers: dict,
+        client: APIClient,
+        dashboard_stats_path: str,
+    ) -> None:
+        """Test que recentReviews retourne une liste vide si aucune review."""
+        response = client.get(
+            dashboard_stats_path,
+            follow=False,
+            **auth_headers,
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()["data"]
+
+        # recentReviews doit être une liste (peut être vide)
+        assert isinstance(data["recentReviews"], list)
+
+    def test_stats_popular_items_handles_missing_photos(
+        self,
+        auth_headers: dict,
+        client: APIClient,
+        dashboard_stats_path: str,
+    ) -> None:
+        """Test que popularItems gère les photos manquantes."""
+        response = client.get(
+            dashboard_stats_path,
+            follow=False,
+            **auth_headers,
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()["data"]
+
+        # popularItems doit être une liste
+        assert isinstance(data["popularItems"], list)
+        # Chaque item doit avoir une clé 'image' (peut être None)
+        for item in data["popularItems"]:
+            assert "image" in item
