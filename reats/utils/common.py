@@ -130,11 +130,11 @@ def send_otp(phone: str) -> Union[dict, None]:
                 "ReferenceId": generate_ref_id(phone),
             },
         )
+        logger.info("Pinpoint send_otp_message response=%s", response)
+        return response
     except ClientError as e:
         logger.info(e.response)
         return None
-
-    return response
 
 
 def is_otp_valid(data: dict) -> bool:
