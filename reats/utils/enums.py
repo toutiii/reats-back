@@ -84,3 +84,8 @@ class ErrorMessageEnum(str, Enum):
     CUSTOMER_ALREADY_EXISTS = _("Customer already exists")
     ADDRESS_ALREADY_EXISTS = _("Address already exists")
     OPERATION_FAILED = _("Operation failed")
+    SEARCH_INVALID_CHARACTERS = _(
+        "Le champ de recherche contient des caractères non autorisés. "
+        "Seuls les lettres, chiffres, espaces, tirets et apostrophes sont acceptés."
+    )
+    INVALID_DATE_RANGE = _("La date de début ne peut pas être supérieure à la date de fin.")

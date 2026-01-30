@@ -41,16 +41,16 @@ COPY .pre-commit-config.yaml /usr/src/app/.pre-commit-config.yaml
 COPY reats/.env.local /usr/src/app/reats/.env.local
 
 COPY reats/config/wait-for-it.sh /usr/src/app/reats/wait-for-it.sh
-COPY reats/config/entrypoint.sh /usr/src/app/reats/entrypoint.sh
+COPY reats/config/entrypoint-local.sh /usr/src/app/reats/entrypoint-local.sh
 COPY reats/tox.ini /usr/src/app/reats/tox.ini
 
 # set permissions
 RUN chmod +x /usr/src/app/reats/wait-for-it.sh \
-    && chmod +x /usr/src/app/reats/entrypoint.sh
+    && chmod +x /usr/src/app/reats/entrypoint-local.sh
 
 # Expose ports
 EXPOSE 8000
 EXPOSE 8001
 
 # run entrypoint.sh
-ENTRYPOINT ["/usr/src/app/reats/entrypoint.sh"]
+ENTRYPOINT ["/usr/src/app/reats/entrypoint-local.sh"]
