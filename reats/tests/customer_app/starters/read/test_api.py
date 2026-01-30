@@ -41,6 +41,7 @@ class TestListStartersForCustomerSuccess:
                         "firstname": "toutii",
                         "id": 4,
                         "lastname": "N",
+                        "email": "test4@gmail.com",
                     },
                     "country": "Cameroun",
                     "description": "Test",
