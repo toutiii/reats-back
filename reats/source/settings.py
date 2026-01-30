@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
+    "django_filters",
     "customer_app",
     "cooker_app",
     "delivery_app",
@@ -196,6 +197,7 @@ REST_FRAMEWORK = {
         "rest_framework.parsers.MultiPartParser",
     ],
     "DEFAULT_RENDERER_CLASSES": ("rest_framework.renderers.JSONRenderer",),
+    "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"],
 }
 
 
@@ -205,6 +207,7 @@ DEFAULT_SEARCH_RADIUS = 2  # in KM
 
 IDLE_CANCEL_TIME_FOR_ASAP_DELIVERY = 5  # in minutes
 IDLE_CANCEL_TIME_FOR_SCHEDULED_DELIVERY = 60  # in minutes
+ORDER_HISTORY_LIMIT_DAYS = 730  # 2 years
 
 SIMPLE_JWT = {
     "ALGORITHM": os.getenv("DJANGO_SIMPLE_JWT_ALGORITHM"),

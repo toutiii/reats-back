@@ -9,51 +9,18 @@ def authenticated_user_id(auth_headers):
 
 
 @pytest.fixture
-def create_test_cooker():
-    cooker, created = CookerModel.objects.get_or_create(
-        firstname="Test",
-        lastname="Cooker",
-        phone="0600000001",
-        email="test_fixture@gmail.com",
-        postal_code="75001",
-        siret="12345678901234",
-        street_name="Rue de test",
-        street_number="1",
-        town="Paris",
-        max_order_number=10,
-        is_activated=True,
-        defaults={"acceptance_rate": 100.0, "photo": "cookers/1/profile_pics/default-profile-pic.jpg"},
-    )
-    return cooker
+def create_test_cooker(db):
+    return CookerModel.objects.get(pk=1)
 
 
 @pytest.fixture
-def create_authenticated_customer(authenticated_user_id):
-    try:
-        return CustomerModel.objects.get(id=authenticated_user_id)
-    except CustomerModel.DoesNotExist:
-        return CustomerModel.objects.create(
-            id=authenticated_user_id,
-            firstname="Test",
-            lastname="Customer",
-            phone=f"0600000{authenticated_user_id:03d}",
-            is_activated=True,
-            photo="customers/1/profile_pics/default-profile-pic.jpg",
-        )
+def create_authenticated_customer(db, authenticated_user_id):
+    return CustomerModel.objects.get(pk=1)
 
 
 @pytest.fixture
-def create_test_address(create_authenticated_customer):
-    customer = create_authenticated_customer
-    address, created = AddressModel.objects.get_or_create(
-        street_name="Rue de test",
-        street_number="1",
-        town="Paris",
-        postal_code="75001",
-        customer=customer,
-        defaults={"is_enabled": True},
-    )
-    return address
+def create_test_address(db, create_authenticated_customer):
+    return AddressModel.objects.get(pk=1)
 
 
 @pytest.fixture

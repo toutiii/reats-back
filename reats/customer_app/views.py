@@ -21,12 +21,11 @@ from core_app.serializers import (
     OrderRatingSerializer,
 )
 from custom_renderers.renderers import (
-    CustomRendererWithoutData,
     DishesCountriesCustomRendererWithData,
-    OrderCustomRendererWithData,
 )
 from django.conf import settings
 from django.db import IntegrityError
+from django_filters import rest_framework as filters
 from phonenumbers.phonenumberutil import NumberParseException
 from rest_framework import status
 from rest_framework.decorators import action
@@ -64,6 +63,8 @@ from utils.distance_computer import (
     get_closest_cookers_ids_from_customer_search_address,
 )
 from utils.enums import ErrorCodeEnum, ErrorMessageEnum, OrderStatusEnum, SuccessMessageEnum
+from utils.filters import OrderFilter
+from utils.paginations import StandardizedResultsSetPagination
 
 from .serializers import (
     AddressGETSerializer,
@@ -517,7 +518,10 @@ class OrderView(
 ):
     permission_classes = [UserPermission]
     queryset = OrderModel.objects.all()
-    parser_classes = [MultiPartParser]
+    parser_classes = [MultiPartParser, JSONParser]
+    pagination_class = StandardizedResultsSetPagination
+    filter_backends = [filters.DjangoFilterBackend]
+    filterset_class = OrderFilter
 
     def perform_create(self, serializer: BaseSerializer) -> None:
         distance_dict: dict = compute_distance(
@@ -606,14 +610,6 @@ class OrderView(
 
         return self.success(data=serializer.data, message=SuccessMessageEnum.OPERATION_SUCCESSFUL)
 
-        if self.request.method == "DELETE":
-            self.renderer_classes = [CustomRendererWithoutData]
-
-        if self.request.method in ("GET", "POST", "PUT"):
-            self.renderer_classes = [OrderCustomRendererWithData]
-
-        return super().get_renderers()
-
     def get_serializer_class(self) -> type[BaseSerializer]:
         if self.request.method in ("POST", "PUT"):
             self.serializer_class = OrderSerializer
@@ -628,21 +624,24 @@ class OrderView(
 
     def list(self, request, *args, **kwargs) -> Response:
         self.queryset = self.queryset.filter(customer__id=request.user.pk)
-        request_status: Union[str, None] = self.request.query_params.get("status")
 
-        if request_status is None or request_status not in [
-            OrderStatusEnum.PENDING,
-            OrderStatusEnum.PROCESSING,
-            OrderStatusEnum.COMPLETED,
-        ]:
-            logger.error(f"Invalid status {request_status}")
-            self.queryset = OrderModel.objects.none()
-        else:
-            self.queryset = self.queryset.filter(status=request_status).order_by("-modified")
+        # Only return active orders
+        self.queryset = self.queryset.filter(
+            status__in=[
+                OrderStatusEnum.PENDING,
+                OrderStatusEnum.PROCESSING,
+                OrderStatusEnum.COMPLETED,
+            ]
+        )
 
         queryset = self.filter_queryset(self.get_queryset())
-        serializer = self.get_serializer(queryset, many=True)
 
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
         return self.success(
             data=serializer.data, message=SuccessMessageEnum.OPERATION_SUCCESSFUL, status_code=status.HTTP_200_OK
         )
@@ -660,43 +659,22 @@ class CustomerOrderHistoryView(StandardizedResponseMixin, ListModelMixin, Generi
     parser_classes = [MultiPartParser]
     serializer_class = OrderGETSerializer
 
+    pagination_class = StandardizedResultsSetPagination
+    filter_backends = [filters.DjangoFilterBackend]
+    filterset_class = OrderFilter
+
     def list(self, request, *args, **kwargs) -> Response:
-        order_status: Union[str, None] = self.request.query_params.get("status")
-        start_date: Union[str, None] = self.request.query_params.get("start_date")
-        end_date: Union[str, None] = self.request.query_params.get("end_date")
         self.queryset = self.queryset.filter(customer__id=request.user.pk).order_by("-modified")
 
-        if start_date and end_date:
-            try:
-                start_date_object = datetime.fromisoformat(start_date.replace("Z", "+00:00"))
-                end_date_object = datetime.fromisoformat(end_date.replace("Z", "+00:00"))
-            except ValueError:
-                return self.error(
-                    message="Invalid date format",
-                    code=ErrorCodeEnum.VALIDATION_ERROR,
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                )
+        queryset = self.filter_queryset(self.get_queryset())
 
-            if start_date_object > end_date_object:
-                return self.error(
-                    message="Start date cannot be greater than end date",
-                    code=ErrorCodeEnum.VALIDATION_ERROR,
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                )
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
 
-            self.queryset = self.queryset.filter(
-                created__gte=start_date_object,
-                created__lte=end_date_object,
-            )
-        if order_status:
-            self.queryset = self.queryset.filter(status=order_status)
-
-        response = super().list(request, *args, **kwargs)
-
-        return self.success(
-            data=response.data,
-            status_code=status.HTTP_200_OK,
-        )
+        serializer = self.get_serializer(queryset, many=True)
+        return self.success(data=serializer.data, status_code=status.HTTP_200_OK)
 
 
 class DishCountriesView(ListModelMixin, GenericViewSet):

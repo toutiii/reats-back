@@ -546,6 +546,17 @@ def test_orders_list_success(
     assert response.json().get("success") == ok_value
     assert response.json().get("message") == SuccessMessageEnum.OPERATION_SUCCESSFUL.value
 
-    diff = DeepDiff(response.json().get("data"), expected_data, ignore_order=True)
+    response_data = response.json().get("data", {})
 
-    assert not diff
+    # Ensure response has the expected paginated structure
+    assert isinstance(response_data, dict), "Response data should be a dictionary"
+    assert "results" in response_data, "Response data should contain 'results' key"
+    assert "pagination" in response_data, "Response data should contain 'pagination' key"
+
+    actual_results = response_data["results"]
+    assert isinstance(actual_results, list), "Results should be a list"
+    assert isinstance(response_data["pagination"], dict), "Pagination should be a dictionary"
+
+    diff = DeepDiff(actual_results, expected_data, ignore_order=True)
+
+    assert not diff, f"Differences found: {diff}"
