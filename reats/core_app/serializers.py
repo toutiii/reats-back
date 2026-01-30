@@ -37,7 +37,7 @@ class SimpleCustomerSerializer(ModelSerializer):
 class SimpleCookerSerializer(ModelSerializer):
     class Meta:
         model = CookerModel
-        fields = ("id", "firstname", "lastname", "acceptance_rate")
+        fields = ("id", "firstname", "lastname", "email", "acceptance_rate")
 
 
 class DishGETSerializer(ModelSerializer):
