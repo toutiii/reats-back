@@ -19,9 +19,51 @@ class OrderStatusEnum(str, Enum):
 
 
 class TimeFrameEnum(str, Enum):
+    TODAY = "today"
     WEEK = "week"
     MONTH = "month"
     YEAR = "year"
+
+
+class TodayChartLabelEnum(str, Enum):
+    H00_04 = "00h-04h"
+    H04_08 = "04h-08h"
+    H08_12 = "08h-12h"
+    H12_16 = "12h-16h"
+    H16_20 = "16h-20h"
+    H20_24 = "20h-24h"
+
+
+class WeekChartLabelEnum(str, Enum):
+    MON = "Mon"
+    TUE = "Tue"
+    WED = "Wed"
+    THU = "Thu"
+    FRI = "Fri"
+    SAT = "Sat"
+    SUN = "Sun"
+
+
+class MonthChartLabelEnum(str, Enum):
+    WEEK_1 = "Week 1"
+    WEEK_2 = "Week 2"
+    WEEK_3 = "Week 3"
+    WEEK_4 = "Week 4"
+
+
+class YearChartLabelEnum(str, Enum):
+    JAN = "Jan"
+    FEB = "Feb"
+    MAR = "Mar"
+    APR = "Apr"
+    MAY = "May"
+    JUN = "Jun"
+    JUL = "Jul"
+    AUG = "Aug"
+    SEP = "Sep"
+    OCT = "Oct"
+    NOV = "Nov"
+    DEC = "Dec"
 
 
 class SuccessMessageEnum(str, Enum):

@@ -239,29 +239,87 @@ class CookerOrderGETSerializer(ModelSerializer):
 
 class RecentReviewSerializer(serializers.Serializer):
     id = serializers.CharField()
-    customerName = serializers.CharField()
+    customer_name = serializers.CharField()
     rating = serializers.IntegerField()
     comment = serializers.CharField(allow_null=True)
     date = serializers.DateTimeField()
-    orderNumber = serializers.CharField()
+    order_number = serializers.CharField()
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        return {
+            "id": data["id"],
+            "customerName": data["customer_name"],
+            "rating": data["rating"],
+            "comment": data["comment"],
+            "date": data["date"],
+            "orderNumber": data["order_number"],
+        }
 
 
 class PopularItemSerializer(serializers.Serializer):
     id = serializers.CharField()
     name = serializers.CharField()
-    soldToday = serializers.IntegerField()
+    number_of_sold_items = serializers.IntegerField()
     revenue = serializers.DecimalField(max_digits=10, decimal_places=2)
     image = serializers.CharField(allow_blank=True, allow_null=True)
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        return {
+            "id": data["id"],
+            "name": data["name"],
+            "numberOfSoldItems": data["number_of_sold_items"],
+            "revenue": data["revenue"],
+            "image": data["image"],
+        }
 
-class RevenueChartSerializer(serializers.Serializer):
+
+class IncomingChartSerializer(serializers.Serializer):
     labels = serializers.ListField(child=serializers.CharField())
     data = serializers.ListField(child=serializers.FloatField())  # type: ignore[assignment]
 
 
+class StatsItemSerializer(serializers.Serializer):
+    count = serializers.IntegerField()
+    trend = serializers.CharField(allow_null=True)
+
+
+class RevenueStatsSerializer(serializers.Serializer):
+    amount = serializers.FloatField()
+    currency = serializers.CharField()
+    trend = serializers.CharField(allow_null=True)
+
+
+class StatsSerializer(serializers.Serializer):
+    active_orders = StatsItemSerializer()
+    pending_orders = StatsItemSerializer()
+    revenue = RevenueStatsSerializer()
+    customers_served = StatsItemSerializer()
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        return {
+            "activeOrders": data["active_orders"],
+            "pendingOrders": data["pending_orders"],
+            "revenue": data["revenue"],
+            "customersServed": data["customers_served"],
+        }
+
+
 class DashboardStatsSerializer(serializers.Serializer):
     period = serializers.CharField()
-    stats = serializers.DictField()
-    revenueChart = RevenueChartSerializer()
-    recentReviews = RecentReviewSerializer(many=True)
-    popularItems = PopularItemSerializer(many=True)
+    stats = StatsSerializer()
+    revenue_chart = IncomingChartSerializer()
+    recent_reviews = RecentReviewSerializer(many=True)
+    popular_items = PopularItemSerializer(many=True)
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        return {
+            "period": data["period"],
+            "stats": data["stats"],
+            "revenueChart": data["revenue_chart"],
+            "recentReviews": data["recent_reviews"],
+            "popularItems": data["popular_items"],
+        }

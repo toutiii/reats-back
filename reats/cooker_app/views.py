@@ -4,7 +4,7 @@ import json
 import logging
 from datetime import datetime, timedelta
 from decimal import Decimal
-from typing import Any, List, Type, TypedDict, Union
+from typing import Any, Callable, List, Optional, Tuple, Type, TypedDict, Union
 
 from core_app.models import CookerModel, DishModel, DrinkModel, OrderDishItemModel, OrderModel
 from core_app.serializers import (
@@ -14,7 +14,7 @@ from core_app.serializers import (
 )
 from django.conf import settings
 from django.db import IntegrityError
-from django.db.models import Count, QuerySet, Sum
+from django.db.models import Count, Q, QuerySet, Sum
 from django.utils import timezone
 from phonenumbers.phonenumberutil import NumberParseException
 from rest_framework import status
@@ -45,8 +45,13 @@ from utils.custom_permissions import CustomAPIKeyPermission, UserPermission
 from utils.enums import (
     ErrorCodeEnum,
     ErrorMessageEnum,
+    MonthChartLabelEnum,
     OrderStatusEnum,
     SuccessMessageEnum,
+    TimeFrameEnum,
+    TodayChartLabelEnum,
+    WeekChartLabelEnum,
+    YearChartLabelEnum,
 )
 
 from .serializers import (
@@ -66,10 +71,12 @@ logger = logging.getLogger("watchtower-logger")
 
 
 class DateRangeDict(TypedDict):
-    start: datetime
-    end: datetime
-    prev_start: datetime
-    prev_end: datetime
+    """Type definition for date range dictionary used in dashboard stats."""
+
+    current_period_start: datetime
+    current_period_end: datetime
+    previous_period_start: datetime
+    previous_period_end: datetime
 
 
 class CookerView(StandardizedResponseMixin, ModelViewSet):
@@ -298,7 +305,7 @@ class DashboardView(StandardizedResponseMixin, GenericViewSet):
 
     @action(methods=["get"], detail=False, url_path="stats")
     def stats(self, request) -> Response:
-        period = request.query_params.get("period", "today")
+        period = request.query_params.get("period", TimeFrameEnum.TODAY.value)
         cooker_id = request.user.pk
 
         date_range = self._get_date_range(period)
@@ -310,9 +317,9 @@ class DashboardView(StandardizedResponseMixin, GenericViewSet):
         data = {
             "period": period,
             "stats": stats,
-            "revenueChart": revenue_chart,
-            "recentReviews": recent_reviews,
-            "popularItems": popular_items,
+            "revenue_chart": revenue_chart,
+            "recent_reviews": recent_reviews,
+            "popular_items": popular_items,
         }
 
         serializer = DashboardStatsSerializer(data=data)
@@ -322,42 +329,57 @@ class DashboardView(StandardizedResponseMixin, GenericViewSet):
     def _get_date_range(self, period: str) -> DateRangeDict:
         now = timezone.now()
 
-        if period == "today":
-            start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
-            prev_start = start_date - timedelta(days=1)
-            prev_end = start_date
-        elif period == "week":
-            start_date = (now - timedelta(days=now.weekday())).replace(hour=0, minute=0, second=0, microsecond=0)
-            prev_start = start_date - timedelta(days=7)
-            prev_end = start_date
-        elif period == "month":
-            start_date = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-            prev_end = start_date
-            prev_start = (start_date - timedelta(days=1)).replace(day=1)
-        elif period == "year":
-            start_date = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
-            prev_end = start_date
-            prev_start = start_date.replace(year=start_date.year - 1)
+        if period == TimeFrameEnum.TODAY.value:
+            current_period_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+            previous_period_start = current_period_start - timedelta(days=1)
+            previous_period_end = current_period_start
+        elif period == TimeFrameEnum.WEEK.value:
+            current_period_start = (now - timedelta(days=now.weekday())).replace(
+                hour=0, minute=0, second=0, microsecond=0
+            )
+            previous_period_start = current_period_start - timedelta(days=7)
+            previous_period_end = current_period_start
+        elif period == TimeFrameEnum.MONTH.value:
+            current_period_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            previous_period_end = current_period_start
+            previous_period_start = (current_period_start - timedelta(days=1)).replace(day=1)
+        elif period == TimeFrameEnum.YEAR.value:
+            current_period_start = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+            previous_period_end = current_period_start
+            previous_period_start = current_period_start.replace(year=current_period_start.year - 1)
         else:
-            start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
-            prev_start = start_date - timedelta(days=1)
-            prev_end = start_date
+            current_period_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+            previous_period_start = current_period_start - timedelta(days=1)
+            previous_period_end = current_period_start
 
-        return {"start": start_date, "end": now, "prev_start": prev_start, "prev_end": prev_end}
+        return {
+            "current_period_start": current_period_start,
+            "current_period_end": now,
+            "previous_period_start": previous_period_start,
+            "previous_period_end": previous_period_end,
+        }
 
     def _get_order_counts(self, cooker_id: int) -> dict[str, int]:
         """Get active and pending order counts for a cooker."""
-        active_count = OrderModel.objects.filter(
-            cooker_id=cooker_id,
-            status__in=[OrderStatusEnum.PENDING, OrderStatusEnum.PROCESSING, OrderStatusEnum.COMPLETED],
-        ).count()
-        pending_count = OrderModel.objects.filter(cooker_id=cooker_id, status=OrderStatusEnum.PENDING).count()
-        return {"active": active_count, "pending": pending_count}
+        counts = OrderModel.objects.filter(cooker_id=cooker_id).aggregate(
+            active_count=Count(
+                "id",
+                filter=Q(
+                    status__in=[
+                        OrderStatusEnum.PENDING,
+                        OrderStatusEnum.PROCESSING,
+                        OrderStatusEnum.COMPLETED,
+                    ]
+                ),
+            ),
+            pending_count=Count("id", filter=Q(status=OrderStatusEnum.PENDING)),
+        )
+        return {"active": counts["active_count"], "pending": counts["pending_count"]}
 
     def _get_revenue_for_orders(self, orders: QuerySet[OrderModel]) -> float:
         """Calculate total revenue from a queryset of orders."""
         delivered_orders = list(orders.filter(status=OrderStatusEnum.DELIVERED))
-        return sum(compute_order_total_amount(o) for o in delivered_orders)
+        return sum(compute_order_total_amount(order) for order in delivered_orders)
 
     def _get_customers_served(self, orders: QuerySet[OrderModel]) -> int:
         """Get distinct customer count from delivered orders."""
@@ -365,11 +387,13 @@ class DashboardView(StandardizedResponseMixin, GenericViewSet):
 
     def _calculate_stats(self, cooker_id: int, date_range: DateRangeDict) -> dict[str, Any]:
         current_orders = OrderModel.objects.filter(
-            cooker_id=cooker_id, created__gte=date_range["start"]
+            cooker_id=cooker_id, created__gte=date_range["current_period_start"]
         ).prefetch_related("dishes_items__dish", "drinks_items__drink")
 
         prev_orders = OrderModel.objects.filter(
-            cooker_id=cooker_id, created__gte=date_range["prev_start"], created__lt=date_range["prev_end"]
+            cooker_id=cooker_id,
+            created__gte=date_range["previous_period_start"],
+            created__lt=date_range["previous_period_end"],
         ).prefetch_related("dishes_items__dish", "drinks_items__drink")
 
         order_counts = self._get_order_counts(cooker_id)
@@ -379,77 +403,87 @@ class DashboardView(StandardizedResponseMixin, GenericViewSet):
         prev_customers = self._get_customers_served(prev_orders)
 
         return {
-            "activeOrders": {"count": order_counts["active"], "trend": None},
-            "pendingOrders": {"count": order_counts["pending"], "trend": None},
+            "active_orders": {"count": order_counts["active"], "trend": None},
+            "pending_orders": {"count": order_counts["pending"], "trend": None},
             "revenue": {
                 "amount": current_revenue,
                 "currency": settings.DEFAULT_CURRENCY,
                 "trend": self._calculate_trend(current_revenue, prev_revenue),
             },
-            "customersServed": {
+            "customers_served": {
                 "count": current_customers,
                 "trend": self._calculate_trend(current_customers, prev_customers),
             },
         }
 
     def _generate_revenue_chart(self, cooker_id: int, period: str, date_range: DateRangeDict) -> dict[str, List[Any]]:
-        labels: List[str] = []
-        data: List[float] = []
-
         orders = list(
             OrderModel.objects.filter(
-                cooker_id=cooker_id, created__gte=date_range["start"], status=OrderStatusEnum.DELIVERED
+                cooker_id=cooker_id,
+                created__gte=date_range["current_period_start"],
+                status=OrderStatusEnum.DELIVERED,
             )
             .prefetch_related("dishes_items__dish", "drinks_items__drink")
             .order_by("created")
         )
 
-        if period == "today":
-            intervals = [0, 4, 8, 12, 16, 20, 24]
-            labels = ["00h-04h", "04h-08h", "08h-12h", "12h-16h", "16h-20h", "20h-24h"]
-            for i in range(len(intervals) - 1):
-                interval_total = sum(
-                    compute_order_total_amount(o) for o in orders if intervals[i] <= o.created.hour < intervals[i + 1]
-                )
-                data.append(float(interval_total))
+        def _aggregate_by_time_slot(
+            chart_labels: List[str],
+            time_slot_index_for_order: Callable[[Any], Optional[int]],
+        ) -> Tuple[List[str], List[float]]:
+            """
+            Aggregate order totals into time slots (one slot per label).
+            """
+            slot_totals: List[float] = [0.0] * len(chart_labels)
 
-        elif period == "week":
-            labels = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"]
-            # Django week_day: 1=Sunday, 2=Monday, ..., 7=Saturday
-            # We want: Lun(i=0)->2, Mar(i=1)->3, Mer(i=2)->4, Jeu(i=3)->5,
-            #          Ven(i=4)->6, Sam(i=5)->7, Dim(i=6)->1
-            for i in range(7):
-                day_total = sum(
-                    compute_order_total_amount(o)
-                    for o in orders
-                    if o.created.weekday() == i  # Python weekday: 0=Monday, 6=Sunday
-                )
-                data.append(float(day_total))
+            for order in orders:
+                time_slot_index = time_slot_index_for_order(order)
+                if time_slot_index is None:
+                    continue
+                slot_totals[time_slot_index] += float(compute_order_total_amount(order))
 
-        elif period == "month":
-            labels = ["Sem 1", "Sem 2", "Sem 3", "Sem 4"]
-            for i in range(4):
-                start = date_range["start"] + timedelta(days=i * 7)
-                end = start + timedelta(days=7)
-                week_total = sum(compute_order_total_amount(o) for o in orders if start <= o.created < end)
-                data.append(float(week_total))
+            return chart_labels, slot_totals
 
-        elif period == "year":
-            labels = ["Jan", "Fév", "Mar", "Avr", "Mai", "Jun", "Jul", "Aoû", "Sep", "Oct", "Nov", "Déc"]
-            for month in range(1, 13):
-                month_total = sum(compute_order_total_amount(o) for o in orders if o.created.month == month)
-                data.append(float(month_total))
+        match period:
+            case TimeFrameEnum.TODAY.value:
+                labels = [label.value for label in TodayChartLabelEnum]
 
-        else:
-            # Default to 'today' behavior for invalid periods
-            intervals = [0, 4, 8, 12, 16, 20, 24]
-            labels = ["00h-04h", "04h-08h", "08h-12h", "12h-16h", "16h-20h", "20h-24h"]
-            for i in range(len(intervals) - 1):
-                interval_total = sum(
-                    compute_order_total_amount(o) for o in orders if intervals[i] <= o.created.hour < intervals[i + 1]
-                )
-                data.append(float(interval_total))
+                def time_slot_index_for_order(order: Any) -> Optional[int]:
+                    # 0..23 -> 0..5 (4-hour slots)
+                    return order.created.hour // 4
 
+            case TimeFrameEnum.WEEK.value:
+                labels = [label.value for label in WeekChartLabelEnum]
+
+                def time_slot_index_for_order(order: Any) -> Optional[int]:
+                    # Python weekday: 0=Monday, 6=Sunday
+                    return order.created.weekday()
+
+            case TimeFrameEnum.MONTH.value:
+                labels = [label.value for label in MonthChartLabelEnum]
+                start_date = date_range["current_period_start"]
+
+                def time_slot_index_for_order(order: Any) -> Optional[int]:
+                    # Keep original behavior: only count orders within the first 4 weeks
+                    days_since_start = (order.created - start_date).days
+                    week_index = days_since_start // 7
+                    return week_index if 0 <= week_index < 4 else None
+
+            case TimeFrameEnum.YEAR.value:
+                labels = [label.value for label in YearChartLabelEnum]
+
+                def time_slot_index_for_order(order: Any) -> Optional[int]:
+                    # 1..12 -> 0..11
+                    return order.created.month - 1
+
+            case _:
+                # Default to 'today' behavior for invalid periods
+                labels = [label.value for label in TodayChartLabelEnum]
+
+                def time_slot_index_for_order(order: Any) -> Optional[int]:
+                    return order.created.hour // 4
+
+        labels, data = _aggregate_by_time_slot(labels, time_slot_index_for_order)
         return {"labels": labels, "data": data}
 
     def _get_recent_reviews(self, cooker_id: int, limit: int = 5) -> List[dict[str, Any]]:
@@ -462,15 +496,15 @@ class DashboardView(StandardizedResponseMixin, GenericViewSet):
         )
 
         reviews: List[dict[str, Any]] = []
-        for o in orders_with_reviews:
+        for order in orders_with_reviews:
             reviews.append(
                 {
-                    "id": str(o.id),
-                    "customerName": f"{o.customer.firstname} {o.customer.lastname}",
-                    "rating": int(o.rating),
-                    "comment": o.comment,
-                    "date": o.modified,
-                    "orderNumber": f"#{o.id}",
+                    "id": str(order.id),
+                    "customer_name": f"{order.customer.firstname} {order.customer.lastname}",
+                    "rating": int(order.rating),
+                    "comment": order.comment,
+                    "date": order.modified,
+                    "order_number": f"#{order.id}",
                 }
             )
         return reviews
@@ -479,7 +513,7 @@ class DashboardView(StandardizedResponseMixin, GenericViewSet):
         dish_items = (
             OrderDishItemModel.objects.filter(
                 order__cooker_id=cooker_id,
-                order__created__gte=date_range["start"],
+                order__created__gte=date_range["current_period_start"],
                 order__status=OrderStatusEnum.DELIVERED,
             )
             .values("dish__id", "dish__name", "dish__photo", "dish__price")
@@ -494,7 +528,7 @@ class DashboardView(StandardizedResponseMixin, GenericViewSet):
                 {
                     "id": str(item["dish__id"]),
                     "name": item["dish__name"],
-                    "soldToday": item["total_sold"],
+                    "number_of_sold_items": item["total_sold"],
                     "revenue": Decimal(str(item["dish__price"])) * item["total_sold"],
                     "image": photo_url,
                 }
@@ -503,7 +537,7 @@ class DashboardView(StandardizedResponseMixin, GenericViewSet):
         return popular[:limit]
 
     def _calculate_trend(self, current: float, previous: float) -> Union[str, None]:
-        if not previous or previous == 0:
+        if not previous:
             return None
         change = ((current - previous) / previous) * 100
         sign = "+" if change > 0 else ""

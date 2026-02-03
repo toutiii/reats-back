@@ -1,13 +1,14 @@
-"""Tests pour l'endpoint Dashboard Stats."""
+"""Tests for the Dashboard Stats endpoint."""
 
 import pytest
 from rest_framework import status
 from rest_framework.test import APIClient
+from utils.enums import TimeFrameEnum
 
 
 @pytest.mark.django_db
 class TestDashboardStatsAPI:
-    """Tests de l'action stats du DashboardView."""
+    """Tests for the DashboardView stats action."""
 
     def test_get_stats_today_success(
         self,
@@ -15,10 +16,10 @@ class TestDashboardStatsAPI:
         client: APIClient,
         dashboard_stats_path: str,
     ) -> None:
-        """Test GET /dashboard/stats?period=today avec succès."""
+        """Test GET /dashboard/stats?period=today successfully."""
         response = client.get(
             dashboard_stats_path,
-            {"period": "today"},
+            {"period": TimeFrameEnum.TODAY.value},
             follow=False,
             **auth_headers,
         )
@@ -30,13 +31,13 @@ class TestDashboardStatsAPI:
 
         assert isinstance(data, dict)
         assert "period" in data
-        assert data["period"] == "today"
+        assert data["period"] == TimeFrameEnum.TODAY.value
         assert "stats" in data
         assert "revenueChart" in data
         assert "recentReviews" in data
         assert "popularItems" in data
 
-        # Vérification des stats clés
+        # Verify key stats
         stats = data["stats"]
         assert "activeOrders" in stats
         assert "pendingOrders" in stats
@@ -49,10 +50,10 @@ class TestDashboardStatsAPI:
         client: APIClient,
         dashboard_stats_path: str,
     ) -> None:
-        """Test GET /dashboard/stats?period=week avec succès."""
+        """Test GET /dashboard/stats?period=week successfully."""
         response = client.get(
             dashboard_stats_path,
-            {"period": "week"},
+            {"period": TimeFrameEnum.WEEK.value},
             follow=False,
             **auth_headers,
         )
@@ -64,8 +65,8 @@ class TestDashboardStatsAPI:
 
         assert isinstance(data, dict)
         assert "period" in data
-        assert data["period"] == "week"
-        assert len(data["revenueChart"]["labels"]) == 7  # 7 jours
+        assert data["period"] == TimeFrameEnum.WEEK.value
+        assert len(data["revenueChart"]["labels"]) == 7  # 7 days
 
     def test_get_stats_month_success(
         self,
@@ -73,10 +74,10 @@ class TestDashboardStatsAPI:
         client: APIClient,
         dashboard_stats_path: str,
     ) -> None:
-        """Test GET /dashboard/stats?period=month avec succès."""
+        """Test GET /dashboard/stats?period=month successfully."""
         response = client.get(
             dashboard_stats_path,
-            {"period": "month"},
+            {"period": TimeFrameEnum.MONTH.value},
             follow=False,
             **auth_headers,
         )
@@ -88,8 +89,8 @@ class TestDashboardStatsAPI:
 
         assert isinstance(data, dict)
         assert "period" in data
-        assert data["period"] == "month"
-        assert len(data["revenueChart"]["labels"]) == 4  # 4 semaines
+        assert data["period"] == TimeFrameEnum.MONTH.value
+        assert len(data["revenueChart"]["labels"]) == 4  # 4 weeks
 
     def test_get_stats_year_success(
         self,
@@ -97,10 +98,10 @@ class TestDashboardStatsAPI:
         client: APIClient,
         dashboard_stats_path: str,
     ) -> None:
-        """Test GET /dashboard/stats?period=year avec succès."""
+        """Test GET /dashboard/stats?period=year successfully."""
         response = client.get(
             dashboard_stats_path,
-            {"period": "year"},
+            {"period": TimeFrameEnum.YEAR.value},
             follow=False,
             **auth_headers,
         )
@@ -112,8 +113,8 @@ class TestDashboardStatsAPI:
 
         assert isinstance(data, dict)
         assert "period" in data
-        assert data["period"] == "year"
-        assert len(data["revenueChart"]["labels"]) == 12  # 12 mois
+        assert data["period"] == TimeFrameEnum.YEAR.value
+        assert len(data["revenueChart"]["labels"]) == 12  # 12 months
 
     def test_get_stats_default_period_is_today(
         self,
@@ -121,7 +122,7 @@ class TestDashboardStatsAPI:
         client: APIClient,
         dashboard_stats_path: str,
     ) -> None:
-        """Test que la période par défaut est 'today'."""
+        """Test that the default period is 'today'."""
         response = client.get(
             dashboard_stats_path,
             follow=False,
@@ -135,7 +136,7 @@ class TestDashboardStatsAPI:
 
         assert isinstance(data, dict)
         assert "period" in data
-        assert data["period"] == "today"
+        assert data["period"] == TimeFrameEnum.TODAY.value
 
     def test_revenue_chart_structure(
         self,
@@ -143,7 +144,7 @@ class TestDashboardStatsAPI:
         client: APIClient,
         dashboard_stats_path: str,
     ) -> None:
-        """Test la structure du graphique de revenus."""
+        """Test the revenue chart structure."""
         response = client.get(
             dashboard_stats_path,
             {"period": "today"},
@@ -171,7 +172,7 @@ class TestDashboardStatsAPI:
         client: APIClient,
         dashboard_stats_path: str,
     ) -> None:
-        """Test la structure des avis récents."""
+        """Test the recent reviews structure."""
         response = client.get(
             dashboard_stats_path,
             follow=False,
@@ -203,7 +204,7 @@ class TestDashboardStatsAPI:
         client: APIClient,
         dashboard_stats_path: str,
     ) -> None:
-        """Test la structure des articles populaires."""
+        """Test the popular items structure."""
         response = client.get(
             dashboard_stats_path,
             follow=False,
@@ -224,7 +225,7 @@ class TestDashboardStatsAPI:
             item = items[0]
             assert "id" in item
             assert "name" in item
-            assert "soldToday" in item
+            assert "numberOfSoldItems" in item
             assert "revenue" in item
             assert "image" in item
 
@@ -234,7 +235,7 @@ class TestDashboardStatsAPI:
         client: APIClient,
         dashboard_stats_path: str,
     ) -> None:
-        """Test que les stats contiennent le compte des commandes actives."""
+        """Test that stats contain the active orders count."""
         response = client.get(
             dashboard_stats_path,
             follow=False,
@@ -250,9 +251,9 @@ class TestDashboardStatsAPI:
         assert "stats" in data
         stats = data["stats"]
 
-        # Commandes actives = PENDING + PROCESSING + COMPLETED
-        assert stats["activeOrders"]["count"] >= 2  # Au moins PENDING et PROCESSING
-        assert stats["pendingOrders"]["count"] >= 1  # Au moins 1 PENDING
+        # Active orders = PENDING + PROCESSING + COMPLETED
+        assert stats["activeOrders"]["count"] >= 2  # At least PENDING and PROCESSING
+        assert stats["pendingOrders"]["count"] >= 1  # At least 1 PENDING
 
     def test_stats_contains_revenue_with_currency(
         self,
@@ -260,7 +261,7 @@ class TestDashboardStatsAPI:
         client: APIClient,
         dashboard_stats_path: str,
     ) -> None:
-        """Test que les revenus ont une devise."""
+        """Test that revenue has a currency."""
         response = client.get(
             dashboard_stats_path,
             follow=False,
@@ -286,7 +287,7 @@ class TestDashboardStatsAPI:
         client: APIClient,
         dashboard_stats_path: str,
     ) -> None:
-        """Test que l'accès sans authentification retourne 401."""
+        """Test that unauthenticated access returns 401."""
         response = client.get(
             dashboard_stats_path,
             follow=False,
@@ -300,7 +301,7 @@ class TestDashboardStatsAPI:
         client: APIClient,
         dashboard_stats_path: str,
     ) -> None:
-        """Test qu'une période invalide retourne les stats 'today' par défaut."""
+        """Test that an invalid period defaults to 'today' logic."""
         response = client.get(
             dashboard_stats_path,
             {"period": "invalid_period"},
@@ -313,9 +314,9 @@ class TestDashboardStatsAPI:
         assert "data" in response.json()
         data = response.json()["data"]
 
-        # Une période invalide devrait être traitée comme 'today'
-        assert data["period"] == "invalid_period"  # Le period retourné est celui passé
-        # Mais les données sont calculées avec la logique 'today' (6 intervalles)
+        # An invalid period should be treated as 'today'
+        assert data["period"] == "invalid_period"  # The returned period is the one passed
+        # But the data is calculated with 'today' logic (6 intervals)
         assert len(data["revenueChart"]["labels"]) == 6
 
     def test_stats_empty_reviews_returns_empty_list(
@@ -324,7 +325,7 @@ class TestDashboardStatsAPI:
         client: APIClient,
         dashboard_stats_path: str,
     ) -> None:
-        """Test que recentReviews retourne une liste vide si aucune review."""
+        """Test that recentReviews returns an empty list if no reviews."""
         response = client.get(
             dashboard_stats_path,
             follow=False,
@@ -334,7 +335,7 @@ class TestDashboardStatsAPI:
         assert response.status_code == status.HTTP_200_OK
         data = response.json()["data"]
 
-        # recentReviews doit être une liste (peut être vide)
+        # recentReviews should be a list (can be empty)
         assert isinstance(data["recentReviews"], list)
 
     def test_stats_popular_items_handles_missing_photos(
@@ -343,7 +344,7 @@ class TestDashboardStatsAPI:
         client: APIClient,
         dashboard_stats_path: str,
     ) -> None:
-        """Test que popularItems gère les photos manquantes."""
+        """Test that popular items handle missing photos."""
         response = client.get(
             dashboard_stats_path,
             follow=False,
@@ -353,8 +354,8 @@ class TestDashboardStatsAPI:
         assert response.status_code == status.HTTP_200_OK
         data = response.json()["data"]
 
-        # popularItems doit être une liste
+        # popularItems should be a list
         assert isinstance(data["popularItems"], list)
-        # Chaque item doit avoir une clé 'image' (peut être None)
+        # Each item should have an 'image' key (can be None)
         for item in data["popularItems"]:
             assert "image" in item
