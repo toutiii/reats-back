@@ -311,15 +311,11 @@ class DashboardView(StandardizedResponseMixin, GenericViewSet):
         date_range = self._get_date_range(period)
         stats = self._calculate_stats(cooker_id, date_range)
         revenue_chart = self._generate_revenue_chart(cooker_id, period, date_range)
-        recent_reviews = self._get_recent_reviews(cooker_id, limit=5)
-        popular_items = self._get_popular_items(cooker_id, date_range, limit=5)
 
         data = {
             "period": period,
             "stats": stats,
             "revenue_chart": revenue_chart,
-            "recent_reviews": recent_reviews,
-            "popular_items": popular_items,
         }
 
         serializer = DashboardStatsSerializer(data=data)
