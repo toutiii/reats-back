@@ -311,8 +311,6 @@ class DashboardStatsSerializer(serializers.Serializer):
     period = serializers.CharField()
     stats = StatsSerializer()
     revenue_chart = IncomingChartSerializer()
-    recent_reviews = RecentReviewSerializer(many=True)
-    popular_items = PopularItemSerializer(many=True)
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -320,6 +318,4 @@ class DashboardStatsSerializer(serializers.Serializer):
             "period": data["period"],
             "stats": data["stats"],
             "revenueChart": data["revenue_chart"],
-            "recentReviews": data["recent_reviews"],
-            "popularItems": data["popular_items"],
         }

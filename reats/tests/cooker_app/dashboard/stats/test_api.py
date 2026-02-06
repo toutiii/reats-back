@@ -34,8 +34,6 @@ class TestDashboardStatsAPI:
         assert data["period"] == TimeFrameEnum.TODAY.value
         assert "stats" in data
         assert "revenueChart" in data
-        assert "recentReviews" in data
-        assert "popularItems" in data
 
         # Verify key stats
         stats = data["stats"]
@@ -166,68 +164,8 @@ class TestDashboardStatsAPI:
         assert len(chart["labels"]) == 6  # 6 intervalles de 4h
         assert len(chart["data"]) == 6
 
-    def test_recent_reviews_structure(
-        self,
-        auth_headers: dict,
-        client: APIClient,
-        dashboard_stats_path: str,
-    ) -> None:
-        """Test the recent reviews structure."""
-        response = client.get(
-            dashboard_stats_path,
-            follow=False,
-            **auth_headers,
-        )
-
-        assert response.status_code == status.HTTP_200_OK
-        assert isinstance(response.json(), dict)
-        assert "data" in response.json()
-        data = response.json()["data"]
-
-        assert isinstance(data, dict)
-        assert "recentReviews" in data
-        reviews = data["recentReviews"]
-        assert isinstance(reviews, list)
-
-        if len(reviews) > 0:
-            review = reviews[0]
-            assert "id" in review
-            assert "customerName" in review
-            assert "rating" in review
-            assert "comment" in review
-            assert "date" in review
-            assert "orderNumber" in review
-
-    def test_popular_items_structure(
-        self,
-        auth_headers: dict,
-        client: APIClient,
-        dashboard_stats_path: str,
-    ) -> None:
-        """Test the popular items structure."""
-        response = client.get(
-            dashboard_stats_path,
-            follow=False,
-            **auth_headers,
-        )
-
-        assert response.status_code == status.HTTP_200_OK
-        assert isinstance(response.json(), dict)
-        assert "data" in response.json()
-        data = response.json()["data"]
-
-        assert isinstance(data, dict)
-        assert "popularItems" in data
-        items = data["popularItems"]
-        assert isinstance(items, list)
-
-        if len(items) > 0:
-            item = items[0]
-            assert "id" in item
-            assert "name" in item
-            assert "numberOfSoldItems" in item
-            assert "revenue" in item
-            assert "image" in item
+    # NOTE: test_recent_reviews_structure removed - tested in /dashboard/recent-reviews
+    # NOTE: test_popular_items_structure removed - tested in /dashboard/popular-items
 
     def test_stats_contains_active_orders_count(
         self,
@@ -319,43 +257,5 @@ class TestDashboardStatsAPI:
         # But the data is calculated with 'today' logic (6 intervals)
         assert len(data["revenueChart"]["labels"]) == 6
 
-    def test_stats_empty_reviews_returns_empty_list(
-        self,
-        auth_headers: dict,
-        client: APIClient,
-        dashboard_stats_path: str,
-    ) -> None:
-        """Test that recentReviews returns an empty list if no reviews."""
-        response = client.get(
-            dashboard_stats_path,
-            follow=False,
-            **auth_headers,
-        )
-
-        assert response.status_code == status.HTTP_200_OK
-        data = response.json()["data"]
-
-        # recentReviews should be a list (can be empty)
-        assert isinstance(data["recentReviews"], list)
-
-    def test_stats_popular_items_handles_missing_photos(
-        self,
-        auth_headers: dict,
-        client: APIClient,
-        dashboard_stats_path: str,
-    ) -> None:
-        """Test that popular items handle missing photos."""
-        response = client.get(
-            dashboard_stats_path,
-            follow=False,
-            **auth_headers,
-        )
-
-        assert response.status_code == status.HTTP_200_OK
-        data = response.json()["data"]
-
-        # popularItems should be a list
-        assert isinstance(data["popularItems"], list)
-        # Each item should have an 'image' key (can be None)
-        for item in data["popularItems"]:
-            assert "image" in item
+    # NOTE: test_stats_empty_reviews_returns_empty_list removed - tested in /dashboard/recent-reviews
+    # NOTE: test_stats_popular_items_handles_missing_photos removed - tested in /dashboard/popular-items
