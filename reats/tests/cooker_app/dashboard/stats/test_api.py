@@ -164,9 +164,6 @@ class TestDashboardStatsAPI:
         assert len(chart["labels"]) == 6  # 6 intervalles de 4h
         assert len(chart["data"]) == 6
 
-    # NOTE: test_recent_reviews_structure removed - tested in /dashboard/recent-reviews
-    # NOTE: test_popular_items_structure removed - tested in /dashboard/popular-items
-
     def test_stats_contains_active_orders_count(
         self,
         auth_headers: dict,
@@ -256,6 +253,3 @@ class TestDashboardStatsAPI:
         assert data["period"] == "invalid_period"  # The returned period is the one passed
         # But the data is calculated with 'today' logic (6 intervals)
         assert len(data["revenueChart"]["labels"]) == 6
-
-    # NOTE: test_stats_empty_reviews_returns_empty_list removed - tested in /dashboard/recent-reviews
-    # NOTE: test_stats_popular_items_handles_missing_photos removed - tested in /dashboard/popular-items
