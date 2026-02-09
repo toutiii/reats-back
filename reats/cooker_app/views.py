@@ -64,6 +64,7 @@ from .serializers import (
     DrinkPATCHSerializer,
     DrinkPOSTSerializer,
     PopularItemSerializer,
+    RecentReviewSerializer,
     TokenObtainPairWithoutPasswordSerializer,
     TokenObtainRefreshWithoutPasswordSerializer,
 )
@@ -501,28 +502,29 @@ class DashboardView(StandardizedResponseMixin, GenericViewSet):
         labels, data = _aggregate_by_time_slot(labels, time_slot_index_for_order)
         return {"labels": labels, "data": data}
 
-    def _get_recent_reviews(self, cooker_id: int, limit: int = 5) -> List[dict[str, Any]]:
-        orders_with_reviews = (
+    @action(methods=["get"], detail=False, url_path="recent-reviews")
+    def recent_reviews(self, request) -> Response:
+        """Return paginated list of recent reviews."""
+        cooker_id = request.user.pk
+        queryset = self._get_recent_reviews_queryset(cooker_id)
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = RecentReviewSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = RecentReviewSerializer(queryset, many=True)
+        return self.success(data=serializer.data)
+
+    def _get_recent_reviews_queryset(self, cooker_id: int) -> QuerySet:
+        """Return QuerySet of recent reviews (orders with ratings/comments)."""
+        return (
             OrderModel.objects.filter(cooker_id=cooker_id, rating__gt=0)
             .exclude(comment__isnull=True)
             .exclude(comment="")
             .select_related("customer")
-            .order_by("-modified")[:limit]
+            .order_by("-modified")
         )
-
-        reviews: List[dict[str, Any]] = []
-        for order in orders_with_reviews:
-            reviews.append(
-                {
-                    "id": str(order.id),
-                    "customer_name": f"{order.customer.firstname} {order.customer.lastname}",
-                    "rating": int(order.rating),
-                    "comment": order.comment,
-                    "date": order.modified,
-                    "order_number": f"#{order.id}",
-                }
-            )
-        return reviews
 
     def _get_popular_items_queryset(self, cooker_id: int, date_range: DateRangeDict) -> QuerySet:
         """Return combined QuerySet of popular dishes and drinks using union."""

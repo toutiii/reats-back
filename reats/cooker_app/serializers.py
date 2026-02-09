@@ -239,12 +239,22 @@ class CookerOrderGETSerializer(ModelSerializer):
 
 
 class RecentReviewSerializer(serializers.Serializer):
+    """Serializer for recent reviews taking an Order model instance."""
+
     id = serializers.CharField()
-    customer_name = serializers.CharField()
+    customer_name = serializers.SerializerMethodField()
     rating = serializers.IntegerField()
     comment = serializers.CharField(allow_null=True)
-    date = serializers.DateTimeField()
-    order_number = serializers.CharField()
+    date = serializers.DateTimeField(source="modified")
+    order_number = serializers.SerializerMethodField()
+
+    def get_customer_name(self, obj) -> str:
+        if hasattr(obj, "customer"):
+            return f"{obj.customer.firstname} {obj.customer.lastname}"
+        return "Unknown Customer"
+
+    def get_order_number(self, obj) -> str:
+        return f"#{obj.id}"
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
