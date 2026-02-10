@@ -11,3 +11,9 @@ import pytest
 def dashboard_stats_path() -> str:
     """Path de l'endpoint dashboard stats."""
     return "/api/v1/cookers-dashboard/stats/"
+
+
+@pytest.fixture
+def popular_items_path() -> str:
+    """Path de l'endpoint dashboard popular-items."""
+    return "/api/v1/cookers-dashboard/popular-items/"

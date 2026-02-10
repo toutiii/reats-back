@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Any, Callable, List, Optional, Tuple, Type, TypedDict, Union
 
-from core_app.models import CookerModel, DishModel, DrinkModel, OrderDishItemModel, OrderModel
+from core_app.models import CookerModel, DishModel, DrinkModel, OrderDishItemModel, OrderDrinkItemModel, OrderModel
 from core_app.serializers import (
     DishGETSerializer,
     DrinkGETSerializer,
@@ -14,7 +14,7 @@ from core_app.serializers import (
 )
 from django.conf import settings
 from django.db import IntegrityError
-from django.db.models import Count, Q, QuerySet, Sum
+from django.db.models import Count, F, Q, QuerySet, Sum
 from django.utils import timezone
 from phonenumbers.phonenumberutil import NumberParseException
 from rest_framework import status
@@ -34,7 +34,6 @@ from utils.common import (
     create_stripe_refund,
     delete_s3_object,
     format_phone,
-    get_pre_signed_url,
     is_otp_valid,
     send_otp,
     update_cooker_acceptance_rate,
@@ -53,6 +52,7 @@ from utils.enums import (
     WeekChartLabelEnum,
     YearChartLabelEnum,
 )
+from utils.paginations import StandardizedResultsSetPagination
 
 from .serializers import (
     CookerGETSerializer,
@@ -63,6 +63,7 @@ from .serializers import (
     DishPOSTSerializer,
     DrinkPATCHSerializer,
     DrinkPOSTSerializer,
+    PopularItemSerializer,
     TokenObtainPairWithoutPasswordSerializer,
     TokenObtainRefreshWithoutPasswordSerializer,
 )
@@ -268,6 +269,7 @@ class CookerView(StandardizedResponseMixin, ModelViewSet):
 
 class DashboardView(StandardizedResponseMixin, GenericViewSet):
     permission_classes = [UserPermission]
+    pagination_class = StandardizedResultsSetPagination
 
     def list(self, request) -> Response:
         start_date_str: Union[str, None] = request.query_params.get("start_date")
@@ -320,6 +322,23 @@ class DashboardView(StandardizedResponseMixin, GenericViewSet):
 
         serializer = DashboardStatsSerializer(data=data)
         serializer.is_valid(raise_exception=True)
+        return self.success(data=serializer.data)
+
+    @action(methods=["get"], detail=False, url_path="popular-items")
+    def popular_items(self, request) -> Response:
+        """Return paginated list of popular items for the given period."""
+        period = request.query_params.get("period", TimeFrameEnum.TODAY.value)
+        cooker_id = request.user.pk
+
+        date_range = self._get_date_range(period)
+        queryset = self._get_popular_items_queryset(cooker_id, date_range)
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = PopularItemSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = PopularItemSerializer(queryset, many=True)
         return self.success(data=serializer.data)
 
     def _get_date_range(self, period: str) -> DateRangeDict:
@@ -505,32 +524,43 @@ class DashboardView(StandardizedResponseMixin, GenericViewSet):
             )
         return reviews
 
-    def _get_popular_items(self, cooker_id: int, date_range: DateRangeDict, limit: int = 5) -> List[dict[str, Any]]:
-        dish_items = (
+    def _get_popular_items_queryset(self, cooker_id: int, date_range: DateRangeDict) -> QuerySet:
+        """Return combined QuerySet of popular dishes and drinks using union."""
+        # Get popular dishes with normalized field names
+        dishes = (
             OrderDishItemModel.objects.filter(
                 order__cooker_id=cooker_id,
                 order__created__gte=date_range["current_period_start"],
                 order__status=OrderStatusEnum.DELIVERED,
             )
-            .values("dish__id", "dish__name", "dish__photo", "dish__price")
+            .values(
+                item_id=F("dish__id"),
+                item_name=F("dish__name"),
+                item_photo=F("dish__photo"),
+                item_price=F("dish__price"),
+            )
             .annotate(total_sold=Sum("dish_quantity"))
-            .order_by("-total_sold")[:limit]
         )
 
-        popular: List[dict[str, Any]] = []
-        for item in dish_items:
-            photo_url = get_pre_signed_url(item["dish__photo"]) if item["dish__photo"] else None
-            popular.append(
-                {
-                    "id": str(item["dish__id"]),
-                    "name": item["dish__name"],
-                    "number_of_sold_items": item["total_sold"],
-                    "revenue": Decimal(str(item["dish__price"])) * item["total_sold"],
-                    "image": photo_url,
-                }
+        # Get popular drinks with normalized field names
+        drinks = (
+            OrderDrinkItemModel.objects.filter(
+                order__cooker_id=cooker_id,
+                order__created__gte=date_range["current_period_start"],
+                order__status=OrderStatusEnum.DELIVERED,
             )
+            .values(
+                item_id=F("drink__id"),
+                item_name=F("drink__name"),
+                item_photo=F("drink__photo"),
+                item_price=F("drink__price"),
+            )
+            .annotate(total_sold=Sum("drink_quantity"))
+        )
 
-        return popular[:limit]
+        # Combine using union and order by total_sold
+        # Note: union() requires identical field names and types
+        return dishes.union(drinks).order_by("-total_sold")
 
     def _calculate_trend(self, current: float, previous: float) -> Union[str, None]:
         if not previous:

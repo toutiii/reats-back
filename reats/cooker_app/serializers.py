@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Any, Dict, Union
 
 import phonenumbers
@@ -258,20 +259,25 @@ class RecentReviewSerializer(serializers.Serializer):
 
 
 class PopularItemSerializer(serializers.Serializer):
-    id = serializers.CharField()
-    name = serializers.CharField()
-    number_of_sold_items = serializers.IntegerField()
-    revenue = serializers.DecimalField(max_digits=10, decimal_places=2)
-    image = serializers.CharField(allow_blank=True, allow_null=True)
+    """Serializer for popular items that handles transformation from QuerySet union."""
+
+    item_id = serializers.UUIDField(source="id")
+    item_name = serializers.CharField(source="name")
+    total_sold = serializers.IntegerField(source="number_of_sold_items")
+    item_price = serializers.DecimalField(max_digits=10, decimal_places=2, write_only=True)
+    item_photo = serializers.CharField(allow_blank=True, allow_null=True, write_only=True)
 
     def to_representation(self, instance):
-        data = super().to_representation(instance)
+        """Transform QuerySet values dict to API response format."""
+        revenue = Decimal(str(instance.get("item_price", 0))) * instance.get("total_sold", 0)
+        photo = instance.get("item_photo")
+
         return {
-            "id": data["id"],
-            "name": data["name"],
-            "numberOfSoldItems": data["number_of_sold_items"],
-            "revenue": data["revenue"],
-            "image": data["image"],
+            "id": str(instance["item_id"]),
+            "name": instance["item_name"],
+            "numberOfSoldItems": instance["total_sold"],
+            "revenue": float(revenue),
+            "image": get_pre_signed_url(photo) if photo else None,
         }
 
 
