@@ -250,7 +250,12 @@ class RecentReviewSerializer(serializers.Serializer):
 
     def get_customer_name(self, obj) -> str:
         if hasattr(obj, "customer"):
-            return f"{obj.customer.firstname} {obj.customer.lastname}"
+            customer = obj.customer
+            first_name = customer.firstname
+            last_name = customer.lastname
+            if last_name:
+                return f"{first_name} {last_name[0].upper()}."
+            return first_name
         return "Unknown Customer"
 
     def get_order_number(self, obj) -> str:
