@@ -20,7 +20,6 @@ from phonenumbers.phonenumberutil import NumberParseException
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.mixins import ListModelMixin, UpdateModelMixin
-from rest_framework.parsers import JSONParser, MultiPartParser
 from rest_framework.permissions import BasePermission
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
@@ -82,7 +81,6 @@ class DateRangeDict(TypedDict):
 
 
 class CookerView(StandardizedResponseMixin, ModelViewSet):
-    parser_classes = [JSONParser, MultiPartParser]
     queryset = CookerModel.objects.all()
 
     def get_permissions(self) -> list:
@@ -573,7 +571,6 @@ class DashboardView(StandardizedResponseMixin, GenericViewSet):
 
 
 class DishView(StandardizedResponseMixin, ModelViewSet):
-    parser_classes = [MultiPartParser]
     queryset = DishModel.objects.filter(is_deleted=False).all()
 
     def get_serializer_class(self) -> type[BaseSerializer]:
@@ -703,7 +700,6 @@ class DishView(StandardizedResponseMixin, ModelViewSet):
 
 
 class DrinkView(StandardizedResponseMixin, ModelViewSet):
-    parser_classes = [MultiPartParser]
     queryset = DrinkModel.objects.filter(is_deleted=False).all()
 
     def get_serializer_class(self) -> type[BaseSerializer]:
@@ -879,7 +875,6 @@ class CookerOrderView(
 ):
     permission_classes = [UserPermission]
     queryset = OrderModel.objects.all()
-    parser_classes = [MultiPartParser]
 
     def partial_update(self, request, *args, **kwargs):
         instance: OrderModel = self.get_object()
@@ -970,7 +965,7 @@ class CookerOrderHistoryView(StandardizedResponseMixin, ListModelMixin, GenericV
             OrderStatusEnum.CANCELLED_BY_COOKER,
         ]
     )
-    parser_classes = [MultiPartParser]
+
     serializer_class = CookerOrderGETSerializer
 
     def list(self, request, *args, **kwargs) -> Response:
