@@ -1,3 +1,54 @@
+[project]
+name = "reats"
+version = "0.1.0"
+requires-python = ">=3.13"
+dependencies = [
+    "boto3==1.28.49",
+    "cryptography==41.0.7",
+    "django==5.2",
+    "django-extensions==3.2.3",
+    "django-filter>=24.0",
+    "django-phonenumber-field[phonenumberslite]==7.1.0",
+    "djangorestframework==3.14.0",
+    "djangorestframework-simplejwt[crypto]==5.3.1",
+    "drf-spectacular==0.29.0",
+    "googlemaps==4.10.0",
+    "gunicorn==21.2.0",
+    "pillow>=11.0.0",
+    "psycopg2-binary==2.9.11",
+    "python-dotenv==1.0.0",
+    "stripe==10.12.0",
+    "watchtower==3.0.1",
+]
+
+[dependency-groups]
+dev = [
+    "deepdiff==7.0.1",
+    "django-stubs==4.2.3",
+    "djangorestframework-stubs==3.14.2",
+    "freezegun>=1.5.0",
+    "pre-commit==3.3.3",
+    "pytest-django==4.5.2",
+    "pytest-env",
+    "ty",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "source.settings"
+django_debug_mode = "keep"
+pythonpath = ["reats"]
+env = [
+    "D:ENV=local",
+    "D:DB_HOST=localhost",
+    "D:DB_PORT=8001",
+    "D:POSTGRES_DB=reats_local_db",
+    "D:POSTGRES_USER=dev",
+    "D:POSTGRES_PASSWORD=devpassword",
+]
+
 [tool.ruff]
 line-length = 120
 
