@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 import django_filters
-from core_app.models import OrderModel
+from core_app.models import DishModel, OrderModel
 from django.conf import settings
 from django.core.validators import RegexValidator
 from django.db.models import Q
@@ -199,3 +199,12 @@ class OrderFilter(filters.FilterSet):
             | Q(cooker__firstname__icontains=value)
             | Q(cooker__lastname__icontains=value)
         ).distinct()
+
+
+class DishFilter(filters.FilterSet):
+    search = django_filters.CharFilter(lookup_expr="icontains", field_name="name")
+    available = django_filters.BooleanFilter(field_name="is_enabled")
+
+    class Meta:
+        model = DishModel
+        fields = ["search", "available"]
