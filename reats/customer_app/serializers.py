@@ -13,8 +13,8 @@ from core_app.models import (
     OrderModel,
 )
 from core_app.serializers import (
-    OrderDishItemGETSerializer,
-    OrderDrinkItemGETSerializer,
+    OrderDishItemCustomerSerializer,
+    OrderDrinkItemCustomerSerializer,
     SimpleCookerSerializer,
     SimpleCustomerSerializer,
 )
@@ -64,8 +64,8 @@ class AddressGETSerializer(ModelSerializer):
 
 
 class OrderGETSerializer(ModelSerializer):
-    dishes_items = OrderDishItemGETSerializer(many=True)
-    drinks_items = OrderDrinkItemGETSerializer(many=True)
+    dishes_items = OrderDishItemCustomerSerializer(many=True)
+    drinks_items = OrderDrinkItemCustomerSerializer(many=True)
     address = AddressGETSerializer()
 
     class Meta:

@@ -93,7 +93,16 @@ class DishPOSTSerializer(DishSerializer):
 class DishPATCHSerializer(DishSerializer):
     class Meta:
         model = DishModel
-        fields = ("is_enabled",)
+        fields = (
+            "is_enabled",
+            "cost",
+            "preparation_time",
+            "max_concurrent_orders",
+            "name",
+            "description",
+            "price",
+            "category",
+        )
 
 
 class DrinkSerializer(ModelSerializer):

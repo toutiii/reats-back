@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 
+from rest_framework import serializers
 from rest_framework.serializers import CharField, ModelSerializer
 from utils.enums import OrderStatusEnum
 
@@ -43,6 +44,7 @@ class SimpleCookerSerializer(ModelSerializer):
 class DishGETSerializer(ModelSerializer):
     ratings = DishRatingSerializer(many=True, read_only=True)
     cooker = SimpleCookerSerializer(read_only=True)
+    margin = serializers.SerializerMethodField()
 
     class Meta:
         model = DishModel
@@ -50,6 +52,27 @@ class DishGETSerializer(ModelSerializer):
             "created",
             "modified",
             "is_deleted",
+        )
+
+    def get_margin(self, obj):
+        return obj.margin
+
+
+class DishCustomerSerializer(ModelSerializer):
+    """Serializer for customer-facing dish endpoints without sensitive financial data."""
+
+    ratings = DishRatingSerializer(many=True, read_only=True)
+    cooker = SimpleCookerSerializer(read_only=True)
+
+    class Meta:
+        model = DishModel
+        exclude = (
+            "created",
+            "modified",
+            "is_deleted",
+            "cost",  # Hide cost from customers
+            "preparation_time",  # Internal operational data
+            "max_concurrent_orders",  # Internal operational data
         )
 
 
@@ -79,7 +102,37 @@ class OrderDishItemGETSerializer(ModelSerializer):
         )
 
 
+class OrderDishItemCustomerSerializer(ModelSerializer):
+    """Customer-facing version using DishCustomerSerializer without margin."""
+
+    dish = DishCustomerSerializer()
+
+    class Meta:
+        model = OrderDishItemModel
+        exclude = (
+            "created",
+            "modified",
+            "order",
+            "id",
+        )
+
+
 class OrderDrinkItemGETSerializer(ModelSerializer):
+    drink = DrinkGETSerializer()
+
+    class Meta:
+        model = OrderDrinkItemModel
+        exclude = (
+            "created",
+            "modified",
+            "order",
+            "id",
+        )
+
+
+class OrderDrinkItemCustomerSerializer(ModelSerializer):
+    """Customer-facing version for consistency."""
+
     drink = DrinkGETSerializer()
 
     class Meta:

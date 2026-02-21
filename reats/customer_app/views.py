@@ -15,7 +15,7 @@ from core_app.models import (
     OrderModel,
 )
 from core_app.serializers import (
-    DishGETSerializer,
+    DishCustomerSerializer,
     DrinkGETSerializer,
     OrderPATCHSerializer,
     OrderRatingSerializer,
@@ -337,7 +337,7 @@ class AddressView(StandardizedResponseMixin, ModelViewSet):
 
 
 class DishView(StandardizedResponseMixin, ListModelMixin, GenericViewSet):
-    serializer_class = DishGETSerializer
+    serializer_class = DishCustomerSerializer
     parser_classes = [MultiPartParser]
     queryset = DishModel.objects.filter(category="dish").filter(is_deleted=False).all()
 
@@ -458,7 +458,7 @@ class DrinkView(StandardizedResponseMixin, ListModelMixin, GenericViewSet):
 
 
 class DessertView(StandardizedResponseMixin, ListModelMixin, GenericViewSet):
-    serializer_class = DishGETSerializer
+    serializer_class = DishCustomerSerializer
     parser_classes = [MultiPartParser]
     queryset = DishModel.objects.filter(category="dessert").filter(is_deleted=False).all()
 
@@ -485,7 +485,7 @@ class DessertView(StandardizedResponseMixin, ListModelMixin, GenericViewSet):
 
 
 class StarterView(StandardizedResponseMixin, ListModelMixin, GenericViewSet):
-    serializer_class = DishGETSerializer
+    serializer_class = DishCustomerSerializer
     parser_classes = [MultiPartParser]
     queryset = DishModel.objects.filter(category="starter").filter(is_deleted=False).all()
 
