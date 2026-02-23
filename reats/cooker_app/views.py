@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Any, Callable, List, Optional, Tuple, Type, TypedDict, Union
 
+import django_filters
 from core_app.models import CookerModel, DishModel, DrinkModel, OrderDishItemModel, OrderDrinkItemModel, OrderModel
 from core_app.serializers import (
     DishGETSerializer,
@@ -51,6 +52,7 @@ from utils.enums import (
     WeekChartLabelEnum,
     YearChartLabelEnum,
 )
+from utils.filters import DishFilter
 from utils.paginations import StandardizedResultsSetPagination
 
 from .serializers import (
@@ -572,6 +574,15 @@ class DashboardView(StandardizedResponseMixin, GenericViewSet):
 
 class DishView(StandardizedResponseMixin, ModelViewSet):
     queryset = DishModel.objects.filter(is_deleted=False).all()
+    filter_backends = [django_filters.rest_framework.DjangoFilterBackend]
+    filterset_class = DishFilter
+
+    def get_queryset(self):
+        # For detail actions, restrict to dishes owned by the authenticated cooker.
+        # super().get_queryset() already applies is_deleted=False from the class-level queryset.
+        if self.action in ("retrieve", "update", "partial_update", "destroy", "toggle_availability"):
+            return super().get_queryset().filter(cooker__id=self.request.user.pk)
+        return super().get_queryset()
 
     def get_serializer_class(self) -> type[BaseSerializer]:
         if self.request.method in ("POST", "PUT"):
@@ -689,6 +700,14 @@ class DishView(StandardizedResponseMixin, ModelViewSet):
             return self.get_paginated_response(serializer.data)
 
         serializer = self.get_serializer(queryset, many=True)
+        return self.success(data=serializer.data)
+
+    @action(detail=True, methods=["patch"], url_path="availability")
+    def toggle_availability(self, request, *args, **kwargs) -> Response:
+        instance: DishModel = self.get_object()
+        instance.is_enabled = not instance.is_enabled
+        instance.save(update_fields=["is_enabled", "modified"])
+        serializer = self.get_serializer(instance)
         return self.success(data=serializer.data)
 
     def destroy(self, request, *args, **kwargs) -> Response:
