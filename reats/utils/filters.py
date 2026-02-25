@@ -9,7 +9,8 @@ from django.utils import timezone
 from django_filters import rest_framework as filters
 from rest_framework.exceptions import ValidationError
 
-from utils.enums import ErrorMessageEnum, OrderStatusEnum
+from utils.enums import ErrorMessageEnum, OrderStatusEnum, SearchWeightEnum
+from utils.search import apply_fulltext_search
 
 
 class CharInFilter(filters.BaseInFilter, filters.CharFilter):
@@ -202,9 +203,17 @@ class OrderFilter(filters.FilterSet):
 
 
 class DishFilter(filters.FilterSet):
-    search = django_filters.CharFilter(lookup_expr="icontains", field_name="name")
+    search = django_filters.CharFilter(method="filter_search")
+    name = django_filters.CharFilter(method="filter_search")  # Alias for backward compatibility
     available = django_filters.BooleanFilter(field_name="is_enabled")
 
     class Meta:
         model = DishModel
-        fields = ["search", "available"]
+        fields = ["search", "name", "available"]
+
+    def filter_search(self, queryset, name, value):
+        return apply_fulltext_search(
+            queryset,
+            term=value,
+            ranked_fields=[("name", SearchWeightEnum.A), ("description", SearchWeightEnum.B)],
+        )
