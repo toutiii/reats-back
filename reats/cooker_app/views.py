@@ -136,27 +136,37 @@ class CookerView(StandardizedResponseMixin, ModelViewSet):
             )
 
     def partial_update(self, request, *args, **kwargs) -> Response:
-        kwargs.pop("pk")  # pk is unexpected in parent's partial_update method
+        kwargs.pop("pk", None)  # Ensure pk is handled smoothly by parent
+        response = super().partial_update(request, *args, **kwargs)
+        return self.success(data=response.data)
+
+    def update(self, request, *args, **kwargs) -> Response:
+        kwargs.pop("pk", None)  # Ensure pk is handled smoothly by parent
+        response = super().update(request, *args, **kwargs)
+        return self.success(data=response.data)
+
+    @action(detail=True, methods=["patch"], url_path="photo")
+    def photo(self, request, pk=None) -> Response:
         cooker: CookerModel = self.get_object()
         old_photo_key: str = cooker.photo
-        photo = None
 
-        try:
-            self.request.FILES["photo"]
-        except KeyError:
-            pass
-        else:
-            photo = "cookers" + "/" + str(cooker.pk) + "/" + "profile_pics" + "/" + self.request.FILES["photo"].name
+        if "photo" not in self.request.FILES:
+            return self.error(
+                message="No photo provided",
+                code="INVALID_DATA",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
 
-        if photo is not None:
-            upload_image_to_s3(self.request.FILES["photo"], photo)
-            cooker.photo = photo
-            cooker.save()
+        photo = "cookers" + "/" + str(cooker.pk) + "/" + "profile_pics" + "/" + self.request.FILES["photo"].name
+        upload_image_to_s3(self.request.FILES["photo"], photo)
 
-            if not old_photo_key.endswith("default-profile-pic.jpg"):
-                delete_s3_object(old_photo_key)
+        cooker.photo = photo
+        cooker.save()
 
-        return super().partial_update(request, *args, **kwargs)
+        if old_photo_key and not old_photo_key.endswith("default-profile-pic.jpg"):
+            delete_s3_object(old_photo_key)
+
+        return self.success(data={"photo": cooker.photo}, message=SuccessMessageEnum.OPERATION_SUCCESSFUL)
 
     def destroy(self, request, *args, **kwargs) -> Response:
         instance: CookerModel = self.get_object()
@@ -665,6 +675,10 @@ class DishView(StandardizedResponseMixin, ModelViewSet):
             instance._prefetched_objects_cache = {}
 
         return self.success(data=serializer.data)
+
+    def partial_update(self, request, *args, **kwargs):
+        kwargs["partial"] = True
+        return self.update(request, *args, **kwargs)
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
