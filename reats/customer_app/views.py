@@ -345,7 +345,6 @@ class DishView(StandardizedResponseMixin, ListModelMixin, GenericViewSet):
 
     def list(self, request, *args, **kwargs) -> Response:
         request_sort: Union[str, None] = self.request.query_params.get("sort")
-        request_name: Union[str, None] = self.request.query_params.get("name")
         request_category: Union[str, None] = self.request.query_params.get("category")
         request_country: Union[str, None] = self.request.query_params.get("country")
         request_search_radius: Union[str, None] = self.request.query_params.get(
@@ -364,10 +363,6 @@ class DishView(StandardizedResponseMixin, ListModelMixin, GenericViewSet):
                 code=ErrorCodeEnum.MISSING_PARAMETERS,
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
-
-        if request_name is not None:
-            # Handled by DishFilter via filter_backends — no manual apply_fulltext_search needed
-            pass
 
         if request_category is not None:
             self.queryset = self.queryset.filter(category=request_category)
@@ -419,7 +414,7 @@ class DishView(StandardizedResponseMixin, ListModelMixin, GenericViewSet):
 
         if (
             request_sort is None
-            and request_name is None
+            and not self.request.query_params.get("search")
             and request_category is None
             and request_country is None
             and request_search_radius is None

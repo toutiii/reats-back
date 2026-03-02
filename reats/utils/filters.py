@@ -204,12 +204,11 @@ class OrderFilter(filters.FilterSet):
 
 class DishFilter(filters.FilterSet):
     search = django_filters.CharFilter(method="filter_search")
-    name = django_filters.CharFilter(method="filter_search")  # Alias for backward compatibility
     available = django_filters.BooleanFilter(field_name="is_enabled")
 
     class Meta:
         model = DishModel
-        fields = ["search", "name", "available"]
+        fields = ["search", "available"]
 
     def filter_search(self, queryset, name, value):
         return apply_fulltext_search(

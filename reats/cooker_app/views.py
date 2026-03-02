@@ -698,8 +698,7 @@ class DishView(StandardizedResponseMixin, ModelViewSet):
             self.queryset = self.queryset.filter(is_enabled=json.loads(request_status))
 
         # If no search term, default ordering by name (search results are ordered by rank via DishFilter)
-        search_term = self.request.query_params.get("name") or self.request.query_params.get("search")
-        if not search_term:
+        if not self.request.query_params.get("search"):
             self.queryset = self.queryset.order_by("name")
 
         queryset = self.filter_queryset(self.get_queryset())

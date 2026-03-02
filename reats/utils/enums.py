@@ -26,8 +26,8 @@ class TimeFrameEnum(str, Enum):
 
 
 class SearchWeightEnum(str, Enum):
-    A = "A"  # High priority (e.g., name)
-    B = "B"  # Medium priority (e.g., description)
+    A = "A"  # High priority
+    B = "B"  # Medium priority
     C = "C"  # Low priority
     D = "D"  # Lowest priority
 
