@@ -246,6 +246,8 @@ DISH_SEARCH_FIELD_WEIGHTS: list[tuple[str, float]] = [
     ("description", 1.0),
 ]
 
+DISH_SEARCH_SIMILARITY_THRESHOLD = 0.3
+
 SIMPLE_JWT = {
     "ALGORITHM": os.getenv("DJANGO_SIMPLE_JWT_ALGORITHM"),
     "SIGNING_KEY": private_key,
