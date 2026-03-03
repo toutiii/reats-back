@@ -1,5 +1,4 @@
 from django.contrib.postgres.indexes import GinIndex
-from django.contrib.postgres.search import SearchVector
 from django.core.validators import MinLengthValidator, RegexValidator
 from django.db.models import (
     CASCADE,
@@ -14,7 +13,7 @@ from django.db.models import (
     Manager,
     TextField,
 )
-from utils.enums import OrderStatusEnum, SearchWeightEnum
+from utils.enums import OrderStatusEnum
 from utils.models import ReatsModel
 
 
@@ -142,10 +141,15 @@ class DishModel(ReatsModel):
         db_table = "dishes"
         indexes = [
             GinIndex(
-                SearchVector("name", weight=SearchWeightEnum.A.value, config="simple")
-                + SearchVector("description", weight=SearchWeightEnum.B.value, config="simple"),
-                name="dish_name_desc_gin_idx",
-            )
+                fields=["name"],
+                name="dish_name_trigram_idx",
+                opclasses=["gin_trgm_ops"],
+            ),
+            GinIndex(
+                fields=["description"],
+                name="dish_desc_trigram_idx",
+                opclasses=["gin_trgm_ops"],
+            ),
         ]
 
 
