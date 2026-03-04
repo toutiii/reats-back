@@ -25,6 +25,13 @@ class TimeFrameEnum(str, Enum):
     YEAR = "year"
 
 
+class SearchWeightEnum(str, Enum):
+    A = "A"  # High priority
+    B = "B"  # Medium priority
+    C = "C"  # Low priority
+    D = "D"  # Lowest priority
+
+
 class TodayChartLabelEnum(str, Enum):
     H00_04 = "00h-04h"
     H04_08 = "04h-08h"

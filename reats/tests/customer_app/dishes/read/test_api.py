@@ -14,7 +14,7 @@ from rest_framework.test import APIClient
             "search_address_id": "1",
         },
         {
-            "name": "pou",
+            "search": "pou",
             "search_address_id": "1",
         },
         {
@@ -26,7 +26,7 @@ from rest_framework.test import APIClient
             "search_address_id": "1",
         },
         {
-            "name": "pou",
+            "search": "pou",
             "country": "Cameroun",
             "search_address_id": "1",
         },
@@ -36,7 +36,7 @@ from rest_framework.test import APIClient
         "search_by_name and address",
         "search_by_country and address",
         "search_by_radius and address",
-        "search_by_name_and_country and_address",
+        "search_by_search_country_address",
     ],
 )
 class TestListDishesForCustomerNoResultsWithQueryParameterGivenByUser:
@@ -70,7 +70,7 @@ class TestListDishesForCustomerNoResultsWithQueryParameterGivenByUser:
             "search_address_id": "1",
         },
         {
-            "name": "pou",
+            "search": "pou",
             "country": "Cameroun",
             "search_address_id": "1",
             "search_radius": "10",
@@ -295,7 +295,7 @@ class TestListDishesForCustomerSuccessWithQueryParameterGivenByUser:
         assert response.json().get("success") is True
         # assert response.json().get("status_code") == 200
 
-        if "name" in query_parameter and "country" in query_parameter:
+        if "search" in query_parameter and "country" in query_parameter:
             diff = DeepDiff(
                 response.json().get("data"),
                 expected_data_when_name_in_query_parameter,
@@ -504,7 +504,7 @@ class TestListDishesWithCookerIdFilter:
             "search_address_id": "1",
         },
         {
-            "name": "pou",
+            "search": "pou",
             "country": "Cameroun",
             "search_address_id": "1",
             "search_radius": "10",

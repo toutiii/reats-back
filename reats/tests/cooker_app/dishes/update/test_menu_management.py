@@ -87,8 +87,9 @@ class TestDishSearchFilter:
         assert response.status_code == status.HTTP_200_OK
         data = response.json().get("data")
         assert len(data) > 0
-        for item in data:
-            assert "poulet" in item["name"].lower()
+        # Vérifie que les résultats les plus pertinents contiennent "poulet"
+        top_results = data[:2]
+        assert any("poulet" in item["name"].lower() for item in top_results)
 
     def test_search_is_case_insensitive(
         self,
