@@ -686,14 +686,10 @@ class DishView(StandardizedResponseMixin, ModelViewSet):
         return self.success(data=serializer.data)
 
     def list(self, request, *args, **kwargs) -> Response:
-        request_name: Union[str, None] = self.request.query_params.get("name")
         request_category: Union[str, None] = self.request.query_params.get("category")
         request_status: Union[str, None] = self.request.query_params.get("is_enabled", "true")
 
         self.queryset = self.queryset.filter(cooker__id=request.user.pk)
-
-        if request_name is not None:
-            self.queryset = self.queryset.filter(name__icontains=request_name)
 
         if request_category is not None:
             self.queryset = self.queryset.filter(category__in=request_category.split(","))
@@ -701,10 +697,9 @@ class DishView(StandardizedResponseMixin, ModelViewSet):
         if request_status is not None:
             self.queryset = self.queryset.filter(is_enabled=json.loads(request_status))
 
-        if request_name is None and request_category is None and request_status is None:
-            self.queryset = DishModel.objects.all()
-
-        self.queryset = self.queryset.order_by("name")
+        # If no search term, default ordering by name (search results are ordered by rank via DishFilter)
+        if not self.request.query_params.get("search"):
+            self.queryset = self.queryset.order_by("name")
 
         queryset = self.filter_queryset(self.get_queryset())
 

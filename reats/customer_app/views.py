@@ -63,7 +63,7 @@ from utils.distance_computer import (
     get_closest_cookers_ids_from_customer_search_address,
 )
 from utils.enums import ErrorCodeEnum, ErrorMessageEnum, OrderStatusEnum, SuccessMessageEnum
-from utils.filters import OrderFilter
+from utils.filters import DishFilter, OrderFilter
 from utils.paginations import StandardizedResultsSetPagination
 
 from .serializers import (
@@ -340,10 +340,11 @@ class DishView(StandardizedResponseMixin, ListModelMixin, GenericViewSet):
     serializer_class = DishCustomerSerializer
     parser_classes = [MultiPartParser]
     queryset = DishModel.objects.filter(category="dish").filter(is_deleted=False).all()
+    filter_backends = [filters.DjangoFilterBackend]
+    filterset_class = DishFilter
 
     def list(self, request, *args, **kwargs) -> Response:
         request_sort: Union[str, None] = self.request.query_params.get("sort")
-        request_name: Union[str, None] = self.request.query_params.get("name")
         request_category: Union[str, None] = self.request.query_params.get("category")
         request_country: Union[str, None] = self.request.query_params.get("country")
         request_search_radius: Union[str, None] = self.request.query_params.get(
@@ -362,9 +363,6 @@ class DishView(StandardizedResponseMixin, ListModelMixin, GenericViewSet):
                 code=ErrorCodeEnum.MISSING_PARAMETERS,
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
-
-        if request_name is not None:
-            self.queryset = self.queryset.filter(name__icontains=request_name)
 
         if request_category is not None:
             self.queryset = self.queryset.filter(category=request_category)
@@ -416,7 +414,7 @@ class DishView(StandardizedResponseMixin, ListModelMixin, GenericViewSet):
 
         if (
             request_sort is None
-            and request_name is None
+            and not self.request.query_params.get("search")
             and request_category is None
             and request_country is None
             and request_search_radius is None
@@ -424,7 +422,9 @@ class DishView(StandardizedResponseMixin, ListModelMixin, GenericViewSet):
         ):
             self.queryset = DishModel.objects.none()
         else:
-            self.queryset = self.queryset.order_by("-cooker__acceptance_rate")
+            if request_sort is None:
+                # Default sort: by acceptance_rate; search_rank ordering is handled by DishFilter
+                self.queryset = self.queryset.order_by("-cooker__acceptance_rate")
 
         response = super().list(request, *args, **kwargs)
         return self.success(response.data)

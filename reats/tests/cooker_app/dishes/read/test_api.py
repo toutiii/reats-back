@@ -244,7 +244,7 @@ class TestOneCookerCantSeeOtherCookerDishes:
             # Then we can ask for some dishes
             response = client.get(
                 path,
-                {"name": "Pou"},
+                {"search": "Pou"},
                 follow=False,
                 **access_auth_header,
             )

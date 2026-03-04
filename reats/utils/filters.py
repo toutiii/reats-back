@@ -10,6 +10,7 @@ from django_filters import rest_framework as filters
 from rest_framework.exceptions import ValidationError
 
 from utils.enums import ErrorMessageEnum, OrderStatusEnum
+from utils.search import apply_trigram_search
 
 
 class CharInFilter(filters.BaseInFilter, filters.CharFilter):
@@ -202,9 +203,17 @@ class OrderFilter(filters.FilterSet):
 
 
 class DishFilter(filters.FilterSet):
-    search = django_filters.CharFilter(lookup_expr="icontains", field_name="name")
+    search = django_filters.CharFilter(method="filter_search")
     available = django_filters.BooleanFilter(field_name="is_enabled")
 
     class Meta:
         model = DishModel
         fields = ["search", "available"]
+
+    def filter_search(self, queryset, name, value):
+        return apply_trigram_search(
+            queryset,
+            term=value,
+            fields=settings.DISH_SEARCH_FIELD_WEIGHTS,
+            sim_threshold=getattr(settings, "DISH_SEARCH_SIMILARITY_THRESHOLD", 0.1),
+        )

@@ -1,3 +1,4 @@
+from django.contrib.postgres.indexes import GinIndex
 from django.core.validators import MinLengthValidator, RegexValidator
 from django.db.models import (
     CASCADE,
@@ -138,6 +139,18 @@ class DishModel(ReatsModel):
 
     class Meta:
         db_table = "dishes"
+        indexes = [
+            GinIndex(
+                fields=["name"],
+                name="dish_name_trigram_idx",
+                opclasses=["gin_trgm_ops"],
+            ),
+            GinIndex(
+                fields=["description"],
+                name="dish_desc_trigram_idx",
+                opclasses=["gin_trgm_ops"],
+            ),
+        ]
 
 
 class DrinkModel(ReatsModel):

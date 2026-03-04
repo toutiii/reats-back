@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.postgres",
     "rest_framework",
     "django_filters",
     "drf_spectacular",
@@ -237,6 +238,15 @@ DEFAULT_SEARCH_RADIUS = 2  # in KM
 IDLE_CANCEL_TIME_FOR_ASAP_DELIVERY = 5  # in minutes
 IDLE_CANCEL_TIME_FOR_SCHEDULED_DELIVERY = 60  # in minutes
 ORDER_HISTORY_LIMIT_DAYS = 730  # 2 years
+
+# Trigram search field weights (field_name, weight)
+# name is prioritized over description: results matching the dish name rank higher
+DISH_SEARCH_FIELD_WEIGHTS: list[tuple[str, float]] = [
+    ("name", 4.0),
+    ("description", 1.0),
+]
+
+DISH_SEARCH_SIMILARITY_THRESHOLD = 0.1
 
 SIMPLE_JWT = {
     "ALGORITHM": os.getenv("DJANGO_SIMPLE_JWT_ALGORITHM"),
