@@ -215,5 +215,5 @@ class DishFilter(filters.FilterSet):
             queryset,
             term=value,
             fields=settings.DISH_SEARCH_FIELD_WEIGHTS,
-            sim_threshold=getattr(settings, "DISH_SEARCH_SIMILARITY_THRESHOLD", 0.3),
+            sim_threshold=getattr(settings, "DISH_SEARCH_SIMILARITY_THRESHOLD", 0.1),
         )
