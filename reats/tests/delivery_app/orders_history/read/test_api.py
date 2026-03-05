@@ -115,6 +115,10 @@ def expected_data() -> list[dict]:
                             "acceptance_rate": 100.0,
                             "email": "test@gmail.com",
                         },
+                        "margin": None,
+                        "allergens": [],
+                        "ingredients": [],
+                        "cost": None,
                     },
                     "drink_quantity": 4,
                 }

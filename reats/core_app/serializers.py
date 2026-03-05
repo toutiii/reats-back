@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from typing import Union
 
 from rest_framework import serializers
 from rest_framework.serializers import CharField, ModelSerializer
@@ -12,7 +13,9 @@ from .models import (
     DishImageModel,
     DishModel,
     DishRatingModel,
+    DrinkImageModel,
     DrinkModel,
+    DrinkNutritionalInfoModel,
     DrinkRatingModel,
     IngredientModel,
     NutritionalInfoModel,
@@ -25,10 +28,10 @@ from .models import (
 class AllergenIngredientMixin:
     """Mixin to avoid duplicating allergen/ingredient serialization logic."""
 
-    def get_allergens(self, obj: DishModel) -> list[str]:
+    def get_allergens(self, obj: Union[DishModel, DrinkModel]) -> list[str]:
         return list(obj.allergens.values_list("code", flat=True))
 
-    def get_ingredients(self, obj: DishModel) -> list[str]:
+    def get_ingredients(self, obj: Union[DishModel, DrinkModel]) -> list[str]:
         return list(obj.ingredients.values_list("code", flat=True))
 
 
@@ -104,6 +107,26 @@ class IngredientSerializer(ModelSerializer):
 class NutritionalInfoSerializer(ModelSerializer):
     class Meta:
         model = NutritionalInfoModel
+        fields = ("calories", "protein", "carbs", "fat")
+
+
+class DrinkImageSerializer(ModelSerializer):
+    url = serializers.SerializerMethodField()
+    isPrimary = serializers.BooleanField(source="is_primary")
+
+    class Meta:
+        model = DrinkImageModel
+        fields = ("id", "url", "isPrimary")
+
+    def get_url(self, obj: DrinkImageModel) -> str | None:
+        if obj.s3_key:
+            return get_pre_signed_url(obj.s3_key)
+        return None
+
+
+class DrinkNutritionalInfoSerializer(ModelSerializer):
+    class Meta:
+        model = DrinkNutritionalInfoModel
         fields = ("calories", "protein", "carbs", "fat")
 
 
@@ -228,9 +251,12 @@ class DishOrderHistorySerializer(ModelSerializer):
         )
 
 
-class DrinkGETSerializer(ModelSerializer):
+class DrinkGETSerializer(AllergenIngredientMixin, ModelSerializer):
     ratings = DrinkRatingSerializer(many=True, read_only=True)
     cooker = SimpleCookerSerializer(read_only=True)
+    margin = serializers.SerializerMethodField()
+    allergens = serializers.SerializerMethodField()
+    ingredients = serializers.SerializerMethodField()
 
     class Meta:
         model = DrinkModel
@@ -239,6 +265,80 @@ class DrinkGETSerializer(ModelSerializer):
             "modified",
             "is_deleted",
         )
+
+    def get_margin(self, obj):
+        return obj.margin
+
+
+class DrinkListSerializer(AllergenIngredientMixin, ModelSerializer):
+    margin = serializers.SerializerMethodField()
+    image = serializers.SerializerMethodField()
+    available = serializers.BooleanField(source="is_enabled")
+    allergens = serializers.SerializerMethodField()
+    ingredients = serializers.SerializerMethodField()
+    createdAt = serializers.DateTimeField(source="created")
+    updatedAt = serializers.DateTimeField(source="modified")
+
+    class Meta:
+        model = DrinkModel
+        fields = (
+            "id",
+            "name",
+            "description",
+            "capacity",
+            "unit",
+            "price",
+            "cost",
+            "margin",
+            "image",
+            "available",
+            "allergens",
+            "ingredients",
+            "createdAt",
+            "updatedAt",
+        )
+
+    def get_margin(self, obj: DrinkModel) -> float | None:
+        return obj.margin
+
+    def get_image(self, obj: DrinkModel) -> str | None:
+        if obj.photo:
+            return get_pre_signed_url(obj.photo)
+        return None
+
+
+class DrinkDetailSerializer(ModelSerializer):
+    margin = serializers.SerializerMethodField()
+    images = DrinkImageSerializer(many=True, read_only=True)
+    available = serializers.BooleanField(source="is_enabled")
+    allergens = AllergenSerializer(many=True, read_only=True)
+    ingredients = IngredientSerializer(many=True, read_only=True)
+    nutritionalInfo = DrinkNutritionalInfoSerializer(source="nutritional_info", read_only=True)
+    createdAt = serializers.DateTimeField(source="created")
+    updatedAt = serializers.DateTimeField(source="modified")
+
+    class Meta:
+        model = DrinkModel
+        fields = (
+            "id",
+            "name",
+            "description",
+            "capacity",
+            "unit",
+            "price",
+            "cost",
+            "margin",
+            "images",
+            "available",
+            "allergens",
+            "ingredients",
+            "nutritionalInfo",
+            "createdAt",
+            "updatedAt",
+        )
+
+    def get_margin(self, obj: DrinkModel) -> float | None:
+        return obj.margin
 
 
 class OrderDishItemGETSerializer(ModelSerializer):

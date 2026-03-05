@@ -34,6 +34,10 @@ class TestListDrinksForCustomerSuccess:
                 "is_suitable_for_quick_delivery": False,
                 "is_suitable_for_scheduled_delivery": False,
                 "ratings": [],
+                "margin": None,
+                "allergens": [],
+                "ingredients": [],
+                "cost": None,
             },
             {
                 "capacity": 75,
@@ -55,6 +59,10 @@ class TestListDrinksForCustomerSuccess:
                 "is_suitable_for_quick_delivery": False,
                 "is_suitable_for_scheduled_delivery": False,
                 "ratings": [],
+                "margin": None,
+                "allergens": [],
+                "ingredients": [],
+                "cost": None,
             },
         ]
 

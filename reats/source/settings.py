@@ -249,6 +249,13 @@ DISH_SEARCH_FIELD_WEIGHTS: list[tuple[str, float]] = [
 
 DISH_SEARCH_SIMILARITY_THRESHOLD = 0.1
 
+DRINK_SEARCH_FIELD_WEIGHTS: list[tuple[str, float]] = [
+    ("name", 4.0),
+    ("description", 1.0),
+]
+
+DRINK_SEARCH_SIMILARITY_THRESHOLD = 0.1
+
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),

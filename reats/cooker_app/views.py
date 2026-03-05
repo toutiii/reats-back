@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import logging
 from datetime import datetime, timedelta
 from decimal import Decimal
@@ -11,6 +10,7 @@ from core_app.models import (
     CookerModel,
     DishImageModel,
     DishModel,
+    DrinkImageModel,
     DrinkModel,
     OrderDishItemModel,
     OrderDrinkItemModel,
@@ -19,7 +19,8 @@ from core_app.models import (
 from core_app.serializers import (
     DishDetailSerializer,
     DishListSerializer,
-    DrinkGETSerializer,
+    DrinkDetailSerializer,
+    DrinkListSerializer,
     OrderPATCHSerializer,
 )
 from django.conf import settings
@@ -61,7 +62,7 @@ from utils.enums import (
     WeekChartLabelEnum,
     YearChartLabelEnum,
 )
-from utils.filters import DishFilter
+from utils.filters import DishFilter, DrinkFilter
 from utils.paginations import StandardizedResultsSetPagination
 
 from .serializers import (
@@ -761,18 +762,54 @@ class DishView(StandardizedResponseMixin, ModelViewSet):
 
 class DrinkView(StandardizedResponseMixin, ModelViewSet):
     queryset = DrinkModel.objects.filter(is_deleted=False).all()
+    filterset_class = DrinkFilter
+    pagination_class = StandardizedResultsSetPagination
+
+    def _annotated_queryset(self):
+        return self.queryset.prefetch_related("allergens", "ingredients", "images").select_related("nutritional_info")
+
+    def get_queryset(self):
+        return self._annotated_queryset().filter(cooker__id=self.request.user.pk)
 
     def get_serializer_class(self) -> type[BaseSerializer]:
         if self.request.method in ("POST", "PUT"):
-            self.serializer_class = DrinkPOSTSerializer
-
+            return DrinkPOSTSerializer
         if self.request.method == "PATCH":
-            self.serializer_class = DrinkPATCHSerializer
+            return DrinkPATCHSerializer
+        if self.action == "retrieve":
+            return DrinkDetailSerializer
+        return DrinkListSerializer
 
-        if self.request.method == "GET":
-            self.serializer_class = DrinkGETSerializer
+    def _build_s3_key(self, cooker_pk: int, filename: str) -> str:
+        return f"cookers/{cooker_pk}/drinks/{filename}"
 
-        return super().get_serializer_class()
+    def perform_create(self, serializer: BaseSerializer) -> None:
+        cooker_pk = serializer.validated_data["cooker"].pk
+        photos = self.request.FILES.getlist("photos") or (
+            [self.request.FILES["photo"]] if "photo" in self.request.FILES else []
+        )
+
+        primary_s3_key = None
+        if photos:
+            primary_s3_key = self._build_s3_key(cooker_pk, photos[0].name)
+            upload_image_to_s3(photos[0], primary_s3_key)
+
+        if primary_s3_key:
+            serializer.validated_data["photo"] = primary_s3_key
+        elif "photo" not in serializer.validated_data:
+            serializer.validated_data["photo"] = ""
+
+        drink = serializer.save()
+
+        for idx, photo_file in enumerate(photos):
+            s3_key = self._build_s3_key(cooker_pk, photo_file.name)
+            if idx > 0:
+                upload_image_to_s3(photo_file, s3_key)
+            DrinkImageModel.objects.create(
+                drink=drink,
+                s3_key=s3_key,
+                is_primary=(idx == 0),
+            )
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -781,111 +818,81 @@ class DrinkView(StandardizedResponseMixin, ModelViewSet):
                 message="Invalid data",
                 code="INVALID_DATA",
                 status_code=status.HTTP_400_BAD_REQUEST,
+                details=serializer.errors,
             )
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return self.success(data=serializer.data, status_code=status.HTTP_201_CREATED, headers=headers)
 
-    def perform_create(self, serializer: BaseSerializer) -> None:
-        photo = (
-            "cookers"
-            + "/"
-            + str(serializer.validated_data["cooker"].pk)
-            + "/"
-            + "drinks"
-            + "/"
-            + self.request.FILES["photo"].name
+    def perform_update(self, serializer: BaseSerializer) -> None:
+        current_object = self.get_object()
+        cooker_pk = current_object.cooker_id
+        photos = self.request.FILES.getlist("photos") or (
+            [self.request.FILES["photo"]] if "photo" in self.request.FILES else []
         )
 
-        upload_image_to_s3(self.request.FILES["photo"], photo)
-        serializer.validated_data["photo"] = photo
-        super().perform_create(serializer)
+        if photos:
+            if current_object.photo:
+                delete_s3_object(current_object.photo)
 
-    def partial_update(self, request, *args, **kwargs):
-        serializer = self.get_serializer(self.get_object(), data=request.data, partial=True)
-        if not serializer.is_valid():
-            return self.error(
-                message="Invalid data",
-                code="INVALID_DATA",
-                status_code=status.HTTP_400_BAD_REQUEST,
-            )
-        self.perform_update(serializer)
-        return self.success(data=serializer.data, status_code=status.HTTP_200_OK)
+            primary_s3_key = self._build_s3_key(cooker_pk, photos[0].name)
+            upload_image_to_s3(photos[0], primary_s3_key)
+            serializer.validated_data["photo"] = primary_s3_key
+
+            current_object.images.all().delete()
+            for idx, photo_file in enumerate(photos):
+                s3_key = self._build_s3_key(cooker_pk, photo_file.name)
+                if idx > 0:
+                    upload_image_to_s3(photo_file, s3_key)
+                DrinkImageModel.objects.create(
+                    drink=current_object,
+                    s3_key=s3_key,
+                    is_primary=(idx == 0),
+                )
+
+        serializer.save()
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop("partial", False)
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        if not serializer.is_valid():
-            return self.error(
-                message="Invalid data",
-                code="INVALID_DATA",
-                status_code=status.HTTP_400_BAD_REQUEST,
-            )
+        serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
-        return self.success(data=serializer.data, status_code=status.HTTP_200_OK)
 
-    def perform_update(self, serializer: BaseSerializer) -> None:
-        current_object = self.get_object()
-        photo = None
+        if getattr(instance, "_prefetched_objects_cache", None):
+            instance._prefetched_objects_cache = {}
 
-        try:
-            self.request.FILES["photo"]
-        except KeyError:
-            pass
-        else:
-            photo = (
-                "cookers"
-                + "/"
-                + str(serializer.validated_data["cooker"].pk)
-                + "/"
-                + "drinks"
-                + "/"
-                + self.request.FILES["photo"].name
-            )
+        return self.success(data=serializer.data)
 
-        if photo is not None:
-            upload_image_to_s3(self.request.FILES["photo"], photo)
-            serializer.validated_data["photo"] = photo
-            old_photo_key = current_object.photo
-            delete_s3_object(old_photo_key)
+    def partial_update(self, request, *args, **kwargs):
+        kwargs["partial"] = True
+        return self.update(request, *args, **kwargs)
 
-        super().perform_update(serializer)
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return self.success(data=serializer.data)
 
     def list(self, request, *args, **kwargs) -> Response:
-        request_name: Union[str, None] = self.request.query_params.get("name")
-        request_status: Union[str, None] = self.request.query_params.get("is_enabled", "true")
-
-        self.queryset = self.queryset.filter(cooker__id=request.user.pk)
-
-        if request_name is not None:
-            self.queryset = self.queryset.filter(name__icontains=request_name)
-
-        if request_status is not None:
-            self.queryset = self.queryset.filter(is_enabled=json.loads(request_status))
-
-        if request_name is None and request_status is None:
-            self.queryset = DrinkModel.objects.all()
-
-        self.queryset = self.queryset.order_by("name")
         queryset = self.filter_queryset(self.get_queryset())
-        page = self.paginate_queryset(queryset)
 
+        if not request.query_params.get("search"):
+            queryset = queryset.order_by("name")
+
+        page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
             return self.get_paginated_response(serializer.data)
 
         serializer = self.get_serializer(queryset, many=True)
-        return self.success(data=serializer.data, status_code=status.HTTP_200_OK)
+        return self.success(data=serializer.data)
 
     def destroy(self, request, *args, **kwargs) -> Response:
         instance: DrinkModel = self.get_object()
         instance.is_deleted = True
         instance.save()
 
-        return self.success(
-            message=SuccessMessageEnum.DRINK_DELETED,
-        )
+        return self.success(message=SuccessMessageEnum.DRINK_DELETED)
 
 
 class TokenObtainPairWithoutPasswordView(StandardizedResponseMixin, TokenViewBase):

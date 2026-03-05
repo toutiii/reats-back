@@ -236,9 +236,57 @@ class DrinkModel(ReatsModel):
     is_suitable_for_quick_delivery: BooleanField = BooleanField(default=False)
     is_suitable_for_scheduled_delivery: BooleanField = BooleanField(default=False)
     is_deleted: BooleanField = BooleanField(default=False)
+    cost: FloatField = FloatField(null=True, blank=True)
+    allergens: ManyToManyField = ManyToManyField(
+        AllergenModel,
+        blank=True,
+        related_name="drinks",
+    )
+    ingredients: ManyToManyField = ManyToManyField(
+        IngredientModel,
+        blank=True,
+        related_name="drinks",
+    )
 
     class Meta:
         db_table = "drinks"
+
+    @property
+    def margin(self) -> float | None:
+        if self.cost is None or self.price == 0:
+            return None
+        return round(((self.price - self.cost) / self.price) * 100, 2)
+
+
+class DrinkNutritionalInfoModel(ReatsModel):
+    id: AutoField = AutoField(primary_key=True)
+    drink: OneToOneField = OneToOneField(
+        DrinkModel,
+        on_delete=CASCADE,
+        related_name="nutritional_info",
+        null=True,
+    )
+    calories: IntegerField = IntegerField(null=True)
+    protein: IntegerField = IntegerField(null=True)
+    carbs: IntegerField = IntegerField(null=True)
+    fat: IntegerField = IntegerField(null=True)
+
+    class Meta:
+        db_table = "drink_nutritional_infos"
+
+
+class DrinkImageModel(ReatsModel):
+    id: AutoField = AutoField(primary_key=True)
+    drink: ForeignKey = ForeignKey(
+        DrinkModel,
+        on_delete=CASCADE,
+        related_name="images",
+    )
+    s3_key: CharField = CharField(max_length=512)
+    is_primary: BooleanField = BooleanField(default=False)
+
+    class Meta:
+        db_table = "drink_images"
 
 
 class CustomerModel(ReatsModel):

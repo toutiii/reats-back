@@ -21,11 +21,8 @@ def test_empty_query_params(auth_headers: dict, client: APIClient, path: str, co
 
     assert response.status_code == status.HTTP_200_OK
     assert response.json().get("success") is True
-    assert response.json().get("data") is not None
-    assert (
-        len(response.json().get("data"))
-        == DrinkModel.objects.filter(is_enabled=True).filter(cooker_id=cooker_id).count()
-    )
+    assert response.json().get("data").get("results") is not None
+    assert len(response.json().get("data").get("results")) == DrinkModel.objects.filter(cooker_id=cooker_id).count()
 
 
 @pytest.mark.django_db
@@ -36,17 +33,17 @@ def test_get_enabled_drinks(
 ) -> None:
     response = client.get(
         path,
-        {"is_enabled": "true"},
+        {"available": "true"},
         follow=False,
         **auth_headers,
     )
 
     assert response.status_code == status.HTTP_200_OK
     assert response.json().get("success") is True
-    assert response.json().get("data") is not None
+    assert response.json().get("data").get("results") is not None
 
-    for item in response.json().get("data"):
-        assert item.get("is_enabled") is True
+    for item in response.json().get("data").get("results"):
+        assert item.get("available") is True
 
 
 @pytest.mark.django_db
@@ -57,17 +54,17 @@ def test_get_disabled_drinks(
 ) -> None:
     response = client.get(
         path,
-        {"is_enabled": "false"},
+        {"available": "false"},
         follow=False,
         **auth_headers,
     )
 
     assert response.status_code == status.HTTP_200_OK
     assert response.json().get("success") is True
-    assert response.json().get("data") is not None
+    assert response.json().get("data").get("results") is not None
 
-    for item in response.json().get("data"):
-        assert item.get("is_enabled") is False
+    for item in response.json().get("data").get("results"):
+        assert item.get("available") is False
 
 
 @pytest.mark.django_db
@@ -111,4 +108,4 @@ class TestOneCookerCantSeeOtherCookerDrinks:
             )
             assert response.status_code == status.HTTP_200_OK
 
-            assert response.json().get("data") == []
+            assert response.json().get("data").get("results") == []

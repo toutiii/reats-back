@@ -93,7 +93,7 @@ def test_get_enabled_drinks_when_item_has_been_deleted(
 
     response = client.get(
         path,
-        {"is_enabled": "true"},
+        {"available": "true"},
         follow=False,
         **auth_headers,
     )
@@ -101,8 +101,8 @@ def test_get_enabled_drinks_when_item_has_been_deleted(
     assert response.status_code == status.HTTP_200_OK
     assert response.json().get("success") is True
     assert response.json().get("message") == SuccessMessageEnum.OPERATION_SUCCESSFUL
-    assert response.json().get("data") is not None
+    assert response.json().get("data").get("results") is not None
 
-    for item in response.json().get("data"):
-        assert item.get("is_enabled") is True
+    for item in response.json().get("data").get("results"):
+        assert item.get("available") is True
         assert DrinkModel.objects.get(pk=item.get("id")).is_deleted is False
