@@ -30,6 +30,8 @@ def expected_data() -> list[dict]:
                         "is_enabled": True,
                         "is_suitable_for_quick_delivery": False,
                         "is_suitable_for_scheduled_delivery": False,
+                        "ingredients": [],
+                        "allergens": [],
                         "cooker": {
                             "id": 4,
                             "firstname": "toutii",
@@ -53,6 +55,8 @@ def expected_data() -> list[dict]:
                         "is_enabled": True,
                         "is_suitable_for_quick_delivery": False,
                         "is_suitable_for_scheduled_delivery": False,
+                        "ingredients": [],
+                        "allergens": [],
                         "cooker": {
                             "id": 4,
                             "firstname": "toutii",
@@ -76,6 +80,8 @@ def expected_data() -> list[dict]:
                         "is_enabled": True,
                         "is_suitable_for_quick_delivery": False,
                         "is_suitable_for_scheduled_delivery": False,
+                        "ingredients": [],
+                        "allergens": [],
                         "cooker": {
                             "id": 1,
                             "firstname": "test",
@@ -168,6 +174,8 @@ def expected_data() -> list[dict]:
                         "is_enabled": True,
                         "is_suitable_for_quick_delivery": False,
                         "is_suitable_for_scheduled_delivery": False,
+                        "ingredients": [],
+                        "allergens": [],
                         "cooker": {
                             "id": 4,
                             "firstname": "toutii",
@@ -191,6 +199,8 @@ def expected_data() -> list[dict]:
                         "is_enabled": True,
                         "is_suitable_for_quick_delivery": False,
                         "is_suitable_for_scheduled_delivery": False,
+                        "ingredients": [],
+                        "allergens": [],
                         "cooker": {
                             "id": 4,
                             "firstname": "toutii",
@@ -424,6 +434,8 @@ def expected_data_for_latest_deliveries() -> list[dict]:
                             "acceptance_rate": 100.0,
                             "email": "test4@gmail.com",
                         },
+                        "ingredients": [],
+                        "allergens": [],
                     },
                     "dish_quantity": 2,
                 },
@@ -447,6 +459,8 @@ def expected_data_for_latest_deliveries() -> list[dict]:
                             "acceptance_rate": 100.0,
                             "email": "test4@gmail.com",
                         },
+                        "ingredients": [],
+                        "allergens": [],
                     },
                     "dish_quantity": 1,
                 },

@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 
 import logging
 import os
+from datetime import timedelta
 from pathlib import Path
 from typing import Any
 
@@ -249,6 +250,8 @@ DISH_SEARCH_FIELD_WEIGHTS: list[tuple[str, float]] = [
 DISH_SEARCH_SIMILARITY_THRESHOLD = 0.1
 
 SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
     "ALGORITHM": os.getenv("DJANGO_SIMPLE_JWT_ALGORITHM"),
     "SIGNING_KEY": private_key,
     "VERIFYING_KEY": public_key,

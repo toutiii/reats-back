@@ -11,6 +11,8 @@ from django.db.models import (
     ForeignKey,
     IntegerField,
     Manager,
+    ManyToManyField,
+    OneToOneField,
     TextField,
 )
 from utils.enums import OrderStatusEnum
@@ -103,6 +105,31 @@ class DeliverModel(ReatsModel):
     objects: Manager = Manager()  # For linting purposes
 
 
+class AllergenModel(ReatsModel):
+    id: AutoField = AutoField(primary_key=True)
+    code: CharField = CharField(max_length=50, unique=True)  # ex: "gluten"
+    name: CharField = CharField(max_length=100)  # ex: "Gluten (céréales)"
+
+    class Meta:
+        db_table = "allergens"
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class IngredientModel(ReatsModel):
+    id: AutoField = AutoField(primary_key=True)
+    code: CharField = CharField(max_length=50, unique=True)  # ex: "beef"
+    name: CharField = CharField(max_length=100)  # ex: "Bœuf"
+    category: CharField = CharField(max_length=50, null=True, blank=True)  # ex: "protein"
+
+    class Meta:
+        db_table = "ingredients"
+
+    def __str__(self) -> str:
+        return self.name
+
+
 class DishModel(ReatsModel):
     CATEGORY_CHOICES = [
         ("starter", "starter"),
@@ -125,6 +152,16 @@ class DishModel(ReatsModel):
     cost: FloatField = FloatField(null=True, blank=True)
     preparation_time: IntegerField = IntegerField(null=True, blank=True)
     max_concurrent_orders: IntegerField = IntegerField(default=10)
+    allergens: ManyToManyField = ManyToManyField(
+        AllergenModel,
+        blank=True,
+        related_name="dishes",
+    )
+    ingredients: ManyToManyField = ManyToManyField(
+        IngredientModel,
+        blank=True,
+        related_name="dishes",
+    )
 
     @property
     def margin(self) -> float | None:
@@ -151,6 +188,33 @@ class DishModel(ReatsModel):
                 opclasses=["gin_trgm_ops"],
             ),
         ]
+
+
+class NutritionalInfoModel(ReatsModel):
+    id: AutoField = AutoField(primary_key=True)
+    dish: OneToOneField = OneToOneField(
+        DishModel,
+        on_delete=CASCADE,
+        related_name="nutritional_info",
+        null=True,
+    )
+    calories: IntegerField = IntegerField(null=True)
+    protein: IntegerField = IntegerField(null=True)  # grammes
+    carbs: IntegerField = IntegerField(null=True)  # grammes
+    fat: IntegerField = IntegerField(null=True)  # grammes
+
+    class Meta:
+        db_table = "nutritional_infos"
+
+
+class DishImageModel(ReatsModel):
+    id: AutoField = AutoField(primary_key=True)
+    dish: ForeignKey = ForeignKey(DishModel, on_delete=CASCADE, related_name="images")
+    s3_key: CharField = CharField(max_length=512)
+    is_primary: BooleanField = BooleanField(default=False)
+
+    class Meta:
+        db_table = "dish_images"
 
 
 class DrinkModel(ReatsModel):
@@ -315,6 +379,7 @@ class OrderDishItemModel(ReatsModel):
         DishModel,
         on_delete=CASCADE,
         null=True,
+        related_name="dish_order_items",
     )
 
     dish_quantity: IntegerField = IntegerField(null=True)

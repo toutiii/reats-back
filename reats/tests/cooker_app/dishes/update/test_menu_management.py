@@ -4,6 +4,14 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 
+def get_items(response) -> list:
+    """Helper: retourne la liste de plats depuis data (paginé ou non)."""
+    data = response.json().get("data")
+    if isinstance(data, dict):
+        return data.get("results", [])
+    return data or []
+
+
 @pytest.mark.django_db
 class TestDishAvailabilityToggle:
     """Tests for PATCH /api/v1/dishes/:id/availability/"""
@@ -28,7 +36,7 @@ class TestDishAvailabilityToggle:
         assert response.json().get("success") is True
         dish.refresh_from_db()
         assert dish.is_enabled is False
-        assert response.json()["data"]["is_enabled"] is False
+        assert response.json()["data"]["available"] is False
 
     def test_toggle_from_disabled_to_enabled(
         self,
@@ -50,7 +58,7 @@ class TestDishAvailabilityToggle:
         assert response.json().get("success") is True
         dish.refresh_from_db()
         assert dish.is_enabled is True
-        assert response.json()["data"]["is_enabled"] is True
+        assert response.json()["data"]["available"] is True
 
     def test_toggle_returns_404_for_other_cooker_dish(
         self,
@@ -79,16 +87,16 @@ class TestDishSearchFilter:
     ) -> None:
         response = client.get(
             path,
-            {"search": "poulet", "is_enabled": "true"},
+            {"search": "poulet", "available": "true"},
             follow=False,
             **auth_headers,
         )
 
         assert response.status_code == status.HTTP_200_OK
-        data = response.json().get("data")
-        assert len(data) > 0
+        items = get_items(response)
+        assert len(items) > 0
         # Vérifie que les résultats les plus pertinents contiennent "poulet"
-        top_results = data[:2]
+        top_results = items[:2]
         assert any("poulet" in item["name"].lower() for item in top_results)
 
     def test_search_is_case_insensitive(
@@ -99,14 +107,14 @@ class TestDishSearchFilter:
     ) -> None:
         response = client.get(
             path,
-            {"search": "POULET", "is_enabled": "true"},
+            {"search": "POULET", "available": "true"},
             follow=False,
             **auth_headers,
         )
 
         assert response.status_code == status.HTTP_200_OK
-        data = response.json().get("data")
-        assert len(data) > 0
+        items = get_items(response)
+        assert len(items) > 0
 
     def test_search_returns_empty_for_no_match(
         self,
@@ -116,13 +124,14 @@ class TestDishSearchFilter:
     ) -> None:
         response = client.get(
             path,
-            {"search": "xyznotexist", "is_enabled": "true"},
+            {"search": "xyznotexist", "available": "true"},
             follow=False,
             **auth_headers,
         )
 
         assert response.status_code == status.HTTP_200_OK
-        assert response.json().get("data") == []
+        items = get_items(response)
+        assert len(items) == 0
 
 
 @pytest.mark.django_db
@@ -143,10 +152,10 @@ class TestDishAvailableFilter:
         )
 
         assert response.status_code == status.HTTP_200_OK
-        data = response.json().get("data")
-        assert len(data) > 0
-        for item in data:
-            assert item["is_enabled"] is True
+        items = get_items(response)
+        assert len(items) > 0
+        for item in items:
+            assert item["available"] is True
 
     def test_available_false_returns_only_disabled(
         self,
@@ -156,13 +165,13 @@ class TestDishAvailableFilter:
     ) -> None:
         response = client.get(
             path,
-            {"available": "false", "is_enabled": "false"},
+            {"available": "false"},
             follow=False,
             **auth_headers,
         )
 
         assert response.status_code == status.HTTP_200_OK
-        data = response.json().get("data")
-        assert len(data) > 0
-        for item in data:
-            assert item["is_enabled"] is False
+        items = get_items(response)
+        assert len(items) > 0
+        for item in items:
+            assert item["available"] is False

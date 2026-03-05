@@ -6,6 +6,14 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 
+def get_items(response) -> list:
+    """Helper: retourne la liste de plats depuis data (paginé ou non)."""
+    data = response.json().get("data")
+    if isinstance(data, dict):
+        return data.get("results", [])
+    return data or []
+
+
 @pytest.fixture
 def cooker_id() -> int:
     return 1
@@ -22,28 +30,30 @@ def test_empty_query_params(auth_headers: dict, client: APIClient, path: str, co
     assert response.status_code == status.HTTP_200_OK
     assert response.json().get("success") is True
     assert response.json().get("data") is not None
-    assert (
-        len(response.json().get("data"))
-        == DishModel.objects.filter(is_enabled=True).filter(cooker_id=cooker_id).count()
-    )
+
+    data = response.json().get("data")
+    # La réponse est paginée. Sans filtre, la vue retourne tous les plats non supprimés.
+    expected_count = DishModel.objects.filter(is_deleted=False, cooker_id=cooker_id).count()
+    if isinstance(data, dict):
+        assert data["pagination"]["total_items"] == expected_count
+    else:
+        assert len(data) == expected_count
 
 
 @pytest.mark.django_db
 def test_get_enabled_dishes(auth_headers: dict, client: APIClient, path: str) -> None:
     response = client.get(
         path,
-        {"is_enabled": "true"},
+        {"available": "true"},
         follow=False,
         **auth_headers,
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.status_code == status.HTTP_200_OK
     assert response.json().get("success") is True
-    assert response.json().get("data") is not None
 
-    for item in response.json().get("data"):
-        assert item.get("is_enabled") is True
+    for item in get_items(response):
+        assert item.get("available") is True
 
 
 @pytest.mark.django_db
@@ -63,18 +73,16 @@ def test_get_enabled_dishes_when_item_has_been_deleted(
 
     response = client.get(
         path,
-        {"is_enabled": "true"},
+        {"available": "true"},
         follow=False,
         **auth_headers,
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.status_code == status.HTTP_200_OK
     assert response.json().get("success") is True
-    assert response.json().get("data") is not None
 
-    for item in response.json().get("data"):
-        assert item.get("is_enabled") is True
+    for item in get_items(response):
+        assert item.get("available") is True
         assert DishModel.objects.get(pk=item.get("id")).is_deleted is False
 
 
@@ -82,18 +90,16 @@ def test_get_enabled_dishes_when_item_has_been_deleted(
 def test_get_disabled_dishes(auth_headers: dict, client: APIClient, path: str) -> None:
     response = client.get(
         path,
-        {"is_enabled": "false"},
+        {"available": "false"},
         follow=False,
         **auth_headers,
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.status_code == status.HTTP_200_OK
     assert response.json().get("success") is True
-    assert response.json().get("data") is not None
 
-    for item in response.json().get("data"):
-        assert item.get("is_enabled") is False
+    for item in get_items(response):
+        assert item.get("available") is False
 
 
 @pytest.mark.django_db
@@ -106,11 +112,9 @@ def test_get_starters(auth_headers: dict, client: APIClient, path: str) -> None:
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.status_code == status.HTTP_200_OK
     assert response.json().get("success") is True
-    assert response.json().get("data") is not None
 
-    for item in response.json().get("data"):
+    for item in get_items(response):
         assert item.get("category") == "starter"
 
 
@@ -124,11 +128,9 @@ def test_get_dishes(auth_headers: dict, client: APIClient, path: str) -> None:
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.status_code == status.HTTP_200_OK
     assert response.json().get("success") is True
-    assert response.json().get("data") is not None
 
-    for item in response.json().get("data"):
+    for item in get_items(response):
         assert item.get("category") == "dish"
 
 
@@ -142,11 +144,9 @@ def test_get_desserts(auth_headers: dict, client: APIClient, path: str) -> None:
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.status_code == status.HTTP_200_OK
     assert response.json().get("success") is True
-    assert response.json().get("data") is not None
 
-    for item in response.json().get("data"):
+    for item in get_items(response):
         assert item.get("category") == "dessert"
 
 
@@ -160,13 +160,11 @@ def test_get_all_categories(auth_headers: dict, client: APIClient, path: str) ->
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.status_code == status.HTTP_200_OK
     assert response.json().get("success") is True
-    assert response.json().get("data") is not None
 
-    for item in response.json().get("data"):
+    for item in get_items(response):
         assert item.get("category") in ("starter", "dish", "dessert")
-        assert item.get("is_enabled") in (True, False)
+        assert item.get("available") in (True, False)
 
 
 @pytest.mark.django_db
@@ -175,20 +173,18 @@ def test_get_all_enabled_categories(auth_headers: dict, client: APIClient, path:
         path,
         {
             "category": "starter,dish,dessert",
-            "is_enabled": "true",
+            "available": "true",
         },
         follow=False,
         **auth_headers,
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.status_code == status.HTTP_200_OK
     assert response.json().get("success") is True
-    assert response.json().get("data") is not None
 
-    for item in response.json().get("data"):
+    for item in get_items(response):
         assert item.get("category") in ("starter", "dish", "dessert")
-        assert item.get("is_enabled") is True
+        assert item.get("available") is True
 
 
 @pytest.mark.django_db
@@ -197,20 +193,18 @@ def test_get_all_disabled_categories(auth_headers: dict, client: APIClient, path
         path,
         {
             "category": "starter,dish,dessert",
-            "is_enabled": "false",
+            "available": "false",
         },
         follow=False,
         **auth_headers,
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.status_code == status.HTTP_200_OK
     assert response.json().get("success") is True
-    assert response.json().get("data") is not None
 
-    for item in response.json().get("data"):
+    for item in get_items(response):
         assert item.get("category") in ("starter", "dish", "dessert")
-        assert item.get("is_enabled") is False
+        assert item.get("available") is False
 
 
 @pytest.mark.django_db
@@ -241,7 +235,7 @@ class TestOneCookerCantSeeOtherCookerDishes:
             access_token = token_response.json().get("data").get("token").get("access")
             access_auth_header = {"HTTP_AUTHORIZATION": f"Bearer {access_token}"}
 
-            # Then we can ask for some dishes
+            # Then we can ask for some dishes — this cooker has no dishes named 'Pou'
             response = client.get(
                 path,
                 {"search": "Pou"},
@@ -249,5 +243,4 @@ class TestOneCookerCantSeeOtherCookerDishes:
                 **access_auth_header,
             )
             assert response.status_code == status.HTTP_200_OK
-
-            assert response.json().get("data") == []
+            assert get_items(response) == []

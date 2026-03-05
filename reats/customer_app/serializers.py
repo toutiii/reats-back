@@ -14,7 +14,8 @@ from core_app.models import (
 )
 from core_app.serializers import (
     OrderDishItemCustomerSerializer,
-    OrderDrinkItemCustomerSerializer,
+    OrderDishItemHistorySerializer,
+    OrderDrinkItemGETSerializer,
     SimpleCookerSerializer,
     SimpleCustomerSerializer,
 )
@@ -65,7 +66,49 @@ class AddressGETSerializer(ModelSerializer):
 
 class OrderGETSerializer(ModelSerializer):
     dishes_items = OrderDishItemCustomerSerializer(many=True)
-    drinks_items = OrderDrinkItemCustomerSerializer(many=True)
+    drinks_items = OrderDrinkItemGETSerializer(many=True)
+    address = AddressGETSerializer()
+
+    class Meta:
+        model = OrderModel
+        exclude = (
+            "modified",
+            "customer",
+            "is_deleted",
+        )
+        many = True
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+
+        data["sub_total"] = compute_order_items_total_amount(instance)
+        data["service_fees"] = round(data["sub_total"] * settings.SERVICE_FEES_RATE, 2)
+        data["total_amount"] = round(data["sub_total"] + data["service_fees"] + instance.delivery_fees, 2)
+
+        for item in data.get("dishes_items", []):
+            if item["dish"].get("photo"):
+                item["dish"]["photo"] = get_pre_signed_url(item["dish"]["photo"])
+
+        for item in data.get("drinks_items", []):
+            if item["drink"].get("photo"):
+                item["drink"]["photo"] = get_pre_signed_url(item["drink"]["photo"])
+
+        order_status = data.get("status")
+
+        if order_status is None or order_status == OrderStatusEnum.DRAFT:
+            customer = instance.customer
+            data["ephemeral_key"] = create_stripe_ephemeral_key(customer)
+
+        if instance.cooker:
+            cooker = instance.cooker
+            data["cooker"] = SimpleCookerSerializer(cooker).data
+
+        return data
+
+
+class OrderHistoryGETSerializer(ModelSerializer):
+    dishes_items = OrderDishItemHistorySerializer(many=True)
+    drinks_items = OrderDrinkItemGETSerializer(many=True)
     address = AddressGETSerializer()
 
     class Meta:

@@ -1,14 +1,18 @@
+import json
 from decimal import Decimal
 from typing import Any, Dict, Union
 
 import phonenumbers
 from core_app.models import (
     AddressModel,
+    AllergenModel,
     CookerModel,
     CustomerModel,
     DeliverModel,
     DishModel,
     DrinkModel,
+    IngredientModel,
+    NutritionalInfoModel,
     OrderModel,
 )
 from core_app.serializers import OrderDishItemGETSerializer, OrderDrinkItemGETSerializer
@@ -16,7 +20,9 @@ from django.conf import settings
 from phonenumbers.phonenumberutil import NumberParseException
 from rest_framework import serializers, status
 from rest_framework.exceptions import ValidationError
+from rest_framework.fields import empty
 from rest_framework.serializers import ModelSerializer
+from rest_framework.utils import html
 from rest_framework_simplejwt.serializers import (
     TokenObtainPairSerializer,
     TokenRefreshSerializer,
@@ -80,8 +86,125 @@ class CookerGETSerializer(ModelSerializer):
         }
 
 
+class AllergenSlugRelatedField(serializers.SlugRelatedField):
+    def to_internal_value(self, data):
+        data = str(data)
+        obj, _ = self.get_queryset().model.objects.get_or_create(code=data, defaults={"name": data.capitalize()})
+        return obj
+
+
+class IngredientSlugRelatedField(serializers.SlugRelatedField):
+    def to_internal_value(self, data):
+        data = str(data)
+        obj, _ = self.get_queryset().model.objects.get_or_create(
+            code=data, defaults={"name": data.replace("_", " ").capitalize()}
+        )
+        return obj
+
+
+class NutritionalInfoSerializer(ModelSerializer):
+    class Meta:
+        model = NutritionalInfoModel
+        fields = ("calories", "protein", "carbs", "fat")
+
+    def get_value(self, dictionary):
+        if html.is_html_input(dictionary):
+            parsed = html.parse_html_dict(dictionary, prefix=self.field_name)
+            if parsed:
+                return parsed
+            return dictionary.get(self.field_name, empty)
+        return dictionary.get(self.field_name, empty)
+
+    def to_internal_value(self, data):
+        if isinstance(data, str):
+            try:
+                data = json.loads(data)
+            except (ValueError, TypeError):
+                raise serializers.ValidationError("Invalid JSON format for nutritional_info")
+        return super().to_internal_value(data)
+
+
 class DishSerializer(ModelSerializer):
     cooker = serializers.PrimaryKeyRelatedField(queryset=CookerModel.objects.all())
+    allergens = AllergenSlugRelatedField(
+        many=True,
+        slug_field="code",
+        queryset=AllergenModel.objects.all(),
+        required=False,
+    )
+    ingredients = IngredientSlugRelatedField(
+        many=True,
+        slug_field="code",
+        queryset=IngredientModel.objects.all(),
+        required=False,
+    )
+    country = serializers.CharField(max_length=50, required=False)
+    nutritional_info = NutritionalInfoSerializer(required=False, allow_null=True)
+    delivery_type = serializers.ChoiceField(
+        choices=["pickup", "scheduled", "both"],
+        required=False,
+        write_only=True,
+    )
+
+    def validate(self, attrs):
+        delivery_type = attrs.pop("delivery_type", None)
+        if delivery_type == "pickup":
+            attrs["is_suitable_for_quick_delivery"] = True
+            attrs["is_suitable_for_scheduled_delivery"] = False
+        elif delivery_type == "scheduled":
+            attrs["is_suitable_for_quick_delivery"] = False
+            attrs["is_suitable_for_scheduled_delivery"] = True
+        elif delivery_type == "both":
+            attrs["is_suitable_for_quick_delivery"] = True
+            attrs["is_suitable_for_scheduled_delivery"] = True
+
+        return super().validate(attrs)
+
+    def create(self, validated_data):
+        nutritional_data = validated_data.pop("nutritional_info", None)
+        allergens = validated_data.pop("allergens", [])
+        ingredients = validated_data.pop("ingredients", [])
+
+        dish = DishModel.objects.create(**validated_data)
+
+        if allergens:
+            dish.allergens.set(allergens)
+        if ingredients:
+            dish.ingredients.set(ingredients)
+
+        if nutritional_data is not None:
+            NutritionalInfoModel.objects.create(dish=dish, **nutritional_data)
+        return dish
+
+    def update(self, instance, validated_data):
+        nutritional_data = validated_data.pop("nutritional_info", None)
+        allergens = validated_data.pop("allergens", None)
+        ingredients = validated_data.pop("ingredients", None)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        if allergens is not None:
+            instance.allergens.set(allergens)
+        if ingredients is not None:
+            instance.ingredients.set(ingredients)
+
+        if nutritional_data is not None:
+            try:
+                info = instance.nutritional_info
+                for key, value in nutritional_data.items():
+                    setattr(info, key, value)
+                info.save()
+            except NutritionalInfoModel.DoesNotExist:
+                NutritionalInfoModel.objects.create(dish=instance, **nutritional_data)
+        elif "nutritional_info" in self.initial_data and self.initial_data["nutritional_info"] is None:
+            try:
+                instance.nutritional_info.delete()
+            except NutritionalInfoModel.DoesNotExist:
+                pass
+
+        return instance
 
 
 class DishPOSTSerializer(DishSerializer):
@@ -102,6 +225,10 @@ class DishPATCHSerializer(DishSerializer):
             "description",
             "price",
             "category",
+            "allergens",
+            "ingredients",
+            "nutritional_info",
+            "delivery_type",
         )
 
 

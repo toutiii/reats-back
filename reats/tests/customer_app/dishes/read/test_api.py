@@ -104,6 +104,8 @@ class TestListDishesForCustomerSuccessWithQueryParameterGivenByUser:
                     "email": "test@gmail.com",
                     "acceptance_rate": 100.0,
                 },
+                "allergens": [],
+                "ingredients": [],
             },
             {
                 "id": 6,
@@ -124,6 +126,8 @@ class TestListDishesForCustomerSuccessWithQueryParameterGivenByUser:
                     "email": "test@gmail.com",
                     "acceptance_rate": 100.0,
                 },
+                "allergens": [],
+                "ingredients": [],
             },
         ]
 
@@ -149,6 +153,8 @@ class TestListDishesForCustomerSuccessWithQueryParameterGivenByUser:
                     "email": "test@gmail.com",
                     "acceptance_rate": 100.0,
                 },
+                "allergens": [],
+                "ingredients": [],
             },
             {
                 "id": 7,
@@ -169,6 +175,8 @@ class TestListDishesForCustomerSuccessWithQueryParameterGivenByUser:
                     "email": "test@gmail.com",
                     "acceptance_rate": 100.0,
                 },
+                "allergens": [],
+                "ingredients": [],
             },
             {
                 "id": 6,
@@ -189,6 +197,8 @@ class TestListDishesForCustomerSuccessWithQueryParameterGivenByUser:
                     "email": "test@gmail.com",
                     "acceptance_rate": 100.0,
                 },
+                "allergens": [],
+                "ingredients": [],
             },
             {
                 "id": 5,
@@ -209,6 +219,8 @@ class TestListDishesForCustomerSuccessWithQueryParameterGivenByUser:
                     "email": "test@gmail.com",
                     "acceptance_rate": 100.0,
                 },
+                "allergens": [],
+                "ingredients": [],
             },
             {
                 "id": 4,
@@ -229,6 +241,8 @@ class TestListDishesForCustomerSuccessWithQueryParameterGivenByUser:
                     "email": "test@gmail.com",
                     "acceptance_rate": 100.0,
                 },
+                "allergens": [],
+                "ingredients": [],
             },
             {
                 "id": 3,
@@ -249,6 +263,8 @@ class TestListDishesForCustomerSuccessWithQueryParameterGivenByUser:
                     "email": "test4@gmail.com",
                     "acceptance_rate": 100.0,
                 },
+                "allergens": [],
+                "ingredients": [],
             },
             {
                 "id": 2,
@@ -269,6 +285,8 @@ class TestListDishesForCustomerSuccessWithQueryParameterGivenByUser:
                     "email": "test4@gmail.com",
                     "acceptance_rate": 100.0,
                 },
+                "allergens": [],
+                "ingredients": [],
             },
         ]
 
@@ -366,6 +384,8 @@ class TestListDishesForCustomerWithMissingSearchAddressId:
                         "is_enabled": True,
                         "is_suitable_for_quick_delivery": True,
                         "is_suitable_for_scheduled_delivery": False,
+                        "ingredients": [],
+                        "allergens": [],
                     }
                 ],
             },
@@ -398,6 +418,8 @@ class TestListDishesForCustomerWithMissingSearchAddressId:
                         "is_suitable_for_quick_delivery": False,
                         "is_suitable_for_scheduled_delivery": True,
                         "ratings": [],
+                        "ingredients": [],
+                        "allergens": [],
                     }
                 ],
             },
@@ -462,6 +484,8 @@ class TestListDishesWithDeliveryModeFilter:
                         "photo": "cookers/1/dishes/dish/poulet-braise.jpg",
                         "price": 11.0,
                         "ratings": [],
+                        "ingredients": [],
+                        "allergens": [],
                     }
                 ],
                 "success": True,

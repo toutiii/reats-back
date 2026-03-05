@@ -75,6 +75,7 @@ from .serializers import (
     CustomerSerializer,
     DishCountriesGETSerializer,
     OrderGETSerializer,
+    OrderHistoryGETSerializer,
     OrderSerializer,
 )
 
@@ -657,7 +658,7 @@ class CustomerOrderHistoryView(StandardizedResponseMixin, ListModelMixin, Generi
         ]
     )
     parser_classes = [MultiPartParser]
-    serializer_class = OrderGETSerializer
+    serializer_class = OrderHistoryGETSerializer
 
     pagination_class = StandardizedResultsSetPagination
     filter_backends = [filters.DjangoFilterBackend]

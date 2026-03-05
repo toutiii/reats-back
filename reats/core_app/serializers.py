@@ -2,19 +2,34 @@ from datetime import datetime, timezone
 
 from rest_framework import serializers
 from rest_framework.serializers import CharField, ModelSerializer
+from utils.common import get_pre_signed_url
 from utils.enums import OrderStatusEnum
 
 from .models import (
+    AllergenModel,
     CookerModel,
     CustomerModel,
+    DishImageModel,
     DishModel,
     DishRatingModel,
     DrinkModel,
     DrinkRatingModel,
+    IngredientModel,
+    NutritionalInfoModel,
     OrderDishItemModel,
     OrderDrinkItemModel,
     OrderModel,
 )
+
+
+class AllergenIngredientMixin:
+    """Mixin to avoid duplicating allergen/ingredient serialization logic."""
+
+    def get_allergens(self, obj: DishModel) -> list[str]:
+        return list(obj.allergens.values_list("code", flat=True))
+
+    def get_ingredients(self, obj: DishModel) -> list[str]:
+        return list(obj.ingredients.values_list("code", flat=True))
 
 
 class DishRatingSerializer(ModelSerializer):
@@ -41,10 +56,12 @@ class SimpleCookerSerializer(ModelSerializer):
         fields = ("id", "firstname", "lastname", "email", "acceptance_rate")
 
 
-class DishGETSerializer(ModelSerializer):
+class DishGETSerializer(AllergenIngredientMixin, ModelSerializer):
     ratings = DishRatingSerializer(many=True, read_only=True)
     cooker = SimpleCookerSerializer(read_only=True)
     margin = serializers.SerializerMethodField()
+    allergens = serializers.SerializerMethodField()
+    ingredients = serializers.SerializerMethodField()
 
     class Meta:
         model = DishModel
@@ -58,8 +75,141 @@ class DishGETSerializer(ModelSerializer):
         return obj.margin
 
 
-class DishCustomerSerializer(ModelSerializer):
+class DishImageSerializer(ModelSerializer):
+    url = serializers.SerializerMethodField()
+    isPrimary = serializers.BooleanField(source="is_primary")
+
+    class Meta:
+        model = DishImageModel
+        fields = ("id", "url", "isPrimary")
+
+    def get_url(self, obj: DishImageModel) -> str | None:
+        if obj.s3_key:
+            return get_pre_signed_url(obj.s3_key)
+        return None
+
+
+class AllergenSerializer(ModelSerializer):
+    class Meta:
+        model = AllergenModel
+        fields = ("id", "code", "name")
+
+
+class IngredientSerializer(ModelSerializer):
+    class Meta:
+        model = IngredientModel
+        fields = ("id", "code", "name", "category")
+
+
+class NutritionalInfoSerializer(ModelSerializer):
+    class Meta:
+        model = NutritionalInfoModel
+        fields = ("calories", "protein", "carbs", "fat")
+
+
+class DishListSerializer(AllergenIngredientMixin, ModelSerializer):
+    margin = serializers.SerializerMethodField()
+    image = serializers.SerializerMethodField()
+    available = serializers.BooleanField(source="is_enabled")
+    preparationTime = serializers.IntegerField(source="preparation_time")
+    maxConcurrentOrders = serializers.IntegerField(source="max_concurrent_orders")
+    currentOrders = serializers.IntegerField(source="current_orders", read_only=True)
+    allergens = serializers.SerializerMethodField()
+    ingredients = serializers.SerializerMethodField()
+    createdAt = serializers.DateTimeField(source="created")
+    updatedAt = serializers.DateTimeField(source="modified")
+
+    class Meta:
+        model = DishModel
+        fields = (
+            "id",
+            "name",
+            "description",
+            "price",
+            "cost",
+            "margin",
+            "category",
+            "image",
+            "available",
+            "preparationTime",
+            "maxConcurrentOrders",
+            "currentOrders",
+            "allergens",
+            "ingredients",
+            "createdAt",
+            "updatedAt",
+        )
+
+    def get_margin(self, obj: DishModel) -> float | None:
+        return obj.margin
+
+    def get_image(self, obj: DishModel) -> str | None:
+        if obj.photo:
+            return get_pre_signed_url(obj.photo)
+        return None
+
+
+class DishDetailSerializer(ModelSerializer):
+    margin = serializers.SerializerMethodField()
+    images = DishImageSerializer(many=True, read_only=True)
+    available = serializers.BooleanField(source="is_enabled")
+    preparationTime = serializers.IntegerField(source="preparation_time")
+    maxConcurrentOrders = serializers.IntegerField(source="max_concurrent_orders")
+    currentOrders = serializers.IntegerField(source="current_orders", read_only=True)
+    allergens = AllergenSerializer(many=True, read_only=True)
+    ingredients = IngredientSerializer(many=True, read_only=True)
+    nutritionalInfo = NutritionalInfoSerializer(source="nutritional_info", read_only=True)
+    createdAt = serializers.DateTimeField(source="created")
+    updatedAt = serializers.DateTimeField(source="modified")
+
+    class Meta:
+        model = DishModel
+        fields = (
+            "id",
+            "name",
+            "description",
+            "price",
+            "cost",
+            "margin",
+            "category",
+            "images",
+            "available",
+            "preparationTime",
+            "maxConcurrentOrders",
+            "currentOrders",
+            "allergens",
+            "ingredients",
+            "nutritionalInfo",
+            "createdAt",
+            "updatedAt",
+        )
+
+    def get_margin(self, obj: DishModel) -> float | None:
+        return obj.margin
+
+
+class DishCustomerSerializer(AllergenIngredientMixin, ModelSerializer):
     """Serializer for customer-facing dish endpoints without sensitive financial data."""
+
+    ratings = DishRatingSerializer(many=True, read_only=True)
+    cooker = SimpleCookerSerializer(read_only=True)
+    allergens = serializers.SerializerMethodField()
+    ingredients = serializers.SerializerMethodField()
+
+    class Meta:
+        model = DishModel
+        exclude = (
+            "created",
+            "modified",
+            "is_deleted",
+            "cost",
+            "preparation_time",
+            "max_concurrent_orders",
+        )
+
+
+class DishOrderHistorySerializer(ModelSerializer):
+    """Serializer for dishes in order history - minimal fields."""
 
     ratings = DishRatingSerializer(many=True, read_only=True)
     cooker = SimpleCookerSerializer(read_only=True)
@@ -70,9 +220,11 @@ class DishCustomerSerializer(ModelSerializer):
             "created",
             "modified",
             "is_deleted",
-            "cost",  # Hide cost from customers
-            "preparation_time",  # Internal operational data
-            "max_concurrent_orders",  # Internal operational data
+            "cost",
+            "preparation_time",
+            "max_concurrent_orders",
+            "allergens",
+            "ingredients",
         )
 
 
@@ -103,7 +255,7 @@ class OrderDishItemGETSerializer(ModelSerializer):
 
 
 class OrderDishItemCustomerSerializer(ModelSerializer):
-    """Customer-facing version using DishCustomerSerializer without margin."""
+    """Customer-facing version using DishCustomerSerializer."""
 
     dish = DishCustomerSerializer()
 
@@ -117,11 +269,13 @@ class OrderDishItemCustomerSerializer(ModelSerializer):
         )
 
 
-class OrderDrinkItemGETSerializer(ModelSerializer):
-    drink = DrinkGETSerializer()
+class OrderDishItemHistorySerializer(ModelSerializer):
+    """Order history version using DishOrderHistorySerializer."""
+
+    dish = DishOrderHistorySerializer()
 
     class Meta:
-        model = OrderDrinkItemModel
+        model = OrderDishItemModel
         exclude = (
             "created",
             "modified",
@@ -130,9 +284,7 @@ class OrderDrinkItemGETSerializer(ModelSerializer):
         )
 
 
-class OrderDrinkItemCustomerSerializer(ModelSerializer):
-    """Customer-facing version for consistency."""
-
+class OrderDrinkItemGETSerializer(ModelSerializer):
     drink = DrinkGETSerializer()
 
     class Meta:
