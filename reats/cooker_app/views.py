@@ -592,9 +592,9 @@ class DishView(StandardizedResponseMixin, ModelViewSet):
     def _annotated_queryset(self):
         return self.queryset.prefetch_related("allergens").annotate(
             current_orders=Count(
-                "dish_order_items",
+                "orderdishitemmodel",
                 filter=Q(
-                    dish_order_items__order__status__in=[
+                    orderdishitemmodel__order__status__in=[
                         OrderStatusEnum.PROCESSING,
                         OrderStatusEnum.IN_DELIVERY,
                     ]

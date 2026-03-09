@@ -101,7 +101,6 @@ class DishListSerializer(AllergenIngredientMixin, ModelSerializer):
             "maxConcurrentOrders",
             "currentOrders",
             "allergens",
-            "ingredients",
             "createdAt",
             "updatedAt",
         )
@@ -140,8 +139,6 @@ class DishDetailSerializer(ModelSerializer):
             "maxConcurrentOrders",
             "currentOrders",
             "allergens",
-            "ingredients",
-            "nutritionalInfo",
             "createdAt",
             "updatedAt",
         )
@@ -185,7 +182,6 @@ class DishOrderHistorySerializer(ModelSerializer):
             "preparation_time",
             "max_concurrent_orders",
             "allergens",
-            "ingredients",
         )
 
 
