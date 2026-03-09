@@ -9,7 +9,8 @@ from typing import Any, Callable, List, Optional, Tuple, Type, TypedDict, Union
 import django_filters
 from core_app.models import CookerModel, DishModel, DrinkModel, OrderDishItemModel, OrderDrinkItemModel, OrderModel
 from core_app.serializers import (
-    DishGETSerializer,
+    DishDetailSerializer,
+    DishListSerializer,
     DrinkGETSerializer,
     OrderPATCHSerializer,
 )
@@ -586,25 +587,37 @@ class DishView(StandardizedResponseMixin, ModelViewSet):
     queryset = DishModel.objects.filter(is_deleted=False).all()
     filter_backends = [django_filters.rest_framework.DjangoFilterBackend]
     filterset_class = DishFilter
+    pagination_class = StandardizedResultsSetPagination
+
+    def _annotated_queryset(self):
+        return self.queryset.prefetch_related("allergens").annotate(
+            current_orders=Count(
+                "dish_order_items",
+                filter=Q(
+                    dish_order_items__order__status__in=[
+                        OrderStatusEnum.PROCESSING,
+                        OrderStatusEnum.IN_DELIVERY,
+                    ]
+                ),
+                distinct=True,
+            )
+        )
 
     def get_queryset(self):
-        # For detail actions, restrict to dishes owned by the authenticated cooker.
-        # super().get_queryset() already applies is_deleted=False from the class-level queryset.
         if self.action in ("retrieve", "update", "partial_update", "destroy", "toggle_availability"):
-            return super().get_queryset().filter(cooker__id=self.request.user.pk)
-        return super().get_queryset()
+            return self._annotated_queryset().filter(cooker__id=self.request.user.pk)
+        return self._annotated_queryset()
 
     def get_serializer_class(self) -> type[BaseSerializer]:
+        if self.action == "toggle_availability":
+            return DishListSerializer
         if self.request.method in ("POST", "PUT"):
-            self.serializer_class = DishPOSTSerializer
-
+            return DishPOSTSerializer
         if self.request.method == "PATCH":
-            self.serializer_class = DishPATCHSerializer
-
-        if self.request.method == "GET":
-            self.serializer_class = DishGETSerializer
-
-        return super().get_serializer_class()
+            return DishPATCHSerializer
+        if self.action == "retrieve":
+            return DishDetailSerializer
+        return DishListSerializer
 
     def perform_create(self, serializer: BaseSerializer) -> None:
         photo = (
@@ -630,6 +643,7 @@ class DishView(StandardizedResponseMixin, ModelViewSet):
                 message="Invalid data",
                 code="INVALID_DATA",
                 status_code=status.HTTP_400_BAD_REQUEST,
+                details=serializer.errors,
             )
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
@@ -686,22 +700,10 @@ class DishView(StandardizedResponseMixin, ModelViewSet):
         return self.success(data=serializer.data)
 
     def list(self, request, *args, **kwargs) -> Response:
-        request_category: Union[str, None] = self.request.query_params.get("category")
-        request_status: Union[str, None] = self.request.query_params.get("is_enabled", "true")
+        queryset = self.filter_queryset(self.get_queryset().filter(cooker__id=request.user.pk))
 
-        self.queryset = self.queryset.filter(cooker__id=request.user.pk)
-
-        if request_category is not None:
-            self.queryset = self.queryset.filter(category__in=request_category.split(","))
-
-        if request_status is not None:
-            self.queryset = self.queryset.filter(is_enabled=json.loads(request_status))
-
-        # If no search term, default ordering by name (search results are ordered by rank via DishFilter)
-        if not self.request.query_params.get("search"):
-            self.queryset = self.queryset.order_by("name")
-
-        queryset = self.filter_queryset(self.get_queryset())
+        if not request.query_params.get("search"):
+            queryset = queryset.order_by("name")
 
         page = self.paginate_queryset(queryset)
         if page is not None:
@@ -716,6 +718,7 @@ class DishView(StandardizedResponseMixin, ModelViewSet):
         instance: DishModel = self.get_object()
         instance.is_enabled = not instance.is_enabled
         instance.save(update_fields=["is_enabled", "modified"])
+        instance = self.queryset.get(pk=instance.pk)
         serializer = self.get_serializer(instance)
         return self.success(data=serializer.data)
 
