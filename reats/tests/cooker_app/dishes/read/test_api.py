@@ -23,7 +23,7 @@ def test_empty_query_params(auth_headers: dict, client: APIClient, path: str, co
     assert response.json().get("success") is True
     assert response.json().get("data") is not None
     assert (
-        len(response.json().get("data"))
+        response.json().get("data").get("pagination").get("total_items")
         == DishModel.objects.filter(is_enabled=True).filter(cooker_id=cooker_id).count()
     )
 
@@ -38,11 +38,11 @@ def test_get_enabled_dishes(auth_headers: dict, client: APIClient, path: str) ->
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.status_code == status.HTTP_200_OK
     assert response.json().get("success") is True
     assert response.json().get("data") is not None
+    assert response.json().get("data").get("results") is not None
 
-    for item in response.json().get("data"):
+    for item in response.json().get("data").get("results"):
         assert item.get("is_enabled") is True
 
 
@@ -69,11 +69,11 @@ def test_get_enabled_dishes_when_item_has_been_deleted(
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.status_code == status.HTTP_200_OK
     assert response.json().get("success") is True
     assert response.json().get("data") is not None
+    assert response.json().get("data").get("results") is not None
 
-    for item in response.json().get("data"):
+    for item in response.json().get("data").get("results"):
         assert item.get("is_enabled") is True
         assert DishModel.objects.get(pk=item.get("id")).is_deleted is False
 
@@ -88,11 +88,11 @@ def test_get_disabled_dishes(auth_headers: dict, client: APIClient, path: str) -
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.status_code == status.HTTP_200_OK
     assert response.json().get("success") is True
     assert response.json().get("data") is not None
+    assert response.json().get("data").get("results") is not None
 
-    for item in response.json().get("data"):
+    for item in response.json().get("data").get("results"):
         assert item.get("is_enabled") is False
 
 
@@ -106,11 +106,11 @@ def test_get_starters(auth_headers: dict, client: APIClient, path: str) -> None:
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.status_code == status.HTTP_200_OK
     assert response.json().get("success") is True
     assert response.json().get("data") is not None
+    assert response.json().get("data").get("results") is not None
 
-    for item in response.json().get("data"):
+    for item in response.json().get("data").get("results"):
         assert item.get("category") == "starter"
 
 
@@ -124,11 +124,11 @@ def test_get_dishes(auth_headers: dict, client: APIClient, path: str) -> None:
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.status_code == status.HTTP_200_OK
     assert response.json().get("success") is True
     assert response.json().get("data") is not None
+    assert response.json().get("data").get("results") is not None
 
-    for item in response.json().get("data"):
+    for item in response.json().get("data").get("results"):
         assert item.get("category") == "dish"
 
 
@@ -142,11 +142,11 @@ def test_get_desserts(auth_headers: dict, client: APIClient, path: str) -> None:
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.status_code == status.HTTP_200_OK
     assert response.json().get("success") is True
     assert response.json().get("data") is not None
+    assert response.json().get("data").get("results") is not None
 
-    for item in response.json().get("data"):
+    for item in response.json().get("data").get("results"):
         assert item.get("category") == "dessert"
 
 
@@ -160,11 +160,11 @@ def test_get_all_categories(auth_headers: dict, client: APIClient, path: str) ->
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.status_code == status.HTTP_200_OK
     assert response.json().get("success") is True
     assert response.json().get("data") is not None
+    assert response.json().get("data").get("results") is not None
 
-    for item in response.json().get("data"):
+    for item in response.json().get("data").get("results"):
         assert item.get("category") in ("starter", "dish", "dessert")
         assert item.get("is_enabled") in (True, False)
 
@@ -182,11 +182,11 @@ def test_get_all_enabled_categories(auth_headers: dict, client: APIClient, path:
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.status_code == status.HTTP_200_OK
     assert response.json().get("success") is True
     assert response.json().get("data") is not None
+    assert response.json().get("data").get("results") is not None
 
-    for item in response.json().get("data"):
+    for item in response.json().get("data").get("results"):
         assert item.get("category") in ("starter", "dish", "dessert")
         assert item.get("is_enabled") is True
 
@@ -204,11 +204,11 @@ def test_get_all_disabled_categories(auth_headers: dict, client: APIClient, path
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.status_code == status.HTTP_200_OK
     assert response.json().get("success") is True
     assert response.json().get("data") is not None
+    assert response.json().get("data").get("results") is not None
 
-    for item in response.json().get("data"):
+    for item in response.json().get("data").get("results"):
         assert item.get("category") in ("starter", "dish", "dessert")
         assert item.get("is_enabled") is False
 
@@ -250,4 +250,4 @@ class TestOneCookerCantSeeOtherCookerDishes:
             )
             assert response.status_code == status.HTTP_200_OK
 
-            assert response.json().get("data") == []
+            assert response.json().get("data").get("results") == []

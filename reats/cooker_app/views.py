@@ -606,7 +606,13 @@ class DishView(StandardizedResponseMixin, ModelViewSet):
     def get_queryset(self):
         if self.action in ("retrieve", "update", "partial_update", "destroy", "toggle_availability"):
             return self._annotated_queryset().filter(cooker__id=self.request.user.pk)
-        return self._annotated_queryset()
+
+        qs = self._annotated_queryset()
+        if self.action == "list":
+            qs = qs.filter(cooker__id=self.request.user.pk)
+            if "is_enabled" not in self.request.query_params:
+                qs = qs.filter(is_enabled=True)
+        return qs
 
     def get_serializer_class(self) -> type[BaseSerializer]:
         if self.action == "toggle_availability":
@@ -700,7 +706,7 @@ class DishView(StandardizedResponseMixin, ModelViewSet):
         return self.success(data=serializer.data)
 
     def list(self, request, *args, **kwargs) -> Response:
-        queryset = self.filter_queryset(self.get_queryset().filter(cooker__id=request.user.pk))
+        queryset = self.filter_queryset(self.get_queryset())
 
         if not request.query_params.get("search"):
             queryset = queryset.order_by("name")

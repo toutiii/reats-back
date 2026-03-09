@@ -104,6 +104,7 @@ class TestListDishesForCustomerSuccessWithQueryParameterGivenByUser:
                     "email": "test@gmail.com",
                     "acceptance_rate": 100.0,
                 },
+                "allergens": [],
             },
             {
                 "id": 6,
@@ -124,6 +125,7 @@ class TestListDishesForCustomerSuccessWithQueryParameterGivenByUser:
                     "email": "test@gmail.com",
                     "acceptance_rate": 100.0,
                 },
+                "allergens": [],
             },
         ]
 
@@ -149,6 +151,7 @@ class TestListDishesForCustomerSuccessWithQueryParameterGivenByUser:
                     "email": "test@gmail.com",
                     "acceptance_rate": 100.0,
                 },
+                "allergens": [],
             },
             {
                 "id": 7,
@@ -169,6 +172,7 @@ class TestListDishesForCustomerSuccessWithQueryParameterGivenByUser:
                     "email": "test@gmail.com",
                     "acceptance_rate": 100.0,
                 },
+                "allergens": [],
             },
             {
                 "id": 6,
@@ -189,6 +193,7 @@ class TestListDishesForCustomerSuccessWithQueryParameterGivenByUser:
                     "email": "test@gmail.com",
                     "acceptance_rate": 100.0,
                 },
+                "allergens": [],
             },
             {
                 "id": 5,
@@ -209,6 +214,7 @@ class TestListDishesForCustomerSuccessWithQueryParameterGivenByUser:
                     "email": "test@gmail.com",
                     "acceptance_rate": 100.0,
                 },
+                "allergens": [],
             },
             {
                 "id": 4,
@@ -229,6 +235,7 @@ class TestListDishesForCustomerSuccessWithQueryParameterGivenByUser:
                     "email": "test@gmail.com",
                     "acceptance_rate": 100.0,
                 },
+                "allergens": [],
             },
             {
                 "id": 3,
@@ -249,6 +256,7 @@ class TestListDishesForCustomerSuccessWithQueryParameterGivenByUser:
                     "email": "test4@gmail.com",
                     "acceptance_rate": 100.0,
                 },
+                "allergens": [],
             },
             {
                 "id": 2,
@@ -269,6 +277,7 @@ class TestListDishesForCustomerSuccessWithQueryParameterGivenByUser:
                     "email": "test4@gmail.com",
                     "acceptance_rate": 100.0,
                 },
+                "allergens": [],
             },
         ]
 
@@ -363,6 +372,7 @@ class TestListDishesForCustomerWithMissingSearchAddressId:
                             "email": "test4@gmail.com",
                             "acceptance_rate": 100.0,
                         },
+                        "allergens": [],
                         "is_enabled": True,
                         "is_suitable_for_quick_delivery": True,
                         "is_suitable_for_scheduled_delivery": False,
@@ -394,6 +404,7 @@ class TestListDishesForCustomerWithMissingSearchAddressId:
                             "lastname": "test",
                             "email": "test@gmail.com",
                         },
+                        "allergens": [],
                         "is_enabled": True,
                         "is_suitable_for_quick_delivery": False,
                         "is_suitable_for_scheduled_delivery": True,
@@ -461,6 +472,7 @@ class TestListDishesWithDeliveryModeFilter:
                         "name": "Poulet braisé",
                         "photo": "cookers/1/dishes/dish/poulet-braise.jpg",
                         "price": 11.0,
+                        "allergens": [],
                         "ratings": [],
                     }
                 ],

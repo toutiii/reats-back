@@ -78,12 +78,12 @@ class DishListSerializer(AllergenIngredientMixin, ModelSerializer):
     margin = serializers.SerializerMethodField()
     image = serializers.SerializerMethodField()
     available = serializers.BooleanField(source="is_enabled")
-    preparationTime = serializers.IntegerField(source="preparation_time")
-    maxConcurrentOrders = serializers.IntegerField(source="max_concurrent_orders")
-    currentOrders = serializers.IntegerField(source="current_orders", read_only=True)
+    preparation_time = serializers.IntegerField()
+    max_concurrent_orders = serializers.IntegerField()
+    current_orders = serializers.IntegerField(read_only=True)
     allergens = serializers.SerializerMethodField()
-    createdAt = serializers.DateTimeField(source="created")
-    updatedAt = serializers.DateTimeField(source="modified")
+    created_at = serializers.DateTimeField(source="created")
+    updated_at = serializers.DateTimeField(source="modified")
 
     class Meta:
         model = DishModel
@@ -97,12 +97,13 @@ class DishListSerializer(AllergenIngredientMixin, ModelSerializer):
             "category",
             "image",
             "available",
-            "preparationTime",
-            "maxConcurrentOrders",
-            "currentOrders",
+            "is_enabled",
+            "preparation_time",
+            "max_concurrent_orders",
+            "current_orders",
             "allergens",
-            "createdAt",
-            "updatedAt",
+            "created_at",
+            "updated_at",
         )
 
     def get_margin(self, obj: DishModel) -> float | None:
@@ -117,12 +118,10 @@ class DishListSerializer(AllergenIngredientMixin, ModelSerializer):
 class DishDetailSerializer(ModelSerializer):
     margin = serializers.SerializerMethodField()
     available = serializers.BooleanField(source="is_enabled")
-    preparationTime = serializers.IntegerField(source="preparation_time")
-    maxConcurrentOrders = serializers.IntegerField(source="max_concurrent_orders")
-    currentOrders = serializers.IntegerField(source="current_orders", read_only=True)
+    current_orders = serializers.IntegerField(read_only=True)
     allergens = AllergenSerializer(many=True, read_only=True)
-    createdAt = serializers.DateTimeField(source="created")
-    updatedAt = serializers.DateTimeField(source="modified")
+    created_at = serializers.DateTimeField(source="created")
+    updated_at = serializers.DateTimeField(source="modified")
 
     class Meta:
         model = DishModel
@@ -135,12 +134,13 @@ class DishDetailSerializer(ModelSerializer):
             "margin",
             "category",
             "available",
-            "preparationTime",
-            "maxConcurrentOrders",
-            "currentOrders",
+            "is_enabled",
+            "preparation_time",
+            "max_concurrent_orders",
+            "current_orders",
             "allergens",
-            "createdAt",
-            "updatedAt",
+            "created_at",
+            "updated_at",
         )
 
     def get_margin(self, obj: DishModel) -> float | None:

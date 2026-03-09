@@ -85,8 +85,14 @@ class TestDishSearchFilter:
         )
 
         assert response.status_code == status.HTTP_200_OK
-        data = response.json().get("data")
+        assert isinstance(response.json(), dict)
+        assert response.json().get("success") is True
+
+        assert isinstance(response.json().get("data"), dict)
+        assert isinstance(response.json().get("data").get("results"), list)
+        data = response.json().get("data").get("results")
         assert len(data) > 0
+
         # Vérifie que les résultats les plus pertinents contiennent "poulet"
         top_results = data[:2]
         assert any("poulet" in item["name"].lower() for item in top_results)
@@ -105,7 +111,12 @@ class TestDishSearchFilter:
         )
 
         assert response.status_code == status.HTTP_200_OK
-        data = response.json().get("data")
+        assert isinstance(response.json(), dict)
+        assert response.json().get("success") is True
+
+        assert isinstance(response.json().get("data"), dict)
+        assert isinstance(response.json().get("data").get("results"), list)
+        data = response.json().get("data").get("results")
         assert len(data) > 0
 
     def test_search_returns_empty_for_no_match(
@@ -122,7 +133,9 @@ class TestDishSearchFilter:
         )
 
         assert response.status_code == status.HTTP_200_OK
-        assert response.json().get("data") == []
+        data = response.json()
+        assert data.get("success") is True
+        assert data["data"]["results"] == []
 
 
 @pytest.mark.django_db
@@ -143,7 +156,13 @@ class TestDishAvailableFilter:
         )
 
         assert response.status_code == status.HTTP_200_OK
-        data = response.json().get("data")
+        assert isinstance(response.json(), dict)
+        assert response.json().get("success") is True
+
+        assert isinstance(response.json().get("data"), dict)
+        assert isinstance(response.json().get("data").get("results"), list)
+        data = response.json().get("data").get("results")
+
         assert len(data) > 0
         for item in data:
             assert item["is_enabled"] is True
@@ -161,8 +180,13 @@ class TestDishAvailableFilter:
             **auth_headers,
         )
 
-        assert response.status_code == status.HTTP_200_OK
-        data = response.json().get("data")
+        assert isinstance(response.json(), dict)
+        assert response.json().get("success") is True
+
+        assert isinstance(response.json().get("data"), dict)
+        assert isinstance(response.json().get("data").get("results"), list)
+        data = response.json().get("data").get("results")
+
         assert len(data) > 0
         for item in data:
             assert item["is_enabled"] is False
