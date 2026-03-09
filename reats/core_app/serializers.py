@@ -1,19 +1,18 @@
 from datetime import datetime, timezone
-from utils.common import get_pre_signed_url
 
 from rest_framework import serializers
 from rest_framework.serializers import CharField, ModelSerializer
+from utils.common import get_pre_signed_url
 from utils.enums import OrderStatusEnum
 
 from .models import (
-    AllergenModel,
+    AllergenDishModel,
     CookerModel,
     CustomerModel,
     DishModel,
     DishRatingModel,
     DrinkModel,
     DrinkRatingModel,
-    IngredientModel,
     OrderDishItemModel,
     OrderDrinkItemModel,
     OrderModel,
@@ -25,10 +24,6 @@ class AllergenIngredientMixin:
 
     def get_allergens(self, obj: DishModel) -> list[str]:
         return list(obj.allergens.values_list("code", flat=True))
-
-    def get_ingredients(self, obj: DishModel) -> list[str]:
-        return list(obj.ingredients.values_list("code", flat=True))
-
 
 
 class DishRatingSerializer(ModelSerializer):
@@ -55,34 +50,9 @@ class SimpleCookerSerializer(ModelSerializer):
         fields = ("id", "firstname", "lastname", "email", "acceptance_rate")
 
 
-class IngredientSerializer(ModelSerializer):
-    class Meta:
-        model = IngredientModel
-        fields = ("id", "code", "name")
-
-
-class DishImageSerializer(ModelSerializer):
-    # Stub for now, will be implemented in multi-photo PR
-    url = serializers.SerializerMethodField()
-
-    class Meta:
-        model = DishModel  # Placeholder
-        fields = ("id", "url")
-
-    def get_url(self, obj):
-        return ""
-
-
-class NutritionalInfoSerializer(ModelSerializer):
-    # Stub for now
-    class Meta:
-        model = DishModel # Placeholder
-        fields = ("id",)
-
-
 class AllergenSerializer(ModelSerializer):
     class Meta:
-        model = AllergenModel
+        model = AllergenDishModel
         fields = ("id", "code", "name")
 
 
@@ -103,6 +73,7 @@ class DishGETSerializer(ModelSerializer):
     def get_margin(self, obj):
         return obj.margin
 
+
 class DishListSerializer(AllergenIngredientMixin, ModelSerializer):
     margin = serializers.SerializerMethodField()
     image = serializers.SerializerMethodField()
@@ -111,7 +82,6 @@ class DishListSerializer(AllergenIngredientMixin, ModelSerializer):
     maxConcurrentOrders = serializers.IntegerField(source="max_concurrent_orders")
     currentOrders = serializers.IntegerField(source="current_orders", read_only=True)
     allergens = serializers.SerializerMethodField()
-    ingredients = serializers.SerializerMethodField()
     createdAt = serializers.DateTimeField(source="created")
     updatedAt = serializers.DateTimeField(source="modified")
 
@@ -145,17 +115,13 @@ class DishListSerializer(AllergenIngredientMixin, ModelSerializer):
         return None
 
 
-
 class DishDetailSerializer(ModelSerializer):
     margin = serializers.SerializerMethodField()
-    images = DishImageSerializer(many=True, read_only=True)
     available = serializers.BooleanField(source="is_enabled")
     preparationTime = serializers.IntegerField(source="preparation_time")
     maxConcurrentOrders = serializers.IntegerField(source="max_concurrent_orders")
     currentOrders = serializers.IntegerField(source="current_orders", read_only=True)
     allergens = AllergenSerializer(many=True, read_only=True)
-    ingredients = IngredientSerializer(many=True, read_only=True)
-    nutritionalInfo = NutritionalInfoSerializer(source="nutritional_info", read_only=True)
     createdAt = serializers.DateTimeField(source="created")
     updatedAt = serializers.DateTimeField(source="modified")
 
@@ -169,7 +135,6 @@ class DishDetailSerializer(ModelSerializer):
             "cost",
             "margin",
             "category",
-            "images",
             "available",
             "preparationTime",
             "maxConcurrentOrders",
@@ -185,13 +150,13 @@ class DishDetailSerializer(ModelSerializer):
         return obj.margin
 
 
-
 class DishCustomerSerializer(AllergenIngredientMixin, ModelSerializer):
     """Serializer for customer-facing dish endpoints without sensitive financial data."""
 
     ratings = DishRatingSerializer(many=True, read_only=True)
     cooker = SimpleCookerSerializer(read_only=True)
     allergens = serializers.SerializerMethodField()
+
     class Meta:
         model = DishModel
         exclude = (
@@ -222,7 +187,6 @@ class DishOrderHistorySerializer(ModelSerializer):
             "allergens",
             "ingredients",
         )
-
 
 
 class DrinkGETSerializer(ModelSerializer):
@@ -279,7 +243,6 @@ class OrderDishItemHistorySerializer(ModelSerializer):
             "order",
             "id",
         )
-
 
 
 class OrderDrinkItemGETSerializer(ModelSerializer):
