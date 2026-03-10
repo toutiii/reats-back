@@ -161,6 +161,30 @@ class DishSerializer(ModelSerializer):
         return instance
 
 
+class DishPOSTSerializer(DishSerializer):
+    class Meta:
+        model = DishModel
+        exclude = ("photo", "is_enabled")
+
+
+class DishPATCHSerializer(DishSerializer):
+    class Meta:
+        model = DishModel
+        fields = (
+            "is_enabled",
+            "cost",
+            "preparation_time",
+            "max_concurrent_orders",
+            "name",
+            "description",
+            "price",
+            "category",
+            "allergens",
+            "ingredients",
+            "delivery_type",
+        )
+
+
 class DrinkSerializer(ModelSerializer):
     cooker = serializers.PrimaryKeyRelatedField(queryset=CookerModel.objects.all())
 
@@ -184,7 +208,6 @@ class DrinkPATCHSerializer(DrinkSerializer):
             "price",
             "category",
             "allergens",
-            "ingredients",
             "delivery_type",
         )
 
