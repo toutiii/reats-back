@@ -9,6 +9,7 @@ from .models import (
     AllergenDishModel,
     CookerModel,
     CustomerModel,
+    DishImageModel,
     DishModel,
     DishRatingModel,
     DrinkModel,
@@ -52,6 +53,20 @@ class SimpleCookerSerializer(ModelSerializer):
     class Meta:
         model = CookerModel
         fields = ("id", "firstname", "lastname", "email", "acceptance_rate")
+
+
+class DishImageSerializer(ModelSerializer):
+    url = serializers.SerializerMethodField()
+    isPrimary = serializers.BooleanField(source="is_primary")
+
+    class Meta:
+        model = DishImageModel
+        fields = ("id", "url", "isPrimary")
+
+    def get_url(self, obj: DishImageModel) -> str | None:
+        if obj.s3_key:
+            return get_pre_signed_url(obj.s3_key)
+        return None
 
 
 class AllergenSerializer(ModelSerializer):
@@ -130,6 +145,7 @@ class DishListSerializer(AllergenIngredientMixin, ModelSerializer):
 
 class DishDetailSerializer(ModelSerializer):
     margin = serializers.SerializerMethodField()
+    images = DishImageSerializer(many=True, read_only=True)
     available = serializers.BooleanField(source="is_enabled")
     current_orders = serializers.IntegerField(read_only=True)
     allergens = AllergenSerializer(many=True, read_only=True)
@@ -147,6 +163,7 @@ class DishDetailSerializer(ModelSerializer):
             "cost",
             "margin",
             "category",
+            "images",
             "available",
             "is_enabled",
             "preparation_time",
