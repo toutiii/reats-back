@@ -189,6 +189,16 @@ class DishModel(ReatsModel):
         ]
 
 
+class DishImageModel(ReatsModel):
+    id: AutoField = AutoField(primary_key=True)
+    dish: ForeignKey = ForeignKey(DishModel, on_delete=CASCADE, related_name="images")
+    s3_key: CharField = CharField(max_length=512)
+    is_primary: BooleanField = BooleanField(default=False)
+
+    class Meta:
+        db_table = "dish_images"
+
+
 class DrinkModel(ReatsModel):
     UNIT_CHOICES = [
         ("liter", "liter"),
