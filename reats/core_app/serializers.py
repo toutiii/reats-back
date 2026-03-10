@@ -153,6 +153,7 @@ class DishDetailSerializer(ModelSerializer):
             "max_concurrent_orders",
             "current_orders",
             "allergens",
+            "ingredients",
             "created_at",
             "updated_at",
         )

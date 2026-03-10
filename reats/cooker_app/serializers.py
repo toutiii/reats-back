@@ -200,15 +200,9 @@ class DrinkPATCHSerializer(DrinkSerializer):
         model = DrinkModel
         fields = (
             "is_enabled",
-            "cost",
-            "preparation_time",
-            "max_concurrent_orders",
             "name",
             "description",
             "price",
-            "category",
-            "allergens",
-            "delivery_type",
         )
 
 
