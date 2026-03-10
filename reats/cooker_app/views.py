@@ -7,7 +7,15 @@ from decimal import Decimal
 from typing import Any, Callable, List, Optional, Tuple, Type, TypedDict, Union
 
 import django_filters
-from core_app.models import CookerModel, DishModel, DrinkModel, OrderDishItemModel, OrderDrinkItemModel, OrderModel
+from core_app.models import (
+    CookerModel,
+    DishImageModel,
+    DishModel,
+    DrinkModel,
+    OrderDishItemModel,
+    OrderDrinkItemModel,
+    OrderModel,
+)
 from core_app.serializers import (
     DishDetailSerializer,
     DishListSerializer,
@@ -590,7 +598,7 @@ class DishView(StandardizedResponseMixin, ModelViewSet):
     pagination_class = StandardizedResultsSetPagination
 
     def _annotated_queryset(self):
-        return self.queryset.prefetch_related("allergens").annotate(
+        return self.queryset.prefetch_related("allergens", "ingredients", "images").annotate(
             current_orders=Count(
                 "orderdishitemmodel",
                 filter=Q(
@@ -625,29 +633,44 @@ class DishView(StandardizedResponseMixin, ModelViewSet):
             return DishDetailSerializer
         return DishListSerializer
 
+    def _build_s3_key(self, cooker_pk: int, category: str, filename: str) -> str:
+        return f"cookers/{cooker_pk}/dishes/{category}/{filename}"
+
     def perform_create(self, serializer: BaseSerializer) -> None:
-        photo = (
-            "cookers"
-            + "/"
-            + str(serializer.validated_data["cooker"].pk)
-            + "/"
-            + "dishes"
-            + "/"
-            + serializer.validated_data["category"]
-            + "/"
-            + self.request.FILES["photo"].name
+        cooker_pk = serializer.validated_data["cooker"].pk
+        category = serializer.validated_data["category"]
+        photos = self.request.FILES.getlist("photos") or (
+            [self.request.FILES["photo"]] if "photo" in self.request.FILES else []
         )
 
-        upload_image_to_s3(self.request.FILES["photo"], photo)
-        serializer.validated_data["photo"] = photo
-        super().perform_create(serializer)
+        primary_s3_key = None
+        if photos:
+            primary_s3_key = self._build_s3_key(cooker_pk, category, photos[0].name)
+            upload_image_to_s3(photos[0], primary_s3_key)
+
+        if primary_s3_key:
+            serializer.validated_data["photo"] = primary_s3_key
+        elif "photo" not in serializer.validated_data:
+            serializer.validated_data["photo"] = ""
+
+        dish = serializer.save()
+
+        for idx, photo_file in enumerate(photos):
+            s3_key = self._build_s3_key(cooker_pk, category, photo_file.name)
+            if idx > 0:
+                upload_image_to_s3(photo_file, s3_key)
+            DishImageModel.objects.create(
+                dish=dish,
+                s3_key=s3_key,
+                is_primary=(idx == 0),
+            )
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         if not serializer.is_valid():
             return self.error(
-                message="Invalid data",
-                code="INVALID_DATA",
+                message=ErrorMessageEnum.INVALID_DATA,
+                code=ErrorCodeEnum.INVALID_DATA,
                 status_code=status.HTTP_400_BAD_REQUEST,
                 details=serializer.errors,
             )
@@ -657,32 +680,34 @@ class DishView(StandardizedResponseMixin, ModelViewSet):
 
     def perform_update(self, serializer: BaseSerializer) -> None:
         current_object = self.get_object()
-        photo = None
+        cooker_pk = current_object.cooker_id
+        category = serializer.validated_data.get("category", current_object.category)
+        photos = self.request.FILES.getlist("photos") or (
+            [self.request.FILES["photo"]] if "photo" in self.request.FILES else []
+        )
 
-        try:
-            self.request.FILES["photo"]
-        except KeyError:
-            pass
-        else:
-            photo = (
-                "cookers"
-                + "/"
-                + str(serializer.validated_data["cooker"].pk)
-                + "/"
-                + "dishes"
-                + "/"
-                + serializer.validated_data["category"]
-                + "/"
-                + self.request.FILES["photo"].name
-            )
+        if photos:
+            # Delete old primary image from S3
+            if current_object.photo:
+                delete_s3_object(current_object.photo)
 
-        if photo is not None:
-            upload_image_to_s3(self.request.FILES["photo"], photo)
-            serializer.validated_data["photo"] = photo
-            old_photo_key = current_object.photo
-            delete_s3_object(old_photo_key)
+            primary_s3_key = self._build_s3_key(cooker_pk, category, photos[0].name)
+            upload_image_to_s3(photos[0], primary_s3_key)
+            serializer.validated_data["photo"] = primary_s3_key
 
-        super().perform_update(serializer)
+            # Replace all existing images
+            current_object.images.all().delete()
+            for idx, photo_file in enumerate(photos):
+                s3_key = self._build_s3_key(cooker_pk, category, photo_file.name)
+                if idx > 0:
+                    upload_image_to_s3(photo_file, s3_key)
+                DishImageModel.objects.create(
+                    dish=current_object,
+                    s3_key=s3_key,
+                    is_primary=(idx == 0),
+                )
+
+        serializer.save()
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop("partial", False)
