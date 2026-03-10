@@ -10,6 +10,7 @@ from core_app.models import (
     DeliverModel,
     DishModel,
     DrinkModel,
+    IngredientDishModel,
     OrderModel,
 )
 from core_app.serializers import OrderDishItemGETSerializer, OrderDrinkItemGETSerializer
@@ -88,6 +89,15 @@ class AllergenSlugRelatedField(serializers.SlugRelatedField):
         return obj
 
 
+class IngredientSlugRelatedField(serializers.SlugRelatedField):
+    def to_internal_value(self, data):
+        data = str(data)
+        obj, _ = self.get_queryset().model.objects.get_or_create(
+            code=data, defaults={"name": data.replace("_", " ").capitalize()}
+        )
+        return obj
+
+
 class DishSerializer(ModelSerializer):
     cooker = serializers.PrimaryKeyRelatedField(queryset=CookerModel.objects.all())
     allergens = AllergenSlugRelatedField(
@@ -96,19 +106,49 @@ class DishSerializer(ModelSerializer):
         queryset=AllergenDishModel.objects.all(),
         required=False,
     )
+    ingredients = IngredientSlugRelatedField(
+        many=True,
+        slug_field="code",
+        queryset=IngredientDishModel.objects.all(),
+        required=False,
+    )
+    country = serializers.CharField(max_length=50, required=False)
+    delivery_type = serializers.ChoiceField(
+        choices=["pickup", "scheduled", "both"],
+        required=False,
+        write_only=True,
+    )
+
+    def validate(self, attrs):
+        delivery_type = attrs.pop("delivery_type", None)
+        if delivery_type == "pickup":
+            attrs["is_suitable_for_quick_delivery"] = True
+            attrs["is_suitable_for_scheduled_delivery"] = False
+        elif delivery_type == "scheduled":
+            attrs["is_suitable_for_quick_delivery"] = False
+            attrs["is_suitable_for_scheduled_delivery"] = True
+        elif delivery_type == "both":
+            attrs["is_suitable_for_quick_delivery"] = True
+            attrs["is_suitable_for_scheduled_delivery"] = True
+
+        return super().validate(attrs)
 
     def create(self, validated_data):
         allergens = validated_data.pop("allergens", [])
+        ingredients = validated_data.pop("ingredients", [])
 
         dish = DishModel.objects.create(**validated_data)
 
         if allergens:
             dish.allergens.set(allergens)
+        if ingredients:
+            dish.ingredients.set(ingredients)
 
         return dish
 
     def update(self, instance, validated_data):
         allergens = validated_data.pop("allergens", None)
+        ingredients = validated_data.pop("ingredients", None)
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
@@ -116,30 +156,9 @@ class DishSerializer(ModelSerializer):
 
         if allergens is not None:
             instance.allergens.set(allergens)
-
+        if ingredients is not None:
+            instance.ingredients.set(ingredients)
         return instance
-
-
-class DishPOSTSerializer(DishSerializer):
-    class Meta:
-        model = DishModel
-        exclude = ("photo", "is_enabled")
-
-
-class DishPATCHSerializer(DishSerializer):
-    class Meta:
-        model = DishModel
-        fields = (
-            "is_enabled",
-            "cost",
-            "preparation_time",
-            "max_concurrent_orders",
-            "name",
-            "description",
-            "price",
-            "category",
-            "allergens",
-        )
 
 
 class DrinkSerializer(ModelSerializer):
@@ -155,7 +174,19 @@ class DrinkPOSTSerializer(DrinkSerializer):
 class DrinkPATCHSerializer(DrinkSerializer):
     class Meta:
         model = DrinkModel
-        fields = ("is_enabled",)
+        fields = (
+            "is_enabled",
+            "cost",
+            "preparation_time",
+            "max_concurrent_orders",
+            "name",
+            "description",
+            "price",
+            "category",
+            "allergens",
+            "ingredients",
+            "delivery_type",
+        )
 
 
 class TokenObtainPairWithoutPasswordSerializer(TokenObtainPairSerializer):

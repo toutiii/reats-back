@@ -13,6 +13,7 @@ from .models import (
     DishRatingModel,
     DrinkModel,
     DrinkRatingModel,
+    IngredientDishModel,
     OrderDishItemModel,
     OrderDrinkItemModel,
     OrderModel,
@@ -24,6 +25,9 @@ class AllergenIngredientMixin:
 
     def get_allergens(self, obj: DishModel) -> list[str]:
         return list(obj.allergens.values_list("code", flat=True))
+
+    def get_ingredients(self, obj: DishModel) -> list[str]:
+        return list(obj.ingredients.values_list("code", flat=True))
 
 
 class DishRatingSerializer(ModelSerializer):
@@ -56,11 +60,18 @@ class AllergenSerializer(ModelSerializer):
         fields = ("id", "code", "name")
 
 
+class IngredientSerializer(ModelSerializer):
+    class Meta:
+        model = IngredientDishModel
+        fields = ("id", "code", "name", "category")
+
+
 class DishGETSerializer(ModelSerializer):
     ratings = DishRatingSerializer(many=True, read_only=True)
     cooker = SimpleCookerSerializer(read_only=True)
     margin = serializers.SerializerMethodField()
     allergens = serializers.SerializerMethodField()
+    ingredients = serializers.SerializerMethodField()
 
     class Meta:
         model = DishModel
@@ -82,6 +93,7 @@ class DishListSerializer(AllergenIngredientMixin, ModelSerializer):
     max_concurrent_orders = serializers.IntegerField()
     current_orders = serializers.IntegerField(read_only=True)
     allergens = serializers.SerializerMethodField()
+    ingredients = serializers.SerializerMethodField()
     created_at = serializers.DateTimeField(source="created")
     updated_at = serializers.DateTimeField(source="modified")
 
@@ -102,6 +114,7 @@ class DishListSerializer(AllergenIngredientMixin, ModelSerializer):
             "max_concurrent_orders",
             "current_orders",
             "allergens",
+            "ingredients",
             "created_at",
             "updated_at",
         )
@@ -120,6 +133,7 @@ class DishDetailSerializer(ModelSerializer):
     available = serializers.BooleanField(source="is_enabled")
     current_orders = serializers.IntegerField(read_only=True)
     allergens = AllergenSerializer(many=True, read_only=True)
+    ingredients = IngredientSerializer(many=True, read_only=True)
     created_at = serializers.DateTimeField(source="created")
     updated_at = serializers.DateTimeField(source="modified")
 
@@ -153,6 +167,7 @@ class DishCustomerSerializer(AllergenIngredientMixin, ModelSerializer):
     ratings = DishRatingSerializer(many=True, read_only=True)
     cooker = SimpleCookerSerializer(read_only=True)
     allergens = serializers.SerializerMethodField()
+    ingredients = serializers.SerializerMethodField()
 
     class Meta:
         model = DishModel
@@ -182,6 +197,7 @@ class DishOrderHistorySerializer(ModelSerializer):
             "preparation_time",
             "max_concurrent_orders",
             "allergens",
+            "ingredients",
         )
 
 
