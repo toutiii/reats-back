@@ -116,6 +116,19 @@ class AllergenDishModel(ReatsModel):
         return self.name
 
 
+class IngredientDishModel(ReatsModel):
+    id: AutoField = AutoField(primary_key=True)
+    code: CharField = CharField(max_length=50, unique=True)  # ex: "beef"
+    name: CharField = CharField(max_length=100)  # ex: "Bœuf"
+    category: CharField = CharField(max_length=50, null=True, blank=True)  # ex: "protein"
+
+    class Meta:
+        db_table = "ingredients_dishes"
+
+    def __str__(self) -> str:
+        return self.name
+
+
 class DishModel(ReatsModel):
     CATEGORY_CHOICES = [
         ("starter", "starter"),
@@ -140,6 +153,11 @@ class DishModel(ReatsModel):
     max_concurrent_orders: IntegerField = IntegerField(default=10)
     allergens: ManyToManyField = ManyToManyField(
         AllergenDishModel,
+        blank=True,
+        related_name="dishes",
+    )
+    ingredients: ManyToManyField = ManyToManyField(
+        IngredientDishModel,
         blank=True,
         related_name="dishes",
     )
