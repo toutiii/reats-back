@@ -157,7 +157,7 @@ class DishDetailSerializer(ModelSerializer):
     current_orders = serializers.IntegerField(read_only=True)
     allergens = AllergenSerializer(many=True, read_only=True)
     ingredients = IngredientSerializer(many=True, read_only=True)
-    nutritional_info = NutritionalInfoDishSerializer(read_only=True)
+    nutritional_info = NutritionalInfoDishSerializer(source="nutritional_dish_info", read_only=True)
     created_at = serializers.DateTimeField(source="created")
     updated_at = serializers.DateTimeField(source="modified")
 
@@ -179,7 +179,8 @@ class DishDetailSerializer(ModelSerializer):
             "current_orders",
             "allergens",
             "ingredients",
-            "nutritional_info" "created_at",
+            "nutritional_info",
+            "created_at",
             "updated_at",
         )
 
