@@ -107,7 +107,7 @@ class DeliverModel(ReatsModel):
 class AllergenDishModel(ReatsModel):
     id: AutoField = AutoField(primary_key=True)
     code: CharField = CharField(max_length=50, unique=True)
-    name: CharField = CharField(max_length=100)
+    name: CharField = CharField(max_length=100, db_index=True)
 
     class Meta:
         db_table = "allergens"
