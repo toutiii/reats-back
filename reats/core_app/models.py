@@ -12,6 +12,7 @@ from django.db.models import (
     IntegerField,
     Manager,
     ManyToManyField,
+    OneToOneField,
     TextField,
 )
 from utils.enums import OrderStatusEnum
@@ -187,6 +188,23 @@ class DishModel(ReatsModel):
                 opclasses=["gin_trgm_ops"],
             ),
         ]
+
+
+class NutritionalInfoDishModel(ReatsModel):
+    id: AutoField = AutoField(primary_key=True)
+    dish: OneToOneField = OneToOneField(
+        DishModel,
+        on_delete=CASCADE,
+        related_name="nutritional_dish_info",
+        null=True,
+    )
+    calories: IntegerField = IntegerField(null=True)
+    protein: IntegerField = IntegerField(null=True)
+    carbs: IntegerField = IntegerField(null=True)
+    fat: IntegerField = IntegerField(null=True)
+
+    class Meta:
+        db_table = "nutritional_dish_infos"
 
 
 class DishImageModel(ReatsModel):
