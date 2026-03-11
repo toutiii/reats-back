@@ -15,6 +15,7 @@ from .models import (
     DrinkModel,
     DrinkRatingModel,
     IngredientDishModel,
+    NutritionalInfoDishModel,
     OrderDishItemModel,
     OrderDrinkItemModel,
     OrderModel,
@@ -79,6 +80,12 @@ class IngredientSerializer(ModelSerializer):
     class Meta:
         model = IngredientDishModel
         fields = ("id", "code", "name", "category")
+
+
+class NutritionalInfoDishSerializer(ModelSerializer):
+    class Meta:
+        model = NutritionalInfoDishModel
+        fields = ("calories", "protein", "carbs", "fat")
 
 
 class DishGETSerializer(ModelSerializer):
@@ -150,6 +157,7 @@ class DishDetailSerializer(ModelSerializer):
     current_orders = serializers.IntegerField(read_only=True)
     allergens = AllergenSerializer(many=True, read_only=True)
     ingredients = IngredientSerializer(many=True, read_only=True)
+    nutritional_info = NutritionalInfoDishSerializer(read_only=True)
     created_at = serializers.DateTimeField(source="created")
     updated_at = serializers.DateTimeField(source="modified")
 
@@ -171,7 +179,7 @@ class DishDetailSerializer(ModelSerializer):
             "current_orders",
             "allergens",
             "ingredients",
-            "created_at",
+            "nutritional_info" "created_at",
             "updated_at",
         )
 
