@@ -74,14 +74,10 @@ class DishGETSerializer(ModelSerializer):
         return obj.margin
 
 
-class DishListSerializer(AllergenIngredientMixin, ModelSerializer):
+class BaseDishSerializer(ModelSerializer):
     margin = serializers.SerializerMethodField()
-    image = serializers.SerializerMethodField()
     available = serializers.BooleanField(source="is_enabled")
-    preparation_time = serializers.IntegerField()
-    max_concurrent_orders = serializers.IntegerField()
     current_orders = serializers.IntegerField(read_only=True)
-    allergens = serializers.SerializerMethodField()
     created_at = serializers.DateTimeField(source="created")
     updated_at = serializers.DateTimeField(source="modified")
 
@@ -95,19 +91,28 @@ class DishListSerializer(AllergenIngredientMixin, ModelSerializer):
             "cost",
             "margin",
             "category",
-            "image",
             "available",
             "is_enabled",
             "preparation_time",
             "max_concurrent_orders",
             "current_orders",
-            "allergens",
             "created_at",
             "updated_at",
         )
 
     def get_margin(self, obj: DishModel) -> float | None:
         return obj.margin
+
+
+class DishListSerializer(AllergenIngredientMixin, BaseDishSerializer):
+    image = serializers.SerializerMethodField()
+    allergens = serializers.SerializerMethodField()
+
+    class Meta(BaseDishSerializer.Meta):
+        fields = BaseDishSerializer.Meta.fields + (  # type: ignore[assignment]
+            "image",
+            "allergens",
+        )
 
     def get_image(self, obj: DishModel) -> str | None:
         if obj.photo:
@@ -115,36 +120,11 @@ class DishListSerializer(AllergenIngredientMixin, ModelSerializer):
         return None
 
 
-class DishDetailSerializer(ModelSerializer):
-    margin = serializers.SerializerMethodField()
-    available = serializers.BooleanField(source="is_enabled")
-    current_orders = serializers.IntegerField(read_only=True)
+class DishDetailSerializer(BaseDishSerializer):
     allergens = AllergenSerializer(many=True, read_only=True)
-    created_at = serializers.DateTimeField(source="created")
-    updated_at = serializers.DateTimeField(source="modified")
 
-    class Meta:
-        model = DishModel
-        fields = (
-            "id",
-            "name",
-            "description",
-            "price",
-            "cost",
-            "margin",
-            "category",
-            "available",
-            "is_enabled",
-            "preparation_time",
-            "max_concurrent_orders",
-            "current_orders",
-            "allergens",
-            "created_at",
-            "updated_at",
-        )
-
-    def get_margin(self, obj: DishModel) -> float | None:
-        return obj.margin
+    class Meta(BaseDishSerializer.Meta):
+        fields = BaseDishSerializer.Meta.fields + ("allergens",)  # type: ignore[assignment]
 
 
 class DishCustomerSerializer(AllergenIngredientMixin, ModelSerializer):
