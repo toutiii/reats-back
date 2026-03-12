@@ -1,6 +1,6 @@
 import pytest
 from core_app.models import CookerModel, DishModel
-from core_app.serializers import DishGETSerializer
+from core_app.serializers import DishDetailSerializer
 
 
 @pytest.mark.django_db
@@ -61,7 +61,7 @@ class TestDishMarginCalculation:
             country="France",
             photo="test.jpg",
         )
-        serializer = DishGETSerializer(dish)
+        serializer = DishDetailSerializer(dish)
         data = serializer.data
 
         assert "margin" in data

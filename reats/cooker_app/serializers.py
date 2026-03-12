@@ -4,6 +4,7 @@ from typing import Any, Dict, Union
 import phonenumbers
 from core_app.models import (
     AddressModel,
+    AllergenDishModel,
     CookerModel,
     CustomerModel,
     DeliverModel,
@@ -80,8 +81,43 @@ class CookerGETSerializer(ModelSerializer):
         }
 
 
+class AllergenSlugRelatedField(serializers.SlugRelatedField):
+    def to_internal_value(self, data):
+        data = str(data)
+        obj, _ = self.get_queryset().model.objects.get_or_create(code=data, defaults={"name": data.capitalize()})
+        return obj
+
+
 class DishSerializer(ModelSerializer):
     cooker = serializers.PrimaryKeyRelatedField(queryset=CookerModel.objects.all())
+    allergens = AllergenSlugRelatedField(
+        many=True,
+        slug_field="code",
+        queryset=AllergenDishModel.objects.all(),
+        required=False,
+    )
+
+    def create(self, validated_data):
+        allergens = validated_data.pop("allergens", [])
+
+        dish = DishModel.objects.create(**validated_data)
+
+        if allergens:
+            dish.allergens.set(allergens)
+
+        return dish
+
+    def update(self, instance, validated_data):
+        allergens = validated_data.pop("allergens", None)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        if allergens is not None:
+            instance.allergens.set(allergens)
+
+        return instance
 
 
 class DishPOSTSerializer(DishSerializer):
@@ -102,6 +138,7 @@ class DishPATCHSerializer(DishSerializer):
             "description",
             "price",
             "category",
+            "allergens",
         )
 
 

@@ -33,6 +33,7 @@ class TestListDessertsForCustomerSuccess:
                     "email": "test@gmail.com",
                     "acceptance_rate": 100.0,
                 },
+                "allergens": [],
             },
             {
                 "id": 14,
@@ -53,6 +54,7 @@ class TestListDessertsForCustomerSuccess:
                     "email": "test@gmail.com",
                     "acceptance_rate": 100.0,
                 },
+                "allergens": [],
             },
             {
                 "id": 15,
@@ -73,6 +75,7 @@ class TestListDessertsForCustomerSuccess:
                     "email": "test@gmail.com",
                     "acceptance_rate": 100.0,
                 },
+                "allergens": [],
             },
             {
                 "id": 11,
@@ -93,6 +96,7 @@ class TestListDessertsForCustomerSuccess:
                     "email": "test@gmail.com",
                     "acceptance_rate": 100.0,
                 },
+                "allergens": [],
             },
             {
                 "id": 12,
@@ -113,6 +117,7 @@ class TestListDessertsForCustomerSuccess:
                     "email": "test@gmail.com",
                     "acceptance_rate": 100.0,
                 },
+                "allergens": [],
             },
         ]
 
