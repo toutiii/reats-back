@@ -204,11 +204,12 @@ class OrderFilter(filters.FilterSet):
 
 class DishFilter(filters.FilterSet):
     search = django_filters.CharFilter(method="filter_search")
-    available = django_filters.BooleanFilter(field_name="is_enabled")
+    is_enabled = django_filters.BooleanFilter(field_name="is_enabled")
+    category = CharInFilter(field_name="category", lookup_expr="in")
 
     class Meta:
         model = DishModel
-        fields = ["search", "available"]
+        fields = ["search", "is_enabled", "category"]
 
     def filter_search(self, queryset, name, value):
         return apply_trigram_search(

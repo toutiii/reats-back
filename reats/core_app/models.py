@@ -11,6 +11,7 @@ from django.db.models import (
     ForeignKey,
     IntegerField,
     Manager,
+    ManyToManyField,
     TextField,
 )
 from utils.enums import OrderStatusEnum
@@ -103,6 +104,18 @@ class DeliverModel(ReatsModel):
     objects: Manager = Manager()  # For linting purposes
 
 
+class AllergenDishModel(ReatsModel):
+    id: AutoField = AutoField(primary_key=True)
+    code: CharField = CharField(max_length=50, unique=True)
+    name: CharField = CharField(max_length=100, db_index=True)
+
+    class Meta:
+        db_table = "allergens"
+
+    def __str__(self) -> str:
+        return self.name
+
+
 class DishModel(ReatsModel):
     CATEGORY_CHOICES = [
         ("starter", "starter"),
@@ -125,6 +138,11 @@ class DishModel(ReatsModel):
     cost: FloatField = FloatField(null=True, blank=True)
     preparation_time: IntegerField = IntegerField(null=True, blank=True)
     max_concurrent_orders: IntegerField = IntegerField(default=10)
+    allergens: ManyToManyField = ManyToManyField(
+        AllergenDishModel,
+        blank=True,
+        related_name="dishes",
+    )
 
     @property
     def margin(self) -> float | None:
