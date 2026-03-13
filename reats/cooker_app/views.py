@@ -590,7 +590,7 @@ class DishView(StandardizedResponseMixin, ModelViewSet):
     pagination_class = StandardizedResultsSetPagination
 
     def _annotated_queryset(self):
-        return self.queryset.prefetch_related("allergens").annotate(
+        return self.queryset.prefetch_related("ingredients__allergens").annotate(
             current_orders=Count(
                 "orderdishitemmodel",
                 filter=Q(

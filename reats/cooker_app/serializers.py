@@ -4,7 +4,6 @@ from typing import Any, Dict, Union
 import phonenumbers
 from core_app.models import (
     AddressModel,
-    AllergenDishModel,
     CookerModel,
     CustomerModel,
     DeliverModel,
@@ -100,12 +99,6 @@ class IngredientSlugRelatedField(serializers.SlugRelatedField):
 
 class DishSerializer(ModelSerializer):
     cooker = serializers.PrimaryKeyRelatedField(queryset=CookerModel.objects.all())
-    allergens = AllergenSlugRelatedField(
-        many=True,
-        slug_field="code",
-        queryset=AllergenDishModel.objects.all(),
-        required=False,
-    )
     ingredients = IngredientSlugRelatedField(
         many=True,
         slug_field="code",
@@ -134,28 +127,22 @@ class DishSerializer(ModelSerializer):
         return super().validate(attrs)
 
     def create(self, validated_data):
-        allergens = validated_data.pop("allergens", [])
         ingredients = validated_data.pop("ingredients", [])
 
         dish = DishModel.objects.create(**validated_data)
 
-        if allergens:
-            dish.allergens.set(allergens)
         if ingredients:
             dish.ingredients.set(ingredients)
 
         return dish
 
     def update(self, instance, validated_data):
-        allergens = validated_data.pop("allergens", None)
         ingredients = validated_data.pop("ingredients", None)
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
 
-        if allergens is not None:
-            instance.allergens.set(allergens)
         if ingredients is not None:
             instance.ingredients.set(ingredients)
         return instance
@@ -179,7 +166,6 @@ class DishPATCHSerializer(DishSerializer):
             "description",
             "price",
             "category",
-            "allergens",
             "ingredients",
             "delivery_type",
         )

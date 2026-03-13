@@ -156,11 +156,6 @@ class DishModel(ReatsModel):
     cost: FloatField = FloatField(null=True, blank=True)
     preparation_time: IntegerField = IntegerField(null=True, blank=True)
     max_concurrent_orders: IntegerField = IntegerField(default=10)
-    allergens: ManyToManyField = ManyToManyField(
-        AllergenDishModel,
-        blank=True,
-        related_name="dishes",
-    )
     ingredients: ManyToManyField = ManyToManyField(
         IngredientDishModel,
         blank=True,
