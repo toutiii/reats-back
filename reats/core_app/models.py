@@ -121,6 +121,11 @@ class IngredientDishModel(ReatsModel):
     code: CharField = CharField(max_length=50, unique=True)  # ex: "beef"
     name: CharField = CharField(max_length=100)  # ex: "Bœuf"
     category: CharField = CharField(max_length=50, null=True, blank=True)  # ex: "protein"
+    allergens: ManyToManyField = ManyToManyField(
+        AllergenDishModel,
+        blank=True,
+        related_name="ingredients",
+    )
 
     class Meta:
         db_table = "ingredients_dishes"
