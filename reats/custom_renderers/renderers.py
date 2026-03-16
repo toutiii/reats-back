@@ -328,7 +328,7 @@ class OrderCustomRendererWithData(JSONRenderer):
             if isinstance(data, list):
                 for order_item in data:
                     for order_dish_item in order_item["dishes_items"]:
-                        order_dish_item["dish"]["photo"] = get_pre_signed_url(order_dish_item["dish"]["photo"])
+                        pass  # dish image is now handled by the serializer via `image` field
                     for order_drink_item in order_item["drinks_items"]:
                         order_drink_item["drink"]["photo"] = get_pre_signed_url(order_drink_item["drink"]["photo"])
                 response = {
