@@ -4,7 +4,6 @@ from typing import Any, Dict, Union
 import phonenumbers
 from core_app.models import (
     AddressModel,
-    AllergenDishModel,
     CookerModel,
     CustomerModel,
     DeliverModel,
@@ -14,6 +13,7 @@ from core_app.models import (
 )
 from core_app.serializers import OrderDishItemGETSerializer, OrderDrinkItemGETSerializer
 from django.conf import settings
+from django.db import transaction
 from phonenumbers.phonenumberutil import NumberParseException
 from rest_framework import serializers, status
 from rest_framework.exceptions import ValidationError
@@ -81,43 +81,75 @@ class CookerGETSerializer(ModelSerializer):
         }
 
 
-class AllergenSlugRelatedField(serializers.SlugRelatedField):
-    def to_internal_value(self, data):
-        data = str(data)
-        obj, _ = self.get_queryset().model.objects.get_or_create(code=data, defaults={"name": data.capitalize()})
-        return obj
-
-
 class DishSerializer(ModelSerializer):
     cooker = serializers.PrimaryKeyRelatedField(queryset=CookerModel.objects.all())
-    allergens = AllergenSlugRelatedField(
-        many=True,
-        slug_field="code",
-        queryset=AllergenDishModel.objects.all(),
-        required=False,
-    )
+    ingredients = serializers.JSONField(required=False, write_only=True)
 
     def create(self, validated_data):
-        allergens = validated_data.pop("allergens", [])
+        ingredients_data = validated_data.pop("ingredients", [])
 
-        dish = DishModel.objects.create(**validated_data)
+        with transaction.atomic():
+            dish = DishModel.objects.create(**validated_data)
 
-        if allergens:
-            dish.allergens.set(allergens)
+            if ingredients_data:
+                self._save_ingredients(dish, ingredients_data)
 
         return dish
 
     def update(self, instance, validated_data):
-        allergens = validated_data.pop("allergens", None)
+        ingredients_data = validated_data.pop("ingredients", None)
 
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        instance.save()
+        with transaction.atomic():
+            for attr, value in validated_data.items():
+                setattr(instance, attr, value)
+            instance.save()
 
-        if allergens is not None:
-            instance.allergens.set(allergens)
+            if ingredients_data is not None:
+                self._save_ingredients(instance, ingredients_data)
 
         return instance
+
+    def _save_ingredients(self, dish: DishModel, ingredients_data: list[dict]) -> None:
+        from core_app.models import IngredientDishModel
+
+        ingredient_objs: list[IngredientDishModel] = []
+        for ing in ingredients_data:
+            code = ing.get("code")
+            if not code:
+                continue
+
+            defaults: dict = {}
+            if "name" in ing:
+                defaults["name"] = ing["name"]
+            else:
+                defaults["name"] = code.capitalize()
+            if "category" in ing:
+                defaults["category"] = ing["category"]
+            if "is_allergen" in ing:
+                defaults["is_allergen"] = ing["is_allergen"]
+
+            ingredient, created = IngredientDishModel.objects.get_or_create(
+                code=code,
+                defaults=defaults,
+            )
+
+            if not created:
+                updated = False
+                if "name" in ing and ingredient.name != ing["name"]:
+                    ingredient.name = ing["name"]
+                    updated = True
+                if "category" in ing and ingredient.category != ing["category"]:
+                    ingredient.category = ing["category"]
+                    updated = True
+                if "is_allergen" in ing and ingredient.is_allergen != ing["is_allergen"]:
+                    ingredient.is_allergen = ing["is_allergen"]
+                    updated = True
+                if updated:
+                    ingredient.save()
+
+            ingredient_objs.append(ingredient)
+
+        dish.ingredients.set(ingredient_objs)
 
 
 class DishPOSTSerializer(DishSerializer):
@@ -138,7 +170,7 @@ class DishPATCHSerializer(DishSerializer):
             "description",
             "price",
             "category",
-            "allergens",
+            "ingredients",
         )
 
 
