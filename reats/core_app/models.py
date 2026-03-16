@@ -132,7 +132,6 @@ class DishModel(ReatsModel):
     description: TextField = TextField(max_length=512, null=True)
     name: CharField = CharField(max_length=128)
     price: FloatField = FloatField()
-    photo: CharField = CharField(max_length=512)
     cooker: ForeignKey = ForeignKey(CookerModel, on_delete=CASCADE)
     is_enabled: BooleanField = BooleanField(default=True)
     is_suitable_for_quick_delivery: BooleanField = BooleanField(default=False)
@@ -146,6 +145,7 @@ class DishModel(ReatsModel):
         blank=True,
         related_name="dishes",
     )
+    images: Manager = Manager()  # Type hint for reverse relationship
 
     @property
     def margin(self) -> float | None:
