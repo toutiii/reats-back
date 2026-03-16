@@ -84,10 +84,6 @@ class OrderGETSerializer(ModelSerializer):
         data["service_fees"] = round(data["sub_total"] * settings.SERVICE_FEES_RATE, 2)
         data["total_amount"] = round(data["sub_total"] + data["service_fees"] + instance.delivery_fees, 2)
 
-        for item in data.get("dishes_items", []):
-            if item["dish"].get("photo"):
-                item["dish"]["photo"] = get_pre_signed_url(item["dish"]["photo"])
-
         for item in data.get("drinks_items", []):
             if item["drink"].get("photo"):
                 item["drink"]["photo"] = get_pre_signed_url(item["drink"]["photo"])
