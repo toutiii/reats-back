@@ -145,7 +145,6 @@ class DishModel(ReatsModel):
         blank=True,
         related_name="dishes",
     )
-    images: Manager = Manager()  # Type hint for reverse relationship
 
     @property
     def margin(self) -> float | None:
