@@ -186,6 +186,7 @@ class DishOrderHistorySerializer(AllergenIngredientMixin, ModelSerializer):
     ratings = DishRatingSerializer(many=True, read_only=True)
     cooker = SimpleCookerSerializer(read_only=True)
     image = serializers.SerializerMethodField()
+    allergens = serializers.SerializerMethodField()
 
     class Meta:
         model = DishModel
@@ -196,7 +197,6 @@ class DishOrderHistorySerializer(AllergenIngredientMixin, ModelSerializer):
             "cost",
             "preparation_time",
             "max_concurrent_orders",
-            "allergens",
         )
 
 
