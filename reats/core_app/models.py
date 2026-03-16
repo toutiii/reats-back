@@ -12,6 +12,7 @@ from django.db.models import (
     IntegerField,
     Manager,
     ManyToManyField,
+    PositiveIntegerField,
     TextField,
 )
 from utils.enums import OrderStatusEnum
@@ -171,6 +172,21 @@ class DishModel(ReatsModel):
                 opclasses=["gin_trgm_ops"],
             ),
         ]
+
+
+class DishImageModel(ReatsModel):
+    id: AutoField = AutoField(primary_key=True)
+    dish: ForeignKey = ForeignKey(DishModel, on_delete=CASCADE, related_name="images")
+    key: CharField = CharField(max_length=512)
+    is_primary: BooleanField = BooleanField(default=False)
+    position: PositiveIntegerField = PositiveIntegerField(default=0)
+
+    class Meta:
+        db_table = "dish_images"
+        ordering = ["position"]
+
+    def __str__(self) -> str:
+        return f"Image {self.position} for {self.dish.name}"
 
 
 class DrinkModel(ReatsModel):
