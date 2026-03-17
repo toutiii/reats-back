@@ -55,7 +55,7 @@ class TestUpdateDishWithoutPhotoSuccess:
             assert dish_object.name == "New name"
             assert dish_object.price == 14.0
             assert dish_object.is_enabled is True
-            assert dish_object.photo == "cookers/1/dishes/dish/poulet-braise.jpg"
+            assert dish_object.images.first().key == "cookers/1/dishes/dish/poulet-braise.jpg"  # type: ignore
             assert dish_object.modified.isoformat() == "2023-10-14T22:00:00+00:00"
 
 
@@ -104,7 +104,7 @@ class TestUpdateDishWithPhotoSuccess:
             assert dish_object.name == "New name"
             assert dish_object.price == 14.0
             assert dish_object.is_enabled is True
-            assert dish_object.photo == "cookers/1/dishes/dessert/test.jpg"
+            assert dish_object.images.first().key == "cookers/1/dishes/dessert/test.jpg"  # type: ignore
             assert dish_object.modified.isoformat() == "2023-10-14T22:00:00+00:00"
 
             upload_fileobj.assert_called_once()

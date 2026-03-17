@@ -681,6 +681,9 @@ class DishView(StandardizedResponseMixin, ModelViewSet):
 
         if photos:
             # Replace all existing images with the newly uploaded ones
+            for old_image in current_object.images.all():
+                if old_image.key and not old_image.key.endswith("default-dish.jpg"):
+                    delete_s3_object(old_image.key)
             current_object.images.all().delete()
 
         dish = serializer.save()

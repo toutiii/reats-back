@@ -56,7 +56,6 @@ def setup_filter_test_data(create_authenticated_customer, create_test_cooker, cr
         cooker=cooker,
         category="dish",
         country="France",
-        photo="test.jpg",
         is_enabled=True,
     )
 
