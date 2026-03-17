@@ -32,7 +32,7 @@ class AllergenIngredientMixin:
 
     def get_image(self, obj: DishModel) -> str | None:
         """Returns the primary image URL for a dish."""
-        primary = obj.images.filter(is_primary=True).first()
+        primary = obj.images.filter(is_primary=True).first()  # type: ignore
         if primary:
             return get_pre_signed_url(primary.key)
         return None
