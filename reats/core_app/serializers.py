@@ -106,6 +106,8 @@ class BaseDishSerializer(ModelSerializer):
     created_at = serializers.DateTimeField(source="created")
     updated_at = serializers.DateTimeField(source="modified")
 
+    nutritional_info = serializers.SerializerMethodField()
+
     class Meta:
         model = DishModel
         fields = (
@@ -123,10 +125,14 @@ class BaseDishSerializer(ModelSerializer):
             "current_orders",
             "created_at",
             "updated_at",
+            "nutritional_info",
         )
 
     def get_margin(self, obj: DishModel) -> float | None:
         return obj.margin
+
+    def get_nutritional_info(self, obj: DishModel) -> dict:
+        return obj.nutritional_info or {}
 
 
 class DishListSerializer(AllergenIngredientMixin, BaseDishSerializer):

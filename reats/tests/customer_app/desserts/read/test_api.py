@@ -35,6 +35,7 @@ class TestListDessertsForCustomerSuccess:
                 },
                 "allergens": [],
                 "ingredients": [],
+                "nutritional_info": {},
             },
             {
                 "id": 14,
@@ -57,6 +58,7 @@ class TestListDessertsForCustomerSuccess:
                 },
                 "allergens": [],
                 "ingredients": [],
+                "nutritional_info": {},
             },
             {
                 "id": 15,
@@ -79,6 +81,7 @@ class TestListDessertsForCustomerSuccess:
                 },
                 "allergens": [],
                 "ingredients": [],
+                "nutritional_info": {},
             },
             {
                 "id": 11,
@@ -101,6 +104,7 @@ class TestListDessertsForCustomerSuccess:
                 },
                 "allergens": [],
                 "ingredients": [],
+                "nutritional_info": {},
             },
             {
                 "id": 12,
@@ -123,6 +127,7 @@ class TestListDessertsForCustomerSuccess:
                 },
                 "allergens": [],
                 "ingredients": [],
+                "nutritional_info": {},
             },
         ]
 

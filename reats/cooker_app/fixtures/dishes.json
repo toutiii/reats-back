@@ -10,7 +10,8 @@
       "description": "Test",
       "name": "Beignets haricots",
       "price": "10",
-      "cooker": 4
+      "cooker": 4,
+      "nutritional_info": {}
     }
   },
   {
@@ -36,7 +37,8 @@
       "description": "Test",
       "name": "Gombo porc riz",
       "price": "13",
-      "cooker": 4
+      "cooker": 4,
+      "nutritional_info": {}
     }
   },
   {
@@ -63,7 +65,8 @@
       "name": "Eru fufu",
       "price": "15",
       "cooker": 4,
-      "is_suitable_for_quick_delivery": true
+      "is_suitable_for_quick_delivery": true,
+      "nutritional_info": {}
     }
   },
   {
@@ -89,7 +92,8 @@
       "description": "Test",
       "name": "Okok manioc",
       "price": "15",
-      "cooker": 1
+      "cooker": 1,
+      "nutritional_info": {}
     }
   },
   {
@@ -113,10 +117,11 @@
       "category": "dish",
       "country": "Cameroun",
       "description": "Test",
-      "name": "Poulet brais\u00e9",
+      "name": "Poulet braisé",
       "price": "11",
       "cooker": 1,
-      "is_suitable_for_scheduled_delivery": true
+      "is_suitable_for_scheduled_delivery": true,
+      "nutritional_info": {}
     }
   },
   {
@@ -142,7 +147,8 @@
       "description": "Test",
       "name": "Poulet DG",
       "price": "11",
-      "cooker": 1
+      "cooker": 1,
+      "nutritional_info": {}
     }
   },
   {
@@ -168,7 +174,8 @@
       "description": "Test",
       "name": "Koki patate douce",
       "price": "11",
-      "cooker": 1
+      "cooker": 1,
+      "nutritional_info": {}
     }
   },
   {
@@ -192,9 +199,10 @@
       "category": "dish",
       "country": "Cameroun",
       "description": "Test",
-      "name": "Ndol\u00e9 Riz",
+      "name": "Ndolé Riz",
       "price": "11",
-      "cooker": 1
+      "cooker": 1,
+      "nutritional_info": {}
     }
   },
   {
@@ -220,7 +228,8 @@
       "description": "Test",
       "name": "Sanga",
       "price": "11",
-      "cooker": 1
+      "cooker": 1,
+      "nutritional_info": {}
     }
   },
   {
@@ -247,7 +256,8 @@
       "name": "Thiakry",
       "price": "3",
       "cooker": 1,
-      "is_enabled": false
+      "is_enabled": false,
+      "nutritional_info": {}
     }
   },
   {
@@ -270,10 +280,11 @@
       "modified": "2024-03-23T17:53:05.718117+02:00",
       "category": "dessert",
       "country": "Italie",
-      "description": "Tiramisu maison au sp\u00e9culos",
-      "name": "Tiramisu sp\u00e9culos",
+      "description": "Tiramisu maison au spéculos",
+      "name": "Tiramisu spéculos",
       "price": "5",
-      "cooker": 1
+      "cooker": 1,
+      "nutritional_info": {}
     }
   },
   {
@@ -296,10 +307,11 @@
       "modified": "2024-03-23T19:00:05.718117+02:00",
       "category": "dessert",
       "country": "France",
-      "description": "Cr\u00e8me catalane",
-      "name": "Cr\u00e8me catalane",
+      "description": "Crème catalane",
+      "name": "Crème catalane",
       "price": "6",
-      "cooker": 1
+      "cooker": 1,
+      "nutritional_info": {}
     }
   },
   {
@@ -323,9 +335,10 @@
       "category": "dessert",
       "country": "France",
       "description": "Gateau moelleux au chocolat",
-      "name": "part de g\u00e2teau au chocolat",
+      "name": "part de gâteau au chocolat",
       "price": "2.5",
-      "cooker": 1
+      "cooker": 1,
+      "nutritional_info": {}
     }
   },
   {
@@ -351,7 +364,8 @@
       "description": "Recette maison de pain perdu au lait",
       "name": "pain perdu",
       "price": "2.5",
-      "cooker": 1
+      "cooker": 1,
+      "nutritional_info": {}
     }
   },
   {
@@ -377,7 +391,8 @@
       "description": "Cupcakes vanille vendu par 6",
       "name": "Cupcakes vanille",
       "price": "5",
-      "cooker": 1
+      "cooker": 1,
+      "nutritional_info": {}
     }
   },
   {

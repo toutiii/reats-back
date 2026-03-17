@@ -55,6 +55,7 @@ class TestListStartersForCustomerSuccess:
                     "ratings": [],
                     "allergens": [],
                     "ingredients": [],
+                    "nutritional_info": {},
                 }
             ],
         }

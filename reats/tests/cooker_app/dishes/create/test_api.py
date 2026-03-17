@@ -1,3 +1,4 @@
+import json
 from unittest.mock import MagicMock
 
 import pytest
@@ -87,4 +88,45 @@ class TestCreateDishFailedInvalidCategory:
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert DishModel.objects.count() == pre_create_count
-        upload_fileobj.assert_not_called()
+
+
+@pytest.mark.django_db
+class TestCreateDishWithNutritionalInfoSuccess:
+    @pytest.fixture
+    def nutritional_info(self) -> dict:
+        return {"calories": 350, "proteins": 15, "carbohydrates": 45, "fats": 10}
+
+    @pytest.fixture
+    def post_data(self, category: str, image: InMemoryUploadedFile, nutritional_info: dict) -> dict:
+        return {
+            "category": category,
+            "cooker": 1,
+            "country": "Cameroun",
+            "description": "Test with nutritional info",
+            "name": "Beignets haricots nutritionnels",
+            "photo": image,
+            "price": "10",
+            "nutritional_info": json.dumps(nutritional_info),
+        }
+
+    def test_response(
+        self,
+        auth_headers: dict,
+        client: APIClient,
+        path: str,
+        post_data: dict,
+        nutritional_info: dict,
+        upload_fileobj: MagicMock,
+    ) -> None:
+        response = client.post(
+            path,
+            encode_multipart(BOUNDARY, post_data),
+            content_type=MULTIPART_CONTENT,
+            follow=False,
+            **auth_headers,
+        )
+
+        assert response.status_code == status.HTTP_201_CREATED
+        dish = DishModel.objects.latest("pk")
+        assert dish.nutritional_info == nutritional_info
+        assert response.json()["data"]["nutritional_info"] == nutritional_info

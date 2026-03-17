@@ -106,6 +106,7 @@ class TestListDishesForCustomerSuccessWithQueryParameterGivenByUser:
                 },
                 "allergens": [],
                 "ingredients": [],
+                "nutritional_info": {},
             },
             {
                 "id": 6,
@@ -128,6 +129,7 @@ class TestListDishesForCustomerSuccessWithQueryParameterGivenByUser:
                 },
                 "allergens": [],
                 "ingredients": [],
+                "nutritional_info": {},
             },
         ]
 
@@ -155,6 +157,7 @@ class TestListDishesForCustomerSuccessWithQueryParameterGivenByUser:
                 },
                 "allergens": [],
                 "ingredients": [],
+                "nutritional_info": {},
             },
             {
                 "id": 7,
@@ -177,6 +180,7 @@ class TestListDishesForCustomerSuccessWithQueryParameterGivenByUser:
                 },
                 "allergens": [],
                 "ingredients": [],
+                "nutritional_info": {},
             },
             {
                 "id": 6,
@@ -199,6 +203,7 @@ class TestListDishesForCustomerSuccessWithQueryParameterGivenByUser:
                 },
                 "allergens": [],
                 "ingredients": [],
+                "nutritional_info": {},
             },
             {
                 "id": 5,
@@ -221,6 +226,7 @@ class TestListDishesForCustomerSuccessWithQueryParameterGivenByUser:
                 },
                 "allergens": [],
                 "ingredients": [],
+                "nutritional_info": {},
             },
             {
                 "id": 4,
@@ -243,6 +249,7 @@ class TestListDishesForCustomerSuccessWithQueryParameterGivenByUser:
                 },
                 "allergens": [],
                 "ingredients": [],
+                "nutritional_info": {},
             },
             {
                 "id": 3,
@@ -265,6 +272,7 @@ class TestListDishesForCustomerSuccessWithQueryParameterGivenByUser:
                 },
                 "allergens": [],
                 "ingredients": [],
+                "nutritional_info": {},
             },
             {
                 "id": 2,
@@ -287,6 +295,7 @@ class TestListDishesForCustomerSuccessWithQueryParameterGivenByUser:
                 },
                 "allergens": [],
                 "ingredients": [],
+                "nutritional_info": {},
             },
         ]
 
@@ -383,6 +392,7 @@ class TestListDishesForCustomerWithMissingSearchAddressId:
                         },
                         "allergens": [],
                         "ingredients": [],
+                        "nutritional_info": {},
                         "is_enabled": True,
                         "is_suitable_for_quick_delivery": True,
                         "is_suitable_for_scheduled_delivery": False,
@@ -416,6 +426,7 @@ class TestListDishesForCustomerWithMissingSearchAddressId:
                         },
                         "allergens": [],
                         "ingredients": [],
+                        "nutritional_info": {},
                         "is_enabled": True,
                         "is_suitable_for_quick_delivery": False,
                         "is_suitable_for_scheduled_delivery": True,
@@ -485,6 +496,7 @@ class TestListDishesWithDeliveryModeFilter:
                         "price": 11.0,
                         "allergens": [],
                         "ingredients": [],
+                        "nutritional_info": {},
                         "ratings": [],
                     }
                 ],

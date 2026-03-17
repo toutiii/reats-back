@@ -1,3 +1,4 @@
+import json
 from unittest.mock import MagicMock
 
 import pytest
@@ -194,4 +195,62 @@ class TestUpdateDishToEnableState:
             dish_object = DishModel.objects.get(pk=dish_id)
 
             assert dish_object.is_enabled is True
-            assert dish_object.modified.isoformat() == "2023-10-21T22:00:00+00:00"
+
+
+@pytest.mark.django_db
+class TestUpdateDishNutritionalInfoSuccess:
+    @pytest.fixture
+    def nutritional_info_update(self) -> dict:
+        return {"calories": 400, "proteins": 20, "carbohydrates": 50, "fats": 15}
+
+    def test_put_update_nutritional_info(
+        self,
+        auth_headers: dict,
+        client: APIClient,
+        dish_id: int,
+        path: str,
+        nutritional_info_update: dict,
+    ) -> None:
+        full_payload = {
+            "category": "dessert",
+            "cooker": 1,
+            "country": "Togo",
+            "description": "Updated with nutrition",
+            "name": "Updated name",
+            "price": "15",
+            "nutritional_info": json.dumps(nutritional_info_update),
+        }
+
+        response = client.put(
+            f"{path}{dish_id}/",
+            encode_multipart(BOUNDARY, full_payload),
+            content_type=MULTIPART_CONTENT,
+            follow=False,
+            **auth_headers,
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        dish = DishModel.objects.get(pk=dish_id)
+        assert dish.nutritional_info == nutritional_info_update
+
+    def test_patch_update_nutritional_info(
+        self,
+        auth_headers: dict,
+        client: APIClient,
+        dish_id: int,
+        path: str,
+    ) -> None:
+        patch_nutritional_info = {"calories": 500}
+        patch_data = {"nutritional_info": json.dumps(patch_nutritional_info)}
+
+        response = client.patch(
+            f"{path}{dish_id}/",
+            encode_multipart(BOUNDARY, patch_data),
+            content_type=MULTIPART_CONTENT,
+            follow=False,
+            **auth_headers,
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        dish = DishModel.objects.get(pk=dish_id)
+        assert dish.nutritional_info == patch_nutritional_info

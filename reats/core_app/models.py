@@ -10,6 +10,7 @@ from django.db.models import (
     FloatField,
     ForeignKey,
     IntegerField,
+    JSONField,
     Manager,
     ManyToManyField,
     PositiveIntegerField,
@@ -145,6 +146,7 @@ class DishModel(ReatsModel):
         blank=True,
         related_name="dishes",
     )
+    nutritional_info: JSONField = JSONField(null=True, blank=True)
 
     @property
     def margin(self) -> float | None:
