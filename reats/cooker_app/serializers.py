@@ -9,6 +9,7 @@ from core_app.models import (
     DeliverModel,
     DishModel,
     DrinkModel,
+    IngredientDishModel,
     OrderModel,
 )
 from core_app.serializers import OrderDishItemGETSerializer, OrderDrinkItemGETSerializer
@@ -110,21 +111,16 @@ class DishSerializer(ModelSerializer):
         return instance
 
     def _save_ingredients(self, dish: DishModel, ingredients_data: list[dict]) -> None:
-        from core_app.models import IngredientDishModel
-
         ingredient_objs: list[IngredientDishModel] = []
         for ing in ingredients_data:
             code = ing.get("code")
             if not code:
                 continue
 
-            defaults: dict = {}
-            if "name" in ing:
-                defaults["name"] = ing["name"]
-            else:
-                defaults["name"] = code.capitalize()
-            if "category" in ing:
-                defaults["category"] = ing["category"]
+            defaults: dict = {
+                "name": ing.get("name") or code.capitalize(),
+                "category": ing.get("category"),
+            }
             if "is_allergen" in ing:
                 defaults["is_allergen"] = ing["is_allergen"]
 
@@ -135,13 +131,13 @@ class DishSerializer(ModelSerializer):
 
             if not created:
                 updated = False
-                if "name" in ing and ingredient.name != ing["name"]:
-                    ingredient.name = ing["name"]
+                if ingredient.name != ing.get("name"):
+                    ingredient.name = ing.get("name") or ingredient.name
                     updated = True
                 if "category" in ing and ingredient.category != ing["category"]:
                     ingredient.category = ing["category"]
                     updated = True
-                if "is_allergen" in ing and ingredient.is_allergen != ing["is_allergen"]:
+                if "is_allergen" in ing and ingredient.is_allergen is not ing["is_allergen"]:
                     ingredient.is_allergen = ing["is_allergen"]
                     updated = True
                 if updated:
