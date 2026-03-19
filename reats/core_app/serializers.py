@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from typing import Any
 
 from rest_framework import serializers
 from rest_framework.serializers import CharField, ModelSerializer
@@ -6,13 +7,13 @@ from utils.common import get_pre_signed_url
 from utils.enums import OrderStatusEnum
 
 from .models import (
-    AllergenDishModel,
     CookerModel,
     CustomerModel,
     DishModel,
     DishRatingModel,
     DrinkModel,
     DrinkRatingModel,
+    IngredientDishModel,
     OrderDishItemModel,
     OrderDrinkItemModel,
     OrderModel,
@@ -23,7 +24,10 @@ class AllergenIngredientMixin:
     """Mixin to avoid duplicating allergen/ingredient serialization logic."""
 
     def get_allergens(self, obj: DishModel) -> list[str]:
-        return list(obj.allergens.values_list("code", flat=True))
+        return list(obj.ingredients.filter(is_allergen=True).values_list("code", flat=True))
+
+    def get_ingredients(self, obj: DishModel) -> list[str]:
+        return list(obj.ingredients.values_list("code", flat=True))
 
 
 class DishRatingSerializer(ModelSerializer):
@@ -50,17 +54,18 @@ class SimpleCookerSerializer(ModelSerializer):
         fields = ("id", "firstname", "lastname", "email", "acceptance_rate")
 
 
-class AllergenSerializer(ModelSerializer):
+class IngredientSerializer(ModelSerializer):
     class Meta:
-        model = AllergenDishModel
-        fields = ("id", "code", "name")
+        model = IngredientDishModel
+        fields = ("id", "code", "name", "category", "is_allergen")
 
 
-class DishGETSerializer(ModelSerializer):
+class DishGETSerializer(AllergenIngredientMixin, ModelSerializer):
     ratings = DishRatingSerializer(many=True, read_only=True)
     cooker = SimpleCookerSerializer(read_only=True)
     margin = serializers.SerializerMethodField()
     allergens = serializers.SerializerMethodField()
+    ingredients = serializers.SerializerMethodField()
 
     class Meta:
         model = DishModel
@@ -107,11 +112,13 @@ class BaseDishSerializer(ModelSerializer):
 class DishListSerializer(AllergenIngredientMixin, BaseDishSerializer):
     image = serializers.SerializerMethodField()
     allergens = serializers.SerializerMethodField()
+    ingredients = serializers.SerializerMethodField()
 
     class Meta(BaseDishSerializer.Meta):
         fields = BaseDishSerializer.Meta.fields + (  # type: ignore[assignment]
             "image",
             "allergens",
+            "ingredients",
         )
 
     def get_image(self, obj: DishModel) -> str | None:
@@ -121,10 +128,18 @@ class DishListSerializer(AllergenIngredientMixin, BaseDishSerializer):
 
 
 class DishDetailSerializer(BaseDishSerializer):
-    allergens = AllergenSerializer(many=True, read_only=True)
+    ingredients = IngredientSerializer(many=True, read_only=True)
+    allergens = serializers.SerializerMethodField()
 
     class Meta(BaseDishSerializer.Meta):
-        fields = BaseDishSerializer.Meta.fields + ("allergens",)  # type: ignore[assignment]
+        fields = BaseDishSerializer.Meta.fields + (  # type: ignore[assignment]
+            "allergens",
+            "ingredients",
+        )
+
+    def get_allergens(self, obj: DishModel) -> Any:
+        allergens = obj.ingredients.filter(is_allergen=True)
+        return IngredientSerializer(allergens, many=True).data
 
 
 class DishCustomerSerializer(AllergenIngredientMixin, ModelSerializer):
@@ -133,6 +148,7 @@ class DishCustomerSerializer(AllergenIngredientMixin, ModelSerializer):
     ratings = DishRatingSerializer(many=True, read_only=True)
     cooker = SimpleCookerSerializer(read_only=True)
     allergens = serializers.SerializerMethodField()
+    ingredients = serializers.SerializerMethodField()
 
     class Meta:
         model = DishModel
