@@ -104,13 +104,15 @@ class DeliverModel(ReatsModel):
     objects: Manager = Manager()  # For linting purposes
 
 
-class AllergenDishModel(ReatsModel):
+class IngredientDishModel(ReatsModel):
     id: AutoField = AutoField(primary_key=True)
     code: CharField = CharField(max_length=50, unique=True)
     name: CharField = CharField(max_length=100, db_index=True)
+    category: CharField = CharField(max_length=50, null=True, blank=True)
+    is_allergen: BooleanField = BooleanField(default=False)
 
     class Meta:
-        db_table = "allergens"
+        db_table = "ingredients_dishes"
 
     def __str__(self) -> str:
         return self.name
@@ -138,8 +140,8 @@ class DishModel(ReatsModel):
     cost: FloatField = FloatField(null=True, blank=True)
     preparation_time: IntegerField = IntegerField(null=True, blank=True)
     max_concurrent_orders: IntegerField = IntegerField(default=10)
-    allergens: ManyToManyField = ManyToManyField(
-        AllergenDishModel,
+    ingredients: ManyToManyField = ManyToManyField(
+        IngredientDishModel,
         blank=True,
         related_name="dishes",
     )

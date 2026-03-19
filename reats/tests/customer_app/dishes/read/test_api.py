@@ -105,6 +105,7 @@ class TestListDishesForCustomerSuccessWithQueryParameterGivenByUser:
                     "acceptance_rate": 100.0,
                 },
                 "allergens": [],
+                "ingredients": [],
             },
             {
                 "id": 6,
@@ -126,6 +127,7 @@ class TestListDishesForCustomerSuccessWithQueryParameterGivenByUser:
                     "acceptance_rate": 100.0,
                 },
                 "allergens": [],
+                "ingredients": [],
             },
         ]
 
@@ -152,6 +154,7 @@ class TestListDishesForCustomerSuccessWithQueryParameterGivenByUser:
                     "acceptance_rate": 100.0,
                 },
                 "allergens": [],
+                "ingredients": [],
             },
             {
                 "id": 7,
@@ -173,6 +176,7 @@ class TestListDishesForCustomerSuccessWithQueryParameterGivenByUser:
                     "acceptance_rate": 100.0,
                 },
                 "allergens": [],
+                "ingredients": [],
             },
             {
                 "id": 6,
@@ -194,6 +198,7 @@ class TestListDishesForCustomerSuccessWithQueryParameterGivenByUser:
                     "acceptance_rate": 100.0,
                 },
                 "allergens": [],
+                "ingredients": [],
             },
             {
                 "id": 5,
@@ -215,6 +220,7 @@ class TestListDishesForCustomerSuccessWithQueryParameterGivenByUser:
                     "acceptance_rate": 100.0,
                 },
                 "allergens": [],
+                "ingredients": [],
             },
             {
                 "id": 4,
@@ -236,6 +242,7 @@ class TestListDishesForCustomerSuccessWithQueryParameterGivenByUser:
                     "acceptance_rate": 100.0,
                 },
                 "allergens": [],
+                "ingredients": [],
             },
             {
                 "id": 3,
@@ -257,6 +264,7 @@ class TestListDishesForCustomerSuccessWithQueryParameterGivenByUser:
                     "acceptance_rate": 100.0,
                 },
                 "allergens": [],
+                "ingredients": [],
             },
             {
                 "id": 2,
@@ -278,6 +286,7 @@ class TestListDishesForCustomerSuccessWithQueryParameterGivenByUser:
                     "acceptance_rate": 100.0,
                 },
                 "allergens": [],
+                "ingredients": [],
             },
         ]
 
@@ -373,6 +382,7 @@ class TestListDishesForCustomerWithMissingSearchAddressId:
                             "acceptance_rate": 100.0,
                         },
                         "allergens": [],
+                        "ingredients": [],
                         "is_enabled": True,
                         "is_suitable_for_quick_delivery": True,
                         "is_suitable_for_scheduled_delivery": False,
@@ -405,6 +415,7 @@ class TestListDishesForCustomerWithMissingSearchAddressId:
                             "email": "test@gmail.com",
                         },
                         "allergens": [],
+                        "ingredients": [],
                         "is_enabled": True,
                         "is_suitable_for_quick_delivery": False,
                         "is_suitable_for_scheduled_delivery": True,
@@ -473,6 +484,7 @@ class TestListDishesWithDeliveryModeFilter:
                         "photo": "cookers/1/dishes/dish/poulet-braise.jpg",
                         "price": 11.0,
                         "allergens": [],
+                        "ingredients": [],
                         "ratings": [],
                     }
                 ],
