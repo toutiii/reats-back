@@ -10,8 +10,19 @@
       "description": "Test",
       "name": "Beignets haricots",
       "price": "10",
-      "photo": "cookers/1/dishes/starter/beignets-haricots.jpg",
       "cooker": 4
+    }
+  },
+  {
+    "model": "core_app.DishImageModel",
+    "pk": 1,
+    "fields": {
+      "dish": 1,
+      "key": "cookers/1/dishes/starter/beignets-haricots.jpg",
+      "is_primary": true,
+      "position": 0,
+      "created": "2023-09-03T22:52:05.718117+02:00",
+      "modified": "2023-09-03T22:52:05.718117+02:00"
     }
   },
   {
@@ -25,8 +36,19 @@
       "description": "Test",
       "name": "Gombo porc riz",
       "price": "13",
-      "photo": "cookers/1/dishes/dish/gombo-porc-riz.jpg",
       "cooker": 4
+    }
+  },
+  {
+    "model": "core_app.DishImageModel",
+    "pk": 2,
+    "fields": {
+      "dish": 2,
+      "key": "cookers/1/dishes/dish/gombo-porc-riz.jpg",
+      "is_primary": true,
+      "position": 0,
+      "created": "2023-09-04T22:52:05.718117+02:00",
+      "modified": "2023-09-04T22:52:05.718117+02:00"
     }
   },
   {
@@ -40,9 +62,20 @@
       "description": "Test",
       "name": "Eru fufu",
       "price": "15",
-      "photo": "cookers/1/dishes/dish/eru-fufu.jpg",
       "cooker": 4,
       "is_suitable_for_quick_delivery": true
+    }
+  },
+  {
+    "model": "core_app.DishImageModel",
+    "pk": 3,
+    "fields": {
+      "dish": 3,
+      "key": "cookers/1/dishes/dish/eru-fufu.jpg",
+      "is_primary": true,
+      "position": 0,
+      "created": "2023-09-05T22:52:05.718117+02:00",
+      "modified": "2023-09-05T22:52:05.718117+02:00"
     }
   },
   {
@@ -56,8 +89,19 @@
       "description": "Test",
       "name": "Okok manioc",
       "price": "15",
-      "photo": "cookers/1/dishes/dish/okok-manioc.jpg",
       "cooker": 1
+    }
+  },
+  {
+    "model": "core_app.DishImageModel",
+    "pk": 4,
+    "fields": {
+      "dish": 4,
+      "key": "cookers/1/dishes/dish/okok-manioc.jpg",
+      "is_primary": true,
+      "position": 0,
+      "created": "2023-09-06T22:52:05.718117+02:00",
+      "modified": "2023-09-06T22:52:05.718117+02:00"
     }
   },
   {
@@ -69,11 +113,22 @@
       "category": "dish",
       "country": "Cameroun",
       "description": "Test",
-      "name": "Poulet braisé",
+      "name": "Poulet brais\u00e9",
       "price": "11",
-      "photo": "cookers/1/dishes/dish/poulet-braise.jpg",
       "cooker": 1,
       "is_suitable_for_scheduled_delivery": true
+    }
+  },
+  {
+    "model": "core_app.DishImageModel",
+    "pk": 5,
+    "fields": {
+      "dish": 5,
+      "key": "cookers/1/dishes/dish/poulet-braise.jpg",
+      "is_primary": true,
+      "position": 0,
+      "created": "2023-09-07T22:52:05.718117+02:00",
+      "modified": "2023-09-07T22:52:05.718117+02:00"
     }
   },
   {
@@ -87,8 +142,19 @@
       "description": "Test",
       "name": "Poulet DG",
       "price": "11",
-      "photo": "cookers/1/dishes/dish/poulet-dg.jpg",
       "cooker": 1
+    }
+  },
+  {
+    "model": "core_app.DishImageModel",
+    "pk": 6,
+    "fields": {
+      "dish": 6,
+      "key": "cookers/1/dishes/dish/poulet-dg.jpg",
+      "is_primary": true,
+      "position": 0,
+      "created": "2023-09-08T22:52:05.718117+02:00",
+      "modified": "2023-09-08T22:52:05.718117+02:00"
     }
   },
   {
@@ -102,8 +168,19 @@
       "description": "Test",
       "name": "Koki patate douce",
       "price": "11",
-      "photo": "cookers/1/dishes/dish/koki-patate-douce.jpg",
       "cooker": 1
+    }
+  },
+  {
+    "model": "core_app.DishImageModel",
+    "pk": 7,
+    "fields": {
+      "dish": 7,
+      "key": "cookers/1/dishes/dish/koki-patate-douce.jpg",
+      "is_primary": true,
+      "position": 0,
+      "created": "2023-09-09T22:52:05.718117+02:00",
+      "modified": "2023-09-09T22:52:05.718117+02:00"
     }
   },
   {
@@ -115,10 +192,21 @@
       "category": "dish",
       "country": "Cameroun",
       "description": "Test",
-      "name": "Ndolé Riz",
+      "name": "Ndol\u00e9 Riz",
       "price": "11",
-      "photo": "cookers/1/dishes/dish/ndole-riz.jpg",
       "cooker": 1
+    }
+  },
+  {
+    "model": "core_app.DishImageModel",
+    "pk": 8,
+    "fields": {
+      "dish": 8,
+      "key": "cookers/1/dishes/dish/ndole-riz.jpg",
+      "is_primary": true,
+      "position": 0,
+      "created": "2023-09-10T22:52:05.718117+02:00",
+      "modified": "2023-09-10T22:52:05.718117+02:00"
     }
   },
   {
@@ -132,8 +220,19 @@
       "description": "Test",
       "name": "Sanga",
       "price": "11",
-      "photo": "cookers/1/dishes/starter/sanga.jpg",
       "cooker": 1
+    }
+  },
+  {
+    "model": "core_app.DishImageModel",
+    "pk": 9,
+    "fields": {
+      "dish": 9,
+      "key": "cookers/1/dishes/starter/sanga.jpg",
+      "is_primary": true,
+      "position": 0,
+      "created": "2023-09-11T22:52:05.718117+02:00",
+      "modified": "2023-09-11T22:52:05.718117+02:00"
     }
   },
   {
@@ -147,9 +246,20 @@
       "description": "Test",
       "name": "Thiakry",
       "price": "3",
-      "photo": "cookers/1/dishes/dessert/thiakry.jpg",
       "cooker": 1,
       "is_enabled": false
+    }
+  },
+  {
+    "model": "core_app.DishImageModel",
+    "pk": 10,
+    "fields": {
+      "dish": 10,
+      "key": "cookers/1/dishes/dessert/thiakry.jpg",
+      "is_primary": true,
+      "position": 0,
+      "created": "2023-10-08T22:53:05.718117+02:00",
+      "modified": "2023-10-08T22:53:05.718117+02:00"
     }
   },
   {
@@ -160,11 +270,22 @@
       "modified": "2024-03-23T17:53:05.718117+02:00",
       "category": "dessert",
       "country": "Italie",
-      "description": "Tiramisu maison au spéculos",
-      "name": "Tiramisu spéculos",
+      "description": "Tiramisu maison au sp\u00e9culos",
+      "name": "Tiramisu sp\u00e9culos",
       "price": "5",
-      "photo": "cookers/1/dishes/dessert/tiramisu-speculoos.jpg",
       "cooker": 1
+    }
+  },
+  {
+    "model": "core_app.DishImageModel",
+    "pk": 11,
+    "fields": {
+      "dish": 11,
+      "key": "cookers/1/dishes/dessert/tiramisu-speculoos.jpg",
+      "is_primary": true,
+      "position": 0,
+      "created": "2024-03-23T17:53:05.718117+02:00",
+      "modified": "2024-03-23T17:53:05.718117+02:00"
     }
   },
   {
@@ -175,11 +296,22 @@
       "modified": "2024-03-23T19:00:05.718117+02:00",
       "category": "dessert",
       "country": "France",
-      "description": "Crème catalane",
-      "name": "Crème catalane",
+      "description": "Cr\u00e8me catalane",
+      "name": "Cr\u00e8me catalane",
       "price": "6",
-      "photo": "cookers/1/dishes/dessert/creme-catalane.jpg",
       "cooker": 1
+    }
+  },
+  {
+    "model": "core_app.DishImageModel",
+    "pk": 12,
+    "fields": {
+      "dish": 12,
+      "key": "cookers/1/dishes/dessert/creme-catalane.jpg",
+      "is_primary": true,
+      "position": 0,
+      "created": "2024-03-23T19:00:05.718117+02:00",
+      "modified": "2024-03-23T19:00:05.718117+02:00"
     }
   },
   {
@@ -191,10 +323,21 @@
       "category": "dessert",
       "country": "France",
       "description": "Gateau moelleux au chocolat",
-      "name": "part de gâteau au chocolat",
+      "name": "part de g\u00e2teau au chocolat",
       "price": "2.5",
-      "photo": "cookers/1/dishes/dessert/gateau-chocolat.jpg",
       "cooker": 1
+    }
+  },
+  {
+    "model": "core_app.DishImageModel",
+    "pk": 13,
+    "fields": {
+      "dish": 13,
+      "key": "cookers/1/dishes/dessert/gateau-chocolat.jpg",
+      "is_primary": true,
+      "position": 0,
+      "created": "2024-03-23T20:00:05.718117+02:00",
+      "modified": "2024-03-23T20:00:05.718117+02:00"
     }
   },
   {
@@ -208,8 +351,19 @@
       "description": "Recette maison de pain perdu au lait",
       "name": "pain perdu",
       "price": "2.5",
-      "photo": "cookers/1/dishes/dessert/pain-perdu.jpeg",
       "cooker": 1
+    }
+  },
+  {
+    "model": "core_app.DishImageModel",
+    "pk": 14,
+    "fields": {
+      "dish": 14,
+      "key": "cookers/1/dishes/dessert/pain-perdu.jpeg",
+      "is_primary": true,
+      "position": 0,
+      "created": "2024-03-23T22:00:05.718117+02:00",
+      "modified": "2024-03-23T22:00:05.718117+02:00"
     }
   },
   {
@@ -223,8 +377,19 @@
       "description": "Cupcakes vanille vendu par 6",
       "name": "Cupcakes vanille",
       "price": "5",
-      "photo": "cookers/1/dishes/dessert/cupcakes.jpeg",
       "cooker": 1
+    }
+  },
+  {
+    "model": "core_app.DishImageModel",
+    "pk": 15,
+    "fields": {
+      "dish": 15,
+      "key": "cookers/1/dishes/dessert/cupcakes.jpeg",
+      "is_primary": true,
+      "position": 0,
+      "created": "2024-03-23T22:35:05.718117+02:00",
+      "modified": "2024-03-23T22:35:05.718117+02:00"
     }
   }
 ]

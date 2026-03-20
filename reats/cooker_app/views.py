@@ -7,7 +7,15 @@ from decimal import Decimal
 from typing import Any, Callable, List, Optional, Tuple, Type, TypedDict, Union
 
 import django_filters
-from core_app.models import CookerModel, DishModel, DrinkModel, OrderDishItemModel, OrderDrinkItemModel, OrderModel
+from core_app.models import (
+    CookerModel,
+    DishImageModel,
+    DishModel,
+    DrinkModel,
+    OrderDishItemModel,
+    OrderDrinkItemModel,
+    OrderModel,
+)
 from core_app.serializers import (
     DishDetailSerializer,
     DishListSerializer,
@@ -16,7 +24,7 @@ from core_app.serializers import (
 )
 from django.conf import settings
 from django.db import IntegrityError
-from django.db.models import Count, F, Q, QuerySet, Sum
+from django.db.models import Count, F, OuterRef, Q, QuerySet, Subquery, Sum
 from django.utils import timezone
 from phonenumbers.phonenumberutil import NumberParseException
 from rest_framework import status
@@ -540,16 +548,19 @@ class DashboardView(StandardizedResponseMixin, GenericViewSet):
     def _get_popular_items_queryset(self, cooker_id: int, date_range: DateRangeDict) -> QuerySet:
         """Return combined QuerySet of popular dishes and drinks using union."""
         # Get popular dishes with normalized field names
+        primary_image_subq = DishImageModel.objects.filter(dish=OuterRef("dish"), is_primary=True).values("key")[:1]
+
         dishes = (
             OrderDishItemModel.objects.filter(
                 order__cooker_id=cooker_id,
                 order__created__gte=date_range["current_period_start"],
                 order__status=OrderStatusEnum.DELIVERED,
             )
+            .annotate(primary_image_key=Subquery(primary_image_subq))
             .values(
                 item_id=F("dish__id"),
                 item_name=F("dish__name"),
-                item_photo=F("dish__photo"),
+                item_photo=F("primary_image_key"),
                 item_price=F("dish__price"),
             )
             .annotate(total_sold=Sum("dish_quantity"))
@@ -590,7 +601,7 @@ class DishView(StandardizedResponseMixin, ModelViewSet):
     pagination_class = StandardizedResultsSetPagination
 
     def _annotated_queryset(self):
-        return self.queryset.prefetch_related("ingredients").annotate(
+        return self.queryset.prefetch_related("ingredients", "images").annotate(
             current_orders=Count(
                 "orderdishitemmodel",
                 filter=Q(
@@ -625,22 +636,27 @@ class DishView(StandardizedResponseMixin, ModelViewSet):
             return DishDetailSerializer
         return DishListSerializer
 
+    def _build_s3_key(self, cooker_pk: int, category: str, filename: str) -> str:
+        return f"cookers/{cooker_pk}/dishes/{category}/{filename}"
+
     def perform_create(self, serializer: BaseSerializer) -> None:
-        photo = (
-            "cookers"
-            + "/"
-            + str(serializer.validated_data["cooker"].pk)
-            + "/"
-            + "dishes"
-            + "/"
-            + serializer.validated_data["category"]
-            + "/"
-            + self.request.FILES["photo"].name
+        cooker_pk = serializer.validated_data["cooker"].pk
+        category = serializer.validated_data["category"]
+        photos = self.request.FILES.getlist("photos") or (
+            [self.request.FILES["photo"]] if "photo" in self.request.FILES else []
         )
 
-        upload_image_to_s3(self.request.FILES["photo"], photo)
-        serializer.validated_data["photo"] = photo
-        super().perform_create(serializer)
+        dish = serializer.save()
+
+        for idx, photo_file in enumerate(photos):
+            s3_key = self._build_s3_key(cooker_pk, category, photo_file.name)
+            upload_image_to_s3(photo_file, s3_key)
+            DishImageModel.objects.create(
+                dish=dish,
+                key=s3_key,
+                is_primary=(idx == 0),
+                position=idx,
+            )
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -657,32 +673,30 @@ class DishView(StandardizedResponseMixin, ModelViewSet):
 
     def perform_update(self, serializer: BaseSerializer) -> None:
         current_object = self.get_object()
-        photo = None
+        cooker_pk = current_object.cooker_id
+        category = serializer.validated_data.get("category", current_object.category)
+        photos = self.request.FILES.getlist("photos") or (
+            [self.request.FILES["photo"]] if "photo" in self.request.FILES else []
+        )
 
-        try:
-            self.request.FILES["photo"]
-        except KeyError:
-            pass
-        else:
-            photo = (
-                "cookers"
-                + "/"
-                + str(serializer.validated_data["cooker"].pk)
-                + "/"
-                + "dishes"
-                + "/"
-                + serializer.validated_data["category"]
-                + "/"
-                + self.request.FILES["photo"].name
+        if photos:
+            # Replace all existing images with the newly uploaded ones
+            for old_image in current_object.images.all():
+                if old_image.key and not old_image.key.endswith("default-dish.jpg"):
+                    delete_s3_object(old_image.key)
+            current_object.images.all().delete()
+
+        dish = serializer.save()
+
+        for idx, photo_file in enumerate(photos):
+            s3_key = self._build_s3_key(cooker_pk, category, photo_file.name)
+            upload_image_to_s3(photo_file, s3_key)
+            DishImageModel.objects.create(
+                dish=dish,
+                key=s3_key,
+                is_primary=(idx == 0),
+                position=idx,
             )
-
-        if photo is not None:
-            upload_image_to_s3(self.request.FILES["photo"], photo)
-            serializer.validated_data["photo"] = photo
-            old_photo_key = current_object.photo
-            delete_s3_object(old_photo_key)
-
-        super().perform_update(serializer)
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop("partial", False)

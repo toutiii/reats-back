@@ -48,7 +48,7 @@ class TestListStartersForCustomerSuccess:
                     "id": 1,
                     "is_enabled": True,
                     "name": "Beignets haricots",
-                    "photo": "cookers/1/dishes/starter/beignets-haricots.jpg",
+                    "image": "https://some-url.com",
                     "price": 10.0,
                     "is_suitable_for_quick_delivery": False,
                     "is_suitable_for_scheduled_delivery": False,
