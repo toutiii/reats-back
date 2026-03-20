@@ -6,6 +6,7 @@ from core_app.models import (
     CookerModel,
     CustomerModel,
     DeliverModel,
+    DishImageModel,
     DishModel,
     DrinkModel,
     OrderDishItemModel,
@@ -145,11 +146,14 @@ class Command(BaseCommand):
 
         created_dishes = []
         for dish_data in dishes_data:
+            photo = dish_data.pop("photo", None)
             dish, created = DishModel.objects.get_or_create(
                 name=dish_data["name"], cooker=cooker, defaults={**dish_data, "is_enabled": True}
             )
             created_dishes.append(dish)
             if created:
+                if photo:
+                    DishImageModel.objects.get_or_create(dish=dish, key=photo, is_primary=True, position=0)
                 self.stdout.write(f"Created Dish: {dish.name}")
 
         # Drinks

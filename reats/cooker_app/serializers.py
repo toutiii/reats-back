@@ -151,7 +151,7 @@ class DishSerializer(ModelSerializer):
 class DishPOSTSerializer(DishSerializer):
     class Meta:
         model = DishModel
-        exclude = ("photo", "is_enabled")
+        exclude = ("is_enabled",)
 
 
 class DishPATCHSerializer(DishSerializer):

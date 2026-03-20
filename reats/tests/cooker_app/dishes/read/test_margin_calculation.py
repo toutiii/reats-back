@@ -15,7 +15,6 @@ class TestDishMarginCalculation:
             cooker=cooker,
             category="dish",
             country="France",
-            photo="test.jpg",
         )
         assert dish.margin == 60.0  # ((20 - 8) / 20) * 100
 
@@ -29,7 +28,6 @@ class TestDishMarginCalculation:
             cooker=cooker,
             category="dish",
             country="France",
-            photo="test.jpg",
         )
         assert dish.margin is None
 
@@ -43,7 +41,6 @@ class TestDishMarginCalculation:
             cooker=cooker,
             category="dish",
             country="France",
-            photo="test.jpg",
         )
         assert dish.margin is None
 
@@ -59,7 +56,6 @@ class TestDishMarginCalculation:
             cooker=cooker,
             category="dish",
             country="France",
-            photo="test.jpg",
         )
         serializer = DishDetailSerializer(dish)
         data = serializer.data

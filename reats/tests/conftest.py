@@ -263,12 +263,13 @@ def delivery_api_key_header(settings) -> dict:
 
 @pytest.fixture(autouse=True, scope="session")
 def mock_get_pre_signed_url() -> Iterator:
-    patcher = patch(
-        "utils.common.get_pre_signed_url",
-        return_value="https://some-url.com",
-    )
-    yield patcher.start()
-    patcher.stop()
+    with (
+        patch("core_app.serializers.get_pre_signed_url", return_value="https://some-url.com") as p1,
+        patch("customer_app.serializers.get_pre_signed_url", return_value="https://some-url.com"),
+        patch("delivery_app.serializers.get_pre_signed_url", return_value="https://some-url.com"),
+        patch("utils.common.get_pre_signed_url", return_value="https://some-url.com"),
+    ):
+        yield p1
 
 
 @pytest.fixture(scope="session")
