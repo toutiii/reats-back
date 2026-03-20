@@ -12,7 +12,7 @@ from core_app.models import (
     IngredientDishModel,
     OrderModel,
 )
-from core_app.serializers import IngredientDishModel, OrderDishItemGETSerializer, OrderDrinkItemGETSerializer
+from core_app.serializers import OrderDishItemGETSerializer, OrderDrinkItemGETSerializer
 from django.conf import settings
 from django.db import transaction
 from phonenumbers.phonenumberutil import NumberParseException
