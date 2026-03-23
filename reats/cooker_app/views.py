@@ -11,6 +11,7 @@ from core_app.models import (
     CookerModel,
     DishImageModel,
     DishModel,
+    DrinkImageModel,
     DrinkModel,
     OrderDishItemModel,
     OrderDrinkItemModel,
@@ -777,71 +778,64 @@ class DrinkView(StandardizedResponseMixin, ModelViewSet):
         headers = self.get_success_headers(serializer.data)
         return self.success(data=serializer.data, status_code=status.HTTP_201_CREATED, headers=headers)
 
+    def _build_s3_key(self, cooker_pk: int | str, filename: str) -> str:
+        return f"cookers/{cooker_pk}/drinks/{filename}"
+
     def perform_create(self, serializer: BaseSerializer) -> None:
-        photo = (
-            "cookers"
-            + "/"
-            + str(serializer.validated_data["cooker"].pk)
-            + "/"
-            + "drinks"
-            + "/"
-            + self.request.FILES["photo"].name
-        )
+        cooker_pk = str(serializer.validated_data["cooker"].pk)
+        photos = self.request.FILES.getlist("photos[]")
 
-        upload_image_to_s3(self.request.FILES["photo"], photo)
-        serializer.validated_data["photo"] = photo
-        super().perform_create(serializer)
+        drink = serializer.save()
 
-    def partial_update(self, request, *args, **kwargs):
-        serializer = self.get_serializer(self.get_object(), data=request.data, partial=True)
-        if not serializer.is_valid():
-            return self.error(
-                message="Invalid data",
-                code="INVALID_DATA",
-                status_code=status.HTTP_400_BAD_REQUEST,
+        for idx, photo_file in enumerate(photos):
+            s3_key = self._build_s3_key(cooker_pk, photo_file.name)
+            upload_image_to_s3(photo_file, s3_key)
+            DrinkImageModel.objects.create(
+                drink=drink,
+                key=s3_key,
+                is_primary=(idx == 0),
+                position=idx,
             )
-        self.perform_update(serializer)
-        return self.success(data=serializer.data, status_code=status.HTTP_200_OK)
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop("partial", False)
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        if not serializer.is_valid():
-            return self.error(
-                message="Invalid data",
-                code="INVALID_DATA",
-                status_code=status.HTTP_400_BAD_REQUEST,
-            )
+        serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
-        return self.success(data=serializer.data, status_code=status.HTTP_200_OK)
+
+        if getattr(instance, "_prefetched_objects_cache", None):
+            instance._prefetched_objects_cache = {}
+
+        return self.success(data=serializer.data)
+
+    def partial_update(self, request, *args, **kwargs):
+        kwargs["partial"] = True
+        return self.update(request, *args, **kwargs)
 
     def perform_update(self, serializer: BaseSerializer) -> None:
         current_object = self.get_object()
-        photo = None
+        cooker_pk = str(current_object.cooker.pk)
+        photos = self.request.FILES.getlist("photos[]")
 
-        try:
-            self.request.FILES["photo"]
-        except KeyError:
-            pass
-        else:
-            photo = (
-                "cookers"
-                + "/"
-                + str(serializer.validated_data["cooker"].pk)
-                + "/"
-                + "drinks"
-                + "/"
-                + self.request.FILES["photo"].name
+        if photos:
+            # Replace all existing images with the newly uploaded ones
+            for old_image in current_object.images.all():
+                if old_image.key:  # type: ignore
+                    delete_s3_object(old_image.key)  # type: ignore
+            current_object.images.all().delete()  # type: ignore
+
+        drink = serializer.save()
+
+        for idx, photo_file in enumerate(photos):
+            s3_key = self._build_s3_key(cooker_pk, photo_file.name)
+            upload_image_to_s3(photo_file, s3_key)
+            DrinkImageModel.objects.create(
+                drink=drink,
+                key=s3_key,
+                is_primary=(idx == 0),
+                position=idx,
             )
-
-        if photo is not None:
-            upload_image_to_s3(self.request.FILES["photo"], photo)
-            serializer.validated_data["photo"] = photo
-            old_photo_key = current_object.photo
-            delete_s3_object(old_photo_key)
-
-        super().perform_update(serializer)
 
     def list(self, request, *args, **kwargs) -> Response:
         request_name: Union[str, None] = self.request.query_params.get("name")
