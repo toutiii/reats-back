@@ -783,7 +783,9 @@ class DrinkView(StandardizedResponseMixin, ModelViewSet):
 
     def perform_create(self, serializer: BaseSerializer) -> None:
         cooker_pk = str(serializer.validated_data["cooker"].pk)
-        photos = self.request.FILES.getlist("photos[]")
+        photos = self.request.FILES.getlist("photos") or (
+            self.request.FILES.getlist("photos[]") if "photos[]" in self.request.FILES else []
+        )
 
         drink = serializer.save()
 
@@ -816,12 +818,14 @@ class DrinkView(StandardizedResponseMixin, ModelViewSet):
     def perform_update(self, serializer: BaseSerializer) -> None:
         current_object = self.get_object()
         cooker_pk = str(current_object.cooker.pk)
-        photos = self.request.FILES.getlist("photos[]")
+        photos = self.request.FILES.getlist("photos") or (
+            self.request.FILES.getlist("photos[]") if "photos[]" in self.request.FILES else []
+        )
 
         if photos:
             # Replace all existing images with the newly uploaded ones
             for old_image in current_object.images.all():
-                if old_image.key:  # type: ignore
+                if old_image.key and "default" not in old_image.key:  # type: ignore
                     delete_s3_object(old_image.key)  # type: ignore
             current_object.images.all().delete()  # type: ignore
 
