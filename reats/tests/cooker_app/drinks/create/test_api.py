@@ -16,7 +16,7 @@ def post_data(image: InMemoryUploadedFile) -> dict:
         "description": "Bissap maison",
         "name": "Bissap",
         "price": "3.5",
-        "photo": image,
+        "photos[]": [image],
         "cooker": 1,
         "capacity": "1",
     }
@@ -39,7 +39,9 @@ class TestCreateDrinkSuccess:
         )
 
         assert response.status_code == status.HTTP_201_CREATED
-        assert DrinkModel.objects.latest("pk").photo == "cookers/1/drinks/test.jpg"
+        drink = DrinkModel.objects.latest("pk")
+        assert drink.images.count() == 1  # type: ignore
+        assert drink.images.first().key == "cookers/1/drinks/test.jpg"  # type: ignore
         upload_fileobj.assert_called_once()
         post_create_count = DrinkModel.objects.count()
 
