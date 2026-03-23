@@ -11,6 +11,7 @@ from .models import (
     CustomerModel,
     DishImageModel,
     DishModel,
+    DishNutritionalInfo,
     DishRatingModel,
     DrinkModel,
     DrinkRatingModel,
@@ -99,7 +100,22 @@ class DishGETSerializer(AllergenIngredientMixin, ModelSerializer):
         return obj.margin
 
 
-class BaseDishSerializer(ModelSerializer):
+class NutritionalInfoMixin:
+    """Mixin to avoid duplicating get_nutritional_info method."""
+
+    def get_nutritional_info(self, obj: DishModel) -> dict:
+        if hasattr(obj, "nutritional_info"):
+            return DishNutritionalInfoSerializer(obj.nutritional_info).data
+        return {}
+
+
+class DishNutritionalInfoSerializer(ModelSerializer):
+    class Meta:
+        model = DishNutritionalInfo
+        exclude = ("id", "dish")
+
+
+class BaseDishSerializer(NutritionalInfoMixin, ModelSerializer):
     margin = serializers.SerializerMethodField()
     available = serializers.BooleanField(source="is_enabled")
     current_orders = serializers.IntegerField(read_only=True)
@@ -130,9 +146,6 @@ class BaseDishSerializer(ModelSerializer):
 
     def get_margin(self, obj: DishModel) -> float | None:
         return obj.margin
-
-    def get_nutritional_info(self, obj: DishModel) -> dict:
-        return obj.nutritional_info or {}
 
 
 class DishListSerializer(AllergenIngredientMixin, BaseDishSerializer):
@@ -165,7 +178,7 @@ class DishDetailSerializer(BaseDishSerializer):
         return IngredientSerializer(allergens, many=True).data
 
 
-class DishCustomerSerializer(AllergenIngredientMixin, ModelSerializer):
+class DishCustomerSerializer(AllergenIngredientMixin, NutritionalInfoMixin, ModelSerializer):
     """Serializer for customer-facing dish endpoints without sensitive financial data."""
 
     ratings = DishRatingSerializer(many=True, read_only=True)
@@ -173,6 +186,7 @@ class DishCustomerSerializer(AllergenIngredientMixin, ModelSerializer):
     image = serializers.SerializerMethodField()
     allergens = serializers.SerializerMethodField()
     ingredients = serializers.SerializerMethodField()
+    nutritional_info = serializers.SerializerMethodField()
 
     class Meta:
         model = DishModel
@@ -186,13 +200,14 @@ class DishCustomerSerializer(AllergenIngredientMixin, ModelSerializer):
         )
 
 
-class DishOrderHistorySerializer(AllergenIngredientMixin, ModelSerializer):
+class DishOrderHistorySerializer(AllergenIngredientMixin, NutritionalInfoMixin, ModelSerializer):
     """Serializer for dishes in order history - minimal fields."""
 
     ratings = DishRatingSerializer(many=True, read_only=True)
     cooker = SimpleCookerSerializer(read_only=True)
     image = serializers.SerializerMethodField()
     allergens = serializers.SerializerMethodField()
+    nutritional_info = serializers.SerializerMethodField()
 
     class Meta:
         model = DishModel

@@ -231,7 +231,8 @@ class TestUpdateDishNutritionalInfoSuccess:
 
         assert response.status_code == status.HTTP_200_OK
         dish = DishModel.objects.get(pk=dish_id)
-        assert dish.nutritional_info == nutritional_info_update
+        for key, value in nutritional_info_update.items():
+            assert getattr(dish.nutritional_info, key) == value  # type: ignore[attr-defined]
 
     def test_patch_update_nutritional_info(
         self,
@@ -253,4 +254,5 @@ class TestUpdateDishNutritionalInfoSuccess:
 
         assert response.status_code == status.HTTP_200_OK
         dish = DishModel.objects.get(pk=dish_id)
-        assert dish.nutritional_info == patch_nutritional_info
+        for key, value in patch_nutritional_info.items():
+            assert getattr(dish.nutritional_info, key) == value  # type: ignore[attr-defined]

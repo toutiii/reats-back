@@ -10,9 +10,10 @@ from django.db.models import (
     FloatField,
     ForeignKey,
     IntegerField,
-    JSONField,
     Manager,
     ManyToManyField,
+    Model,
+    OneToOneField,
     PositiveIntegerField,
     TextField,
 )
@@ -120,6 +121,28 @@ class IngredientDishModel(ReatsModel):
         return self.name
 
 
+class BaseNutritionalInfo(Model):
+    calories: PositiveIntegerField = PositiveIntegerField(null=True, blank=True)
+    proteins: FloatField = FloatField(null=True, blank=True)
+    carbohydrates: FloatField = FloatField(null=True, blank=True)
+    sugars: FloatField = FloatField(null=True, blank=True)
+    fats: FloatField = FloatField(null=True, blank=True)
+    saturated_fats: FloatField = FloatField(null=True, blank=True)
+    fiber: FloatField = FloatField(null=True, blank=True)
+    salt: FloatField = FloatField(null=True, blank=True)
+    sodium: FloatField = FloatField(null=True, blank=True)
+
+    class Meta:
+        abstract = True
+
+
+class DishNutritionalInfo(BaseNutritionalInfo):
+    dish: OneToOneField = OneToOneField("DishModel", on_delete=CASCADE, related_name="nutritional_info")
+
+    class Meta:
+        db_table = "dish_nutritional_info"
+
+
 class DishModel(ReatsModel):
     CATEGORY_CHOICES = [
         ("starter", "starter"),
@@ -146,7 +169,6 @@ class DishModel(ReatsModel):
         blank=True,
         related_name="dishes",
     )
-    nutritional_info: JSONField = JSONField(null=True, blank=True)
 
     @property
     def margin(self) -> float | None:

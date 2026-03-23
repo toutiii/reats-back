@@ -8,11 +8,16 @@ from core_app.models import (
     CustomerModel,
     DeliverModel,
     DishModel,
+    DishNutritionalInfo,
     DrinkModel,
     IngredientDishModel,
     OrderModel,
 )
-from core_app.serializers import OrderDishItemGETSerializer, OrderDrinkItemGETSerializer
+from core_app.serializers import (
+    DishNutritionalInfoSerializer,
+    OrderDishItemGETSerializer,
+    OrderDrinkItemGETSerializer,
+)
 from django.conf import settings
 from django.db import transaction
 from phonenumbers.phonenumberutil import NumberParseException
@@ -85,9 +90,11 @@ class CookerGETSerializer(ModelSerializer):
 class DishSerializer(ModelSerializer):
     cooker = serializers.PrimaryKeyRelatedField(queryset=CookerModel.objects.all())
     ingredients = serializers.JSONField(required=False, write_only=True)
+    nutritional_info = serializers.JSONField(required=False, write_only=True, allow_null=True)
 
     def create(self, validated_data):
         ingredients_data = validated_data.pop("ingredients", [])
+        nutritional_data = validated_data.pop("nutritional_info", None)
 
         with transaction.atomic():
             dish = DishModel.objects.create(**validated_data)
@@ -95,10 +102,14 @@ class DishSerializer(ModelSerializer):
             if ingredients_data:
                 self._save_ingredients(dish, ingredients_data)
 
+            if nutritional_data is not None:
+                self._save_nutritional_info(dish, nutritional_data)
+
         return dish
 
     def update(self, instance, validated_data):
         ingredients_data = validated_data.pop("ingredients", None)
+        nutritional_data = validated_data.pop("nutritional_info", None)
 
         with transaction.atomic():
             for attr, value in validated_data.items():
@@ -108,7 +119,16 @@ class DishSerializer(ModelSerializer):
             if ingredients_data is not None:
                 self._save_ingredients(instance, ingredients_data)
 
+            if nutritional_data is not None:
+                self._save_nutritional_info(instance, nutritional_data)
+
         return instance
+
+    def _save_nutritional_info(self, dish: DishModel, nutritional_data: dict) -> None:
+        DishNutritionalInfo.objects.update_or_create(
+            dish=dish,
+            defaults=nutritional_data,
+        )
 
     def _save_ingredients(self, dish: DishModel, ingredients_data: list[dict]) -> None:
         ingredient_objs: list[IngredientDishModel] = []
@@ -146,6 +166,14 @@ class DishSerializer(ModelSerializer):
             ingredient_objs.append(ingredient)
 
         dish.ingredients.set(ingredient_objs)
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if hasattr(instance, "nutritional_info"):
+            data["nutritional_info"] = DishNutritionalInfoSerializer(instance.nutritional_info).data
+        else:
+            data["nutritional_info"] = {}
+        return data
 
 
 class DishPOSTSerializer(DishSerializer):

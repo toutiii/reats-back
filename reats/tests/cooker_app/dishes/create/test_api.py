@@ -128,5 +128,8 @@ class TestCreateDishWithNutritionalInfoSuccess:
 
         assert response.status_code == status.HTTP_201_CREATED
         dish = DishModel.objects.latest("pk")
-        assert dish.nutritional_info == nutritional_info
-        assert response.json()["data"]["nutritional_info"] == nutritional_info
+        for key, value in nutritional_info.items():
+            assert getattr(dish.nutritional_info, key) == value  # type: ignore[attr-defined]
+        response_nutritional_info = response.json()["data"]["nutritional_info"]
+        for key, value in nutritional_info.items():
+            assert response_nutritional_info[key] == value
