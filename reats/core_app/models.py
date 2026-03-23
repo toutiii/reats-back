@@ -236,6 +236,21 @@ class DrinkModel(ReatsModel):
         db_table = "drinks"
 
 
+class DrinkImageModel(ReatsModel):
+    id: AutoField = AutoField(primary_key=True)
+    drink: ForeignKey = ForeignKey(DrinkModel, on_delete=CASCADE, related_name="images")
+    key: CharField = CharField(max_length=512)
+    is_primary: BooleanField = BooleanField(default=False)
+    position: PositiveIntegerField = PositiveIntegerField(default=0)
+
+    class Meta:
+        db_table = "drink_images"
+        ordering = ["position"]
+
+    def __str__(self) -> str:
+        return f"Image {self.position} for {self.drink.name}"
+
+
 class CustomerModel(ReatsModel):
     id: AutoField = AutoField(primary_key=True)
     firstname: CharField = CharField(max_length=100)
