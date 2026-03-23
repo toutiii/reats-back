@@ -877,7 +877,7 @@ class DrinkView(StandardizedResponseMixin, ModelViewSet):
         if photos:
             # Replace all existing images with the newly uploaded ones
             for old_image in current_object.images.all():
-                if old_image.key:  # type: ignore
+                if old_image.key and "default" not in old_image.key:  # type: ignore
                     delete_s3_object(old_image.key)  # type: ignore
             current_object.images.all().delete()  # type: ignore
 
