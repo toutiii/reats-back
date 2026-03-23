@@ -827,7 +827,17 @@ class DrinkView(StandardizedResponseMixin, ModelViewSet):
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
+        serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
+
+        if getattr(instance, "_prefetched_objects_cache", None):
+            instance._prefetched_objects_cache = {}
+
+        return self.success(data=serializer.data)
+
+    def partial_update(self, request, *args, **kwargs):
+        kwargs["partial"] = True
+        return self.update(request, *args, **kwargs)
 
         if getattr(instance, "_prefetched_objects_cache", None):
             instance._prefetched_objects_cache = {}
@@ -861,6 +871,53 @@ class DrinkView(StandardizedResponseMixin, ModelViewSet):
                 is_primary=(idx == 0),
                 position=idx,
             )
+        cooker_pk = str(current_object.cooker.pk)
+        photos = self.request.FILES.getlist("photos[]")
+
+        if photos:
+            # Replace all existing images with the newly uploaded ones
+            for old_image in current_object.images.all():
+                if old_image.key:  # type: ignore
+                    delete_s3_object(old_image.key)  # type: ignore
+            current_object.images.all().delete()  # type: ignore
+
+        drink = serializer.save()
+
+        for idx, photo_file in enumerate(photos):
+            s3_key = self._build_s3_key(cooker_pk, photo_file.name)
+            upload_image_to_s3(photo_file, s3_key)
+            DrinkImageModel.objects.create(
+                drink=drink,
+                key=s3_key,
+                is_primary=(idx == 0),
+                position=idx,
+            )
+
+    def list(self, request, *args, **kwargs) -> Response:
+        request_name: Union[str, None] = self.request.query_params.get("name")
+        request_status: Union[str, None] = self.request.query_params.get("is_enabled", "true")
+
+        self.queryset = self.queryset.filter(cooker__id=request.user.pk)
+
+        if request_name is not None:
+            self.queryset = self.queryset.filter(name__icontains=request_name)
+
+        if request_status is not None:
+            self.queryset = self.queryset.filter(is_enabled=json.loads(request_status))
+
+        if request_name is None and request_status is None:
+            self.queryset = DrinkModel.objects.all()
+
+        self.queryset = self.queryset.order_by("name")
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return self.success(data=serializer.data, status_code=status.HTTP_200_OK)
 
     def destroy(self, request, *args, **kwargs) -> Response:
         instance: DrinkModel = self.get_object()
