@@ -808,9 +808,7 @@ class DrinkView(StandardizedResponseMixin, ModelViewSet):
 
     def perform_create(self, serializer: BaseSerializer) -> None:
         cooker_pk = str(serializer.validated_data["cooker"].pk)
-        photos = self.request.FILES.getlist("photos") or (
-            self.request.FILES.getlist("photos[]") if "photos[]" in self.request.FILES else []
-        )
+        photos = self.request.FILES.getlist("photos")
 
         drink = serializer.save()
 
@@ -843,9 +841,7 @@ class DrinkView(StandardizedResponseMixin, ModelViewSet):
     def perform_update(self, serializer: BaseSerializer) -> None:
         current_object = self.get_object()
         cooker_pk = str(current_object.cooker.pk)
-        photos = self.request.FILES.getlist("photos") or (
-            self.request.FILES.getlist("photos[]") if "photos[]" in self.request.FILES else []
-        )
+        photos = self.request.FILES.getlist("photos")
 
         if photos:
             # Replace all existing images with the newly uploaded ones
