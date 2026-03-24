@@ -20,7 +20,8 @@ from core_app.models import (
 from core_app.serializers import (
     DishDetailSerializer,
     DishListSerializer,
-    DrinkGETSerializer,
+    DrinkDetailSerializer,
+    DrinkListSerializer,
     OrderPATCHSerializer,
 )
 from django.conf import settings
@@ -762,7 +763,10 @@ class DrinkView(StandardizedResponseMixin, ModelViewSet):
             self.serializer_class = DrinkPATCHSerializer
 
         if self.request.method == "GET":
-            self.serializer_class = DrinkGETSerializer
+            if self.action == "retrieve":
+                self.serializer_class = DrinkDetailSerializer
+            else:
+                self.serializer_class = DrinkListSerializer
 
         return super().get_serializer_class()
 

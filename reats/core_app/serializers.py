@@ -233,11 +233,9 @@ class DrinkImageSerializer(ModelSerializer):
         return get_pre_signed_url(obj.key)
 
 
-class DrinkGETSerializer(ModelSerializer):
+class BaseDrinkSerializer(ModelSerializer):
     ratings = DrinkRatingSerializer(many=True, read_only=True)
     cooker = SimpleCookerSerializer(read_only=True)
-    images = DrinkImageSerializer(many=True, read_only=True)
-    image = serializers.SerializerMethodField()
 
     class Meta:
         model = DrinkModel
@@ -247,11 +245,25 @@ class DrinkGETSerializer(ModelSerializer):
             "is_deleted",
         )
 
+
+class DrinkListSerializer(BaseDrinkSerializer):
+    image = serializers.SerializerMethodField()
+
+    class Meta(BaseDrinkSerializer.Meta):
+        pass
+
     def get_image(self, obj: DrinkModel) -> Union[str, None]:
         primary = obj.images.filter(is_primary=True).first()  # type: ignore
         if primary:
             return get_pre_signed_url(primary.key)
         return None
+
+
+class DrinkDetailSerializer(BaseDrinkSerializer):
+    images = DrinkImageSerializer(many=True, read_only=True)
+
+    class Meta(BaseDrinkSerializer.Meta):
+        pass
 
 
 class OrderDishItemGETSerializer(ModelSerializer):
@@ -298,7 +310,7 @@ class OrderDishItemHistorySerializer(ModelSerializer):
 
 
 class OrderDrinkItemGETSerializer(ModelSerializer):
-    drink = DrinkGETSerializer()
+    drink = DrinkListSerializer()
 
     class Meta:
         model = OrderDrinkItemModel
@@ -313,7 +325,7 @@ class OrderDrinkItemGETSerializer(ModelSerializer):
 class OrderDrinkItemCustomerSerializer(ModelSerializer):
     """Customer-facing version for consistency."""
 
-    drink = DrinkGETSerializer()
+    drink = DrinkListSerializer()
 
     class Meta:
         model = OrderDrinkItemModel
