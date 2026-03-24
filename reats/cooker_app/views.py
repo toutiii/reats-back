@@ -893,32 +893,6 @@ class DrinkView(StandardizedResponseMixin, ModelViewSet):
                 position=idx,
             )
 
-    def list(self, request, *args, **kwargs) -> Response:
-        request_name: Union[str, None] = self.request.query_params.get("name")
-        request_status: Union[str, None] = self.request.query_params.get("is_enabled", "true")
-
-        self.queryset = self.queryset.filter(cooker__id=request.user.pk)
-
-        if request_name is not None:
-            self.queryset = self.queryset.filter(name__icontains=request_name)
-
-        if request_status is not None:
-            self.queryset = self.queryset.filter(is_enabled=json.loads(request_status))
-
-        if request_name is None and request_status is None:
-            self.queryset = DrinkModel.objects.all()
-
-        self.queryset = self.queryset.order_by("name")
-        queryset = self.filter_queryset(self.get_queryset())
-        page = self.paginate_queryset(queryset)
-
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-
-        serializer = self.get_serializer(queryset, many=True)
-        return self.success(data=serializer.data, status_code=status.HTTP_200_OK)
-
     def destroy(self, request, *args, **kwargs) -> Response:
         instance: DrinkModel = self.get_object()
         instance.is_deleted = True
