@@ -852,6 +852,7 @@ class DrinkView(StandardizedResponseMixin, ModelViewSet):
         current_object = self.get_object()
         cooker_pk = str(current_object.cooker.pk)
         photos = self.request.FILES.getlist("photos")
+        photos = self.request.FILES.getlist("photos")
 
         if photos:
             # Replace all existing images with the newly uploaded ones
