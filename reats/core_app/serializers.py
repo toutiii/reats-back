@@ -236,8 +236,6 @@ class DrinkImageSerializer(ModelSerializer):
 class BaseDrinkSerializer(ModelSerializer):
     ratings = DrinkRatingSerializer(many=True, read_only=True)
     cooker = SimpleCookerSerializer(read_only=True)
-    images = DrinkImageSerializer(many=True, read_only=True)
-    image = serializers.SerializerMethodField()
 
     class Meta:
         model = DrinkModel
