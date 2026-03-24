@@ -197,7 +197,7 @@ def customer_id() -> int:
                                 "description": "Gingembre maison",
                                 "name": "Gingembre",
                                 "price": 5.0,
-                                "photo": "https://some-url.com",
+                                "image": "https://some-url.com",
                                 "is_enabled": True,
                                 "capacity": 75,
                                 "is_suitable_for_quick_delivery": False,

@@ -55,7 +55,7 @@ class TestUpdateDrinkWithoutPhotoSuccess:
             assert drink_object.name == "New name"
             assert drink_object.price == 3.0
             assert drink_object.is_enabled is True
-            assert drink_object.photo == "cookers/1/drinks/gingembre.jpg"
+            assert drink_object.images.filter(is_primary=True).first().key == "cookers/1/drinks/gingembre.jpg"  # type: ignore
             assert drink_object.modified.isoformat() == "2023-10-14T22:00:00+00:00"
 
 
@@ -69,7 +69,7 @@ def post_data_with_photo(image: InMemoryUploadedFile) -> dict:
         "price": "3",
         "cooker": 1,
         "capacity": "10",
-        "photo": image,
+        "photos": image,
     }
 
 
@@ -103,7 +103,7 @@ class TestUpdateDrinkWithPhotoSuccess:
             assert drink_object.name == "New name"
             assert drink_object.price == 3.0
             assert drink_object.is_enabled is True
-            assert drink_object.photo == "cookers/1/drinks/test.jpg"
+            assert drink_object.images.filter(is_primary=True).first().key == "cookers/1/drinks/test.jpg"  # type: ignore
             assert drink_object.modified.isoformat() == "2023-10-14T22:00:00+00:00"
 
             upload_fileobj.assert_called_once()
