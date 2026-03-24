@@ -16,7 +16,7 @@ def post_data(image: InMemoryUploadedFile) -> dict:
         "description": "Bissap maison",
         "name": "Bissap",
         "price": "3.5",
-        "photos[]": [image],
+        "photos": [image],
         "cooker": 1,
         "capacity": "1",
     }

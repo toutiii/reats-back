@@ -69,7 +69,7 @@ def post_data_with_photo(image: InMemoryUploadedFile) -> dict:
         "price": "3",
         "cooker": 1,
         "capacity": "10",
-        "photos[]": image,
+        "photos": image,
     }
 
 
