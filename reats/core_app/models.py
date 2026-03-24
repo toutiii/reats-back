@@ -233,6 +233,18 @@ class DrinkModel(ReatsModel):
 
     class Meta:
         db_table = "drinks"
+        indexes = [
+            GinIndex(
+                fields=["name"],
+                name="drink_name_trigram_idx",
+                opclasses=["gin_trgm_ops"],
+            ),
+            GinIndex(
+                fields=["description"],
+                name="drink_desc_trigram_idx",
+                opclasses=["gin_trgm_ops"],
+            ),
+        ]
 
 
 class DrinkImageModel(ReatsModel):
