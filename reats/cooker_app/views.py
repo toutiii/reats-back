@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import logging
 from datetime import datetime, timedelta
 from decimal import Decimal
@@ -63,7 +62,7 @@ from utils.enums import (
     WeekChartLabelEnum,
     YearChartLabelEnum,
 )
-from utils.filters import DishFilter
+from utils.filters import DishFilter, DrinkFilter
 from utils.paginations import StandardizedResultsSetPagination
 
 from .serializers import (
@@ -569,16 +568,21 @@ class DashboardView(StandardizedResponseMixin, GenericViewSet):
         )
 
         # Get popular drinks with normalized field names
+        primary_drink_image_subq = DrinkImageModel.objects.filter(drink=OuterRef("drink"), is_primary=True).values(
+            "key"
+        )[:1]
+
         drinks = (
             OrderDrinkItemModel.objects.filter(
                 order__cooker_id=cooker_id,
                 order__created__gte=date_range["current_period_start"],
                 order__status=OrderStatusEnum.DELIVERED,
             )
+            .annotate(primary_image_key=Subquery(primary_drink_image_subq))
             .values(
                 item_id=F("drink__id"),
                 item_name=F("drink__name"),
-                item_photo=F("drink__photo"),
+                item_photo=F("primary_image_key"),
                 item_price=F("drink__price"),
             )
             .annotate(total_sold=Sum("drink_quantity"))
@@ -754,6 +758,23 @@ class DishView(StandardizedResponseMixin, ModelViewSet):
 
 class DrinkView(StandardizedResponseMixin, ModelViewSet):
     queryset = DrinkModel.objects.filter(is_deleted=False).all()
+    filter_backends = [django_filters.rest_framework.DjangoFilterBackend]
+    filterset_class = DrinkFilter
+    pagination_class = StandardizedResultsSetPagination
+
+    def _annotated_queryset(self):
+        return self.queryset.prefetch_related("images")
+
+    def get_queryset(self):
+        if self.action in ("retrieve", "update", "partial_update", "destroy"):
+            return self._annotated_queryset().filter(cooker__id=self.request.user.pk)
+
+        qs = self._annotated_queryset()
+        if self.action == "list":
+            qs = qs.filter(cooker__id=self.request.user.pk)
+            if "is_enabled" not in self.request.query_params:
+                qs = qs.filter(is_enabled=True)
+        return qs
 
     def get_serializer_class(self) -> type[BaseSerializer]:
         if self.request.method in ("POST", "PUT"):
@@ -844,32 +865,6 @@ class DrinkView(StandardizedResponseMixin, ModelViewSet):
                 is_primary=(idx == 0),
                 position=idx,
             )
-
-    def list(self, request, *args, **kwargs) -> Response:
-        request_name: Union[str, None] = self.request.query_params.get("name")
-        request_status: Union[str, None] = self.request.query_params.get("is_enabled", "true")
-
-        self.queryset = self.queryset.filter(cooker__id=request.user.pk)
-
-        if request_name is not None:
-            self.queryset = self.queryset.filter(name__icontains=request_name)
-
-        if request_status is not None:
-            self.queryset = self.queryset.filter(is_enabled=json.loads(request_status))
-
-        if request_name is None and request_status is None:
-            self.queryset = DrinkModel.objects.all()
-
-        self.queryset = self.queryset.order_by("name")
-        queryset = self.filter_queryset(self.get_queryset())
-        page = self.paginate_queryset(queryset)
-
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-
-        serializer = self.get_serializer(queryset, many=True)
-        return self.success(data=serializer.data, status_code=status.HTTP_200_OK)
 
     def destroy(self, request, *args, **kwargs) -> Response:
         instance: DrinkModel = self.get_object()

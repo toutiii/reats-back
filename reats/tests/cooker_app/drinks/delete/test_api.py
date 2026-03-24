@@ -101,8 +101,10 @@ def test_get_enabled_drinks_when_item_has_been_deleted(
     assert response.status_code == status.HTTP_200_OK
     assert response.json().get("success") is True
     assert response.json().get("message") == SuccessMessageEnum.OPERATION_SUCCESSFUL
-    assert response.json().get("data") is not None
+    data = response.json().get("data")
+    assert data is not None
+    results = data.get("results") if isinstance(data, dict) else data
 
-    for item in response.json().get("data"):
+    for item in results:
         assert item.get("is_enabled") is True
         assert DrinkModel.objects.get(pk=item.get("id")).is_deleted is False

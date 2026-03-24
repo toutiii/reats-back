@@ -21,11 +21,10 @@ def test_empty_query_params(auth_headers: dict, client: APIClient, path: str, co
 
     assert response.status_code == status.HTTP_200_OK
     assert response.json().get("success") is True
-    assert response.json().get("data") is not None
-    assert (
-        len(response.json().get("data"))
-        == DrinkModel.objects.filter(is_enabled=True).filter(cooker_id=cooker_id).count()
-    )
+    data = response.json().get("data")
+    assert data is not None
+    results = data.get("results") if isinstance(data, dict) else data
+    assert len(results) == DrinkModel.objects.filter(is_enabled=True).filter(cooker_id=cooker_id).count()
 
 
 @pytest.mark.django_db
@@ -43,9 +42,11 @@ def test_get_enabled_drinks(
 
     assert response.status_code == status.HTTP_200_OK
     assert response.json().get("success") is True
-    assert response.json().get("data") is not None
+    data = response.json().get("data")
+    assert data is not None
+    results = data.get("results") if isinstance(data, dict) else data
 
-    for item in response.json().get("data"):
+    for item in results:
         assert item.get("is_enabled") is True
 
 
@@ -64,9 +65,11 @@ def test_get_disabled_drinks(
 
     assert response.status_code == status.HTTP_200_OK
     assert response.json().get("success") is True
-    assert response.json().get("data") is not None
+    data = response.json().get("data")
+    assert data is not None
+    results = data.get("results") if isinstance(data, dict) else data
 
-    for item in response.json().get("data"):
+    for item in results:
         assert item.get("is_enabled") is False
 
 
@@ -111,4 +114,6 @@ class TestOneCookerCantSeeOtherCookerDrinks:
             )
             assert response.status_code == status.HTTP_200_OK
 
-            assert response.json().get("data") == []
+            data = response.json().get("data")
+            results = data.get("results") if isinstance(data, dict) else data
+            assert results == []

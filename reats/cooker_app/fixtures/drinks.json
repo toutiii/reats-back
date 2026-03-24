@@ -10,9 +10,20 @@
       "description": "Bissap maison",
       "name": "Bissap",
       "price": "3.5",
-      "photo": "cookers/1/drinks/bissap.jpg",
       "cooker": 1,
       "capacity": 1
+    }
+  },
+  {
+    "model": "core_app.DrinkImageModel",
+    "pk": 1,
+    "fields": {
+      "created": "2023-12-03T22:52:05.718117+02:00",
+      "modified": "2023-12-03T22:52:05.718117+02:00",
+      "drink": 1,
+      "key": "cookers/1/drinks/bissap.jpg",
+      "is_primary": true,
+      "position": 0
     }
   },
   {
@@ -26,9 +37,20 @@
       "description": "Gingembre maison",
       "name": "Gingembre",
       "price": "5",
-      "photo": "cookers/1/drinks/gingembre.jpg",
       "cooker": 1,
       "capacity": 75
+    }
+  },
+  {
+    "model": "core_app.DrinkImageModel",
+    "pk": 2,
+    "fields": {
+      "created": "2023-12-04T22:52:05.718117+02:00",
+      "modified": "2023-12-04T22:52:05.718117+02:00",
+      "drink": 2,
+      "key": "cookers/1/drinks/gingembre.jpg",
+      "is_primary": true,
+      "position": 0
     }
   },
   {
@@ -42,10 +64,21 @@
       "description": "Limonade maison",
       "name": "Limonade",
       "price": "2.5",
-      "photo": "cookers/1/drinks/limonade.jpg",
       "cooker": 1,
       "capacity": 33,
       "is_enabled": false
+    }
+  },
+  {
+    "model": "core_app.DrinkImageModel",
+    "pk": 3,
+    "fields": {
+      "created": "2023-12-01T22:52:05.718117+02:00",
+      "modified": "2023-12-01T22:52:05.718117+02:00",
+      "drink": 3,
+      "key": "cookers/1/drinks/limonade.jpg",
+      "is_primary": true,
+      "position": 0
     }
   }
 ]
