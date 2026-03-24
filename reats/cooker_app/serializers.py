@@ -206,13 +206,21 @@ class DrinkSerializer(ModelSerializer):
 class DrinkPOSTSerializer(DrinkSerializer):
     class Meta:
         model = DrinkModel
-        exclude = ("photo", "is_enabled")
+        exclude = ("is_enabled",)
 
 
 class DrinkPATCHSerializer(DrinkSerializer):
     class Meta:
         model = DrinkModel
-        fields = ("is_enabled",)
+        fields = (
+            "is_enabled",
+            "name",
+            "description",
+            "price",
+            "capacity",
+            "is_suitable_for_quick_delivery",
+            "is_suitable_for_scheduled_delivery",
+        )
 
 
 class TokenObtainPairWithoutPasswordSerializer(TokenObtainPairSerializer):

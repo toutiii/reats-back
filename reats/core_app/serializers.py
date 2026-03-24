@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Union
 
 from rest_framework import serializers
 from rest_framework.serializers import CharField, ModelSerializer
@@ -13,6 +13,7 @@ from .models import (
     DishModel,
     DishNutritionalInfo,
     DishRatingModel,
+    DrinkImageModel,
     DrinkModel,
     DrinkRatingModel,
     IngredientDishModel,
@@ -221,7 +222,18 @@ class DishOrderHistorySerializer(AllergenIngredientMixin, NutritionalInfoMixin, 
         )
 
 
-class DrinkGETSerializer(ModelSerializer):
+class DrinkImageSerializer(ModelSerializer):
+    url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = DrinkImageModel
+        fields = ("id", "url", "is_primary", "position")
+
+    def get_url(self, obj: DrinkImageModel) -> Union[str, None]:
+        return get_pre_signed_url(obj.key)
+
+
+class BaseDrinkSerializer(ModelSerializer):
     ratings = DrinkRatingSerializer(many=True, read_only=True)
     cooker = SimpleCookerSerializer(read_only=True)
 
@@ -232,6 +244,26 @@ class DrinkGETSerializer(ModelSerializer):
             "modified",
             "is_deleted",
         )
+
+
+class DrinkListSerializer(BaseDrinkSerializer):
+    image = serializers.SerializerMethodField()
+
+    class Meta(BaseDrinkSerializer.Meta):
+        pass
+
+    def get_image(self, obj: DrinkModel) -> Union[str, None]:
+        primary = obj.images.filter(is_primary=True).first()  # type: ignore
+        if primary:
+            return get_pre_signed_url(primary.key)
+        return None
+
+
+class DrinkDetailSerializer(BaseDrinkSerializer):
+    images = DrinkImageSerializer(many=True, read_only=True)
+
+    class Meta(BaseDrinkSerializer.Meta):
+        pass
 
 
 class OrderDishItemGETSerializer(ModelSerializer):
@@ -278,7 +310,7 @@ class OrderDishItemHistorySerializer(ModelSerializer):
 
 
 class OrderDrinkItemGETSerializer(ModelSerializer):
-    drink = DrinkGETSerializer()
+    drink = DrinkListSerializer()
 
     class Meta:
         model = OrderDrinkItemModel
@@ -293,7 +325,7 @@ class OrderDrinkItemGETSerializer(ModelSerializer):
 class OrderDrinkItemCustomerSerializer(ModelSerializer):
     """Customer-facing version for consistency."""
 
-    drink = DrinkGETSerializer()
+    drink = DrinkListSerializer()
 
     class Meta:
         model = OrderDrinkItemModel

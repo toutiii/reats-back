@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 import django_filters
-from core_app.models import DishModel, OrderModel
+from core_app.models import DishModel, DrinkModel, OrderModel
 from django.conf import settings
 from django.core.validators import RegexValidator
 from django.db.models import Q
@@ -217,4 +217,21 @@ class DishFilter(filters.FilterSet):
             term=value,
             fields=settings.DISH_SEARCH_FIELD_WEIGHTS,
             sim_threshold=getattr(settings, "DISH_SEARCH_SIMILARITY_THRESHOLD", 0.1),
+        )
+
+
+class DrinkFilter(filters.FilterSet):
+    search = django_filters.CharFilter(method="filter_search")
+    is_enabled = django_filters.BooleanFilter(field_name="is_enabled")
+
+    class Meta:
+        model = DrinkModel
+        fields = ["search", "is_enabled"]
+
+    def filter_search(self, queryset, name, value):
+        return apply_trigram_search(
+            queryset,
+            term=value,
+            fields=settings.DRINK_SEARCH_FIELD_WEIGHTS,
+            sim_threshold=getattr(settings, "DRINK_SEARCH_SIMILARITY_THRESHOLD", 0.1),
         )

@@ -8,6 +8,7 @@ from core_app.models import (
     DeliverModel,
     DishImageModel,
     DishModel,
+    DrinkImageModel,
     DrinkModel,
     OrderDishItemModel,
     OrderDrinkItemModel,
@@ -171,11 +172,14 @@ class Command(BaseCommand):
 
         created_drinks = []
         for drink_data in drinks_data:
+            photo = drink_data.pop("photo", None)
             drink, created = DrinkModel.objects.get_or_create(
                 name=drink_data["name"], cooker=cooker, defaults={**drink_data, "is_enabled": True}
             )
             created_drinks.append(drink)
             if created:
+                if photo:
+                    DrinkImageModel.objects.get_or_create(drink=drink, key=photo, is_primary=True, position=0)
                 self.stdout.write(f"Created Drink: {drink.name}")
 
         # --- 3. Orders Generation ---
