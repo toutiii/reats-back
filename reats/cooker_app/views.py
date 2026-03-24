@@ -827,17 +827,7 @@ class DrinkView(StandardizedResponseMixin, ModelViewSet):
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
-        serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
-
-        if getattr(instance, "_prefetched_objects_cache", None):
-            instance._prefetched_objects_cache = {}
-
-        return self.success(data=serializer.data)
-
-    def partial_update(self, request, *args, **kwargs):
-        kwargs["partial"] = True
-        return self.update(request, *args, **kwargs)
 
         if getattr(instance, "_prefetched_objects_cache", None):
             instance._prefetched_objects_cache = {}
@@ -851,7 +841,6 @@ class DrinkView(StandardizedResponseMixin, ModelViewSet):
     def perform_update(self, serializer: BaseSerializer) -> None:
         current_object = self.get_object()
         cooker_pk = str(current_object.cooker.pk)
-        photos = self.request.FILES.getlist("photos")
         photos = self.request.FILES.getlist("photos")
 
         if photos:
