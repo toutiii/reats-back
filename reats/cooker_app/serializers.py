@@ -12,11 +12,13 @@ from core_app.models import (
     DrinkModel,
     DrinkNutritionalInfo,
     IngredientDishModel,
+    IngredientDrinkModel,
     OrderModel,
 )
 from core_app.serializers import (
     DishNutritionalInfoSerializer,
     DrinkNutritionalInfoSerializer,
+    IngredientDrinkSerializer,
     OrderDishItemGETSerializer,
     OrderDrinkItemGETSerializer,
 )
@@ -204,12 +206,17 @@ class DishPATCHSerializer(DishSerializer):
 class DrinkSerializer(ModelSerializer):
     cooker = serializers.PrimaryKeyRelatedField(queryset=CookerModel.objects.all())
     nutritional_info = serializers.JSONField(required=False, write_only=True, allow_null=True)
+    ingredients = serializers.JSONField(required=False, write_only=True)
 
     def create(self, validated_data: dict) -> DrinkModel:
         nutritional_data = validated_data.pop("nutritional_info", None)
+        ingredients_data = validated_data.pop("ingredients", None)
 
         with transaction.atomic():
             drink = DrinkModel.objects.create(**validated_data)
+
+            if ingredients_data:
+                self._save_ingredients(drink, ingredients_data)
 
             if nutritional_data is not None:
                 self._save_nutritional_info(drink, nutritional_data)
@@ -218,11 +225,15 @@ class DrinkSerializer(ModelSerializer):
 
     def update(self, instance: DrinkModel, validated_data: dict) -> DrinkModel:
         nutritional_data = validated_data.pop("nutritional_info", None)
+        ingredients_data = validated_data.pop("ingredients", None)
 
         with transaction.atomic():
             for attr, value in validated_data.items():
                 setattr(instance, attr, value)
             instance.save()
+
+            if ingredients_data is not None:
+                self._save_ingredients(instance, ingredients_data)
 
             if nutritional_data is not None:
                 self._save_nutritional_info(instance, nutritional_data)
@@ -235,12 +246,51 @@ class DrinkSerializer(ModelSerializer):
             defaults=nutritional_data,
         )
 
+    def _save_ingredients(self, drink: DrinkModel, ingredients_data: list[dict]) -> None:
+        ingredient_objs: list[IngredientDrinkModel] = []
+        for ing in ingredients_data:
+            code = ing.get("code")
+            if not code:
+                continue
+
+            defaults: dict = {
+                "name": ing.get("name") or code.capitalize(),
+            }
+            if "category" in ing:
+                defaults["category"] = ing["category"]
+            if "is_allergen" in ing:
+                defaults["is_allergen"] = ing["is_allergen"]
+
+            ingredient, created = IngredientDrinkModel.objects.get_or_create(
+                code=code,
+                defaults=defaults,
+            )
+
+            if not created:
+                updated = False
+                if ingredient.name != ing.get("name"):
+                    ingredient.name = ing.get("name") or ingredient.name
+                    updated = True
+                if "category" in ing and ingredient.category != ing["category"]:
+                    ingredient.category = ing["category"]
+                    updated = True
+                if "is_allergen" in ing and ingredient.is_allergen != ing["is_allergen"]:
+                    ingredient.is_allergen = ing["is_allergen"]
+                    updated = True
+                if updated:
+                    ingredient.save()
+
+            ingredient_objs.append(ingredient)
+
+        drink.ingredients.set(ingredient_objs)
+
     def to_representation(self, instance: DrinkModel) -> dict:
         data = super().to_representation(instance)
         if hasattr(instance, "nutritional_info"):
             data["nutritional_info"] = DrinkNutritionalInfoSerializer(instance.nutritional_info).data
         else:
             data["nutritional_info"] = {}
+        data["ingredients"] = IngredientDrinkSerializer(instance.ingredients.all(), many=True).data
         return data
 
 
@@ -261,6 +311,7 @@ class DrinkPATCHSerializer(DrinkSerializer):
             "capacity",
             "is_suitable_for_quick_delivery",
             "is_suitable_for_scheduled_delivery",
+            "ingredients",
             "nutritional_info",
         )
 

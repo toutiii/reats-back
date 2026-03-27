@@ -1,3 +1,4 @@
+import json
 from unittest.mock import MagicMock
 
 import pytest
@@ -15,7 +16,12 @@ def drink_id() -> int:
 
 
 @pytest.fixture
-def post_data_without_photo() -> dict:
+def ingredients() -> list[dict]:
+    return [{"code": "eau", "name": "Eau potable", "is_allergen": False}]
+
+
+@pytest.fixture
+def post_data_without_photo(ingredients: list[dict]) -> dict:
     return {
         "unit": "centiliters",
         "country": "Togo",
@@ -24,6 +30,7 @@ def post_data_without_photo() -> dict:
         "price": "3",
         "cooker": 1,
         "capacity": "10",
+        "ingredients": json.dumps(ingredients),
     }
 
 
@@ -36,6 +43,7 @@ class TestUpdateDrinkWithoutPhotoSuccess:
         drink_id: int,
         path: str,
         post_data_without_photo: dict,
+        ingredients: list[dict],
     ) -> None:
         with freeze_time("2023-10-14T22:00:00+00:00"):
             response = client.put(
@@ -56,8 +64,17 @@ class TestUpdateDrinkWithoutPhotoSuccess:
             assert drink_object.price == 3.0
             assert drink_object.is_enabled is True
             assert drink_object.images.filter(is_primary=True).first().key == "cookers/1/drinks/gingembre.jpg"  # type: ignore
-            assert drink_object.images.filter(is_primary=True).first().key == "cookers/1/drinks/gingembre.jpg"  # type: ignore
             assert drink_object.modified.isoformat() == "2023-10-14T22:00:00+00:00"
+
+            assert drink_object.ingredients.count() == 1
+            ingredient = drink_object.ingredients.first()
+            assert ingredient.code == ingredients[0]["code"]  # type: ignore[union-attr]
+            assert ingredient.is_allergen == ingredients[0]["is_allergen"]  # type: ignore[union-attr]
+
+            response_ingredients = response.json()["data"]["ingredients"]
+            assert len(response_ingredients) == 1
+            assert response_ingredients[0]["code"] == ingredients[0]["code"]
+            assert response_ingredients[0]["is_allergen"] == ingredients[0]["is_allergen"]
 
 
 @pytest.fixture
