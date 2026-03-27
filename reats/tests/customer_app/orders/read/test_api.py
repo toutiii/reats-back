@@ -209,6 +209,7 @@ def customer_id() -> int:
                                     "email": "test@gmail.com",
                                     "acceptance_rate": 100.0,
                                 },
+                                "nutritional_info": {},
                             },
                             "drink_quantity": 4,
                         }

@@ -432,7 +432,7 @@ class DishView(StandardizedResponseMixin, ListModelMixin, GenericViewSet):
 
 class DrinkView(StandardizedResponseMixin, ListModelMixin, GenericViewSet):
     serializer_class = DrinkListSerializer
-    parser_classes = [MultiPartParser]
+    pagination_class = StandardizedResultsSetPagination
     queryset = DrinkModel.objects.filter(is_deleted=False).all()
 
     def list(self, request, *args, **kwargs) -> Response:
@@ -453,8 +453,15 @@ class DrinkView(StandardizedResponseMixin, ListModelMixin, GenericViewSet):
         else:
             self.queryset = self.queryset.order_by("-cooker__acceptance_rate")
 
-        response = super().list(request, *args, **kwargs)
-        return self.success(response.data)
+        queryset = self.filter_queryset(self.get_queryset())
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return self.success(serializer.data)
 
 
 class DessertView(StandardizedResponseMixin, ListModelMixin, GenericViewSet):

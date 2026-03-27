@@ -10,11 +10,13 @@ from core_app.models import (
     DishModel,
     DishNutritionalInfo,
     DrinkModel,
+    DrinkNutritionalInfo,
     IngredientDishModel,
     OrderModel,
 )
 from core_app.serializers import (
     DishNutritionalInfoSerializer,
+    DrinkNutritionalInfoSerializer,
     OrderDishItemGETSerializer,
     OrderDrinkItemGETSerializer,
 )
@@ -201,6 +203,45 @@ class DishPATCHSerializer(DishSerializer):
 
 class DrinkSerializer(ModelSerializer):
     cooker = serializers.PrimaryKeyRelatedField(queryset=CookerModel.objects.all())
+    nutritional_info = serializers.JSONField(required=False, write_only=True, allow_null=True)
+
+    def create(self, validated_data: dict) -> DrinkModel:
+        nutritional_data = validated_data.pop("nutritional_info", None)
+
+        with transaction.atomic():
+            drink = DrinkModel.objects.create(**validated_data)
+
+            if nutritional_data is not None:
+                self._save_nutritional_info(drink, nutritional_data)
+
+        return drink
+
+    def update(self, instance: DrinkModel, validated_data: dict) -> DrinkModel:
+        nutritional_data = validated_data.pop("nutritional_info", None)
+
+        with transaction.atomic():
+            for attr, value in validated_data.items():
+                setattr(instance, attr, value)
+            instance.save()
+
+            if nutritional_data is not None:
+                self._save_nutritional_info(instance, nutritional_data)
+
+        return instance
+
+    def _save_nutritional_info(self, drink: DrinkModel, nutritional_data: dict) -> None:
+        DrinkNutritionalInfo.objects.update_or_create(
+            drink=drink,
+            defaults=nutritional_data,
+        )
+
+    def to_representation(self, instance: DrinkModel) -> dict:
+        data = super().to_representation(instance)
+        if hasattr(instance, "nutritional_info"):
+            data["nutritional_info"] = DrinkNutritionalInfoSerializer(instance.nutritional_info).data
+        else:
+            data["nutritional_info"] = {}
+        return data
 
 
 class DrinkPOSTSerializer(DrinkSerializer):
@@ -220,6 +261,7 @@ class DrinkPATCHSerializer(DrinkSerializer):
             "capacity",
             "is_suitable_for_quick_delivery",
             "is_suitable_for_scheduled_delivery",
+            "nutritional_info",
         )
 
 

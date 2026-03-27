@@ -8,8 +8,10 @@ from core_app.models import (
     DeliverModel,
     DishImageModel,
     DishModel,
+    DishNutritionalInfo,
     DrinkImageModel,
     DrinkModel,
+    DrinkNutritionalInfo,
     OrderDishItemModel,
     OrderDrinkItemModel,
     OrderModel,
@@ -155,6 +157,17 @@ class Command(BaseCommand):
             if created:
                 if photo:
                     DishImageModel.objects.get_or_create(dish=dish, key=photo, is_primary=True, position=0)
+
+                # Default nutritional info
+                DishNutritionalInfo.objects.get_or_create(
+                    dish=dish,
+                    defaults={
+                        "calories": random.randint(100, 500),
+                        "fat": random.randint(5, 30),
+                        "proteins": random.randint(5, 40),
+                        "carbohydrates": random.randint(10, 80),
+                    },
+                )
                 self.stdout.write(f"Created Dish: {dish.name}")
 
         # Drinks
@@ -189,6 +202,18 @@ class Command(BaseCommand):
             if created:
                 if photo:
                     DrinkImageModel.objects.get_or_create(drink=drink, key=photo, is_primary=True, position=0)
+
+                # Default nutritional info
+                DrinkNutritionalInfo.objects.get_or_create(
+                    drink=drink,
+                    defaults={
+                        "calories": random.randint(20, 150),
+                        "fat": random.randint(0, 5),
+                        "proteins": random.randint(0, 5),
+                        "carbohydrates": random.randint(5, 30),
+                        "sugars": random.randint(5, 25),
+                    },
+                )
                 self.stdout.write(f"Created Drink: {drink.name}")
 
         # --- 3. Orders Generation ---
