@@ -13,11 +13,13 @@ from core_app.models import (
     DrinkNutritionalInfo,
     IngredientDishModel,
     IngredientDrinkModel,
+    IngredientDrinkModel,
     OrderModel,
 )
 from core_app.serializers import (
     DishNutritionalInfoSerializer,
     DrinkNutritionalInfoSerializer,
+    IngredientDrinkSerializer,
     IngredientDrinkSerializer,
     OrderDishItemGETSerializer,
     OrderDrinkItemGETSerializer,
@@ -207,14 +209,17 @@ class DrinkSerializer(ModelSerializer):
     cooker = serializers.PrimaryKeyRelatedField(queryset=CookerModel.objects.all())
     nutritional_info = serializers.JSONField(required=False, write_only=True, allow_null=True)
     ingredients = serializers.JSONField(required=False, write_only=True)
+    ingredients = serializers.JSONField(required=False, write_only=True)
 
     def create(self, validated_data: dict) -> DrinkModel:
         nutritional_data = validated_data.pop("nutritional_info", None)
-        ingredients_data = validated_data.pop("ingredients", [])
+        ingredients_data = validated_data.pop("ingredients", None)
 
         with transaction.atomic():
             drink = DrinkModel.objects.create(**validated_data)
-            self._save_ingredients(drink, ingredients_data)
+
+            if ingredients_data:
+                self._save_ingredients(drink, ingredients_data)
 
             if nutritional_data is not None:
                 self._save_nutritional_info(drink, nutritional_data)
@@ -224,11 +229,15 @@ class DrinkSerializer(ModelSerializer):
     def update(self, instance: DrinkModel, validated_data: dict) -> DrinkModel:
         nutritional_data = validated_data.pop("nutritional_info", None)
         ingredients_data = validated_data.pop("ingredients", None)
+        ingredients_data = validated_data.pop("ingredients", None)
 
         with transaction.atomic():
             for attr, value in validated_data.items():
                 setattr(instance, attr, value)
             instance.save()
+
+            if ingredients_data is not None:
+                self._save_ingredients(instance, ingredients_data)
 
             if ingredients_data is not None:
                 self._save_ingredients(instance, ingredients_data)
@@ -245,23 +254,11 @@ class DrinkSerializer(ModelSerializer):
         )
 
     def _save_ingredients(self, drink: DrinkModel, ingredients_data: list[dict]) -> None:
-        ingredients_data = [ing for ing in ingredients_data if ing.get("code")]
-        if not ingredients_data:
-            drink.ingredients.set([])
-            return
-
-        codes = [ing["code"] for ing in ingredients_data]
-        existing_ingredients_by_code = {
-            ingredient.code: ingredient for ingredient in IngredientDrinkModel.objects.filter(code__in=codes)
-        }
-
         ingredient_objs: list[IngredientDrinkModel] = []
-        ingredients_to_create: list[IngredientDrinkModel] = []
-        ingredients_to_update: list[IngredientDrinkModel] = []
-
         for ing in ingredients_data:
-            code = ing["code"]
-            ingredient = existing_ingredients_by_code.get(code)
+            code = ing.get("code")
+            if not code:
+                continue
 
             defaults: dict = {
                 "name": ing.get("name") or code.capitalize(),
@@ -271,60 +268,27 @@ class DrinkSerializer(ModelSerializer):
             if "is_allergen" in ing:
                 defaults["is_allergen"] = ing["is_allergen"]
 
-            if ingredient is None:
-                # Prepare missing ingredients for bulk_create instead of inserting one by one.
-                ingredient = IngredientDrinkModel(
-                    code=code,
-                    name=defaults["name"],
-                    category=defaults.get("category"),
-                    is_allergen=defaults.get("is_allergen", False),
-                )
-                ingredients_to_create.append(ingredient)
-                ingredient_objs.append(ingredient)
-                continue
+            ingredient, created = IngredientDrinkModel.objects.get_or_create(
+                code=code,
+                defaults=defaults,
+            )
 
-            # For existing rows, only update fields that were provided and really changed.
-            updated = False
-            if ing.get("name") and ingredient.name != ing["name"]:
-                ingredient.name = ing["name"]
-                updated = True
-            if "category" in ing and ingredient.category != ing["category"]:
-                ingredient.category = ing["category"]
-                updated = True
-            if "is_allergen" in ing and ingredient.is_allergen != ing["is_allergen"]:
-                ingredient.is_allergen = ing["is_allergen"]
-                updated = True
-
-            if updated:
-                ingredients_to_update.append(ingredient)
+            if not created:
+                updated = False
+                if ingredient.name != ing.get("name"):
+                    ingredient.name = ing.get("name") or ingredient.name
+                    updated = True
+                if "category" in ing and ingredient.category != ing["category"]:
+                    ingredient.category = ing["category"]
+                    updated = True
+                if "is_allergen" in ing and ingredient.is_allergen != ing["is_allergen"]:
+                    ingredient.is_allergen = ing["is_allergen"]
+                    updated = True
+                if updated:
+                    ingredient.save()
 
             ingredient_objs.append(ingredient)
 
-        if ingredients_to_create:
-            # Create all missing ingredients in one query.
-            IngredientDrinkModel.objects.bulk_create(ingredients_to_create)
-
-            # Re-fetch created rows so we have saved instances with PKs for the M2M relation.
-            created_ingredients_by_code = {
-                ingredient.code: ingredient
-                for ingredient in IngredientDrinkModel.objects.filter(
-                    code__in=[ingredient.code for ingredient in ingredients_to_create]
-                )
-            }
-
-            ingredient_objs = [
-                created_ingredients_by_code.get(ingredient.code, ingredient) if ingredient.pk is None else ingredient
-                for ingredient in ingredient_objs
-            ]
-
-        if ingredients_to_update:
-            # Save all modified existing ingredients in one query.
-            IngredientDrinkModel.objects.bulk_update(
-                ingredients_to_update,
-                ["name", "category", "is_allergen"],
-            )
-
-        # Replace the drink M2M with the final ingredient list.
         drink.ingredients.set(ingredient_objs)
 
     def to_representation(self, instance: DrinkModel) -> dict:
@@ -333,6 +297,7 @@ class DrinkSerializer(ModelSerializer):
             data["nutritional_info"] = DrinkNutritionalInfoSerializer(instance.nutritional_info).data
         else:
             data["nutritional_info"] = {}
+        data["ingredients"] = IngredientDrinkSerializer(instance.ingredients.all(), many=True).data
         data["ingredients"] = IngredientDrinkSerializer(instance.ingredients.all(), many=True).data
         return data
 
@@ -357,6 +322,7 @@ class DrinkPATCHSerializer(DrinkSerializer):
             "capacity",
             "is_suitable_for_quick_delivery",
             "is_suitable_for_scheduled_delivery",
+            "ingredients",
             "ingredients",
             "nutritional_info",
         )
