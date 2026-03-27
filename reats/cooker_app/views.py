@@ -939,6 +939,45 @@ class DrinkView(StandardizedResponseMixin, IngredientsEndpointMixin, ModelViewSe
             message=SuccessMessageEnum.DRINK_DELETED,
         )
 
+    @action(detail=False, methods=["get"], url_path="ingredients")
+    def ingredients(self, request, *args, **kwargs) -> Response:
+        queryset = IngredientDrinkModel.objects.all().order_by("name")
+        search = request.query_params.get("search")
+        if search:
+            queryset = queryset.filter(Q(name__icontains=search) | Q(code__icontains=search))
+
+        # Categories aggregation
+        category_counts = (
+            IngredientDrinkModel.objects.filter(id__in=queryset.values_list("id", flat=True))
+            .values("category")
+            .annotate(count=Count("id"))
+            .order_by("-count")
+        )
+        categories_data = [
+            {
+                "id": str(c["category"]),
+                "name": str(c["category"]).capitalize() if c["category"] else "Autre",
+                "count": c["count"],
+            }
+            for c in category_counts
+            if c["category"]
+        ]
+
+        serializer = IngredientDrinkSerializer(queryset, many=True)
+
+        # We transform the data to match the snippet (mapping id to code if needed)
+        # However, for consistency with existing REA-140, I'll keep the serializer as is
+        # but wrap it in the requested structure.
+
+        response_data = {
+            "ingredients": serializer.data,
+            "categories": categories_data,
+        }
+
+        # The snippet doesn't show pagination, but for potentially large lists,
+        # we might want to keep it. However, the requirement is strict on the structure.
+        return self.success(data=response_data)
+
 
 class TokenObtainPairWithoutPasswordView(StandardizedResponseMixin, TokenViewBase):
     serializer_class = TokenObtainPairWithoutPasswordSerializer
