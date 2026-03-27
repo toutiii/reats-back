@@ -965,10 +965,6 @@ class DrinkView(StandardizedResponseMixin, IngredientsEndpointMixin, ModelViewSe
 
         serializer = IngredientDrinkSerializer(queryset, many=True)
 
-        # We transform the data to match the snippet (mapping id to code if needed)
-        # However, for consistency with existing REA-140, I'll keep the serializer as is
-        # but wrap it in the requested structure.
-
         response_data = {
             "ingredients": serializer.data,
             "categories": categories_data,
