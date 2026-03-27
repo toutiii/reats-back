@@ -12,6 +12,7 @@ from core_app.models import (
     DrinkImageModel,
     DrinkModel,
     DrinkNutritionalInfo,
+    IngredientDrinkModel,
     OrderDishItemModel,
     OrderDrinkItemModel,
     OrderModel,
@@ -205,6 +206,19 @@ class Command(BaseCommand):
                         "sugars": random.randint(5, 25),
                     },
                 )
+
+                # Default ingredients
+                if "coca" in drink.name.lower():
+                    ing, _ = IngredientDrinkModel.objects.get_or_create(
+                        code="sucre", defaults={"name": "Sucre", "is_allergen": False}
+                    )
+                    drink.ingredients.add(ing)
+                else:
+                    ing, _ = IngredientDrinkModel.objects.get_or_create(
+                        code="sulfites", defaults={"name": "Sulfites", "is_allergen": True}
+                    )
+                    drink.ingredients.add(ing)
+
                 self.stdout.write(f"Created Drink: {drink.name}")
 
         # --- 3. Orders Generation ---

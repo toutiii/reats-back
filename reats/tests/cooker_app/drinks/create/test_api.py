@@ -1,3 +1,4 @@
+import json
 from unittest.mock import MagicMock
 
 import pytest
@@ -9,7 +10,12 @@ from rest_framework.test import APIClient
 
 
 @pytest.fixture
-def post_data(image: InMemoryUploadedFile) -> dict:
+def ingredients() -> list[dict]:
+    return [{"code": "sucre", "name": "Sucre", "is_allergen": False}]
+
+
+@pytest.fixture
+def post_data(image: InMemoryUploadedFile, ingredients: list[dict]) -> dict:
     return {
         "unit": "liter",
         "country": "Sénégal",
@@ -19,6 +25,7 @@ def post_data(image: InMemoryUploadedFile) -> dict:
         "photos": [image],
         "cooker": 1,
         "capacity": "1",
+        "ingredients": json.dumps(ingredients),
     }
 
 
@@ -30,6 +37,7 @@ class TestCreateDrinkSuccess:
         client: APIClient,
         path: str,
         post_data: dict,
+        ingredients: list[dict],
         upload_fileobj: MagicMock,
     ) -> None:
         pre_create_count = DrinkModel.objects.count()
@@ -42,6 +50,17 @@ class TestCreateDrinkSuccess:
         drink = DrinkModel.objects.latest("pk")
         assert drink.images.count() == 1  # type: ignore
         assert drink.images.first().key == "cookers/1/drinks/test.jpg"  # type: ignore
+
+        assert drink.ingredients.count() == 1
+        ingredient = drink.ingredients.first()
+        assert ingredient.code == ingredients[0]["code"]  # type: ignore[union-attr]
+        assert ingredient.is_allergen == ingredients[0]["is_allergen"]  # type: ignore[union-attr]
+
+        response_ingredients = response.json()["data"]["ingredients"]
+        assert len(response_ingredients) == 1
+        assert response_ingredients[0]["code"] == ingredients[0]["code"]
+        assert response_ingredients[0]["is_allergen"] == ingredients[0]["is_allergen"]
+
         upload_fileobj.assert_called_once()
         post_create_count = DrinkModel.objects.count()
 
