@@ -143,6 +143,13 @@ class DishNutritionalInfo(BaseNutritionalInfo):
         db_table = "dish_nutritional_info"
 
 
+class DrinkNutritionalInfo(BaseNutritionalInfo):
+    drink: OneToOneField = OneToOneField("DrinkModel", on_delete=CASCADE, related_name="nutritional_info")
+
+    class Meta:
+        db_table = "drink_nutritional_info"
+
+
 class DishModel(ReatsModel):
     CATEGORY_CHOICES = [
         ("starter", "starter"),

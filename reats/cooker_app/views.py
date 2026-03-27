@@ -861,6 +861,27 @@ class DrinkView(StandardizedResponseMixin, ModelViewSet):
                 is_primary=(idx == 0),
                 position=idx,
             )
+        cooker_pk = str(current_object.cooker.pk)
+        photos = self.request.FILES.getlist("photos[]")
+
+        if photos:
+            # Replace all existing images with the newly uploaded ones
+            for old_image in current_object.images.all():
+                if old_image.key and "default" not in old_image.key:  # type: ignore
+                    delete_s3_object(old_image.key)  # type: ignore
+            current_object.images.all().delete()  # type: ignore
+
+        drink = serializer.save()
+
+        for idx, photo_file in enumerate(photos):
+            s3_key = self._build_s3_key(cooker_pk, photo_file.name)
+            upload_image_to_s3(photo_file, s3_key)
+            DrinkImageModel.objects.create(
+                drink=drink,
+                key=s3_key,
+                is_primary=(idx == 0),
+                position=idx,
+            )
 
     def destroy(self, request, *args, **kwargs) -> Response:
         instance: DrinkModel = self.get_object()

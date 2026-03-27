@@ -15,6 +15,7 @@ from .models import (
     DishRatingModel,
     DrinkImageModel,
     DrinkModel,
+    DrinkNutritionalInfo,
     DrinkRatingModel,
     IngredientDishModel,
     OrderDishItemModel,
@@ -114,6 +115,12 @@ class DishNutritionalInfoSerializer(ModelSerializer):
     class Meta:
         model = DishNutritionalInfo
         exclude = ("id", "dish")
+
+
+class DrinkNutritionalInfoSerializer(ModelSerializer):
+    class Meta:
+        model = DrinkNutritionalInfo
+        exclude = ("id", "drink")
 
 
 class BaseDishSerializer(NutritionalInfoMixin, ModelSerializer):
@@ -236,6 +243,7 @@ class DrinkImageSerializer(ModelSerializer):
 class BaseDrinkSerializer(ModelSerializer):
     ratings = DrinkRatingSerializer(many=True, read_only=True)
     cooker = SimpleCookerSerializer(read_only=True)
+    nutritional_info = serializers.SerializerMethodField()
 
     class Meta:
         model = DrinkModel
@@ -244,6 +252,11 @@ class BaseDrinkSerializer(ModelSerializer):
             "modified",
             "is_deleted",
         )
+
+    def get_nutritional_info(self, obj: DrinkModel) -> dict:
+        if hasattr(obj, "nutritional_info"):
+            return DrinkNutritionalInfoSerializer(obj.nutritional_info).data
+        return {}
 
 
 class DrinkListSerializer(BaseDrinkSerializer):

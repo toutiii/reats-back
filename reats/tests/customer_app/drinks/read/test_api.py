@@ -34,6 +34,7 @@ class TestListDrinksForCustomerSuccess:
                 "is_suitable_for_quick_delivery": False,
                 "is_suitable_for_scheduled_delivery": False,
                 "ratings": [],
+                "nutritional_info": {},
             },
             {
                 "capacity": 75,
@@ -55,6 +56,7 @@ class TestListDrinksForCustomerSuccess:
                 "is_suitable_for_quick_delivery": False,
                 "is_suitable_for_scheduled_delivery": False,
                 "ratings": [],
+                "nutritional_info": {},
             },
         ]
 
@@ -79,7 +81,12 @@ class TestListDrinksForCustomerSuccess:
         assert response.status_code == status.HTTP_200_OK
         assert response.json().get("success") is True
         assert response.json().get("message") == SuccessMessageEnum.OPERATION_SUCCESSFUL.value
-        diff = DeepDiff(response.json().get("data"), expected_data, ignore_order=True)
+
+        data = response.json().get("data")
+        assert "results" in data
+        assert "pagination" in data
+
+        diff = DeepDiff(data.get("results"), expected_data, ignore_order=True)
         assert not diff
 
 
@@ -106,11 +113,9 @@ class TestListDrinksForCustomeFailedWithUnknownCookerId:
             **auth_headers,
         )
         assert response.status_code == status.HTTP_200_OK
-        assert response.json() == {
-            "success": True,
-            "message": SuccessMessageEnum.OPERATION_SUCCESSFUL.value,
-            "data": [],
-        }
+        data = response.json().get("data")
+        assert data["results"] == []
+        assert data["pagination"]["total_items"] == 0
 
 
 class TestListDrinksForCustomerFailedWithoutCookerId:
@@ -127,11 +132,9 @@ class TestListDrinksForCustomerFailedWithoutCookerId:
             **auth_headers,
         )
         assert response.status_code == status.HTTP_200_OK
-        assert response.json() == {
-            "success": True,
-            "data": [],
-            "message": SuccessMessageEnum.OPERATION_SUCCESSFUL.value,
-        }
+        data = response.json().get("data")
+        assert data["results"] == []
+        assert data["pagination"]["total_items"] == 0
 
 
 class TestListDrinksOnlyReturnNonDeletedItems:
@@ -157,7 +160,7 @@ class TestListDrinksOnlyReturnNonDeletedItems:
             assert False
 
         response = client.get(
-            customer_drink_path,
+            f"{customer_drink_path}?cooker_id={cooker_id}",
             follow=False,
             **auth_headers,
         )
@@ -165,6 +168,7 @@ class TestListDrinksOnlyReturnNonDeletedItems:
         assert response.json().get("success") is True
         assert response.json().get("message") == SuccessMessageEnum.OPERATION_SUCCESSFUL.value
 
-        for item in response.json().get("data"):
+        data = response.json().get("data")
+        for item in data.get("results"):
             assert item.get("is_enabled") is True
             assert DrinkModel.objects.get(pk=int(item.get("id"))).is_deleted is False
