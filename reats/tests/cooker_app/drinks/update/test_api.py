@@ -88,6 +88,7 @@ def post_data_with_photo(image: InMemoryUploadedFile) -> dict:
         "cooker": 1,
         "capacity": "10",
         "photos": image,
+        "ingredients": '[{"code": "sucre", "name": "Sucre blanc", "category": "sucre", "is_allergen": false}]',
     }
 
 
