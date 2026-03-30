@@ -227,15 +227,11 @@ class DrinkSerializer(ModelSerializer):
     def update(self, instance: DrinkModel, validated_data: dict) -> DrinkModel:
         nutritional_data = validated_data.pop("nutritional_info", None)
         ingredients_data = validated_data.pop("ingredients", None)
-        ingredients_data = validated_data.pop("ingredients", None)
 
         with transaction.atomic():
             for attr, value in validated_data.items():
                 setattr(instance, attr, value)
             instance.save()
-
-            if ingredients_data is not None:
-                self._save_ingredients(instance, ingredients_data)
 
             if ingredients_data is not None:
                 self._save_ingredients(instance, ingredients_data)
@@ -320,7 +316,6 @@ class DrinkPATCHSerializer(DrinkSerializer):
             "capacity",
             "is_suitable_for_quick_delivery",
             "is_suitable_for_scheduled_delivery",
-            "ingredients",
             "ingredients",
             "nutritional_info",
         )
