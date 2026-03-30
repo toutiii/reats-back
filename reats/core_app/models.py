@@ -107,7 +107,7 @@ class DeliverModel(ReatsModel):
     objects: Manager = Manager()  # For linting purposes
 
 
-class IngredientDishModel(ReatsModel):
+class BaseIngredientModel(ReatsModel):
     id: AutoField = AutoField(primary_key=True)
     code: CharField = CharField(max_length=50, unique=True)
     name: CharField = CharField(max_length=100, db_index=True)
@@ -115,10 +115,22 @@ class IngredientDishModel(ReatsModel):
     is_allergen: BooleanField = BooleanField(default=False)
 
     class Meta:
-        db_table = "ingredients_dishes"
+        abstract = True
 
     def __str__(self) -> str:
         return self.name
+
+
+class IngredientDishModel(BaseIngredientModel):
+    class Meta(BaseIngredientModel.Meta):
+        abstract = False
+        db_table = "ingredients_dishes"
+
+
+class IngredientDrinkModel(BaseIngredientModel):
+    class Meta(BaseIngredientModel.Meta):
+        abstract = False
+        db_table = "ingredients_drinks"
 
 
 class BaseNutritionalInfo(Model):
@@ -237,6 +249,11 @@ class DrinkModel(ReatsModel):
     is_suitable_for_quick_delivery: BooleanField = BooleanField(default=False)
     is_suitable_for_scheduled_delivery: BooleanField = BooleanField(default=False)
     is_deleted: BooleanField = BooleanField(default=False)
+    ingredients: ManyToManyField = ManyToManyField(
+        "IngredientDrinkModel",
+        blank=True,
+        related_name="drinks",
+    )
 
     class Meta:
         db_table = "drinks"

@@ -35,6 +35,7 @@ class TestListDrinksForCustomerSuccess:
                 "is_suitable_for_scheduled_delivery": False,
                 "ratings": [],
                 "nutritional_info": {},
+                "ingredients": [],
             },
             {
                 "capacity": 75,
@@ -57,6 +58,7 @@ class TestListDrinksForCustomerSuccess:
                 "is_suitable_for_scheduled_delivery": False,
                 "ratings": [],
                 "nutritional_info": {},
+                "ingredients": [],
             },
         ]
 
