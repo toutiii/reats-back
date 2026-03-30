@@ -13,13 +13,11 @@ from core_app.models import (
     DrinkNutritionalInfo,
     IngredientDishModel,
     IngredientDrinkModel,
-    IngredientDrinkModel,
     OrderModel,
 )
 from core_app.serializers import (
     DishNutritionalInfoSerializer,
     DrinkNutritionalInfoSerializer,
-    IngredientDrinkSerializer,
     IngredientDrinkSerializer,
     OrderDishItemGETSerializer,
     OrderDrinkItemGETSerializer,
