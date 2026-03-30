@@ -210,6 +210,7 @@ def customer_id() -> int:
                                     "acceptance_rate": 100.0,
                                 },
                                 "nutritional_info": {},
+                                "ingredients": [],
                             },
                             "drink_quantity": 4,
                         }

@@ -431,6 +431,7 @@ def expected_data() -> list[dict]:
                             "email": "test@gmail.com",
                         },
                         "nutritional_info": {},
+                        "ingredients": [],
                     },
                     "drink_quantity": 4,
                 }
