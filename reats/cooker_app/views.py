@@ -12,6 +12,7 @@ from core_app.models import (
     DishModel,
     DrinkImageModel,
     DrinkModel,
+    IngredientDrinkModel,
     OrderDishItemModel,
     OrderDrinkItemModel,
     OrderModel,
@@ -21,6 +22,7 @@ from core_app.serializers import (
     DishListSerializer,
     DrinkDetailSerializer,
     DrinkListSerializer,
+    IngredientDrinkSerializer,
     OrderPATCHSerializer,
 )
 from django.conf import settings
@@ -756,11 +758,56 @@ class DishView(StandardizedResponseMixin, ModelViewSet):
         return self.success(message=SuccessMessageEnum.DISH_DELETED)
 
 
-class DrinkView(StandardizedResponseMixin, ModelViewSet):
+class IngredientsEndpointMixin:
+    """
+    Mixin to provide the GET /{items}/ingredients/ endpoint with custom structure.
+    Requires the viewset to define `ingredient_model` and `ingredient_serializer_class`
+    and inherit from `StandardizedResponseMixin`.
+    """
+
+    ingredient_model: Any = None
+    ingredient_serializer_class: Any = None
+
+    @action(detail=False, methods=["get"], url_path="ingredients")
+    def ingredients(self, request, *args, **kwargs) -> Response:
+        queryset = self.ingredient_model.objects.all().order_by("name")
+        search = request.query_params.get("search")
+        if search:
+            queryset = queryset.filter(Q(name__icontains=search) | Q(code__icontains=search))
+
+        category_counts = (
+            self.ingredient_model.objects.filter(id__in=queryset.values_list("id", flat=True))
+            .values("category")
+            .annotate(count=Count("id"))
+            .order_by("-count")
+        )
+        categories_data = [
+            {
+                "id": str(item["category"]),
+                "name": str(item["category"]).capitalize() if item["category"] else "Autre",
+                "count": item["count"],
+            }
+            for item in category_counts
+            if item["category"]
+        ]
+
+        serializer = self.ingredient_serializer_class(queryset, many=True)
+
+        response_data = {
+            "ingredients": serializer.data,
+            "categories": categories_data,
+        }
+
+        return self.success(data=response_data)  # type: ignore
+
+
+class DrinkView(StandardizedResponseMixin, IngredientsEndpointMixin, ModelViewSet):
     queryset = DrinkModel.objects.filter(is_deleted=False).all()
     filter_backends = [django_filters.rest_framework.DjangoFilterBackend]
     filterset_class = DrinkFilter
     pagination_class = StandardizedResultsSetPagination
+    ingredient_model = IngredientDrinkModel
+    ingredient_serializer_class = IngredientDrinkSerializer
 
     def _annotated_queryset(self):
         return self.queryset.prefetch_related("images")
