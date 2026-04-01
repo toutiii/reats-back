@@ -66,7 +66,7 @@ class SimpleCookerSerializer(ModelSerializer):
         fields = ("id", "firstname", "lastname", "email", "acceptance_rate")
 
 
-class IngredientSerializer(ModelSerializer):
+class IngredientDishSerializer(ModelSerializer):
     class Meta:
         model = IngredientDishModel
         fields = ("id", "code", "name", "category", "is_allergen")
@@ -177,7 +177,7 @@ class DishListSerializer(AllergenIngredientMixin, BaseDishSerializer):
 
 
 class DishDetailSerializer(BaseDishSerializer):
-    ingredients = IngredientSerializer(many=True, read_only=True)
+    ingredients = IngredientDishSerializer(many=True, read_only=True)
     images = DishImageSerializer(many=True, read_only=True)
     allergens = serializers.SerializerMethodField()
 
@@ -190,7 +190,7 @@ class DishDetailSerializer(BaseDishSerializer):
 
     def get_allergens(self, obj: DishModel) -> Any:
         allergens = obj.ingredients.filter(is_allergen=True)
-        return IngredientSerializer(allergens, many=True).data
+        return IngredientDishSerializer(allergens, many=True).data
 
 
 class DishCustomerSerializer(AllergenIngredientMixin, NutritionalInfoMixin, ModelSerializer):

@@ -164,7 +164,7 @@ class Command(BaseCommand):
                     dish=dish,
                     defaults={
                         "calories": random.randint(100, 500),
-                        "fat": random.randint(5, 30),
+                        "fats": random.randint(5, 30),
                         "proteins": random.randint(5, 40),
                         "carbohydrates": random.randint(10, 80),
                     },
@@ -209,7 +209,7 @@ class Command(BaseCommand):
                     drink=drink,
                     defaults={
                         "calories": random.randint(20, 150),
-                        "fat": random.randint(0, 5),
+                        "fats": random.randint(0, 5),
                         "proteins": random.randint(0, 5),
                         "carbohydrates": random.randint(5, 30),
                         "sugars": random.randint(5, 25),
