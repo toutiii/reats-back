@@ -207,7 +207,6 @@ class DrinkSerializer(ModelSerializer):
     cooker = serializers.PrimaryKeyRelatedField(queryset=CookerModel.objects.all())
     nutritional_info = serializers.JSONField(required=False, write_only=True, allow_null=True)
     ingredients = serializers.JSONField(required=False, write_only=True)
-    ingredients = serializers.JSONField(required=False, write_only=True)
 
     def create(self, validated_data: dict) -> DrinkModel:
         nutritional_data = validated_data.pop("nutritional_info", None)

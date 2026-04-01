@@ -783,12 +783,12 @@ class IngredientsEndpointMixin:
         )
         categories_data = [
             {
-                "id": str(c["category"]),
-                "name": str(c["category"]).capitalize() if c["category"] else "Autre",
-                "count": c["count"],
+                "id": str(item["category"]),
+                "name": str(item["category"]).capitalize() if item["category"] else "Autre",
+                "count": item["count"],
             }
-            for c in category_counts
-            if c["category"]
+            for item in category_counts
+            if item["category"]
         ]
 
         serializer = self.ingredient_serializer_class(queryset, many=True)
