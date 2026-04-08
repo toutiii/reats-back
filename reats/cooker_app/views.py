@@ -793,7 +793,7 @@ class DishView(StandardizedResponseMixin, IngredientsEndpointMixin, ModelViewSet
     def toggle_availability(self, request, *args, **kwargs) -> Response:
         instance: DishModel = self.get_object()
         instance.is_enabled = not instance.is_enabled
-        instance.save(update_fields=["is_enabled", "modified"])
+        instance.save(update_fields=["is_enabled"])
         instance = self.queryset.get(pk=instance.pk)
         serializer = self.get_serializer(instance)
         return self.success(data=serializer.data)
@@ -942,7 +942,11 @@ class DrinkView(StandardizedResponseMixin, IngredientsEndpointMixin, ModelViewSe
     def toggle_availability(self, request, *args, **kwargs) -> Response:
         instance: DrinkModel = self.get_object()
         instance.is_enabled = not instance.is_enabled
-        instance.save(update_fields=["is_enabled", "modified"])
+        instance.save(
+            update_fields=[
+                "is_enabled",
+            ]
+        )
         instance = self.queryset.get(pk=instance.pk)
         serializer = self.get_serializer(instance)
         return self.success(data=serializer.data)
