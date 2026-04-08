@@ -829,6 +829,9 @@ class DrinkView(StandardizedResponseMixin, IngredientsEndpointMixin, ModelViewSe
         return qs
 
     def get_serializer_class(self) -> type[BaseSerializer]:
+        if self.action == "toggle_availability":
+            return DrinkListSerializer
+
         if self.request.method in ("POST", "PUT"):
             self.serializer_class = DrinkPOSTSerializer
 
@@ -934,6 +937,15 @@ class DrinkView(StandardizedResponseMixin, IngredientsEndpointMixin, ModelViewSe
                 is_primary=(idx == 0),
                 position=idx,
             )
+
+    @action(detail=True, methods=["patch"], url_path="availability")
+    def toggle_availability(self, request, *args, **kwargs) -> Response:
+        instance: DrinkModel = self.get_object()
+        instance.is_enabled = not instance.is_enabled
+        instance.save(update_fields=["is_enabled", "modified"])
+        instance = self.queryset.get(pk=instance.pk)
+        serializer = self.get_serializer(instance)
+        return self.success(data=serializer.data)
 
     def destroy(self, request, *args, **kwargs) -> Response:
         instance: DrinkModel = self.get_object()
