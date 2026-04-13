@@ -84,11 +84,14 @@ def compute_start_date(timeframe: str) -> datetime:
 
 
 def upload_image_to_s3(image: InMemoryUploadedFile, image_path: str) -> None:
+    image.seek(0)
+    content = image.read()
     try:
-        _get_s3_client().upload_fileobj(
-            image,
-            os.getenv("AWS_S3_BUCKET"),
-            image_path,
+        _get_s3_client().put_object(
+            Bucket=os.getenv("AWS_S3_BUCKET"),
+            Key=image_path,
+            Body=content,
+            ContentType=getattr(image, "content_type", None) or "application/octet-stream",
         )
     except ClientError as err:
         logger.error(err)

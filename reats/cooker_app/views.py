@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import uuid
 from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Any, Callable, List, Optional, Tuple, Type, TypedDict, Union
@@ -180,7 +181,10 @@ class CookerView(StandardizedResponseMixin, ModelViewSet):
         if old_photo_key and not old_photo_key.endswith("default-profile-pic.jpg"):
             delete_s3_object(old_photo_key)
 
-        return self.success(data={"photo": cooker.photo}, message=SuccessMessageEnum.OPERATION_SUCCESSFUL)
+        return self.success(
+            data={"photo": cooker.photo},
+            message=SuccessMessageEnum.OPERATION_SUCCESSFUL,
+        )
 
     def destroy(self, request, *args, **kwargs) -> Response:
         instance: CookerModel = self.get_object()
@@ -630,7 +634,7 @@ class IngredientsEndpointMixin:
         categories_data = [
             {
                 "id": str(item["category"]),
-                "name": str(item["category"]).capitalize() if item["category"] else "Autre",
+                "name": (str(item["category"]).capitalize() if item["category"] else "Autre"),
                 "count": item["count"],
             }
             for item in category_counts
@@ -671,7 +675,13 @@ class DishView(StandardizedResponseMixin, IngredientsEndpointMixin, ModelViewSet
         )
 
     def get_queryset(self):
-        if self.action in ("retrieve", "update", "partial_update", "destroy", "toggle_availability"):
+        if self.action in (
+            "retrieve",
+            "update",
+            "partial_update",
+            "destroy",
+            "toggle_availability",
+        ):
             return self._annotated_queryset().filter(cooker__id=self.request.user.pk)
 
         qs = self._annotated_queryset()
@@ -692,8 +702,11 @@ class DishView(StandardizedResponseMixin, IngredientsEndpointMixin, ModelViewSet
             return DishDetailSerializer
         return DishListSerializer
 
+    # def _build_s3_key(self, cooker_pk: int, category: str, filename: str) -> str:
+    #     return f"cookers/{cooker_pk}/dishes/{category}/{filename}"
+
     def _build_s3_key(self, cooker_pk: int, category: str, filename: str) -> str:
-        return f"cookers/{cooker_pk}/dishes/{category}/{filename}"
+        return f"cookers/{cooker_pk}/dishes/{category}/{uuid.uuid4()}-{filename}"
 
     def perform_create(self, serializer: BaseSerializer) -> None:
         cooker_pk = serializer.validated_data["cooker"].pk
