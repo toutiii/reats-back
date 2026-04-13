@@ -41,17 +41,21 @@ def image() -> InMemoryUploadedFile:
 
 
 @pytest.fixture
-def upload_fileobj() -> Iterator:
-    patcher = patch("utils.common.s3.upload_fileobj")
-    yield patcher.start()
+def mock_s3_client() -> Iterator:
+    patcher = patch("utils.common._get_s3_client")
+    mock = patcher.start()
+    yield mock.return_value
     patcher.stop()
 
 
 @pytest.fixture
-def delete_object() -> Iterator:
-    patcher = patch("utils.common.s3.delete_object")
-    yield patcher.start()
-    patcher.stop()
+def upload_fileobj(mock_s3_client) -> Iterator:
+    yield mock_s3_client.upload_fileobj
+
+
+@pytest.fixture
+def delete_object(mock_s3_client) -> Iterator:
+    yield mock_s3_client.delete_object
 
 
 @pytest.fixture

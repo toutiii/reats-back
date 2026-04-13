@@ -18,8 +18,37 @@ from phonenumbers.phonenumberutil import NumberParseException
 from utils.enums import OrderStatusEnum
 
 logger = logging.getLogger("watchtower-logger")
-session = boto3.session.Session(region_name=os.getenv("AWS_REGION"))
-s3 = session.client("s3", config=boto3.session.Config(signature_version="s3v4"))
+
+
+def _get_s3_client():
+    """
+    Lazy factory: creates a fresh boto3 S3 client on every call.
+
+    Why not module-level?
+    - This module is imported at Django startup, BEFORE load_dotenv() runs.
+    - A module-level client would have AWS_REGION=None and stale/missing
+      credentials, producing presigned URLs signed with no region (defaulting
+      to the global s3.amazonaws.com endpoint).
+    - AWS rejects those URLs because the credential region (eu-central-1)
+      does not match the endpoint region (us-east-1 / global).
+
+    Why virtual addressing style?
+    - Generates URLs as https://<bucket>.s3.<region>.amazonaws.com/<key>
+    - The hostname region always matches the signing region → no mismatch.
+    """
+    region = (os.getenv("AWS_REGION") or "").strip("\"'")
+    if not region:
+        logger.error("[S3] AWS_REGION is not set — S3 calls will fail.")
+    return boto3.client(
+        "s3",
+        region_name=region,
+        config=boto3.session.Config(
+            signature_version="s3v4",
+            s3={"addressing_style": "virtual"},
+        ),
+    )
+
+
 pinpoint_client = boto3.client("pinpoint", region_name=os.getenv("AWS_REGION"))
 stripe.api_key = settings.STRIPE_PRIVATE_API_KEY
 
@@ -56,7 +85,7 @@ def compute_start_date(timeframe: str) -> datetime:
 
 def upload_image_to_s3(image: InMemoryUploadedFile, image_path: str) -> None:
     try:
-        s3.upload_fileobj(
+        _get_s3_client().upload_fileobj(
             image,
             os.getenv("AWS_S3_BUCKET"),
             image_path,
@@ -68,25 +97,28 @@ def upload_image_to_s3(image: InMemoryUploadedFile, image_path: str) -> None:
 
 
 def get_pre_signed_url(key: str) -> str:
+    bucket = os.getenv("AWS_S3_BUCKET")
     try:
-        url = s3.generate_presigned_url(
+        url = _get_s3_client().generate_presigned_url(
             ClientMethod="get_object",
             Params={
-                "Bucket": os.getenv("AWS_S3_BUCKET"),
+                "Bucket": bucket,
                 "Key": key,
             },
+            ExpiresIn=3600,
         )
     except ClientError as err:
-        logger.error(err)
+        logger.error(f"[S3] Failed to generate presigned URL for key={key}: {err}")
+        return ""
     else:
-        logger.info(url)
+        logger.debug(f"[S3] Presigned URL generated for key={key}")
 
     return url
 
 
 def delete_s3_object(key: str) -> None:
     try:
-        s3.delete_object(Bucket=os.getenv("AWS_S3_BUCKET"), Key=key)
+        _get_s3_client().delete_object(Bucket=os.getenv("AWS_S3_BUCKET"), Key=key)
     except ClientError as err:
         logger.error(err)
     else:
