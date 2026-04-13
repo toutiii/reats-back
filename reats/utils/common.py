@@ -86,17 +86,56 @@ def compute_start_date(timeframe: str) -> datetime:
 def upload_image_to_s3(image: InMemoryUploadedFile, image_path: str) -> None:
     image.seek(0)
     content = image.read()
+
+    local_md5 = hashlib.md5(content).hexdigest()
+    local_first16 = content[:16].hex()
+    bucket = os.getenv("AWS_S3_BUCKET")
+    client = _get_s3_client()
+
+    logger.info("REMOTE_UPLOAD_DEBUG_START key=%s", image_path)
+    logger.info("REMOTE_UPLOAD_DEBUG local_size=%s", len(content))
+    logger.info("REMOTE_UPLOAD_DEBUG local_first16=%s", local_first16)
+    logger.info("REMOTE_UPLOAD_DEBUG local_md5=%s", local_md5)
+    logger.info("REMOTE_UPLOAD_DEBUG content_type=%s", getattr(image, "content_type", None))
+
     try:
-        _get_s3_client().put_object(
-            Bucket=os.getenv("AWS_S3_BUCKET"),
+        client.put_object(
+            Bucket=bucket,
             Key=image_path,
             Body=content,
             ContentType=getattr(image, "content_type", None) or "application/octet-stream",
         )
+
+        head = client.head_object(Bucket=bucket, Key=image_path)
+        logger.info("REMOTE_UPLOAD_DEBUG head_content_length=%s", head.get("ContentLength"))
+        logger.info("REMOTE_UPLOAD_DEBUG head_content_type=%s", head.get("ContentType"))
+        logger.info("REMOTE_UPLOAD_DEBUG head_etag=%s", head.get("ETag"))
+        logger.info("REMOTE_UPLOAD_DEBUG head_last_modified=%s", head.get("LastModified"))
+
+        obj = client.get_object(Bucket=bucket, Key=image_path)
+        s3_content = obj["Body"].read()
+
+        s3_md5 = hashlib.md5(s3_content).hexdigest()
+        s3_first16 = s3_content[:16].hex()
+
+        logger.info("REMOTE_UPLOAD_DEBUG s3_size=%s", len(s3_content))
+        logger.info("REMOTE_UPLOAD_DEBUG s3_first16=%s", s3_first16)
+        logger.info("REMOTE_UPLOAD_DEBUG s3_md5=%s", s3_md5)
+        logger.info("REMOTE_UPLOAD_DEBUG s3_content_type=%s", obj.get("ContentType"))
+        logger.info("REMOTE_UPLOAD_DEBUG s3_content_encoding=%s", obj.get("ContentEncoding"))
+
+        logger.info(
+            "REMOTE_UPLOAD_DEBUG compare same_size=%s same_md5=%s same_first16=%s",
+            len(content) == len(s3_content),
+            local_md5 == s3_md5,
+            local_first16 == s3_first16,
+        )
+
     except ClientError as err:
-        logger.error(err)
+        logger.exception("REMOTE_UPLOAD_DEBUG error=%s", err)
+        raise
     else:
-        logger.info(f"{image_path} has been uploaded to S3.")
+        logger.info("REMOTE_UPLOAD_DEBUG_DONE key=%s", image_path)
 
 
 def get_pre_signed_url(key: str) -> str:

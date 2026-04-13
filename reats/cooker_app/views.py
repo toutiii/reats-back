@@ -719,6 +719,12 @@ class DishView(StandardizedResponseMixin, IngredientsEndpointMixin, ModelViewSet
 
         for idx, photo_file in enumerate(photos):
             s3_key = self._build_s3_key(cooker_pk, category, photo_file.name)
+            logger.info(
+                "REMOTE_UPLOAD_DEBUG_SELECTED_FILE name=%s size=%s content_type=%s",
+                photo_file.name,
+                getattr(photo_file, "size", None),
+                getattr(photo_file, "content_type", None),
+            )
             upload_image_to_s3(photo_file, s3_key)
             DishImageModel.objects.create(
                 dish=dish,
