@@ -95,8 +95,14 @@ class DishSerializer(ModelSerializer):
     cooker = serializers.PrimaryKeyRelatedField(queryset=CookerModel.objects.all())
     ingredients = serializers.JSONField(required=False, write_only=True)
     nutritional_info = serializers.JSONField(required=False, write_only=True, allow_null=True)
+    photos = serializers.ListField(
+        child=serializers.ImageField(),
+        required=False,
+        write_only=True,
+    )
 
     def create(self, validated_data):
+        validated_data.pop("photos", None)
         ingredients_data = validated_data.pop("ingredients", [])
         nutritional_data = validated_data.pop("nutritional_info", None)
 
@@ -200,6 +206,7 @@ class DishPATCHSerializer(DishSerializer):
             "category",
             "ingredients",
             "nutritional_info",
+            "photos",
         )
 
 
@@ -207,8 +214,14 @@ class DrinkSerializer(ModelSerializer):
     cooker = serializers.PrimaryKeyRelatedField(queryset=CookerModel.objects.all())
     nutritional_info = serializers.JSONField(required=False, write_only=True, allow_null=True)
     ingredients = serializers.JSONField(required=False, write_only=True)
+    photos = serializers.ListField(
+        child=serializers.ImageField(),
+        required=False,
+        write_only=True,
+    )
 
     def create(self, validated_data: dict) -> DrinkModel:
+        validated_data.pop("photos", None)
         nutritional_data = validated_data.pop("nutritional_info", None)
         ingredients_data = validated_data.pop("ingredients", None)
 
@@ -224,6 +237,7 @@ class DrinkSerializer(ModelSerializer):
         return drink
 
     def update(self, instance: DrinkModel, validated_data: dict) -> DrinkModel:
+        validated_data.pop("photos", None)
         nutritional_data = validated_data.pop("nutritional_info", None)
         ingredients_data = validated_data.pop("ingredients", None)
 
