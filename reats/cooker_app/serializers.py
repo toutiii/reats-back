@@ -96,10 +96,18 @@ class DishSerializer(ModelSerializer):
     ingredients = serializers.JSONField(required=False, write_only=True)
     nutritional_info = serializers.JSONField(required=False, write_only=True, allow_null=True)
     photos = serializers.ListField(
-        child=serializers.ImageField(),
+        child=serializers.FileField(),
         required=False,
         write_only=True,
+        help_text="One or more dish images. Handled via request.FILES in the view.",
     )
+
+    def to_internal_value(self, data):
+        if hasattr(data, "copy"):
+            data = data.copy()  # make QueryDict mutable
+        data.pop("photos", None)
+        data.pop("photos[]", None)
+        return super().to_internal_value(data)
 
     def create(self, validated_data):
         validated_data.pop("photos", None)
@@ -215,10 +223,18 @@ class DrinkSerializer(ModelSerializer):
     nutritional_info = serializers.JSONField(required=False, write_only=True, allow_null=True)
     ingredients = serializers.JSONField(required=False, write_only=True)
     photos = serializers.ListField(
-        child=serializers.ImageField(),
+        child=serializers.FileField(),
         required=False,
         write_only=True,
+        help_text="One or more drink images. Handled via request.FILES in the view.",
     )
+
+    def to_internal_value(self, data):
+        if hasattr(data, "copy"):
+            data = data.copy()  # make QueryDict mutable
+        data.pop("photos", None)
+        data.pop("photos[]", None)
+        return super().to_internal_value(data)
 
     def create(self, validated_data: dict) -> DrinkModel:
         validated_data.pop("photos", None)
