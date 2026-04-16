@@ -172,7 +172,7 @@ class DishModel(ReatsModel):
     id: AutoField = AutoField(primary_key=True)
     category: CharField = CharField(max_length=9, choices=CATEGORY_CHOICES)
     country: CharField = CharField(max_length=50)
-    description: TextField = TextField(max_length=2000, null=True)
+    description: TextField = TextField(max_length=1024, null=True)
     name: CharField = CharField(max_length=128)
     price: FloatField = FloatField()
     cooker: ForeignKey = ForeignKey(CookerModel, on_delete=CASCADE)
