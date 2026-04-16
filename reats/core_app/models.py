@@ -240,7 +240,7 @@ class DrinkModel(ReatsModel):
     id: AutoField = AutoField(primary_key=True)
     unit: CharField = CharField(max_length=20, choices=UNIT_CHOICES)
     country: CharField = CharField(max_length=50)
-    description: TextField = TextField(max_length=2000, null=True)
+    description: TextField = TextField(max_length=1024, null=True)
     name: CharField = CharField(max_length=128)
     price: FloatField = FloatField()
     cooker: ForeignKey = ForeignKey(CookerModel, on_delete=CASCADE)
