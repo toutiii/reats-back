@@ -507,14 +507,14 @@ sdist = { url = "https://files.pythonhosted.org/packages/fe/26/bca4d737a9acea25e
 
 [[package]]
 name = "gunicorn"
-version = "20.1.0"
+version = "21.2.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "setuptools" },
+    { name = "packaging" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/28/5b/0d1f0296485a6af03366604142ea8f19f0833894db3512a40ed07b2a56dd/gunicorn-20.1.0.tar.gz", hash = "sha256:e0a968b5ba15f8a328fdfd7ab1fcb5af4470c28aaf7e55df02a99bc13138e6e8", size = 370601, upload-time = "2021-03-27T01:54:37.202Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/06/89/acd9879fa6a5309b4bf16a5a8855f1e58f26d38e0c18ede9b3a70996b021/gunicorn-21.2.0.tar.gz", hash = "sha256:88ec8bff1d634f98e61b9f65bc4bf3cd918a90806c6f5c48bc5603849ec81033", size = 3632557, upload-time = "2023-07-19T11:46:46.917Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e4/dd/5b190393e6066286773a67dfcc2f9492058e9b57c4867a95f1ba5caf0a83/gunicorn-20.1.0-py3-none-any.whl", hash = "sha256:9dcc4547dbb1cb284accfb15ab5667a0e5d1881cc443e0677b4882a4067a807e", size = 79531, upload-time = "2021-04-27T12:16:23.375Z" },
+    { url = "https://files.pythonhosted.org/packages/0e/2a/c3a878eccb100ccddf45c50b6b8db8cf3301a6adede6e31d48e8531cab13/gunicorn-21.2.0-py3-none-any.whl", hash = "sha256:3213aa5e8c24949e792bcacfc176fef362e7aac80b76c56f6b5122bf350722f0", size = 80176, upload-time = "2023-07-19T11:46:44.51Z" },
 ]
 
 [[package]]
@@ -1135,7 +1135,7 @@ requires-dist = [
     { name = "djangorestframework-simplejwt", extras = ["crypto"], specifier = "==5.3.1" },
     { name = "drf-spectacular", specifier = "==0.29.0" },
     { name = "googlemaps", specifier = "==4.10.0" },
-    { name = "gunicorn", specifier = "==20.1.0" },
+    { name = "gunicorn", specifier = "==21.2.0" },
     { name = "pillow", specifier = "==10.0.1" },
     { name = "psycopg2-binary", specifier = "==2.9.11" },
     { name = "python-dotenv", specifier = "==1.0.0" },
@@ -1315,15 +1315,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/5a/47/d676353674e651910085e3537866f093d2b9e9699e95e89d960e78df9ecf/s3transfer-0.6.2.tar.gz", hash = "sha256:cab66d3380cca3e70939ef2255d01cd8aece6a4907a9528740f668c4b0611861", size = 132821, upload-time = "2023-08-15T22:06:41.78Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d9/17/a3b666f5ef9543cfd3c661d39d1e193abb9649d0cfbbfee3cf3b51d5af02/s3transfer-0.6.2-py3-none-any.whl", hash = "sha256:b014be3a8a2aab98cfe1abc7229cc5a9a0cf05eb9c1f2b86b230fd8df3f78084", size = 79765, upload-time = "2023-08-15T22:06:39.88Z" },
-]
-
-[[package]]
-name = "setuptools"
-version = "82.0.1"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/4f/db/cfac1baf10650ab4d1c111714410d2fbb77ac5a616db26775db562c8fab2/setuptools-82.0.1.tar.gz", hash = "sha256:7d872682c5d01cfde07da7bccc7b65469d3dca203318515ada1de5eda35efbf9", size = 1152316, upload-time = "2026-03-09T12:47:17.221Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/9d/76/f789f7a86709c6b087c5a2f52f911838cad707cc613162401badc665acfe/setuptools-82.0.1-py3-none-any.whl", hash = "sha256:a59e362652f08dcd477c78bb6e7bd9d80a7995bc73ce773050228a348ce2e5bb", size = 1006223, upload-time = "2026-03-09T12:47:15.026Z" },
 ]
 
 [[package]]
