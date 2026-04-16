@@ -9,6 +9,8 @@ from uuid import uuid4
 import jwt
 import pytest
 import stripe
+import stripe.error
+import stripe.util
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives.serialization import load_pem_private_key
 from django.core.files.uploadedfile import InMemoryUploadedFile
@@ -268,9 +270,18 @@ def delivery_api_key_header(settings) -> dict:
 @pytest.fixture(autouse=True, scope="session")
 def mock_get_pre_signed_url() -> Iterator:
     with (
-        patch("core_app.serializers.get_pre_signed_url", return_value="https://some-url.com") as p1,
-        patch("customer_app.serializers.get_pre_signed_url", return_value="https://some-url.com"),
-        patch("delivery_app.serializers.get_pre_signed_url", return_value="https://some-url.com"),
+        patch(
+            "core_app.serializers.get_pre_signed_url",
+            return_value="https://some-url.com",
+        ) as p1,
+        patch(
+            "customer_app.serializers.get_pre_signed_url",
+            return_value="https://some-url.com",
+        ),
+        patch(
+            "delivery_app.serializers.get_pre_signed_url",
+            return_value="https://some-url.com",
+        ),
         patch("utils.common.get_pre_signed_url", return_value="https://some-url.com"),
     ):
         yield p1
@@ -322,7 +333,7 @@ def mock_googlemaps_distance_matrix() -> Iterator:
 def mock_stripe_payment_intent_create() -> Iterator:
     patcher = patch(
         "stripe.PaymentIntent.create",
-        return_value=stripe.util.convert_to_dict(
+        return_value=stripe.util.convert_to_dict(  # ty: ignore[unresolved-attribute]
             json.loads(
                 """{
                 "amount": 150870,
@@ -387,7 +398,7 @@ def mock_stripe_payment_intent_create() -> Iterator:
 def mock_stripe_create_ephemeral_key() -> Iterator:
     patcher = patch(
         "stripe.EphemeralKey.create",
-        return_value=stripe.util.convert_to_dict(
+        return_value=stripe.util.convert_to_dict(  # ty: ignore[unresolved-attribute]
             json.loads(
                 """{
                 "associated_objects": [
@@ -498,7 +509,9 @@ def mock_stripe_webhook_construct_event_success(
 ) -> Iterator:
     pather = patch(
         "stripe.Webhook.construct_event",
-        return_value=stripe.util.convert_to_dict(stripe_payment_intent_success_webhook_data),
+        return_value=stripe.util.convert_to_dict(  # ty: ignore[unresolved-attribute]
+            stripe_payment_intent_success_webhook_data
+        ),
     )
     yield pather.start()
     pather.stop()
@@ -508,7 +521,7 @@ def mock_stripe_webhook_construct_event_success(
 def mock_stripe_webhook_construct_event_failed() -> Iterator:
     patcher = patch(
         "stripe.Webhook.construct_event",
-        side_effect=stripe.error.SignatureVerificationError("error", "sig_header"),
+        side_effect=stripe.error.SignatureVerificationError("error", "sig_header"),  # ty: ignore[unresolved-attribute]
     )
     yield patcher.start()
     patcher.stop()

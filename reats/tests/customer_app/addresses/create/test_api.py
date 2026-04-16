@@ -1,5 +1,5 @@
 import pytest
-from core_app.models import AddressModel, CustomerModel
+from core_app.models import AddressModel
 from django.forms.models import model_to_dict
 from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from rest_framework import status
@@ -55,8 +55,8 @@ def test_create_address_success(
         "is_enabled": True,
         "customer": customer_id,
     }
-    assert CustomerModel.objects.get(pk=customer_id).addresses.count() == 1
-    assert CustomerModel.objects.get(pk=customer_id).addresses.first() == AddressModel.objects.latest("pk")
+    assert AddressModel.objects.filter(customer=customer_id).count() == 1
+    assert AddressModel.objects.filter(customer=customer_id).first() == AddressModel.objects.latest("pk")
 
     assert response.json().get("success") is True
     assert isinstance(response.json().get("data"), dict)

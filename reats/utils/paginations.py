@@ -16,7 +16,8 @@ class StandardizedResultsSetPagination(PageNumberPagination):
         except (KeyError, ValueError):
             return self.page_size
 
-    def get_paginated_response(self, results, sumary_data=None):
+    def get_paginated_response(self, results, sumary_data=None):  # ty: ignore[invalid-method-override]
+        assert self.page is not None
         pagination: dict = {
             "current_page": self.page.number,
             "total_pages": self.page.paginator.num_pages,

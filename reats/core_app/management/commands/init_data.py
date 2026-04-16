@@ -1,5 +1,6 @@
 import random
 from datetime import timedelta
+from typing import cast
 
 from core_app.models import (
     AddressModel,
@@ -34,7 +35,11 @@ class Command(BaseCommand):
         # --- 0. Superuser Creation ---
         superuser_email = "admin@reats.com"
         if not User.objects.filter(username=superuser_email).exists():
-            User.objects.create_superuser(username=superuser_email, email=superuser_email, password="password")
+            User.objects.create_superuser(  # ty: ignore[unresolved-attribute]
+                username=superuser_email,
+                email=superuser_email,
+                password="password",
+            )
             self.stdout.write(f"Created Superuser: {superuser_email}")
         else:
             self.stdout.write(f"Superuser already exists: {superuser_email}")
@@ -143,7 +148,9 @@ class Command(BaseCommand):
         for dish_data in dishes_data:
             photo = dish_data.pop("photo", None)
             dish, created = DishModel.objects.get_or_create(
-                name=dish_data["name"], cooker=cooker, defaults={**dish_data, "is_enabled": True}
+                name=dish_data["name"],
+                cooker=cooker,
+                defaults={**dish_data, "is_enabled": True},
             )
             created_dishes.append(dish)
             if created:
@@ -188,7 +195,9 @@ class Command(BaseCommand):
         for drink_data in drinks_data:
             photo = drink_data.pop("photo", None)
             drink, created = DrinkModel.objects.get_or_create(
-                name=drink_data["name"], cooker=cooker, defaults={**drink_data, "is_enabled": True}
+                name=drink_data["name"],
+                cooker=cooker,
+                defaults={**drink_data, "is_enabled": True},
             )
             created_drinks.append(drink)
             if created:
@@ -215,7 +224,8 @@ class Command(BaseCommand):
                     drink.ingredients.add(ing)
                 else:
                     ing, _ = IngredientDrinkModel.objects.get_or_create(
-                        code="sulfites", defaults={"name": "Sulfites", "is_allergen": True}
+                        code="sulfites",
+                        defaults={"name": "Sulfites", "is_allergen": True},
                     )
                     drink.ingredients.add(ing)
 
@@ -237,23 +247,43 @@ class Command(BaseCommand):
         now = timezone.now()
         scenarios = [
             # Past Orders (Completed/Delivered)
-            {"status": OrderStatusEnum.DELIVERED, "date": now - timedelta(days=1), "count": 3},
-            {"status": OrderStatusEnum.COMPLETED, "date": now - timedelta(days=7), "count": 2},
-            {"status": OrderStatusEnum.DELIVERED, "date": now - timedelta(days=30), "count": 5},
+            {
+                "status": OrderStatusEnum.DELIVERED,
+                "date": now - timedelta(days=1),
+                "count": 3,
+            },
+            {
+                "status": OrderStatusEnum.COMPLETED,
+                "date": now - timedelta(days=7),
+                "count": 2,
+            },
+            {
+                "status": OrderStatusEnum.DELIVERED,
+                "date": now - timedelta(days=30),
+                "count": 5,
+            },
             # Active Orders
             {"status": OrderStatusEnum.PENDING, "date": now, "count": 2},
             {"status": OrderStatusEnum.PROCESSING, "date": now, "count": 1},
             {"status": OrderStatusEnum.IN_DELIVERY, "date": now, "count": 1},
             # Cancelled Orders
-            {"status": OrderStatusEnum.CANCELLED_BY_CUSTOMER, "date": now - timedelta(days=2), "count": 1},
-            {"status": OrderStatusEnum.CANCELLED_BY_COOKER, "date": now - timedelta(days=3), "count": 1},
+            {
+                "status": OrderStatusEnum.CANCELLED_BY_CUSTOMER,
+                "date": now - timedelta(days=2),
+                "count": 1,
+            },
+            {
+                "status": OrderStatusEnum.CANCELLED_BY_COOKER,
+                "date": now - timedelta(days=3),
+                "count": 1,
+            },
         ]
 
         total_orders_created = 0
-        customer_address = customer.addresses.first()
+        customer_address = AddressModel.objects.filter(customer=customer).first()
 
         for scenario in scenarios:
-            for _ in range(scenario["count"]):
+            for _ in range(cast(int, scenario["count"])):
                 if OrderModel.objects.filter(cooker=cooker).count() > 50:
                     break
 
@@ -261,9 +291,11 @@ class Command(BaseCommand):
                     cooker=cooker,
                     customer=customer,
                     address=customer_address,
-                    delivery_man=deliver
-                    if scenario["status"] in [OrderStatusEnum.IN_DELIVERY, OrderStatusEnum.DELIVERED]
-                    else None,
+                    delivery_man=(
+                        deliver
+                        if scenario["status"] in [OrderStatusEnum.IN_DELIVERY, OrderStatusEnum.DELIVERED]
+                        else None
+                    ),
                     status=scenario["status"],
                     delivery_fees=5.0,
                     delivery_distance=2.5,
@@ -284,7 +316,9 @@ class Command(BaseCommand):
                     selected_drinks = random.sample(created_drinks, k=min(len(created_drinks), random.randint(0, 2)))
                     for drink in selected_drinks:
                         OrderDrinkItemModel.objects.create(
-                            order=order, drink=drink, drink_quantity=random.randint(1, 2)
+                            order=order,
+                            drink=drink,
+                            drink_quantity=random.randint(1, 2),
                         )
 
                 total_orders_created += 1

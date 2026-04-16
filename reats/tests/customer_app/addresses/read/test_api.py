@@ -1,5 +1,5 @@
 import pytest
-from core_app.models import CustomerModel
+from core_app.models import AddressModel
 from rest_framework import status
 from rest_framework.test import APIClient
 from utils.enums import SuccessMessageEnum
@@ -19,7 +19,7 @@ class TestReadAddressesSuccess:
         customer_address_path: str,
     ) -> None:
         # we check that the customer has some addresses
-        assert CustomerModel.objects.get(pk=customer_id).addresses.count() == 2
+        assert AddressModel.objects.filter(customer=customer_id).count() == 2
 
         # Then we list addresses
         response = client.get(

@@ -14,7 +14,7 @@ import logging
 import os
 from datetime import timedelta
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import boto3
 from dotenv import load_dotenv
@@ -327,10 +327,10 @@ LOGGING: dict[str, Any] = {
 
 
 if os.environ["ENV"] == "prod":
-    LOGGING["root"]["handlers"] = ["watchtower"]  # Log only to CloudWatch
+    cast(dict[str, Any], LOGGING["root"])["handlers"] = ["watchtower"]  # Log only to CloudWatch
 
 if os.environ["ENV"] in ["dev", "staging"]:
-    LOGGING["root"]["handlers"] = [
+    cast(dict[str, Any], LOGGING["root"])["handlers"] = [
         "console",
         "watchtower",
     ]  # Log to both in dev/staging

@@ -22,7 +22,7 @@ def compute_distance(
     :return: dict containing the distance between addresses
     """
     try:
-        distance_dict: dict[str, Any] = google_map_client.distance_matrix(
+        distance_dict: dict[str, Any] = google_map_client.distance_matrix(  # ty: ignore[unresolved-attribute]
             origins=origins,
             destinations=destinations,
         )
