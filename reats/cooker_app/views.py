@@ -31,6 +31,13 @@ from django.conf import settings
 from django.db import IntegrityError
 from django.db.models import Count, F, OuterRef, Q, QuerySet, Subquery, Sum
 from django.utils import timezone
+from drf_spectacular.utils import (
+    OpenApiExample,
+    OpenApiParameter,
+    OpenApiResponse,
+    OpenApiTypes,
+    extend_schema,
+)
 from phonenumbers.phonenumberutil import NumberParseException
 from rest_framework import status
 from rest_framework.decorators import action
@@ -614,6 +621,63 @@ class IngredientsEndpointMixin:
     ingredient_model: Any = None
     ingredient_serializer_class: Any = None
 
+    @extend_schema(
+        summary="List available ingredients",
+        description=(
+            "Returns all available ingredients grouped by category, with category counts.\n\n"
+            "This endpoint is available on both `/dishes/ingredients/` and `/drinks/ingredients/`.\n\n"
+            "**Query parameters:**\n"
+            "- `search` (string, optional): Filter ingredients by name or code (case-insensitive)."
+        ),
+        parameters=[
+            OpenApiParameter(
+                name="search",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                description="Filter ingredients by name or code (case-insensitive partial match)",
+                required=False,
+                examples=[OpenApiExample(name="Search for ginger", value="ginger")],
+            ),
+        ],
+        responses={200: OpenApiResponse(description="Ingredient list with category counts")},
+        examples=[
+            OpenApiExample(
+                name="Ingredient list response",
+                value={
+                    "success": True,
+                    "data": {
+                        "ingredients": [
+                            {
+                                "id": 1,
+                                "code": "crayfish",
+                                "name": "Crayfish",
+                                "category": "seafood",
+                                "is_allergen": True,
+                            },
+                            {
+                                "id": 2,
+                                "code": "eru_leaves",
+                                "name": "Eru leaves",
+                                "category": "vegetable",
+                                "is_allergen": False,
+                            },
+                            {"id": 3, "code": "ginger", "name": "Ginger", "category": "spice", "is_allergen": False},
+                            {"id": 4, "code": "palm_oil", "name": "Palm oil", "category": "oil", "is_allergen": False},
+                        ],
+                        "categories": [
+                            {"id": "vegetable", "name": "Vegetable", "count": 5},
+                            {"id": "spice", "name": "Spice", "count": 3},
+                            {"id": "seafood", "name": "Seafood", "count": 2},
+                            {"id": "oil", "name": "Oil", "count": 1},
+                        ],
+                    },
+                    "message": "Operation successful",
+                },
+                response_only=True,
+                status_codes=["200"],
+            ),
+        ],
+    )
     @action(detail=False, methods=["get"], url_path="ingredients")
     def ingredients(self, request, *args, **kwargs) -> Response:
         queryset = self.ingredient_model.objects.all().order_by("name")
@@ -648,6 +712,13 @@ class IngredientsEndpointMixin:
 
 
 class DishView(StandardizedResponseMixin, IngredientsEndpointMixin, ModelViewSet):
+    """
+    Dish management for the authenticated restaurant (cooker).
+
+    Provides CRUD operations, availability toggling, and ingredient listing
+    for dishes belonging to the authenticated cooker.
+    """
+
     queryset = DishModel.objects.filter(is_deleted=False).all()
     filter_backends = [django_filters.rest_framework.DjangoFilterBackend]
     filterset_class = DishFilter
@@ -714,6 +785,112 @@ class DishView(StandardizedResponseMixin, IngredientsEndpointMixin, ModelViewSet
                 position=idx,
             )
 
+    @extend_schema(
+        summary="Create a dish",
+        description=(
+            "Creates a new dish for the authenticated restaurant.\n\n"
+            "This endpoint accepts **multipart/form-data** to allow photo uploads alongside JSON fields.\n\n"
+            "**Fields:**\n"
+            "- `photos` (file[], required): One or more dish images. The first image becomes the primary image.\n"
+            "- `cooker` (int, required): The cooker ID.\n"
+            "- `name` (string, required): Dish name.\n"
+            "- `price` (float, required): Selling price.\n"
+            "- `category` (string, required): One of `dish`, `starter`, `dessert`.\n"
+            "- `country` (string, required): Country of origin.\n"
+            "- `description` (string, optional): Dish description.\n"
+            "- `cost` (float, optional): Cost price for margin calculation.\n"
+            "- `preparation_time` (int, optional): Preparation time in minutes.\n"
+            "- `max_concurrent_orders` (int, optional): Max simultaneous orders (default: 10).\n"
+            "- `ingredients` (JSON array, optional): Array of `{code, name, category?, is_allergen?}` objects.\n"
+            "- `nutritional_info` (JSON object, optional): `{calories, proteins, carbohydrates, fats, fiber}`."
+        ),
+        request={
+            "multipart/form-data": DishPOSTSerializer,
+        },
+        responses={
+            201: OpenApiResponse(response=DishPOSTSerializer, description="Dish created successfully"),
+            400: OpenApiResponse(description="Validation error"),
+        },
+        examples=[
+            OpenApiExample(
+                name="Create an Eru dish",
+                description="Example: creating a Cameroonian dish with ingredients, nutritional info and photos.",
+                value={
+                    "cooker": 6,
+                    "name": "Eru",
+                    "description": "Traditional Cameroonian dish with meat and skin",
+                    "price": 10.99,
+                    "cost": 5.50,
+                    "category": "dish",
+                    "country": "cameroun",
+                    "preparation_time": 45,
+                    "max_concurrent_orders": 10,
+                    "photos": ["(binary file)"],
+                    "ingredients": [
+                        {"code": "eru_leaves", "name": "Eru leaves", "category": "vegetable", "is_allergen": False},
+                        {"code": "waterleaf", "name": "Waterleaf", "category": "vegetable", "is_allergen": False},
+                        {"code": "palm_oil", "name": "Palm oil", "category": "oil", "is_allergen": False},
+                        {"code": "crayfish", "name": "Crayfish", "category": "seafood", "is_allergen": True},
+                    ],
+                    "nutritional_info": {
+                        "calories": 350,
+                        "proteins": 18.5,
+                        "carbohydrates": 12.0,
+                        "fats": 22.0,
+                        "fiber": 5.0,
+                    },
+                },
+                request_only=True,
+                media_type="multipart/form-data",
+            ),
+            OpenApiExample(
+                name="Response — Dish created",
+                description="Successful creation response.",
+                value={
+                    "success": True,
+                    "data": {
+                        "id": 18,
+                        "cooker": 6,
+                        "name": "Eru",
+                        "description": "Traditional Cameroonian dish with meat and skin",
+                        "price": 10.99,
+                        "cost": 5.50,
+                        "category": "dish",
+                        "country": "cameroun",
+                        "preparation_time": 45,
+                        "max_concurrent_orders": 10,
+                        "ingredients": [
+                            {
+                                "id": 1,
+                                "code": "eru_leaves",
+                                "name": "Eru leaves",
+                                "category": "vegetable",
+                                "is_allergen": False,
+                            },
+                            {
+                                "id": 2,
+                                "code": "crayfish",
+                                "name": "Crayfish",
+                                "category": "seafood",
+                                "is_allergen": True,
+                            },
+                        ],
+                        "nutritional_info": {
+                            "calories": 350,
+                            "proteins": 18.5,
+                            "carbohydrates": 12.0,
+                            "fats": 22.0,
+                            "fiber": 5.0,
+                        },
+                    },
+                    "message": "Operation successful",
+                },
+                response_only=True,
+                status_codes=["201"],
+            ),
+        ],
+        tags=["Dishes"],
+    )
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         if not serializer.is_valid():
@@ -754,6 +931,16 @@ class DishView(StandardizedResponseMixin, IngredientsEndpointMixin, ModelViewSet
                 position=idx,
             )
 
+    @extend_schema(
+        summary="Full update a dish",
+        description=(
+            "Fully updates an existing dish. All required fields must be provided.\n\n"
+            "Accepts **multipart/form-data**. Sending `photos` replaces all existing images."
+        ),
+        request={"multipart/form-data": DishPOSTSerializer},
+        responses={200: OpenApiResponse(response=DishPOSTSerializer, description="Dish updated")},
+        tags=["Dishes"],
+    )
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop("partial", False)
         instance = self.get_object()
@@ -766,15 +953,265 @@ class DishView(StandardizedResponseMixin, IngredientsEndpointMixin, ModelViewSet
 
         return self.success(data=serializer.data)
 
+    @extend_schema(
+        summary="Partially update a dish",
+        description=(
+            "Partially updates an existing dish. Only the provided fields are modified.\n\n"
+            "Accepts **multipart/form-data**. Sending `photos` replaces all existing images."
+        ),
+        request={"multipart/form-data": DishPATCHSerializer},
+        responses={200: OpenApiResponse(response=DishPATCHSerializer, description="Dish partially updated")},
+        examples=[
+            OpenApiExample(
+                name="Update price and description",
+                value={
+                    "price": 12.99,
+                    "description": "Updated dish description with more details",
+                },
+                request_only=True,
+                media_type="application/json",
+            ),
+            OpenApiExample(
+                name="Replace photos and ingredients",
+                value={
+                    "photos": ["(binary file)", "(binary file)"],
+                    "ingredients": [
+                        {"code": "eru_leaves", "name": "Eru leaves", "category": "vegetable", "is_allergen": False},
+                        {"code": "palm_oil", "name": "Palm oil", "category": "oil", "is_allergen": False},
+                    ],
+                },
+                request_only=True,
+                media_type="multipart/form-data",
+            ),
+            OpenApiExample(
+                name="Response — Dish updated",
+                value={
+                    "success": True,
+                    "data": {
+                        "name": "Eru",
+                        "price": 12.99,
+                        "description": "Updated dish description with more details",
+                        "ingredients": [
+                            {
+                                "id": 1,
+                                "code": "eru_leaves",
+                                "name": "Eru leaves",
+                                "category": "vegetable",
+                                "is_allergen": False,
+                            },
+                            {"id": 3, "code": "palm_oil", "name": "Palm oil", "category": "oil", "is_allergen": False},
+                        ],
+                        "nutritional_info": {},
+                    },
+                    "message": "Operation successful",
+                },
+                response_only=True,
+                status_codes=["200"],
+            ),
+        ],
+        tags=["Dishes"],
+    )
     def partial_update(self, request, *args, **kwargs):
         kwargs["partial"] = True
         return self.update(request, *args, **kwargs)
 
+    @extend_schema(
+        summary="Get dish details",
+        description=(
+            "Returns the full details of a dish, including all images, "
+            "detailed ingredients, allergens, and nutritional information."
+        ),
+        responses={
+            200: OpenApiResponse(response=DishDetailSerializer, description="Dish details"),
+            404: OpenApiResponse(description="Dish not found"),
+        },
+        examples=[
+            OpenApiExample(
+                name="Dish detail — Eru",
+                value={
+                    "success": True,
+                    "data": {
+                        "id": 18,
+                        "name": "Eru",
+                        "description": "Traditional Cameroonian dish with meat and skin",
+                        "price": 10.99,
+                        "cost": 5.50,
+                        "margin": 49.95,
+                        "category": "dish",
+                        "available": True,
+                        "is_enabled": True,
+                        "preparation_time": 45,
+                        "max_concurrent_orders": 10,
+                        "current_orders": 2,
+                        "created_at": "2024-05-08T10:00:00Z",
+                        "updated_at": "2024-05-08T10:00:00Z",
+                        "images": [
+                            {
+                                "id": 1,
+                                "url": "https://reats-dev-bucket.s3.eu-central-1.amazonaws.com/cookers/6/dishes/dish/eru.png?X-Amz-...",
+                                "is_primary": True,
+                                "position": 0,
+                            },
+                            {
+                                "id": 2,
+                                "url": "https://reats-dev-bucket.s3.eu-central-1.amazonaws.com/cookers/6/dishes/dish/eru-2.png?X-Amz-...",
+                                "is_primary": False,
+                                "position": 1,
+                            },
+                        ],
+                        "ingredients": [
+                            {
+                                "id": 1,
+                                "code": "eru_leaves",
+                                "name": "Eru leaves",
+                                "category": "vegetable",
+                                "is_allergen": False,
+                            },
+                            {
+                                "id": 2,
+                                "code": "crayfish",
+                                "name": "Crayfish",
+                                "category": "seafood",
+                                "is_allergen": True,
+                            },
+                        ],
+                        "allergens": [
+                            {
+                                "id": 2,
+                                "code": "crayfish",
+                                "name": "Crayfish",
+                                "category": "seafood",
+                                "is_allergen": True,
+                            },
+                        ],
+                        "nutritional_info": {
+                            "calories": 350,
+                            "proteins": 18.5,
+                            "carbohydrates": 12.0,
+                            "fats": 22.0,
+                            "fiber": 5.0,
+                        },
+                    },
+                    "message": "Operation successful",
+                },
+                response_only=True,
+                status_codes=["200"],
+            ),
+        ],
+        tags=["Dishes"],
+    )
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
         return self.success(data=serializer.data)
 
+    @extend_schema(
+        summary="List dishes",
+        description=(
+            "Returns a paginated list of dishes for the authenticated restaurant.\n\n"
+            "By default, only enabled dishes are returned. Use `is_enabled=false` to include disabled dishes.\n\n"
+            "**Available filters:**\n"
+            "- `search`: trigram text search on name and description\n"
+            "- `is_enabled`: filter by availability (`true`/`false`)\n"
+            "- `category`: filter by category (`dish`, `starter`, `dessert`). Comma-separated for multiple values."
+        ),
+        parameters=[
+            OpenApiParameter(
+                name="search",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                description="Text search on dish name and description (trigram similarity)",
+                required=False,
+                examples=[OpenApiExample(name="Search for Eru", value="Eru")],
+            ),
+            OpenApiParameter(
+                name="is_enabled",
+                type=OpenApiTypes.BOOL,
+                location=OpenApiParameter.QUERY,
+                description="Filter by availability. Only enabled dishes are returned by default.",
+                required=False,
+            ),
+            OpenApiParameter(
+                name="category",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                description="Filter by category. Possible values: `dish`, `starter`, `dessert`. Comma-separated.",
+                required=False,
+                examples=[
+                    OpenApiExample(name="Dishes only", value="dish"),
+                    OpenApiExample(name="Dishes and desserts", value="dish,dessert"),
+                ],
+            ),
+        ],
+        responses={
+            200: OpenApiResponse(response=DishListSerializer(many=True), description="Paginated dish list"),
+        },
+        examples=[
+            OpenApiExample(
+                name="Dish list response",
+                value={
+                    "success": True,
+                    "data": {
+                        "count": 2,
+                        "next": None,
+                        "previous": None,
+                        "results": [
+                            {
+                                "id": 16,
+                                "name": "Achu",
+                                "description": "Traditional dish from West Cameroon",
+                                "price": 8.99,
+                                "cost": 4.00,
+                                "margin": 55.51,
+                                "category": "dish",
+                                "available": True,
+                                "is_enabled": True,
+                                "preparation_time": 60,
+                                "max_concurrent_orders": 10,
+                                "current_orders": 0,
+                                "created_at": "2024-05-01T12:00:00Z",
+                                "updated_at": "2024-05-01T12:00:00Z",
+                                "image": "https://reats-dev-bucket.s3.eu-central-1.amazonaws.com/cookers/6/dishes/dish/achu.png?X-Amz-...",
+                                "allergens": [],
+                                "ingredients": ["taro", "palm_oil", "limestone"],
+                                "nutritional_info": {},
+                            },
+                            {
+                                "id": 18,
+                                "name": "Eru",
+                                "description": "Traditional Cameroonian dish with meat and skin",
+                                "price": 10.99,
+                                "cost": 5.50,
+                                "margin": 49.95,
+                                "category": "dish",
+                                "available": True,
+                                "is_enabled": True,
+                                "preparation_time": 45,
+                                "max_concurrent_orders": 10,
+                                "current_orders": 1,
+                                "created_at": "2024-05-08T10:00:00Z",
+                                "updated_at": "2024-05-08T10:00:00Z",
+                                "image": "https://reats-dev-bucket.s3.eu-central-1.amazonaws.com/cookers/6/dishes/dish/eru.png?X-Amz-...",
+                                "allergens": ["crayfish"],
+                                "ingredients": ["eru_leaves", "waterleaf", "crayfish", "palm_oil"],
+                                "nutritional_info": {
+                                    "calories": 350,
+                                    "proteins": 18.5,
+                                    "carbohydrates": 12.0,
+                                    "fats": 22.0,
+                                    "fiber": 5.0,
+                                },
+                            },
+                        ],
+                    },
+                    "message": "Operation successful",
+                },
+                response_only=True,
+                status_codes=["200"],
+            ),
+        ],
+        tags=["Dishes"],
+    )
     def list(self, request, *args, **kwargs) -> Response:
         queryset = self.filter_queryset(self.get_queryset())
 
@@ -789,6 +1226,34 @@ class DishView(StandardizedResponseMixin, IngredientsEndpointMixin, ModelViewSet
         serializer = self.get_serializer(queryset, many=True)
         return self.success(data=serializer.data)
 
+    @extend_schema(
+        summary="Toggle dish availability",
+        description=(
+            "Toggles the `is_enabled` flag of a dish. "
+            "If the dish is currently enabled, it becomes disabled and vice-versa.\n\n"
+            "No request body is required."
+        ),
+        request=None,
+        responses={200: OpenApiResponse(response=DishListSerializer, description="Dish with updated availability")},
+        examples=[
+            OpenApiExample(
+                name="Dish disabled",
+                value={
+                    "success": True,
+                    "data": {
+                        "id": 18,
+                        "name": "Eru",
+                        "available": False,
+                        "is_enabled": False,
+                    },
+                    "message": "Operation successful",
+                },
+                response_only=True,
+                status_codes=["200"],
+            ),
+        ],
+        tags=["Dishes"],
+    )
     @action(detail=True, methods=["patch"], url_path="availability")
     def toggle_availability(self, request, *args, **kwargs) -> Response:
         instance: DishModel = self.get_object()
@@ -798,6 +1263,26 @@ class DishView(StandardizedResponseMixin, IngredientsEndpointMixin, ModelViewSet
         serializer = self.get_serializer(instance)
         return self.success(data=serializer.data)
 
+    @extend_schema(
+        summary="Delete a dish",
+        description=(
+            "Soft-deletes a dish by setting `is_deleted=True`. " "The dish will no longer appear in list responses."
+        ),
+        responses={200: OpenApiResponse(description="Dish deleted successfully")},
+        examples=[
+            OpenApiExample(
+                name="Successful deletion",
+                value={
+                    "success": True,
+                    "data": {},
+                    "message": "Dish deleted successfully",
+                },
+                response_only=True,
+                status_codes=["200"],
+            ),
+        ],
+        tags=["Dishes"],
+    )
     def destroy(self, request, *args, **kwargs) -> Response:
         instance: DishModel = self.get_object()
         instance.is_deleted = True
@@ -807,6 +1292,13 @@ class DishView(StandardizedResponseMixin, IngredientsEndpointMixin, ModelViewSet
 
 
 class DrinkView(StandardizedResponseMixin, IngredientsEndpointMixin, ModelViewSet):
+    """
+    Drink management for the authenticated restaurant (cooker).
+
+    Provides CRUD operations, availability toggling, and ingredient listing
+    for drinks belonging to the authenticated cooker.
+    """
+
     queryset = DrinkModel.objects.filter(is_deleted=False).all()
     filter_backends = [django_filters.rest_framework.DjangoFilterBackend]
     filterset_class = DrinkFilter
@@ -846,6 +1338,99 @@ class DrinkView(StandardizedResponseMixin, IngredientsEndpointMixin, ModelViewSe
 
         return super().get_serializer_class()
 
+    @extend_schema(
+        summary="Create a drink",
+        description=(
+            "Creates a new drink for the authenticated restaurant.\n\n"
+            "This endpoint accepts **multipart/form-data** to allow photo uploads alongside JSON fields.\n\n"
+            "**Fields:**\n"
+            "- `photos` (file[], required): One or more drink images. The first image becomes the primary image.\n"
+            "- `cooker` (int, required): The cooker ID.\n"
+            "- `name` (string, required): Drink name.\n"
+            "- `price` (float, required): Selling price.\n"
+            "- `capacity` (int, required): Capacity value.\n"
+            "- `unit` (string, required): Unit of capacity. One of `liter`, `centiliters`.\n"
+            "- `country` (string, required): Country of origin.\n"
+            "- `description` (string, optional): Drink description.\n"
+            "- `is_suitable_for_quick_delivery` (bool, optional): Whether the drink supports quick delivery.\n"
+            "- `is_suitable_for_scheduled_delivery` (bool, optional): Whether the drink supports scheduled delivery.\n"
+            "- `ingredients` (JSON array, required): Array of `{code, name, category?, is_allergen?}` objects.\n"
+            "- `nutritional_info` (JSON object, optional): `{calories, proteins, carbohydrates, fats, fiber}`."
+        ),
+        request={
+            "multipart/form-data": DrinkPOSTSerializer,
+        },
+        responses={
+            201: OpenApiResponse(response=DrinkPOSTSerializer, description="Drink created successfully"),
+            400: OpenApiResponse(description="Validation error"),
+        },
+        examples=[
+            OpenApiExample(
+                name="Create a Ginger Juice",
+                description="Example: creating a homemade drink with ingredients and photos.",
+                value={
+                    "cooker": 6,
+                    "name": "Ginger Juice",
+                    "description": "Fresh homemade ginger juice with lemon",
+                    "price": 3.50,
+                    "capacity": 33,
+                    "unit": "centiliters",
+                    "country": "cameroun",
+                    "is_suitable_for_quick_delivery": True,
+                    "is_suitable_for_scheduled_delivery": True,
+                    "photos": ["(binary file)"],
+                    "ingredients": [
+                        {"code": "ginger", "name": "Ginger", "category": "spice", "is_allergen": False},
+                        {"code": "lemon", "name": "Lemon", "category": "fruit", "is_allergen": False},
+                        {"code": "sugar", "name": "Sugar", "category": "sweetener", "is_allergen": False},
+                    ],
+                    "nutritional_info": {
+                        "calories": 80,
+                        "proteins": 0.5,
+                        "carbohydrates": 18.0,
+                        "fats": 0.1,
+                        "fiber": 0.3,
+                    },
+                },
+                request_only=True,
+                media_type="multipart/form-data",
+            ),
+            OpenApiExample(
+                name="Response — Drink created",
+                description="Successful creation response.",
+                value={
+                    "success": True,
+                    "data": {
+                        "id": 5,
+                        "cooker": 6,
+                        "name": "Ginger Juice",
+                        "description": "Fresh homemade ginger juice with lemon",
+                        "price": 3.50,
+                        "capacity": 33,
+                        "unit": "centiliters",
+                        "country": "cameroun",
+                        "is_suitable_for_quick_delivery": True,
+                        "is_suitable_for_scheduled_delivery": True,
+                        "ingredients": [
+                            {"id": 1, "code": "ginger", "name": "Ginger", "category": "spice", "is_allergen": False},
+                            {"id": 2, "code": "lemon", "name": "Lemon", "category": "fruit", "is_allergen": False},
+                        ],
+                        "nutritional_info": {
+                            "calories": 80,
+                            "proteins": 0.5,
+                            "carbohydrates": 18.0,
+                            "fats": 0.1,
+                            "fiber": 0.3,
+                        },
+                    },
+                    "message": "Operation successful",
+                },
+                response_only=True,
+                status_codes=["201"],
+            ),
+        ],
+        tags=["Drinks"],
+    )
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         if not serializer.is_valid():
@@ -877,6 +1462,16 @@ class DrinkView(StandardizedResponseMixin, IngredientsEndpointMixin, ModelViewSe
                 position=idx,
             )
 
+    @extend_schema(
+        summary="Full update a drink",
+        description=(
+            "Fully updates an existing drink. All required fields must be provided.\n\n"
+            "Accepts **multipart/form-data**. Sending `photos` replaces all existing images."
+        ),
+        request={"multipart/form-data": DrinkPOSTSerializer},
+        responses={200: OpenApiResponse(response=DrinkPOSTSerializer, description="Drink updated")},
+        tags=["Drinks"],
+    )
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop("partial", False)
         instance = self.get_object()
@@ -889,6 +1484,52 @@ class DrinkView(StandardizedResponseMixin, IngredientsEndpointMixin, ModelViewSe
 
         return self.success(data=serializer.data)
 
+    @extend_schema(
+        summary="Partially update a drink",
+        description=(
+            "Partially updates an existing drink. Only the provided fields are modified.\n\n"
+            "Accepts **multipart/form-data**. Sending `photos` replaces all existing images."
+        ),
+        request={"multipart/form-data": DrinkPATCHSerializer},
+        responses={200: OpenApiResponse(response=DrinkPATCHSerializer, description="Drink partially updated")},
+        examples=[
+            OpenApiExample(
+                name="Update price",
+                value={
+                    "price": 4.50,
+                },
+                request_only=True,
+                media_type="application/json",
+            ),
+            OpenApiExample(
+                name="Replace photos",
+                value={
+                    "photos": ["(binary file)", "(binary file)"],
+                },
+                request_only=True,
+                media_type="multipart/form-data",
+            ),
+            OpenApiExample(
+                name="Response — Drink updated",
+                value={
+                    "success": True,
+                    "data": {
+                        "name": "Ginger Juice",
+                        "price": 4.50,
+                        "description": "Fresh homemade ginger juice with lemon",
+                        "ingredients": [
+                            {"id": 1, "code": "ginger", "name": "Ginger", "category": "spice", "is_allergen": False},
+                        ],
+                        "nutritional_info": {},
+                    },
+                    "message": "Operation successful",
+                },
+                response_only=True,
+                status_codes=["200"],
+            ),
+        ],
+        tags=["Drinks"],
+    )
     def partial_update(self, request, *args, **kwargs):
         kwargs["partial"] = True
         return self.update(request, *args, **kwargs)
@@ -896,28 +1537,7 @@ class DrinkView(StandardizedResponseMixin, IngredientsEndpointMixin, ModelViewSe
     def perform_update(self, serializer: BaseSerializer) -> None:
         current_object = self.get_object()
         cooker_pk = str(current_object.cooker.pk)
-        photos = self.request.FILES.getlist("photos")
-
-        if photos:
-            # Replace all existing images with the newly uploaded ones
-            for old_image in current_object.images.all():
-                if old_image.key and "default" not in old_image.key:  # type: ignore
-                    delete_s3_object(old_image.key)  # type: ignore
-            current_object.images.all().delete()  # type: ignore
-
-        drink = serializer.save()
-
-        for idx, photo_file in enumerate(photos):
-            s3_key = self._build_s3_key(cooker_pk, photo_file.name)
-            upload_image_to_s3(photo_file, s3_key)
-            DrinkImageModel.objects.create(
-                drink=drink,
-                key=s3_key,
-                is_primary=(idx == 0),
-                position=idx,
-            )
-        cooker_pk = str(current_object.cooker.pk)
-        photos = self.request.FILES.getlist("photos[]")
+        photos = self.request.FILES.getlist("photos") or self.request.FILES.getlist("photos[]")
 
         if photos:
             # Replace all existing images with the newly uploaded ones
@@ -938,6 +1558,231 @@ class DrinkView(StandardizedResponseMixin, IngredientsEndpointMixin, ModelViewSe
                 position=idx,
             )
 
+    @extend_schema(
+        summary="Get drink details",
+        description=(
+            "Returns the full details of a drink, including all images, "
+            "detailed ingredients, and nutritional information."
+        ),
+        responses={
+            200: OpenApiResponse(response=DrinkDetailSerializer, description="Drink details"),
+            404: OpenApiResponse(description="Drink not found"),
+        },
+        examples=[
+            OpenApiExample(
+                name="Drink detail — Ginger Juice",
+                value={
+                    "success": True,
+                    "data": {
+                        "id": 5,
+                        "name": "Ginger Juice",
+                        "description": "Fresh homemade ginger juice with lemon",
+                        "price": 3.50,
+                        "capacity": 33,
+                        "unit": "centiliters",
+                        "country": "cameroun",
+                        "is_enabled": True,
+                        "is_suitable_for_quick_delivery": True,
+                        "is_suitable_for_scheduled_delivery": True,
+                        "cooker": {
+                            "id": 6,
+                            "firstname": "Jean",
+                            "lastname": "Dupont",
+                            "email": "jean@reats.fr",
+                            "acceptance_rate": 95.0,
+                        },
+                        "images": [
+                            {
+                                "id": 1,
+                                "url": "https://reats-dev-bucket.s3.eu-central-1.amazonaws.com/cookers/6/drinks/ginger.png?X-Amz-...",
+                                "is_primary": True,
+                                "position": 0,
+                            },
+                        ],
+                        "ingredients": [
+                            {"id": 1, "code": "ginger", "name": "Ginger", "category": "spice", "is_allergen": False},
+                            {"id": 2, "code": "lemon", "name": "Lemon", "category": "fruit", "is_allergen": False},
+                        ],
+                        "ratings": [],
+                        "nutritional_info": {
+                            "calories": 80,
+                            "proteins": 0.5,
+                            "carbohydrates": 18.0,
+                            "fats": 0.1,
+                            "fiber": 0.3,
+                        },
+                    },
+                    "message": "Operation successful",
+                },
+                response_only=True,
+                status_codes=["200"],
+            ),
+        ],
+        tags=["Drinks"],
+    )
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return self.success(data=serializer.data)
+
+    @extend_schema(
+        summary="List drinks",
+        description=(
+            "Returns a paginated list of drinks for the authenticated restaurant.\n\n"
+            "By default, only enabled drinks are returned. Use `is_enabled=false` to include disabled drinks.\n\n"
+            "**Available filters:**\n"
+            "- `search`: trigram text search on name and description\n"
+            "- `is_enabled`: filter by availability (`true`/`false`)"
+        ),
+        parameters=[
+            OpenApiParameter(
+                name="search",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                description="Text search on drink name and description (trigram similarity)",
+                required=False,
+                examples=[OpenApiExample(name="Search for Ginger", value="Ginger")],
+            ),
+            OpenApiParameter(
+                name="is_enabled",
+                type=OpenApiTypes.BOOL,
+                location=OpenApiParameter.QUERY,
+                description="Filter by availability. Only enabled drinks are returned by default.",
+                required=False,
+            ),
+        ],
+        responses={
+            200: OpenApiResponse(response=DrinkListSerializer(many=True), description="Paginated drink list"),
+        },
+        examples=[
+            OpenApiExample(
+                name="Drink list response",
+                value={
+                    "success": True,
+                    "data": {
+                        "count": 2,
+                        "next": None,
+                        "previous": None,
+                        "results": [
+                            {
+                                "id": 5,
+                                "name": "Ginger Juice",
+                                "description": "Fresh homemade ginger juice with lemon",
+                                "price": 3.50,
+                                "capacity": 33,
+                                "unit": "centiliters",
+                                "country": "cameroun",
+                                "is_enabled": True,
+                                "is_suitable_for_quick_delivery": True,
+                                "is_suitable_for_scheduled_delivery": True,
+                                "cooker": {
+                                    "id": 6,
+                                    "firstname": "Jean",
+                                    "lastname": "Dupont",
+                                    "email": "jean@reats.fr",
+                                    "acceptance_rate": 95.0,
+                                },
+                                "image": "https://reats-dev-bucket.s3.eu-central-1.amazonaws.com/cookers/6/drinks/ginger.png?X-Amz-...",
+                                "ingredients": [
+                                    {
+                                        "id": 1,
+                                        "code": "ginger",
+                                        "name": "Ginger",
+                                        "category": "spice",
+                                        "is_allergen": False,
+                                    },
+                                ],
+                                "ratings": [],
+                                "nutritional_info": {},
+                            },
+                            {
+                                "id": 6,
+                                "name": "Hibiscus Tea",
+                                "description": "Traditional bissap drink",
+                                "price": 2.99,
+                                "capacity": 50,
+                                "unit": "centiliters",
+                                "country": "cameroun",
+                                "is_enabled": True,
+                                "is_suitable_for_quick_delivery": True,
+                                "is_suitable_for_scheduled_delivery": False,
+                                "cooker": {
+                                    "id": 6,
+                                    "firstname": "Jean",
+                                    "lastname": "Dupont",
+                                    "email": "jean@reats.fr",
+                                    "acceptance_rate": 95.0,
+                                },
+                                "image": "https://reats-dev-bucket.s3.eu-central-1.amazonaws.com/cookers/6/drinks/bissap.png?X-Amz-...",
+                                "ingredients": [
+                                    {
+                                        "id": 3,
+                                        "code": "hibiscus",
+                                        "name": "Hibiscus",
+                                        "category": "flower",
+                                        "is_allergen": False,
+                                    },
+                                ],
+                                "ratings": [],
+                                "nutritional_info": {
+                                    "calories": 45,
+                                    "proteins": 0.2,
+                                    "carbohydrates": 10.0,
+                                    "fats": 0.0,
+                                    "fiber": 0.1,
+                                },
+                            },
+                        ],
+                    },
+                    "message": "Operation successful",
+                },
+                response_only=True,
+                status_codes=["200"],
+            ),
+        ],
+        tags=["Drinks"],
+    )
+    def list(self, request, *args, **kwargs) -> Response:
+        queryset = self.filter_queryset(self.get_queryset())
+
+        if not request.query_params.get("search"):
+            queryset = queryset.order_by("name")
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return self.success(data=serializer.data)
+
+    @extend_schema(
+        summary="Toggle drink availability",
+        description=(
+            "Toggles the `is_enabled` flag of a drink. "
+            "If the drink is currently enabled, it becomes disabled and vice-versa.\n\n"
+            "No request body is required."
+        ),
+        request=None,
+        responses={200: OpenApiResponse(response=DrinkListSerializer, description="Drink with updated availability")},
+        examples=[
+            OpenApiExample(
+                name="Drink disabled",
+                value={
+                    "success": True,
+                    "data": {
+                        "id": 5,
+                        "name": "Ginger Juice",
+                        "is_enabled": False,
+                    },
+                    "message": "Operation successful",
+                },
+                response_only=True,
+                status_codes=["200"],
+            ),
+        ],
+        tags=["Drinks"],
+    )
     @action(detail=True, methods=["patch"], url_path="availability")
     def toggle_availability(self, request, *args, **kwargs) -> Response:
         instance: DrinkModel = self.get_object()
@@ -951,6 +1796,26 @@ class DrinkView(StandardizedResponseMixin, IngredientsEndpointMixin, ModelViewSe
         serializer = self.get_serializer(instance)
         return self.success(data=serializer.data)
 
+    @extend_schema(
+        summary="Delete a drink",
+        description=(
+            "Soft-deletes a drink by setting `is_deleted=True`. " "The drink will no longer appear in list responses."
+        ),
+        responses={200: OpenApiResponse(description="Drink deleted successfully")},
+        examples=[
+            OpenApiExample(
+                name="Successful deletion",
+                value={
+                    "success": True,
+                    "data": {},
+                    "message": "Drink deleted successfully",
+                },
+                response_only=True,
+                status_codes=["200"],
+            ),
+        ],
+        tags=["Drinks"],
+    )
     def destroy(self, request, *args, **kwargs) -> Response:
         instance: DrinkModel = self.get_object()
         instance.is_deleted = True
