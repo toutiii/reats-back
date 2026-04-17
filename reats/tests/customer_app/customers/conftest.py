@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 import pytest
 import stripe
+import stripe.util
 
 
 @pytest.fixture
@@ -20,7 +21,7 @@ def mock_stripe_customer_create() -> Iterator:
 def mock_stripe_customer_delete() -> Iterator:
     patcher = patch(
         "stripe.Customer.delete",
-        return_value=stripe.util.convert_to_dict(
+        return_value=stripe.util.convert_to_dict(  # ty: ignore[unresolved-attribute]
             json.loads(
                 """{
                 "deleted": true,

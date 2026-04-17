@@ -13,15 +13,12 @@ repos:
         args: ["--fix", "--exit-non-zero-on-fix"]
       - id: ruff-format
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.1.1
+  - repo: local
     hooks:
-      - id: mypy
-        additional_dependencies:
-          - django-extensions==3.2.3
-          - django-phonenumber-field[phonenumberslite]==7.1.0
-          - django-stubs==4.2.3
-          - djangorestframework-stubs==3.14.2
-          - djangorestframework==3.14.0
-          - python-dotenv==1.0.0
-          - psycopg2-binary==2.9.11
+      - id: ty
+        name: ty
+        entry: uv run ty check
+        args: ["reats"]
+        language: system
+        types: [python]
+        pass_filenames: false

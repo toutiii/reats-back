@@ -1,5 +1,6 @@
 import json
 import logging
+from typing import cast
 
 import phonenumbers
 from core_app.models import CookerModel, CustomerModel
@@ -14,6 +15,7 @@ logger = logging.getLogger("watchtower-logger")
 
 class CustomerCustomRendererWithData(JSONRenderer):
     def render(self, data, accepted_media_type=None, renderer_context=None):
+        assert renderer_context is not None
         status_code = renderer_context["response"].status_code
 
         try:
@@ -69,6 +71,7 @@ class CustomerCustomRendererWithData(JSONRenderer):
 
 class DeliverCustomRendererWithData(JSONRenderer):
     def render(self, data, accepted_media_type=None, renderer_context=None):
+        assert renderer_context is not None
         status_code = renderer_context["response"].status_code
 
         try:
@@ -134,6 +137,7 @@ class CustomRendererWithData(JSONRenderer):
             }
 
     def render(self, data, accepted_media_type=None, renderer_context=None):
+        assert renderer_context is not None
         logger.info(data)
         status_code = renderer_context["response"].status_code
         response = {
@@ -161,7 +165,7 @@ class CustomRendererWithData(JSONRenderer):
                     ],
                 }
             )
-            for response_item in response["data"]:
+            for response_item in cast(list, response["data"]):
                 self._enrich_response(response_item)
 
         if not str(status_code).startswith("2"):
@@ -182,6 +186,7 @@ class CustomRendererWithData(JSONRenderer):
 
 class DishesCountriesCustomRendererWithData(JSONRenderer):
     def render(self, data, accepted_media_type=None, renderer_context=None):
+        assert renderer_context is not None
         logger.info(data)
         status_code = renderer_context["response"].status_code
         response = {
@@ -218,6 +223,7 @@ class DishesCountriesCustomRendererWithData(JSONRenderer):
 
 class CustomRendererWithoutData(JSONRenderer):
     def render(self, data, accepted_media_type=None, renderer_context=None):
+        assert renderer_context is not None
         logger.info(data)
         status_code = renderer_context["response"].status_code
         response = {
@@ -249,6 +255,7 @@ class CustomRendererWithoutData(JSONRenderer):
 
 class AddressCustomRendererWithData(JSONRenderer):
     def render(self, data, accepted_media_type=None, renderer_context=None):
+        assert renderer_context is not None
         status_code = renderer_context["response"].status_code
 
         response = {
@@ -315,6 +322,7 @@ class OrderCustomRendererWithData(JSONRenderer):
             }
 
     def render(self, data, accepted_media_type=None, renderer_context=None):
+        assert renderer_context is not None
         status_code = renderer_context["response"].status_code
         response = {
             "ok": True,
@@ -363,6 +371,7 @@ class OrderCustomRendererWithData(JSONRenderer):
 
 class DeliveryStatsCustomRendererWithData(JSONRenderer):
     def render(self, data, accepted_media_type=None, renderer_context=None):
+        assert renderer_context is not None
         status_code = renderer_context["response"].status_code
 
         response = {
@@ -398,6 +407,7 @@ class DeliveryStatsCustomRendererWithData(JSONRenderer):
 
 class CustomJSONRendererWithData(JSONRenderer):
     def render(self, data, accepted_media_type=None, renderer_context=None):
+        assert renderer_context is not None
         logger.info(data)
         status_code = renderer_context["response"].status_code
 

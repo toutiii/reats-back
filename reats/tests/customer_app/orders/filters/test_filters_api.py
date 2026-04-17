@@ -1,5 +1,6 @@
 import time
 from datetime import timedelta
+from typing import cast
 
 import pytest
 from core_app.models import DishModel, OrderDishItemModel, OrderModel
@@ -29,7 +30,7 @@ def setup_filter_test_data(create_authenticated_customer, create_test_cooker, cr
     ]
 
     for config in order_configs:
-        created_date = timezone.now() - timedelta(days=config["created_delta"])
+        created_date = timezone.now() - timedelta(days=cast(int, config["created_delta"]))
 
         order_data = {
             "customer": customer,
@@ -41,7 +42,7 @@ def setup_filter_test_data(create_authenticated_customer, create_test_cooker, cr
         }
 
         if "scheduled" in config:
-            order_data["scheduled_delivery_date"] = timezone.now() + timedelta(days=config["scheduled"])
+            order_data["scheduled_delivery_date"] = timezone.now() + timedelta(days=cast(int, config["scheduled"]))
 
         order = OrderModel.objects.create(**order_data)
         # Forcer la date de création (car auto_now_add=True)

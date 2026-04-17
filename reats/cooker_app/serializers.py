@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import Any, Dict, Union
+from typing import Any, Dict, Union, cast
 
 import phonenumbers
 from core_app.models import (
@@ -23,6 +23,7 @@ from core_app.serializers import (
     OrderDrinkItemGETSerializer,
 )
 from django.conf import settings
+from django.contrib.auth.base_user import AbstractBaseUser
 from django.db import transaction
 from phonenumbers.phonenumberutil import NumberParseException
 from rest_framework import serializers, status
@@ -32,6 +33,7 @@ from rest_framework_simplejwt.serializers import (
     TokenObtainPairSerializer,
     TokenRefreshSerializer,
 )
+from rest_framework_simplejwt.tokens import RefreshToken
 from utils.common import (
     compute_order_items_total_amount,
     format_phone,
@@ -361,7 +363,7 @@ class TokenObtainPairWithoutPasswordSerializer(TokenObtainPairSerializer):
 
     def validate(self, attrs) -> dict:
         phone = attrs["phone"]
-        request_headers = self.context.get("request").headers
+        request_headers = self.context["request"].headers
         app_origin = request_headers.get("App-Origin")
         formatted_phone = format_phone(phone)
 
@@ -401,7 +403,7 @@ class TokenObtainPairWithoutPasswordSerializer(TokenObtainPairSerializer):
         if self.user is None:
             return {"ok": False, "status": status.HTTP_400_BAD_REQUEST}
 
-        refresh = self.get_token(self.user)
+        refresh = cast(RefreshToken, self.get_token(cast(AbstractBaseUser, self.user)))
         data = {}
         data["refresh"] = str(refresh)
         data["access"] = str(refresh.access_token)

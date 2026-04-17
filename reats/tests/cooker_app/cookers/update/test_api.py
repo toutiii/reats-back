@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock
 from uuid import uuid4
 
@@ -324,7 +324,7 @@ FhxtAirMySNzId/rIu6k6wPIqyziXjh0DBu0eI4flX3CJe1In0UfX9oqcFuw+VbY
 
     @pytest.fixture(scope="class")
     def token_signed_with_unknown_private_key(self, unknown_private_key: str) -> str:
-        due_date = datetime.utcnow() + timedelta(minutes=60)
+        due_date = datetime.now(timezone.utc) + timedelta(minutes=60)
         payload = {
             "exp": int(due_date.timestamp()),
             "jti": str(uuid4()),
@@ -467,7 +467,7 @@ class TestAccessTokenRenew:
             assert response.status_code == status.HTTP_200_OK
 
             # Going to 5 min in the future
-            token_expired_date = datetime.utcnow() + timedelta(minutes=5)
+            token_expired_date = datetime.now(timezone.utc) + timedelta(minutes=5)
             frozen_datetime.move_to(token_expired_date)
 
             # Then we attempt the same request as 5 min ago
@@ -563,7 +563,7 @@ class TestRefreshTokenRenew:
             assert response.status_code == status.HTTP_200_OK
 
             # Travel to one day and plus in the future
-            refresh_token_expired_date = datetime.utcnow() + timedelta(hours=24.1)
+            refresh_token_expired_date = datetime.now(timezone.utc) + timedelta(hours=24.1)
             frozen_datetime.move_to(refresh_token_expired_date)
 
             # Then we attempt the same request as approximtively 24h ago

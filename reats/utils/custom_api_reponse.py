@@ -146,7 +146,7 @@ class StandardizedResponseMixin:
 
     def handle_exception(self, exc):
         try:
-            response = super().handle_exception(exc)
+            response = super().handle_exception(exc)  # ty: ignore[unresolved-attribute]
         except (TokenError, InvalidToken):
             return self.error(
                 message=ErrorMessageEnum.TOKEN_NOT_VALID,

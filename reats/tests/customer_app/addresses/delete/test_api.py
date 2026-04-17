@@ -75,7 +75,7 @@ def test_delete_address_success(
     second_address = AddressModel.objects.latest("pk")
 
     # Then we check that the customer has both addresses
-    assert CustomerModel.objects.get(pk=customer_id).addresses.count() == 2
+    assert AddressModel.objects.filter(customer=customer_id).count() == 2
 
     # Then we delete, for example, the 2nd address
     delete_response = client.delete(
@@ -104,7 +104,7 @@ def test_delete_address_success(
     assert AddressModel.objects.filter(pk=first_address.pk).exists()
 
     # Then we check that the customer still has both addresses
-    assert CustomerModel.objects.get(pk=customer_id).addresses.count() == 2
+    assert AddressModel.objects.filter(customer=customer_id).count() == 2
 
 
 @pytest.mark.django_db
@@ -164,7 +164,7 @@ def test_delete_customer_will_also_delete_his_addresses(
     second_address = AddressModel.objects.latest("pk")
 
     # Then we check that the customer has both addresses
-    assert CustomerModel.objects.get(pk=customer_id).addresses.count() == 2
+    assert AddressModel.objects.filter(customer=customer_id).count() == 2
 
     # Then we delete the customer
     delete_response = client.delete(
