@@ -8,7 +8,8 @@ ENV PYTHONUNBUFFERED=1
 # get some useful python lib for dev
 RUN apt-get -y update \
     && apt-get -y upgrade \
-    && apt-get install -y python3-dev postgresql-server-dev-all gcc musl-dev git vim
+    && apt-get install -y python3-dev postgresql-server-dev-all gcc musl-dev git vim \
+    && rm -rf /var/lib/apt/lists/*
 
 # create needed dirs
 RUN mkdir -p /usr/src/app/reats
