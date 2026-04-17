@@ -79,6 +79,7 @@ from utils.paginations import StandardizedResultsSetPagination
 from .serializers import (
     CookerGETSerializer,
     CookerOrderGETSerializer,
+    CookerPATCHSerializer,
     CookerSerializer,
     DashboardStatsSerializer,
     DishPATCHSerializer,
@@ -106,6 +107,11 @@ class DateRangeDict(TypedDict):
 class CookerView(StandardizedResponseMixin, ModelViewSet):
     queryset = CookerModel.objects.all()
 
+    def get_queryset(self):
+        if self.request.user and self.request.user.is_authenticated:
+            return CookerModel.objects.filter(pk=self.request.user.pk)
+        return super().get_queryset()
+
     def get_permissions(self) -> List[BasePermission]:
         permission_classes: list[Type[BasePermission]] = []
         if self.action in (
@@ -121,8 +127,11 @@ class CookerView(StandardizedResponseMixin, ModelViewSet):
         return [permission() for permission in permission_classes]
 
     def get_serializer_class(self) -> type[BaseSerializer]:
-        if self.request.method in ("POST", "PATCH"):
+        if self.request.method == "POST":
             self.serializer_class = CookerSerializer
+
+        if self.request.method in ("PATCH", "PUT"):
+            self.serializer_class = CookerPATCHSerializer
 
         if self.request.method == "GET":
             self.serializer_class = CookerGETSerializer
@@ -156,11 +165,13 @@ class CookerView(StandardizedResponseMixin, ModelViewSet):
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
 
+    @extend_schema(request=CookerPATCHSerializer, responses={200: CookerGETSerializer})
     def partial_update(self, request, *args, **kwargs) -> Response:
         kwargs.pop("pk", None)  # Ensure pk is handled smoothly by parent
         response = super().partial_update(request, *args, **kwargs)
         return self.success(data=response.data)
 
+    @extend_schema(request=CookerPATCHSerializer, responses={200: CookerGETSerializer})
     def update(self, request, *args, **kwargs) -> Response:
         kwargs.pop("pk", None)  # Ensure pk is handled smoothly by parent
         response = super().update(request, *args, **kwargs)

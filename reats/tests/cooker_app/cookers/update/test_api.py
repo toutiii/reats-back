@@ -77,6 +77,45 @@ class TestUpdateCookerInfoSuccess:
             assert cooker.lastname == "DOE"
             assert cooker.modified.isoformat() == "2023-10-14T22:00:00+00:00"
 
+    def test_update_personal_info_with_put(
+        self,
+        auth_headers: dict,
+        client: APIClient,
+        cooker_id: int,
+        path: str,
+    ) -> None:
+        # Fetch existing to populate mandatory fields for PUT
+        existing = client.get(f"{path}{cooker_id}/", **auth_headers).json()["data"]
+
+        full_put_data = {
+            "firstname": "Jane",
+            "lastname": "DOEE",
+            "email": "jane.doee@test.com",
+            "postal_code": existing["address_section"]["postal_code"],
+            "siret": existing["personal_infos_section"]["siret"],
+            "street_name": "New Street",
+            "street_number": "100",
+            "town": "NEW TOWN",
+            "max_order_number": 15,
+            "is_online": True,
+        }
+
+        with freeze_time("2023-10-15T22:00:00+00:00"):
+            response = client.put(
+                f"{path}{cooker_id}/",
+                encode_multipart(BOUNDARY, full_put_data),
+                content_type=MULTIPART_CONTENT,
+                **auth_headers,
+            )
+
+            assert response.status_code == status.HTTP_200_OK
+            assert response.json()["success"] is True
+
+            cooker = CookerModel.objects.get(pk=cooker_id)
+            assert cooker.firstname == "Jane"
+            assert cooker.lastname == "DOEE"
+            assert cooker.modified.isoformat() == "2023-10-15T22:00:00+00:00"
+
     def test_update_address(
         self,
         auth_headers: dict,
@@ -115,6 +154,45 @@ class TestUpdateCookerInfoFailure:
         )
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
+    def test_update_info_unauthorized_other_cooker(
+        self,
+        auth_headers: dict,
+        client: APIClient,
+        path: str,
+    ) -> None:
+        other_cooker = CookerModel.objects.create(
+            phone="0722222222", email="other2@test.com", siret="12345678901236", lastname="Other2", firstname="User2"
+        )
+        response = client.patch(
+            f"{path}{other_cooker.pk}/",
+            encode_multipart(BOUNDARY, {"firstname": "Hacker"}),
+            content_type=MULTIPART_CONTENT,
+            **auth_headers,
+        )
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_update_info_ignores_sensitive_fields(
+        self,
+        auth_headers: dict,
+        client: APIClient,
+        cooker_id: int,
+        path: str,
+    ) -> None:
+        # We try to set acceptance rate to 10 and is_activated to False
+        response = client.patch(
+            f"{path}{cooker_id}/",
+            {"acceptance_rate": 10, "is_activated": False, "firstname": "Edited"},
+            format="json",
+            **auth_headers,
+        )
+        assert response.status_code == status.HTTP_200_OK
+        cooker = CookerModel.objects.get(pk=cooker_id)
+        assert cooker.firstname == "Edited"
+        # The acceptance rate should not have changed to 10 (it defaults to 100)
+        assert cooker.acceptance_rate != 10
+        # The is_activated should not have changed to False
+        assert cooker.is_activated is True
+
     def test_update_info_uniqueness_conflict(
         self,
         auth_headers: dict,
@@ -129,7 +207,7 @@ class TestUpdateCookerInfoFailure:
 
         response = client.patch(
             f"{path}{cooker_id}/",
-            encode_multipart(BOUNDARY, {"phone": "0711111111"}),
+            encode_multipart(BOUNDARY, {"email": "other@test.com"}),
             content_type=MULTIPART_CONTENT,
             **auth_headers,
         )
@@ -453,12 +531,13 @@ class TestAccessTokenRenew:
             # Extracting access and refresh tokens from the API response
             access_token = response.json().get("data").get("token").get("access")
             refresh_token = response.json().get("data").get("token").get("refresh")
+            user_id = response.json().get("data").get("user_id")
             access_auth_header = {"HTTP_AUTHORIZATION": f"Bearer {access_token}"}
             refresh_token_data = {"refresh": refresh_token}
 
             # Secondly we try a simple request:
             response = client.patch(
-                f"{path}{cooker_id}/",
+                f"{path}{user_id}/",
                 encode_multipart(BOUNDARY, post_switch_cooker_online),
                 content_type=MULTIPART_CONTENT,
                 follow=False,
@@ -472,7 +551,7 @@ class TestAccessTokenRenew:
 
             # Then we attempt the same request as 5 min ago
             response = client.patch(
-                f"{path}{cooker_id}/",
+                f"{path}{user_id}/",
                 encode_multipart(BOUNDARY, post_switch_cooker_online),
                 content_type=MULTIPART_CONTENT,
                 follow=False,
@@ -500,7 +579,7 @@ class TestAccessTokenRenew:
             # Finally we try again the request with our new access token
             new_access_auth_header = {"HTTP_AUTHORIZATION": f"Bearer {new_access_token}"}
             response = client.patch(
-                f"{path}{cooker_id}/",
+                f"{path}{user_id}/",
                 encode_multipart(BOUNDARY, post_switch_cooker_online),
                 content_type=MULTIPART_CONTENT,
                 follow=False,
@@ -549,12 +628,13 @@ class TestRefreshTokenRenew:
             # Extracting access and refresh tokens from the API response
             access_token = response.json().get("data").get("token").get("access")
             refresh_token = response.json().get("data").get("token").get("refresh")
+            user_id = response.json().get("data").get("user_id")
             access_auth_header = {"HTTP_AUTHORIZATION": f"Bearer {access_token}"}
             refresh_token_data = {"refresh": refresh_token}
 
             # Secondly we try a simple request:
             response = client.patch(
-                f"{path}{cooker_id}/",
+                f"{path}{user_id}/",
                 encode_multipart(BOUNDARY, post_switch_cooker_online),
                 content_type=MULTIPART_CONTENT,
                 follow=False,
@@ -568,7 +648,7 @@ class TestRefreshTokenRenew:
 
             # Then we attempt the same request as approximtively 24h ago
             response = client.patch(
-                f"{path}{cooker_id}/",
+                f"{path}{user_id}/",
                 encode_multipart(BOUNDARY, post_switch_cooker_online),
                 content_type=MULTIPART_CONTENT,
                 follow=False,
@@ -604,7 +684,7 @@ class TestRefreshTokenRenew:
             new_access_token = response.json().get("data").get("token").get("access")
             new_access_auth_header = {"HTTP_AUTHORIZATION": f"Bearer {new_access_token}"}
             response = client.patch(
-                f"{path}{cooker_id}/",
+                f"{path}{user_id}/",
                 encode_multipart(BOUNDARY, post_switch_cooker_online),
                 content_type=MULTIPART_CONTENT,
                 follow=False,

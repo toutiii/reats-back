@@ -55,6 +55,21 @@ class CookerSerializer(ModelSerializer):
             return e164_phone_format
 
 
+class CookerPATCHSerializer(ModelSerializer):
+    class Meta:
+        model = CookerModel
+        exclude = (
+            "phone",
+            "photo",
+            "is_activated",
+            "acceptance_rate",
+            "last_acceptance_rate_update_date",
+            "is_deleted",
+            "created",
+            "modified",
+        )
+
+
 class CookerGETSerializer(ModelSerializer):
     class Meta:
         model = CookerModel
