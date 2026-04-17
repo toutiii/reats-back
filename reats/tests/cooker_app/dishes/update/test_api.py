@@ -2,7 +2,7 @@ import json
 from unittest.mock import MagicMock
 
 import pytest
-from core_app.models import DishModel
+from core_app.models import DishModel, DishNutritionalInfo
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from freezegun import freeze_time
@@ -231,8 +231,9 @@ class TestUpdateDishNutritionalInfoSuccess:
 
         assert response.status_code == status.HTTP_200_OK
         dish = DishModel.objects.get(pk=dish_id)
+        dish_nutritional_info = DishNutritionalInfo.objects.get(dish=dish)
         for key, value in nutritional_info_update.items():
-            assert getattr(dish.nutritional_info, key) == value  # type: ignore[attr-defined]
+            assert getattr(dish_nutritional_info, key) == value
 
     def test_patch_update_nutritional_info(
         self,
@@ -254,5 +255,6 @@ class TestUpdateDishNutritionalInfoSuccess:
 
         assert response.status_code == status.HTTP_200_OK
         dish = DishModel.objects.get(pk=dish_id)
+        dish_nutritional_info = DishNutritionalInfo.objects.get(dish=dish)
         for key, value in patch_nutritional_info.items():
-            assert getattr(dish.nutritional_info, key) == value  # type: ignore[attr-defined]
+            assert getattr(dish_nutritional_info, key) == value

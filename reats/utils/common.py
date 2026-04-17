@@ -9,6 +9,7 @@ import boto3
 import phonenumbers
 import stripe
 import stripe.error
+import stripe.util
 from botocore.exceptions import ClientError
 from core_app.models import CookerModel, CustomerModel, DeliverModel, OrderModel
 from django.conf import settings
@@ -213,7 +214,7 @@ def create_stripe_customer(
     default_email_suffix: str,
 ) -> None:
     customer_default_email = user_data["phone"] + default_email_suffix
-    customer: Union[str, None] = get_stripe_customer_by_email(customer_default_email)
+    customer: Union[stripe.Customer, None] = get_stripe_customer_by_email(customer_default_email)
 
     if customer:
         logger.info(f"Stripe customer with email {customer_default_email} already exists")
@@ -301,7 +302,7 @@ def create_payment_intent(order: OrderModel) -> dict:
         raise
     else:
         logger.info(f"Payment intent for order {order.id} created successfully")
-        return stripe.util.convert_to_dict(response)
+        return stripe.util.convert_to_dict(response)  # ty: ignore[unresolved-attribute]
 
 
 def update_payment_intent(
@@ -372,7 +373,7 @@ def is_event_from_stripe(request) -> bool:
         is_event_valid = True
     except ValueError as e:
         logger.error(e)
-    except stripe.error.SignatureVerificationError as e:
+    except stripe.error.SignatureVerificationError as e:  # ty: ignore[unresolved-attribute]
         logger.error(e)
     except Exception as e:
         logger.error(e)

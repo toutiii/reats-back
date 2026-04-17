@@ -93,7 +93,7 @@ class OrderFilter(filters.FilterSet):
         ]
 
     def clean(self):
-        cleaned_data = super().clean()
+        cleaned_data = super().clean()  # ty: ignore[unresolved-attribute]
 
         # Validation croisée des dates (aliases compris)
         after = cleaned_data.get("created_after") or cleaned_data.get("start_date")

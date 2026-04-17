@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from io import BytesIO
 from unittest.mock import MagicMock
 from uuid import uuid4
@@ -281,7 +281,7 @@ FhxtAirMySNzId/rIu6k6wPIqyziXjh0DBu0eI4flX3CJe1In0UfX9oqcFuw+VbY
 
     @pytest.fixture(scope="class")
     def token_signed_with_unknown_private_key(self, unknown_private_key: str) -> str:
-        due_date = datetime.utcnow() + timedelta(minutes=60)
+        due_date = datetime.now(timezone.utc) + timedelta(minutes=60)
         payload = {
             "exp": int(due_date.timestamp()),
             "jti": str(uuid4()),

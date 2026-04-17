@@ -113,4 +113,4 @@ urlpatterns = [
 ]
 
 if settings.DEBUG:
-    urlpatterns += staticfiles_urlpatterns()  # type: ignore
+    urlpatterns += staticfiles_urlpatterns()

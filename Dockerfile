@@ -1,9 +1,13 @@
 # pull official base image
 FROM python:3.10-slim
 
+# install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
 # set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
+ENV PATH="/usr/src/app/reats/.venv/bin:$PATH"
 
 # get some useful python lib for dev
 RUN apt-get -y update \
@@ -18,9 +22,9 @@ RUN mkdir -p /usr/src/app/reats
 WORKDIR /usr/src/app/reats/
 
 # install dependencies
-COPY reats/requirements.txt /usr/src/app/reats/requirements.txt
-RUN pip3 install --upgrade pip \
-    && pip install -r requirements.txt
+COPY pyproject.toml /usr/src/app/reats/pyproject.toml
+COPY uv.lock /usr/src/app/reats/uv.lock
+RUN uv sync --frozen --no-dev
 
 # copy project files
 COPY reats/customer_app /usr/src/app/reats/customer_app/
@@ -46,7 +50,6 @@ COPY reats/.env.prod /usr/src/app/reats/.env.prod
 
 COPY reats/config/wait-for-it.sh /usr/src/app/reats/wait-for-it.sh
 COPY reats/config/entrypoint.sh /usr/src/app/reats/entrypoint.sh
-COPY reats/tox.ini /usr/src/app/reats/tox.ini
 
 # set permissions
 RUN chmod +x /usr/src/app/reats/wait-for-it.sh \
