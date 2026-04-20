@@ -145,7 +145,7 @@ class TestUpdateCookerInfoFailure:
         client: APIClient,
         path: str,
     ) -> None:
-        # Attempt to update a cooker that does not exist or not owned (mocking not found)
+        """PATCH on a non-existent cooker ID → 404 Not Found."""
         response = client.patch(
             f"{path}9999/",
             encode_multipart(BOUNDARY, {"firstname": "Ghost"}),
@@ -154,45 +154,6 @@ class TestUpdateCookerInfoFailure:
         )
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
-    def test_update_info_unauthorized_other_cooker(
-        self,
-        auth_headers: dict,
-        client: APIClient,
-        path: str,
-    ) -> None:
-        other_cooker = CookerModel.objects.create(
-            phone="0722222222", email="other2@test.com", siret="12345678901236", lastname="Other2", firstname="User2"
-        )
-        response = client.patch(
-            f"{path}{other_cooker.pk}/",
-            encode_multipart(BOUNDARY, {"firstname": "Hacker"}),
-            content_type=MULTIPART_CONTENT,
-            **auth_headers,
-        )
-        assert response.status_code == status.HTTP_404_NOT_FOUND
-
-    def test_update_info_ignores_sensitive_fields(
-        self,
-        auth_headers: dict,
-        client: APIClient,
-        cooker_id: int,
-        path: str,
-    ) -> None:
-        # We try to set acceptance rate to 10 and is_activated to False
-        response = client.patch(
-            f"{path}{cooker_id}/",
-            {"acceptance_rate": 10, "is_activated": False, "firstname": "Edited"},
-            format="json",
-            **auth_headers,
-        )
-        assert response.status_code == status.HTTP_200_OK
-        cooker = CookerModel.objects.get(pk=cooker_id)
-        assert cooker.firstname == "Edited"
-        # The acceptance rate should not have changed to 10 (it defaults to 100)
-        assert cooker.acceptance_rate != 10
-        # The is_activated should not have changed to False
-        assert cooker.is_activated is True
-
     def test_update_info_uniqueness_conflict(
         self,
         auth_headers: dict,
@@ -200,7 +161,7 @@ class TestUpdateCookerInfoFailure:
         cooker_id: int,
         path: str,
     ) -> None:
-        # Create another cooker to collide with
+        """PATCH that creates a unique constraint violation → 400 Bad Request."""
         CookerModel.objects.create(
             phone="0711111111", email="other@test.com", siret="12345678901235", lastname="Other", firstname="User"
         )
@@ -213,6 +174,109 @@ class TestUpdateCookerInfoFailure:
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert response.json()["error"]["code"] == "VALIDATION_ERROR"
+
+
+@pytest.mark.django_db
+class TestUpdateCookerStrictContract:
+    """
+    Validates the strict PATCH contract on the cooker profile endpoint.
+
+    CTO requirements:
+      1. PATCH with only authorized fields → 200 OK, data correctly updated.
+      2. PATCH containing at least one forbidden field (e.g. phone) → 400 Bad Request.
+      3. PATCH with valid fields but targeting a different cooker → 403 Forbidden.
+    """
+
+    def test_patch_with_allowed_fields_succeeds(
+        self,
+        auth_headers: dict,
+        client: APIClient,
+        cooker_id: int,
+        path: str,
+    ) -> None:
+        """Test 1: PATCH with only authorized fields → 200 OK."""
+        payload = {
+            "firstname": "Jean",
+            "lastname": "MARTIN",
+            "max_order_number": 5,
+        }
+        response = client.patch(
+            f"{path}{cooker_id}/",
+            encode_multipart(BOUNDARY, payload),
+            content_type=MULTIPART_CONTENT,
+            **auth_headers,
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["success"] is True
+
+        cooker = CookerModel.objects.get(pk=cooker_id)
+        assert cooker.firstname == "Jean"
+        assert cooker.lastname == "MARTIN"
+        assert cooker.max_order_number == 5
+
+    def test_patch_with_forbidden_field_returns_400(
+        self,
+        auth_headers: dict,
+        client: APIClient,
+        cooker_id: int,
+        path: str,
+    ) -> None:
+        """Test 2: PATCH containing a forbidden field (phone) → 400 Bad Request."""
+        payload = {
+            "firstname": "Jean",
+            "phone": "0600000099",  # phone has its own endpoint with OTP verification
+        }
+        response = client.patch(
+            f"{path}{cooker_id}/",
+            encode_multipart(BOUNDARY, payload),
+            content_type=MULTIPART_CONTENT,
+            **auth_headers,
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_patch_sensitive_fields_return_400(
+        self,
+        auth_headers: dict,
+        client: APIClient,
+        cooker_id: int,
+        path: str,
+    ) -> None:
+        """Test 2b: PATCH containing sensitive admin fields → 400 Bad Request."""
+        payload = {
+            "firstname": "Jean",
+            "acceptance_rate": 10,  # read-only field managed internally
+            "is_activated": False,  # read-only field managed internally
+        }
+        response = client.patch(
+            f"{path}{cooker_id}/",
+            encode_multipart(BOUNDARY, payload),
+            content_type=MULTIPART_CONTENT,
+            **auth_headers,
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_patch_another_cooker_returns_403(
+        self,
+        auth_headers: dict,
+        client: APIClient,
+        path: str,
+    ) -> None:
+        """Test 3: PATCH with valid fields but targeting another cooker's ID → 403 Forbidden."""
+        other_cooker = CookerModel.objects.create(
+            phone="0722222222",
+            email="other3@reats.com",
+            siret="12345678901237",
+            lastname="Autre",
+            firstname="Cuisinier",
+        )
+        payload = {"firstname": "Hacker"}
+        response = client.patch(
+            f"{path}{other_cooker.pk}/",
+            encode_multipart(BOUNDARY, payload),
+            content_type=MULTIPART_CONTENT,
+            **auth_headers,
+        )
+        assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
 @pytest.mark.django_db
