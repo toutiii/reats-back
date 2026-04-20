@@ -55,6 +55,33 @@ class CookerSerializer(ModelSerializer):
             return e164_phone_format
 
 
+class CookerPATCHSerializer(ModelSerializer):
+    class Meta:
+        model = CookerModel
+        exclude = (
+            "phone",
+            "photo",
+            "is_activated",
+            "acceptance_rate",
+            "last_acceptance_rate_update_date",
+            "is_deleted",
+            "created",
+            "modified",
+        )
+
+    def to_internal_value(self, data):
+        allowed_fields = set(self.fields.keys())
+        incoming_keys = set(data.keys())
+        forbidden_keys = incoming_keys - allowed_fields
+
+        if forbidden_keys:
+            raise ValidationError(
+                {field: ["Ce champ n'est pas autorisé dans cette requête."] for field in forbidden_keys}
+            )
+
+        return super().to_internal_value(data)
+
+
 class CookerGETSerializer(ModelSerializer):
     class Meta:
         model = CookerModel

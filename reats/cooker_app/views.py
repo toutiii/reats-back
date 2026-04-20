@@ -61,7 +61,7 @@ from utils.common import (
     upload_image_to_s3,
 )
 from utils.custom_api_reponse import StandardizedResponseMixin
-from utils.custom_permissions import CustomAPIKeyPermission, UserPermission
+from utils.custom_permissions import CustomAPIKeyPermission, IsCookerOwner, UserPermission
 from utils.enums import (
     ErrorCodeEnum,
     ErrorMessageEnum,
@@ -79,6 +79,7 @@ from utils.paginations import StandardizedResultsSetPagination
 from .serializers import (
     CookerGETSerializer,
     CookerOrderGETSerializer,
+    CookerPATCHSerializer,
     CookerSerializer,
     DashboardStatsSerializer,
     DishPATCHSerializer,
@@ -106,6 +107,15 @@ class DateRangeDict(TypedDict):
 class CookerView(StandardizedResponseMixin, ModelViewSet):
     queryset = CookerModel.objects.all()
 
+    def get_queryset(self):
+        # For PATCH/PUT: expose all cookers so that a missing ID gives 404 and
+        # a valid ID belonging to another cooker gives 403 (via IsCookerOwner).
+        if self.action in ("partial_update", "update", "photo"):
+            return CookerModel.objects.all()
+        if self.request.user and self.request.user.is_authenticated:
+            return CookerModel.objects.filter(pk=self.request.user.pk)
+        return super().get_queryset()
+
     def get_permissions(self) -> List[BasePermission]:
         permission_classes: list[Type[BasePermission]] = []
         if self.action in (
@@ -115,14 +125,20 @@ class CookerView(StandardizedResponseMixin, ModelViewSet):
             "otp_verify",
         ):
             permission_classes.append(CustomAPIKeyPermission)
+        elif self.action in ("partial_update", "update", "photo"):
+            permission_classes.append(UserPermission)
+            permission_classes.append(IsCookerOwner)
         else:
             permission_classes.append(UserPermission)
 
         return [permission() for permission in permission_classes]
 
     def get_serializer_class(self) -> type[BaseSerializer]:
-        if self.request.method in ("POST", "PATCH"):
+        if self.request.method == "POST":
             self.serializer_class = CookerSerializer
+
+        if self.request.method in ("PATCH", "PUT"):
+            self.serializer_class = CookerPATCHSerializer
 
         if self.request.method == "GET":
             self.serializer_class = CookerGETSerializer
@@ -156,11 +172,13 @@ class CookerView(StandardizedResponseMixin, ModelViewSet):
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
 
+    @extend_schema(request=CookerPATCHSerializer, responses={200: CookerGETSerializer})
     def partial_update(self, request, *args, **kwargs) -> Response:
         kwargs.pop("pk", None)  # Ensure pk is handled smoothly by parent
         response = super().partial_update(request, *args, **kwargs)
         return self.success(data=response.data)
 
+    @extend_schema(request=CookerPATCHSerializer, responses={200: CookerGETSerializer})
     def update(self, request, *args, **kwargs) -> Response:
         kwargs.pop("pk", None)  # Ensure pk is handled smoothly by parent
         response = super().update(request, *args, **kwargs)

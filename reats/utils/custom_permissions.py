@@ -50,3 +50,23 @@ class CustomAPIKeyPermission(BasePermission):
 class AnonymousPermission(BasePermission):
     def has_permission(self, request: Request, view) -> bool:
         return True
+
+
+class IsResourceOwner(BasePermission):
+    """
+    Generic object-level permission that enforces resource ownership.
+
+    The comparison is: `getattr(obj, owner_field) == request.user.pk`
+    """
+
+    owner_field: str = "pk"
+
+    def has_object_permission(self, request: Request, view, obj) -> bool:
+        owner_value = getattr(obj, self.owner_field, None)
+        return owner_value == request.user.pk
+
+
+class IsCookerOwner(IsResourceOwner):
+    """A cooker can only modify their own profile (obj IS the CookerModel instance)."""
+
+    owner_field = "pk"
