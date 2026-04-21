@@ -43,10 +43,10 @@ pythonpath = ["reats"]
 env = [
     "D:ENV=local",
     "D:DB_HOST=localhost",
-    "D:DB_PORT=5432",
+    "D:DB_PORT=8001",
     "D:POSTGRES_DB=reats_local_db",
-    "D:POSTGRES_USER=postgres",
-    "D:POSTGRES_PASSWORD=",
+    "D:POSTGRES_USER=dev",
+    "D:POSTGRES_PASSWORD=devpassword",
 ]
 
 [tool.ruff]
