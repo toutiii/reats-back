@@ -220,6 +220,8 @@ def simple_jwt_overload(settings, private_key: str, public_key: str) -> None:
         "SIGNING_KEY": private_key,
         "VERIFYING_KEY": public_key,
         "TOKEN_OBTAIN_SERIALIZER": "cookers_app.serializers.TokenObtainPairWithoutPasswordSerializer",
+        "ROTATE_REFRESH_TOKENS": True,
+        "BLACKLIST_AFTER_ROTATION": True,
     }
 
 

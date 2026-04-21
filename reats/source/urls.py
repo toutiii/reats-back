@@ -95,6 +95,11 @@ urlpatterns = [
         name="token_refresh",
     ),
     path(
+        "api/v1/logout/",
+        cooker_app_views.LogoutView.as_view(),
+        name="logout",
+    ),
+    path(
         "api/v1/stripe/webhook/",
         customer_app_views.StripeWebhookView.as_view({"post": "create"}),
         name="stripe_webhook",
