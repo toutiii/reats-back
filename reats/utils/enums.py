@@ -83,6 +83,7 @@ class SuccessMessageEnum(str, Enum):
     DRINK_DELETED = _("Drink deleted successfully")
     TOKEN_GENERATED = _("Token generated successfully")
     TOKEN_REFRESHED = _("Token refreshed successfully")
+    LOGOUT_SUCCESSFUL = _("Deconnexion reussie")
 
 
 class ErrorCodeEnum(str, Enum):

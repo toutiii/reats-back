@@ -33,7 +33,10 @@ from rest_framework_simplejwt.serializers import (
     TokenObtainPairSerializer,
     TokenRefreshSerializer,
 )
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.settings import api_settings
+from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
+from rest_framework_simplejwt.tokens import RefreshToken, Token
+from rest_framework_simplejwt.utils import datetime_from_epoch
 from utils.common import (
     compute_order_items_total_amount,
     format_phone,
@@ -379,7 +382,29 @@ class DrinkPATCHSerializer(DrinkSerializer):
         )
 
 
+class CustomRefreshToken(RefreshToken):
+    @classmethod
+    def for_user(cls, user):
+        token = Token.for_user.__func__(cls, user)
+
+        if "rest_framework_simplejwt.token_blacklist" in settings.INSTALLED_APPS:
+            jti = token[api_settings.JTI_CLAIM]
+            exp = token["exp"]
+
+            OutstandingToken.objects.create(
+                user=None,
+                jti=jti,
+                token=str(token),
+                created_at=token.current_time,
+                expires_at=datetime_from_epoch(exp),
+            )
+
+        return token
+
+
 class TokenObtainPairWithoutPasswordSerializer(TokenObtainPairSerializer):
+    token_class = CustomRefreshToken
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["password"].required = False
@@ -430,7 +455,7 @@ class TokenObtainPairWithoutPasswordSerializer(TokenObtainPairSerializer):
         if self.user is None:
             return {"ok": False, "status": status.HTTP_400_BAD_REQUEST}
 
-        refresh = cast(RefreshToken, self.get_token(cast(AbstractBaseUser, self.user)))
+        refresh = cast(CustomRefreshToken, self.get_token(cast(AbstractBaseUser, self.user)))
         data = {}
         data["refresh"] = str(refresh)
         data["access"] = str(refresh.access_token)
