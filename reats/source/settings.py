@@ -64,6 +64,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "django_filters",
     "drf_spectacular",
+    "rest_framework_simplejwt.token_blacklist",
     "customer_app",
     "cooker_app",
     "delivery_app",
@@ -266,6 +267,8 @@ SIMPLE_JWT = {
     "SIGNING_KEY": private_key,
     "VERIFYING_KEY": public_key,
     "TOKEN_OBTAIN_SERIALIZER": "cookers_app.serializers.TokenObtainPairWithoutPasswordSerializer",
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
 }
 
 SERVICE_FEES_RATE = 0.07

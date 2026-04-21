@@ -37,16 +37,20 @@ from drf_spectacular.utils import (
     OpenApiResponse,
     OpenApiTypes,
     extend_schema,
+    inline_serializer,
 )
 from phonenumbers.phonenumberutil import NumberParseException
-from rest_framework import status
+from rest_framework import serializers, status
 from rest_framework.decorators import action
 from rest_framework.mixins import ListModelMixin, UpdateModelMixin
 from rest_framework.permissions import BasePermission
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
+from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
+from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenViewBase
 from utils.common import (
     activate_user,
@@ -1881,6 +1885,37 @@ class TokenObtainRefreshWithoutPasswordView(StandardizedResponseMixin, TokenView
             raise
 
         return self.success(data=serializer.validated_data, message=SuccessMessageEnum.TOKEN_REFRESHED)
+
+
+class LogoutView(StandardizedResponseMixin, APIView):
+    permission_classes = [UserPermission]
+
+    @extend_schema(
+        request=inline_serializer(name="LogoutRequest", fields={"refresh": serializers.CharField()}),
+        responses={200: OpenApiResponse(description="Successfully logged out.")},
+        tags=["Auth"],
+    )
+    def post(self, request):
+        try:
+            refresh_token = request.data.get("refresh")
+            if not refresh_token:
+                return self.error(
+                    ErrorMessageEnum.INVALID_DATA,
+                    code=ErrorCodeEnum.MISSING_PARAMETERS,
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                )
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+            return self.success(
+                message=SuccessMessageEnum.LOGOUT_SUCCESSFUL,
+                status_code=status.HTTP_200_OK,
+            )
+        except TokenError:
+            return self.error(
+                ErrorMessageEnum.INVALID_DATA,
+                code=ErrorCodeEnum.INVALID_DATA,
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
 
 
 class CookerOrderView(

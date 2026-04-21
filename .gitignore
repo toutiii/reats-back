@@ -1,6 +1,8 @@
 *.pyc
 !*-tpl
 *.venv
+*.txt
+*/__pycache__/*
 
 # Elastic Beanstalk Files
 .elasticbeanstalk/*
