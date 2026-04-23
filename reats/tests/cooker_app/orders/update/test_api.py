@@ -4,7 +4,7 @@ from decimal import Decimal
 from unittest.mock import MagicMock
 
 import pytest
-from core_app.models import CookerModel, OrderModel
+from core_app.models import AddressModel, CookerModel, CustomerModel, OrderModel
 from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from freezegun import freeze_time
 from rest_framework import status
@@ -566,3 +566,56 @@ def test_update_cooker_acceptance_rate(
             amount=2319,
             payment_intent="pi_3Q6VU7EEYeaFww1W0xCZEUxw",
         )
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "order_status",
+    [
+        OrderStatusEnum.PENDING,
+        OrderStatusEnum.PROCESSING,
+        OrderStatusEnum.COMPLETED,
+        OrderStatusEnum.IN_DELIVERY,
+        OrderStatusEnum.CANCELLED_BY_CUSTOMER,
+        OrderStatusEnum.CANCELLED_BY_COOKER,
+        OrderStatusEnum.DELIVERED,
+    ],
+    ids=[
+        s.value
+        for s in [
+            OrderStatusEnum.PENDING,
+            OrderStatusEnum.PROCESSING,
+            OrderStatusEnum.COMPLETED,
+            OrderStatusEnum.IN_DELIVERY,
+            OrderStatusEnum.CANCELLED_BY_CUSTOMER,
+            OrderStatusEnum.CANCELLED_BY_COOKER,
+            OrderStatusEnum.DELIVERED,
+        ]
+    ],
+)
+def test_update_order_of_another_cooker_returns_404(
+    auth_headers: dict,
+    client: APIClient,
+    cookers_order_path: str,
+    order_status: OrderStatusEnum,
+) -> None:
+    other_cooker = CookerModel.objects.exclude(id=1).first()
+    assert other_cooker is not None, "Need at least another cooker in the DB"
+
+    order = OrderModel.objects.create(
+        cooker=other_cooker,
+        customer=CustomerModel.objects.first(),
+        address=AddressModel.objects.first(),
+        status=order_status.value,
+        delivery_distance=1.0,
+        delivery_fees=2.0,
+    )
+
+    update_response = client.patch(
+        f"{cookers_order_path}{order.id}/",
+        data={"status": OrderStatusEnum.PROCESSING.value},
+        format="json",
+        **auth_headers,
+    )
+
+    assert update_response.status_code == status.HTTP_404_NOT_FOUND

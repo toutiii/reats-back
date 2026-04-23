@@ -1981,8 +1981,11 @@ class CookerOrderView(
 
         return super().get_serializer_class()
 
+    def get_queryset(self):
+        return super().get_queryset().filter(cooker__id=self.request.user.pk)
+
     def list(self, request, *args, **kwargs) -> Response:
-        self.queryset = self.queryset.filter(cooker__id=request.user.pk)
+        queryset = self.filter_queryset(self.get_queryset())
         request_status: Union[str, None] = self.request.query_params.get("status")
 
         if request_status is None or request_status not in [
@@ -1992,12 +1995,11 @@ class CookerOrderView(
         ]:
             if request_status is not None:
                 logger.error(f"Invalid status {request_status}")
-            self.queryset = OrderModel.objects.none()
+            queryset = queryset.none()
 
         if request_status is not None:
-            self.queryset = self.queryset.filter(status=request_status).order_by("-modified")
+            queryset = queryset.filter(status=request_status).order_by("-modified")
 
-        queryset = self.filter_queryset(self.get_queryset())
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
