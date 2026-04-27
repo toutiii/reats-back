@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from django.contrib.postgres.indexes import GinIndex
 from django.core.validators import MinLengthValidator, RegexValidator
 from django.db.models import (
@@ -17,7 +19,6 @@ from django.db.models import (
     PositiveIntegerField,
     TextField,
 )
-from datetime import datetime, timezone
 from utils.enums import OrderStatusEnum
 from utils.models import ReatsModel
 
@@ -463,7 +464,7 @@ class OrderState:
         if self.can_transition_to(new_state):
             new_status = order.get_reverse_state_map().get(new_state.__class__.__name__)
             order.status = new_status
-            
+
             now = datetime.now(timezone.utc)
             if new_status in (OrderStatusEnum.CANCELLED_BY_COOKER, OrderStatusEnum.CANCELLED_BY_CUSTOMER):
                 order.cancelled_date = now

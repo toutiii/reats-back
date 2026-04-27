@@ -1,10 +1,8 @@
-from datetime import datetime, timezone
 from typing import Any, Union
 
 from rest_framework import serializers
 from rest_framework.serializers import CharField, ModelSerializer
 from utils.common import get_pre_signed_url
-from utils.enums import OrderStatusEnum
 
 from .models import (
     CookerModel,
