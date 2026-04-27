@@ -38,7 +38,7 @@ class Command(BaseCommand):
         count = options["count"]
         cooker_id = 1  # Change if needed
         customer_id = 1  # Change if needed
-        address_id = 3  # Change if needed
+        address_id = 1  # Change if needed
 
         cooker: CookerModel = CookerModel.objects.get(pk=cooker_id)
         assert cooker.is_activated, "Cooker must be activated."
