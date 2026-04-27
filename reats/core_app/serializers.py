@@ -365,32 +365,6 @@ class OrderPATCHSerializer(ModelSerializer):
         model = OrderModel
         fields = ("status",)
 
-    def update(self, instance: OrderModel, validated_data: dict):
-        status = validated_data["status"]
-        instance.status = status
-
-        if status in (
-            OrderStatusEnum.CANCELLED_BY_COOKER,
-            OrderStatusEnum.CANCELLED_BY_CUSTOMER,
-        ):
-            instance.cancelled_date = datetime.now(timezone.utc)
-
-        if status == OrderStatusEnum.PROCESSING:
-            instance.processing_date = datetime.now(timezone.utc)
-
-        if status == OrderStatusEnum.COMPLETED:
-            instance.completed_date = datetime.now(timezone.utc)
-
-        if status == OrderStatusEnum.IN_DELIVERY:
-            instance.delivery_in_progress_date = datetime.now(timezone.utc)
-
-        if status == OrderStatusEnum.DELIVERED:
-            instance.delivered_date = datetime.now(timezone.utc)
-
-        instance.save()
-
-        return instance
-
 
 class OrderRatingSerializer(ModelSerializer):
     class Meta:
