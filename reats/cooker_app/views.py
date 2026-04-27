@@ -1288,7 +1288,7 @@ class DishView(StandardizedResponseMixin, IngredientsEndpointMixin, ModelViewSet
     @extend_schema(
         summary="Delete a dish",
         description=(
-            "Soft-deletes a dish by setting `is_deleted=True`. " "The dish will no longer appear in list responses."
+            "Soft-deletes a dish by setting `is_deleted=True`. The dish will no longer appear in list responses."
         ),
         responses={200: OpenApiResponse(description="Dish deleted successfully")},
         examples=[
@@ -1821,7 +1821,7 @@ class DrinkView(StandardizedResponseMixin, IngredientsEndpointMixin, ModelViewSe
     @extend_schema(
         summary="Delete a drink",
         description=(
-            "Soft-deletes a drink by setting `is_deleted=True`. " "The drink will no longer appear in list responses."
+            "Soft-deletes a drink by setting `is_deleted=True`. The drink will no longer appear in list responses."
         ),
         responses={200: OpenApiResponse(description="Drink deleted successfully")},
         examples=[
@@ -1986,18 +1986,19 @@ class CookerOrderView(
 
     def list(self, request, *args, **kwargs) -> Response:
         queryset = self.filter_queryset(self.get_queryset())
-        request_status: Union[str, None] = self.request.query_params.get("status")
+        request_status = self.request.query_params.get("status", OrderStatusEnum.PENDING)
 
-        if request_status is None or request_status not in [
+        valid_statuses = [
             OrderStatusEnum.PENDING,
             OrderStatusEnum.PROCESSING,
             OrderStatusEnum.COMPLETED,
-        ]:
-            if request_status is not None:
+        ]
+
+        if request_status not in valid_statuses:
+            if request_status:
                 logger.error(f"Invalid status {request_status}")
             queryset = queryset.none()
-
-        if request_status is not None:
+        else:
             queryset = queryset.filter(status=request_status).order_by("-modified")
 
         page = self.paginate_queryset(queryset)
