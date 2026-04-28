@@ -611,8 +611,6 @@ class OrderView(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
 
-        super().partial_update(request, *args, **kwargs)
-        instance.refresh_from_db()
         serializer = OrderGETSerializer(instance)
 
         return self.success(data=serializer.data, message=SuccessMessageEnum.OPERATION_SUCCESSFUL)

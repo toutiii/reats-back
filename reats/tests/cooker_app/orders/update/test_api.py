@@ -392,6 +392,60 @@ def test_update_order_from_pending_to_completed_state(
 
 
 @pytest.mark.django_db
+def test_update_order_with_invalid_transition_returns_400_validation_error(
+    auth_headers: dict,
+    client: APIClient,
+    cookers_order_path: str,
+    customer_order_path: str,
+    post_order_data: dict,
+    mock_googlemaps_distance_matrix: MagicMock,
+    mock_stripe_payment_intent_create: MagicMock,
+) -> None:
+    with freeze_time("2024-05-08T10:16:00+00:00"):
+        # First we create a draft order
+        response = client.post(
+            customer_order_path,
+            encode_multipart(
+                BOUNDARY,
+                post_order_data,
+            ),
+            content_type=MULTIPART_CONTENT,
+            follow=False,
+            **auth_headers,
+        )
+        assert response.status_code == status.HTTP_201_CREATED
+
+        order: OrderModel = OrderModel.objects.latest("pk")
+        assert order.status == OrderStatusEnum.DRAFT.value
+
+    # Manually set the order to PENDING status
+    order.status = OrderStatusEnum.PENDING.value
+    order.save()
+
+    assert order.status == OrderStatusEnum.PENDING.value
+
+    with freeze_time("2024-05-08T10:18:00+00:00"):
+        # Try to transition directly from PENDING to COMPLETED
+        invalid_transition_response = client.patch(
+            f"{cookers_order_path}{order.id}/",
+            encode_multipart(
+                BOUNDARY,
+                {
+                    "status": OrderStatusEnum.COMPLETED.value,
+                },
+            ),
+            content_type=MULTIPART_CONTENT,
+            follow=False,
+            **auth_headers,
+        )
+
+        # Should return 400 Bad Request
+        assert invalid_transition_response.status_code == status.HTTP_400_BAD_REQUEST
+        response_data = invalid_transition_response.json()
+        assert "Cannot transition from PendingState to CompletedState" in response_data["error"]["message"]
+
+
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     "new_status",
     [
