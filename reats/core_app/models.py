@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from django.contrib.postgres.indexes import GinIndex
 from django.core.validators import MinLengthValidator, RegexValidator
 from django.db.models import (
@@ -460,7 +462,21 @@ class OrderState:
 
     def transition_to(self, order: OrderModel, new_state):
         if self.can_transition_to(new_state):
-            order.status = order.get_reverse_state_map().get(new_state.__class__.__name__)
+            new_status = order.get_reverse_state_map().get(new_state.__class__.__name__)
+            order.status = new_status
+
+            now = datetime.now(timezone.utc)
+            if new_status in (OrderStatusEnum.CANCELLED_BY_COOKER, OrderStatusEnum.CANCELLED_BY_CUSTOMER):
+                order.cancelled_date = now
+            elif new_status == OrderStatusEnum.PROCESSING:
+                order.processing_date = now
+            elif new_status == OrderStatusEnum.COMPLETED:
+                order.completed_date = now
+            elif new_status == OrderStatusEnum.IN_DELIVERY:
+                order.delivery_in_progress_date = now
+            elif new_status == OrderStatusEnum.DELIVERED:
+                order.delivered_date = now
+
             order.save()
         else:
             raise ValueError(f"Cannot transition from {self.__class__.__name__} to {new_state.__class__.__name__}")

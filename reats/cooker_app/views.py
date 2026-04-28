@@ -1966,10 +1966,7 @@ class CookerOrderView(
 
         update_cooker_acceptance_rate(instance, new_status)
 
-        serializer = self.get_serializer(instance, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-
+        serializer = CookerOrderGETSerializer(instance)
         return self.success(serializer.data)
 
     def get_serializer_class(self) -> type[BaseSerializer]:
