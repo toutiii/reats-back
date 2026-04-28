@@ -24,7 +24,7 @@ WORKDIR /usr/src/app/reats/
 # install dependencies
 COPY pyproject.toml /usr/src/app/reats/pyproject.toml
 COPY uv.lock /usr/src/app/reats/uv.lock
-RUN uv sync --frozen --no-dev
+RUN uv sync --frozen
 
 # copy project files
 COPY reats/customer_app /usr/src/app/reats/customer_app/
