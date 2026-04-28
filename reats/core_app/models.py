@@ -18,6 +18,7 @@ from django.db.models import (
     OneToOneField,
     PositiveIntegerField,
     TextField,
+    UniqueConstraint,
 )
 from utils.enums import OrderStatusEnum
 from utils.models import ReatsModel
@@ -550,10 +551,7 @@ class DishRatingModel(RatingsModel):
 
     class Meta:
         db_table = "dish_ratings"
-        unique_together = (
-            "customer",
-            "dish",
-        )  # One customer can rate a dish only once
+        constraints = [UniqueConstraint(fields=["customer", "dish"], name="unique_customer_dish_rating")]
 
 
 class DrinkRatingModel(RatingsModel):
@@ -570,7 +568,4 @@ class DrinkRatingModel(RatingsModel):
 
     class Meta:
         db_table = "drink_ratings"
-        unique_together = (
-            "customer",
-            "drink",
-        )  # One customer can rate a drink only once
+        constraints = [UniqueConstraint(fields=["customer", "drink"], name="unique_customer_drink_rating")]
