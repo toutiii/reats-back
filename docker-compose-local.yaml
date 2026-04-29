@@ -7,6 +7,11 @@ services:
       - "8000:8000"
     environment:
       - ENV=local
+      - DB_HOST=db
+      - DB_PORT=5432
+      - POSTGRES_DB=reats_local_db
+      - POSTGRES_USER=dev
+      - POSTGRES_PASSWORD=devpassword
     depends_on:
       - db
     volumes:

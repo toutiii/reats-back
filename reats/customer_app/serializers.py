@@ -1,7 +1,7 @@
 import ast
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 
-import pytz
 from core_app.models import (
     AddressModel,
     CustomerModel,
@@ -155,18 +155,18 @@ class OrderSerializer(ModelSerializer):
         if data.get("date") and data.get("time"):
             delivery_datetime_string = f"{data.get('date')} {data.get('time')}"
             delivery_datetime_object_naive = datetime.strptime(delivery_datetime_string, "%m/%d/%Y %H:%M:%S")
-            local_timezone = pytz.timezone("Europe/Paris")
-            local_delivery_datetime = local_timezone.localize(delivery_datetime_object_naive)
-            utc_delivery_datetime = local_delivery_datetime.astimezone(pytz.UTC)
+            local_timezone = ZoneInfo("Europe/Paris")
+            local_delivery_datetime = delivery_datetime_object_naive.replace(tzinfo=local_timezone)
+            utc_delivery_datetime = local_delivery_datetime.astimezone(timezone.utc)
 
             # Check if utc_delivery_datetime is in the past and return a 400 response
-            if utc_delivery_datetime < datetime.now(pytz.UTC):
+            if utc_delivery_datetime < datetime.now(timezone.utc):
                 raise serializers.ValidationError(
                     {"date": "Scheduled delivery date must be in the future"},
                 )
 
             # Check if utc_delivery_datetime is at least one hour in the future
-            if utc_delivery_datetime < datetime.now(pytz.UTC) + timedelta(hours=1):
+            if utc_delivery_datetime < datetime.now(timezone.utc) + timedelta(hours=1):
                 raise serializers.ValidationError(
                     {"date": "Scheduled delivery date must be at least one hour in the future"},
                 )
