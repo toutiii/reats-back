@@ -1,4 +1,4 @@
-from typing import Any, Union
+from typing import Union
 
 from rest_framework import serializers
 from rest_framework.serializers import CharField, ModelSerializer
@@ -25,9 +25,6 @@ from .models import (
 
 class AllergenIngredientMixin:
     """Mixin to avoid duplicating allergen/ingredient serialization logic."""
-
-    def get_allergens(self, obj: Union[DishModel, DrinkModel]) -> list[str]:
-        return list(obj.ingredients.filter(is_allergen=True).values_list("code", flat=True))
 
     def get_ingredients(self, obj: Union[DishModel, DrinkModel]) -> list[str]:
         return list(obj.ingredients.values_list("code", flat=True))
@@ -92,7 +89,6 @@ class DishGETSerializer(AllergenIngredientMixin, ModelSerializer):
     cooker = SimpleCookerSerializer(read_only=True)
     image = serializers.SerializerMethodField()
     margin = serializers.SerializerMethodField()
-    allergens = serializers.SerializerMethodField()
     ingredients = serializers.SerializerMethodField()
 
     class Meta:
@@ -166,13 +162,11 @@ class BaseDishSerializer(NutritionalInfoMixin, ModelSerializer):
 
 class DishListSerializer(AllergenIngredientMixin, BaseDishSerializer):
     image = serializers.SerializerMethodField()
-    allergens = serializers.SerializerMethodField()
     ingredients = serializers.SerializerMethodField()
 
     class Meta(BaseDishSerializer.Meta):
         fields = BaseDishSerializer.Meta.fields + (  # type: ignore[assignment]
             "image",
-            "allergens",
             "ingredients",
         )
 
@@ -180,18 +174,12 @@ class DishListSerializer(AllergenIngredientMixin, BaseDishSerializer):
 class DishDetailSerializer(BaseDishSerializer):
     ingredients = IngredientDishSerializer(many=True, read_only=True)
     images = DishImageSerializer(many=True, read_only=True)
-    allergens = serializers.SerializerMethodField()
 
     class Meta(BaseDishSerializer.Meta):
         fields = BaseDishSerializer.Meta.fields + (  # type: ignore[assignment]
-            "allergens",
             "ingredients",
             "images",
         )
-
-    def get_allergens(self, obj: DishModel) -> Any:
-        allergens = obj.ingredients.filter(is_allergen=True)
-        return IngredientDishSerializer(allergens, many=True).data
 
 
 class DishCustomerSerializer(AllergenIngredientMixin, NutritionalInfoMixin, ModelSerializer):
@@ -200,7 +188,6 @@ class DishCustomerSerializer(AllergenIngredientMixin, NutritionalInfoMixin, Mode
     ratings = DishRatingSerializer(many=True, read_only=True)
     cooker = SimpleCookerSerializer(read_only=True)
     image = serializers.SerializerMethodField()
-    allergens = serializers.SerializerMethodField()
     ingredients = serializers.SerializerMethodField()
     nutritional_info = serializers.SerializerMethodField()
 
@@ -222,7 +209,6 @@ class DishOrderHistorySerializer(AllergenIngredientMixin, NutritionalInfoMixin, 
     ratings = DishRatingSerializer(many=True, read_only=True)
     cooker = SimpleCookerSerializer(read_only=True)
     image = serializers.SerializerMethodField()
-    allergens = serializers.SerializerMethodField()
     nutritional_info = serializers.SerializerMethodField()
 
     class Meta:
@@ -285,7 +271,6 @@ class DrinkCustomerSerializer(AllergenIngredientMixin, NutritionalInfoMixin, Mod
     ratings = DrinkRatingSerializer(many=True, read_only=True)
     cooker = SimpleCookerSerializer(read_only=True)
     image = serializers.SerializerMethodField()
-    allergens = serializers.SerializerMethodField()
     ingredients = serializers.SerializerMethodField()
     nutritional_info = serializers.SerializerMethodField()
 
@@ -301,14 +286,12 @@ class DrinkCustomerSerializer(AllergenIngredientMixin, NutritionalInfoMixin, Mod
 
 class DrinkListSerializer(AllergenIngredientMixin, BaseDrinkSerializer):
     image = serializers.SerializerMethodField()
-    allergens = serializers.SerializerMethodField()
     ingredients = serializers.SerializerMethodField()
     ratings = DrinkRatingSerializer(many=True, read_only=True)
 
     class Meta(BaseDrinkSerializer.Meta):
         fields = BaseDrinkSerializer.Meta.fields + (  # type: ignore[assignment]
             "image",
-            "allergens",
             "ingredients",
             "ratings",
         )
@@ -318,19 +301,13 @@ class DrinkDetailSerializer(BaseDrinkSerializer):
     ingredients = IngredientDrinkSerializer(many=True, read_only=True)
     images = DrinkImageSerializer(many=True, read_only=True)
     ratings = DrinkRatingSerializer(many=True, read_only=True)
-    allergens = serializers.SerializerMethodField()
 
     class Meta(BaseDrinkSerializer.Meta):
         fields = BaseDrinkSerializer.Meta.fields + (  # type: ignore[assignment]
-            "allergens",
             "ingredients",
             "images",
             "ratings",
         )
-
-    def get_allergens(self, obj: DrinkModel) -> Any:
-        allergens = obj.ingredients.filter(is_allergen=True)
-        return IngredientDrinkSerializer(allergens, many=True).data
 
 
 class OrderDishItemGETSerializer(ModelSerializer):
