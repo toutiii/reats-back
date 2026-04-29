@@ -246,18 +246,34 @@ class DrinkImageSerializer(ModelSerializer):
 
 
 class BaseDrinkSerializer(ModelSerializer):
-    ratings = DrinkRatingSerializer(many=True, read_only=True)
-    cooker = SimpleCookerSerializer(read_only=True)
+    margin = serializers.SerializerMethodField()
+    available = serializers.BooleanField(source="is_enabled")
+    created_at = serializers.DateTimeField(source="created")
+    updated_at = serializers.DateTimeField(source="modified")
+
     nutritional_info = serializers.SerializerMethodField()
-    ingredients = IngredientDrinkSerializer(many=True, read_only=True)
 
     class Meta:
         model = DrinkModel
-        exclude = (
-            "created",
-            "modified",
-            "is_deleted",
+        fields = (
+            "id",
+            "name",
+            "description",
+            "price",
+            "cost",
+            "margin",
+            "unit",
+            "capacity",
+            "country",
+            "available",
+            "is_enabled",
+            "created_at",
+            "updated_at",
+            "nutritional_info",
         )
+
+    def get_margin(self, obj: DrinkModel) -> float | None:
+        return obj.margin
 
     def get_nutritional_info(self, obj: DrinkModel) -> dict:
         if hasattr(obj, "nutritional_info"):
@@ -265,11 +281,47 @@ class BaseDrinkSerializer(ModelSerializer):
         return {}
 
 
+class DrinkCustomerSerializer(ModelSerializer):
+    """Serializer for customer-facing drink endpoints without sensitive financial data."""
+
+    ratings = DrinkRatingSerializer(many=True, read_only=True)
+    cooker = SimpleCookerSerializer(read_only=True)
+    image = serializers.SerializerMethodField()
+    ingredients = IngredientDrinkSerializer(many=True, read_only=True)
+    nutritional_info = serializers.SerializerMethodField()
+
+    class Meta:
+        model = DrinkModel
+        exclude = (
+            "created",
+            "modified",
+            "is_deleted",
+            "cost",
+        )
+
+    def get_nutritional_info(self, obj: DrinkModel) -> dict:
+        if hasattr(obj, "nutritional_info"):
+            return DrinkNutritionalInfoSerializer(obj.nutritional_info).data
+        return {}
+
+    def get_image(self, obj: DrinkModel) -> Union[str, None]:
+        primary = obj.images.filter(is_primary=True).first()  # type: ignore
+        if primary:
+            return get_pre_signed_url(primary.key)
+        return None
+
+
 class DrinkListSerializer(BaseDrinkSerializer):
     image = serializers.SerializerMethodField()
+    ingredients = IngredientDrinkSerializer(many=True, read_only=True)
+    ratings = DrinkRatingSerializer(many=True, read_only=True)
 
     class Meta(BaseDrinkSerializer.Meta):
-        pass
+        fields = BaseDrinkSerializer.Meta.fields + (  # type: ignore[assignment]
+            "image",
+            "ingredients",
+            "ratings",
+        )
 
     def get_image(self, obj: DrinkModel) -> Union[str, None]:
         primary = obj.images.filter(is_primary=True).first()  # type: ignore
@@ -279,10 +331,16 @@ class DrinkListSerializer(BaseDrinkSerializer):
 
 
 class DrinkDetailSerializer(BaseDrinkSerializer):
+    ingredients = IngredientDrinkSerializer(many=True, read_only=True)
     images = DrinkImageSerializer(many=True, read_only=True)
+    ratings = DrinkRatingSerializer(many=True, read_only=True)
 
     class Meta(BaseDrinkSerializer.Meta):
-        pass
+        fields = BaseDrinkSerializer.Meta.fields + (  # type: ignore[assignment]
+            "ingredients",
+            "images",
+            "ratings",
+        )
 
 
 class OrderDishItemGETSerializer(ModelSerializer):
@@ -344,7 +402,7 @@ class OrderDrinkItemGETSerializer(ModelSerializer):
 class OrderDrinkItemCustomerSerializer(ModelSerializer):
     """Customer-facing version for consistency."""
 
-    drink = DrinkListSerializer()
+    drink = DrinkCustomerSerializer()
 
     class Meta:
         model = OrderDrinkItemModel
