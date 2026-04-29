@@ -53,7 +53,6 @@ class TestListStartersForCustomerSuccess:
                     "is_suitable_for_quick_delivery": False,
                     "is_suitable_for_scheduled_delivery": False,
                     "ratings": [],
-                    "allergens": [],
                     "ingredients": [],
                     "nutritional_info": {},
                 }

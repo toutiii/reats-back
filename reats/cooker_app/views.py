@@ -1041,7 +1041,7 @@ class DishView(StandardizedResponseMixin, IngredientsEndpointMixin, ModelViewSet
         summary="Get dish details",
         description=(
             "Returns the full details of a dish, including all images, "
-            "detailed ingredients, allergens, and nutritional information."
+            "detailed ingredients, and nutritional information."
         ),
         responses={
             200: OpenApiResponse(response=DishDetailSerializer, description="Dish details"),
@@ -1089,15 +1089,6 @@ class DishView(StandardizedResponseMixin, IngredientsEndpointMixin, ModelViewSet
                                 "category": "vegetable",
                                 "is_allergen": False,
                             },
-                            {
-                                "id": 2,
-                                "code": "crayfish",
-                                "name": "Crayfish",
-                                "category": "seafood",
-                                "is_allergen": True,
-                            },
-                        ],
-                        "allergens": [
                             {
                                 "id": 2,
                                 "code": "crayfish",
@@ -1194,7 +1185,6 @@ class DishView(StandardizedResponseMixin, IngredientsEndpointMixin, ModelViewSet
                                 "created_at": "2024-05-01T12:00:00Z",
                                 "updated_at": "2024-05-01T12:00:00Z",
                                 "image": "https://reats-dev-bucket.s3.eu-central-1.amazonaws.com/cookers/6/dishes/dish/achu.png?X-Amz-...",
-                                "allergens": [],
                                 "ingredients": ["taro", "palm_oil", "limestone"],
                                 "nutritional_info": {},
                             },
@@ -1214,7 +1204,6 @@ class DishView(StandardizedResponseMixin, IngredientsEndpointMixin, ModelViewSet
                                 "created_at": "2024-05-08T10:00:00Z",
                                 "updated_at": "2024-05-08T10:00:00Z",
                                 "image": "https://reats-dev-bucket.s3.eu-central-1.amazonaws.com/cookers/6/dishes/dish/eru.png?X-Amz-...",
-                                "allergens": ["crayfish"],
                                 "ingredients": ["eru_leaves", "waterleaf", "crayfish", "palm_oil"],
                                 "nutritional_info": {
                                     "calories": 350,
