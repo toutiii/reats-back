@@ -16,7 +16,7 @@ from core_app.models import (
 )
 from core_app.serializers import (
     DishCustomerSerializer,
-    DrinkListSerializer,
+    DrinkCustomerSerializer,
     OrderPATCHSerializer,
     OrderRatingSerializer,
 )
@@ -431,7 +431,7 @@ class DishView(StandardizedResponseMixin, ListModelMixin, GenericViewSet):
 
 
 class DrinkView(StandardizedResponseMixin, ListModelMixin, GenericViewSet):
-    serializer_class = DrinkListSerializer
+    serializer_class = DrinkCustomerSerializer
     pagination_class = StandardizedResultsSetPagination
     queryset = DrinkModel.objects.filter(is_deleted=False).all()
 
