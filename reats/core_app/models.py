@@ -252,11 +252,23 @@ class DrinkModel(ReatsModel):
     is_suitable_for_quick_delivery: BooleanField = BooleanField(default=False)
     is_suitable_for_scheduled_delivery: BooleanField = BooleanField(default=False)
     is_deleted: BooleanField = BooleanField(default=False)
+    cost: FloatField = FloatField(null=True, blank=True)
     ingredients: ManyToManyField = ManyToManyField(
         "IngredientDrinkModel",
         blank=True,
         related_name="drinks",
     )
+
+    @property
+    def margin(self) -> float | None:
+        """
+        Calcule la marge en pourcentage.
+        Formule : ((price - cost) / price) * 100
+        Retourne None si cost est None ou price est 0.
+        """
+        if self.cost is None or self.price == 0:
+            return None
+        return round(((self.price - self.cost) / self.price) * 100, 2)
 
     class Meta:
         db_table = "drinks"
