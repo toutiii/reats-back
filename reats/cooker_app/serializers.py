@@ -374,6 +374,7 @@ class DrinkPATCHSerializer(DrinkSerializer):
             "name",
             "description",
             "price",
+            "cost",
             "capacity",
             "is_suitable_for_quick_delivery",
             "is_suitable_for_scheduled_delivery",
