@@ -70,6 +70,12 @@ def cooker_response_keys() -> list:
     ]
 
 
+def assert_response_structure(response_body: dict, expected_data: dict, keys: list) -> None:
+    """Extrait un sous-ensemble de clés de la réponse et le compare aux données attendues."""
+    actual_subset = {k: response_body["data"].get(k) for k in keys}
+    assert actual_subset == expected_data
+
+
 @pytest.mark.django_db
 class TestUpdateCookerInfoSuccess:
     def test_update_personal_info(
@@ -94,7 +100,7 @@ class TestUpdateCookerInfoSuccess:
             assert response_body["success"] is True
             assert response_body["message"] == "Operation successful"
 
-            self.assert_response_structure(
+            assert_response_structure(
                 response_body,
                 {
                     "id": cooker_id,
@@ -154,7 +160,7 @@ class TestUpdateCookerInfoSuccess:
             assert response_body["success"] is True
             assert response_body["message"] == "Operation successful"
 
-            self.assert_response_structure(
+            assert_response_structure(
                 response_body,
                 {
                     "id": cooker_id,
@@ -176,11 +182,6 @@ class TestUpdateCookerInfoSuccess:
             # On vérifie uniquement la date de modification en DB car elle n'est pas dans la réponse API
             cooker = CookerModel.objects.get(pk=cooker_id)
             assert cooker.modified.isoformat() == "2023-10-15T22:00:00+00:00"
-
-    def assert_response_structure(self, response_body: dict, expected_data: dict, keys: list) -> None:
-        """Extrait un sous-ensemble de clés de la réponse et le compare aux données attendues."""
-        actual_subset = {k: response_body["data"].get(k) for k in keys}
-        assert actual_subset == expected_data
 
     def test_update_address(
         self,
@@ -259,6 +260,7 @@ class TestUpdateCookerStrictContract:
         client: APIClient,
         cooker_id: int,
         path: str,
+        cooker_response_keys: list,
     ) -> None:
         """Test 1: PATCH with only authorized fields → 200 OK."""
         payload = {
@@ -273,7 +275,27 @@ class TestUpdateCookerStrictContract:
             **auth_headers,
         )
         assert response.status_code == status.HTTP_200_OK
-        assert response.json()["success"] is True
+        response_body = response.json()
+        assert response_body["success"] is True
+
+        assert_response_structure(
+            response_body,
+            {
+                "id": cooker_id,
+                "firstname": "Jean",
+                "lastname": "MARTIN",
+                "email": "test@gmail.com",
+                "postal_code": "91000",
+                "siret": "00000000000001",
+                "street_name": "rue André Lalande",
+                "street_number": "1",
+                "town": "Evry",
+                "address_complement": None,
+                "max_order_number": 5,
+                "is_online": True,
+            },
+            cooker_response_keys,
+        )
 
         cooker = CookerModel.objects.get(pk=cooker_id)
         assert cooker.firstname == "Jean"
