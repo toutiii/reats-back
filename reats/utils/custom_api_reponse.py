@@ -97,6 +97,9 @@ class CustomApiResponse:
         extra_data: dict | None = None,
         headers: dict | None = None,
     ) -> Response:
+        if isinstance(data, dict) and {"success", "data", "message"}.issubset(data.keys()):
+            return Response(data, status=status_code, headers=headers)
+
         payload: dict = {
             "success": True,
             "data": data if data is not None else {},
