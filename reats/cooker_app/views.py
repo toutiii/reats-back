@@ -178,14 +178,20 @@ class CookerView(StandardizedResponseMixin, ModelViewSet):
 
     @extend_schema(request=CookerPATCHSerializer, responses={200: CookerGETSerializer})
     def partial_update(self, request, *args, **kwargs) -> Response:
-        kwargs.pop("pk", None)  # Ensure pk is handled smoothly by parent
+        kwargs.pop("pk", None)
         response = super().partial_update(request, *args, **kwargs)
+
+        updated_cooker = self.get_object()
+        logger.info(f"[PATCH] Cooker {updated_cooker.pk} updated in memory. Lastname: {updated_cooker.lastname}")
         return self.success(data=response.data)
 
     @extend_schema(request=CookerPATCHSerializer, responses={200: CookerGETSerializer})
     def update(self, request, *args, **kwargs) -> Response:
-        kwargs.pop("pk", None)  # Ensure pk is handled smoothly by parent
+        kwargs.pop("pk", None)
         response = super().update(request, *args, **kwargs)
+
+        updated_cooker = self.get_object()
+        logger.info(f"[PUT] Cooker {updated_cooker.pk} updated in memory. Lastname: {updated_cooker.lastname}")
         return self.success(data=response.data)
 
     @action(detail=True, methods=["patch"], url_path="photo")
