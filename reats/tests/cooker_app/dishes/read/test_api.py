@@ -24,7 +24,7 @@ def test_empty_query_params(auth_headers: dict, client: APIClient, path: str, co
     assert response.json().get("data") is not None
     assert (
         response.json().get("data").get("pagination").get("total_items")
-        == DishModel.objects.filter(is_enabled=True).filter(cooker_id=cooker_id).count()
+        == DishModel.objects.filter(is_deleted=False).filter(cooker_id=cooker_id).count()
     )
 
 
