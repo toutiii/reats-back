@@ -247,8 +247,13 @@ def test_orders_history_list_success_for_cookers(
     )
     assert response.status_code == status.HTTP_200_OK
 
-    diff = DeepDiff(response.json().get("data"), expected_data, ignore_order=True)
+    data = response.json().get("data")
+    results = data.get("results")
+    pagination = data.get("pagination")
 
+    assert pagination["total_items"] == len(expected_data)
+
+    diff = DeepDiff(results, expected_data, ignore_order=True)
     assert not diff
 
 
@@ -288,7 +293,8 @@ def test_orders_list_success_with_order_status_filter(
     assert response.status_code == status.HTTP_200_OK
     assert response.json().get("success") is True
 
-    for order_item in response.json().get("data"):
+    results = response.json().get("data").get("results")
+    for order_item in results:
         assert order_item.get("status") == order_status.value
 
 
@@ -316,7 +322,7 @@ def test_orders_list_success_with_dates_filter_when_some_orders_exist(
 
     assert response.status_code == status.HTTP_200_OK
     assert response.json().get("success") is True
-    assert len(response.json().get("data")) > 0
+    assert len(response.json().get("data").get("results")) > 0
 
 
 @pytest.mark.django_db
@@ -343,7 +349,7 @@ def test_orders_list_success_with_dates_filter_when_no_orders_exist(
 
     assert response.status_code == status.HTTP_200_OK
     assert response.json().get("success") is True
-    assert len(response.json().get("data")) == 0
+    assert len(response.json().get("data").get("results")) == 0
 
 
 @pytest.mark.django_db
@@ -616,8 +622,11 @@ def test_orders_list_success_with_multiple_filters(
 
     assert response.status_code == status.HTTP_200_OK
     assert response.json().get("success") is True
-    assert len(response.json().get("data")) > 0
 
-    diff = DeepDiff(response.json().get("data"), expected_data, ignore_order=True)
+    data = response.json().get("data")
+    results = data.get("results")
+    assert len(results) > 0
+
+    diff = DeepDiff(results, expected_data, ignore_order=True)
 
     assert not diff
