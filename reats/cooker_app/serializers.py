@@ -506,13 +506,43 @@ class CookerOrderCookerGETSerializer(ModelSerializer):
         )
 
 
-class CookerOrderListDishSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField(source="dish.id")
-    name = serializers.CharField(source="dish.name")
-    category = serializers.CharField(source="dish.category")
+class BaseCookerOrderItemSerializer(serializers.ModelSerializer):
+    id = serializers.SerializerMethodField()
+    name = serializers.SerializerMethodField()
     image = serializers.SerializerMethodField()
-    quantity = serializers.IntegerField(source="dish_quantity")
-    unit_price = serializers.FloatField(source="dish.price")
+    quantity = serializers.SerializerMethodField()
+    unit_price = serializers.SerializerMethodField()
+
+    def get_item(self, obj):
+        return getattr(obj, "dish", None) or getattr(obj, "drink", None)
+
+    def get_id(self, obj) -> Union[int, None]:
+        item = self.get_item(obj)
+        return item.id if item else None
+
+    def get_name(self, obj) -> str:
+        item = self.get_item(obj)
+        return item.name if item else ""
+
+    def get_quantity(self, obj) -> Union[int, None]:
+        return getattr(obj, "dish_quantity", None) or getattr(obj, "drink_quantity", None)
+
+    def get_unit_price(self, obj) -> float:
+        item = self.get_item(obj)
+        return item.price if item else 0.0
+
+    def get_image(self, obj) -> Union[str, None]:
+        item = self.get_item(obj)
+        if not item or not hasattr(item, "images"):
+            return None
+        primary = item.images.filter(is_primary=True).first()
+        if primary:
+            return get_pre_signed_url(primary.key)
+        return None
+
+
+class CookerOrderListDishSerializer(BaseCookerOrderItemSerializer):
+    category = serializers.CharField(source="dish.category")
 
     class Meta:
         model = OrderDishItemModel
@@ -525,22 +555,9 @@ class CookerOrderListDishSerializer(serializers.ModelSerializer):
             "unit_price",
         )
 
-    def get_image(self, obj: OrderDishItemModel) -> str | None:
-        if not obj.dish:
-            return None
-        primary = obj.dish.images.filter(is_primary=True).first()
-        if primary:
-            return get_pre_signed_url(primary.key)
-        return None
 
-
-class CookerOrderListDrinkSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField(source="drink.id")
-    name = serializers.CharField(source="drink.name")
+class CookerOrderListDrinkSerializer(BaseCookerOrderItemSerializer):
     capacity = serializers.SerializerMethodField()
-    image = serializers.SerializerMethodField()
-    quantity = serializers.IntegerField(source="drink_quantity")
-    unit_price = serializers.FloatField(source="drink.price")
 
     class Meta:
         model = OrderDrinkItemModel
@@ -560,13 +577,48 @@ class CookerOrderListDrinkSerializer(serializers.ModelSerializer):
         unit_suffix = unit_map.get(obj.drink.unit, obj.drink.unit)
         return f"{obj.drink.capacity}{unit_suffix}"
 
-    def get_image(self, obj: OrderDrinkItemModel) -> str | None:
-        if not obj.drink:
-            return None
-        primary = obj.drink.images.filter(is_primary=True).first()
-        if primary:
-            return get_pre_signed_url(primary.key)
-        return None
+
+class CookerOrderListSerializer(serializers.ModelSerializer):
+    customer = CookerOrderCustomerGETSerializer()
+    address = CookerAddressSerializer()
+    dishes_items = CookerOrderListDishSerializer(many=True)
+    drinks_items = CookerOrderListDrinkSerializer(many=True)
+    items_count = serializers.SerializerMethodField()
+    sub_total = serializers.SerializerMethodField()
+    service_fees = serializers.SerializerMethodField()
+    total_amount = serializers.SerializerMethodField()
+
+    class Meta:
+        model = OrderModel
+        fields = (
+            "id",
+            "status",
+            "created",
+            "customer",
+            "address",
+            "dishes_items",
+            "drinks_items",
+            "items_count",
+            "sub_total",
+            "delivery_fees",
+            "service_fees",
+            "total_amount",
+        )
+
+    def get_items_count(self, obj: OrderModel) -> int:
+        return obj.dishes_items.count() + obj.drinks_items.count()  # ty: ignore[unresolved-attribute]
+
+    def get_sub_total(self, obj: OrderModel) -> float:
+        return compute_order_items_total_amount(obj)
+
+    def get_service_fees(self, obj: OrderModel) -> float:
+        sub_total = compute_order_items_total_amount(obj)
+        return round(sub_total * settings.SERVICE_FEES_RATE, 2)
+
+    def get_total_amount(self, obj: OrderModel) -> float:
+        sub_total = compute_order_items_total_amount(obj)
+        service_fees = round(sub_total * settings.SERVICE_FEES_RATE, 2)
+        return round(sub_total + service_fees + (obj.delivery_fees or 0), 2)
 
 
 class CookerOrderGETSerializer(ModelSerializer):

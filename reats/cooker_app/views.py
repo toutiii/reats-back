@@ -83,6 +83,7 @@ from utils.paginations import StandardizedResultsSetPagination
 from .serializers import (
     CookerGETSerializer,
     CookerOrderGETSerializer,
+    CookerOrderListSerializer,
     CookerPATCHSerializer,
     CookerSerializer,
     DashboardStatsSerializer,
@@ -1962,7 +1963,10 @@ class CookerOrderView(
 
     def get_serializer_class(self) -> type[BaseSerializer]:
         if self.request.method == "GET":
-            self.serializer_class = CookerOrderGETSerializer
+            if self.action == "list":
+                self.serializer_class = CookerOrderListSerializer
+            else:
+                self.serializer_class = CookerOrderGETSerializer
 
         elif self.request.method == "PATCH":
             self.serializer_class = OrderPATCHSerializer
