@@ -24,7 +24,7 @@ def test_empty_query_params(auth_headers: dict, client: APIClient, path: str, co
     data = response.json().get("data")
     assert data is not None
     results = data.get("results") if isinstance(data, dict) else data
-    assert len(results) == DrinkModel.objects.filter(is_enabled=True).filter(cooker_id=cooker_id).count()
+    assert len(results) == DrinkModel.objects.filter(is_deleted=False).filter(cooker_id=cooker_id).count()
 
 
 @pytest.mark.django_db
