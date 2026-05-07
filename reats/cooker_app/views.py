@@ -776,8 +776,6 @@ class DishView(StandardizedResponseMixin, IngredientsEndpointMixin, ModelViewSet
         qs = self._annotated_queryset()
         if self.action == "list":
             qs = qs.filter(cooker__id=self.request.user.pk)
-            if "is_enabled" not in self.request.query_params:
-                qs = qs.filter(is_enabled=True)
         return qs
 
     def get_serializer_class(self) -> type[BaseSerializer]:
@@ -1333,8 +1331,6 @@ class DrinkView(StandardizedResponseMixin, IngredientsEndpointMixin, ModelViewSe
         qs = self._annotated_queryset()
         if self.action == "list":
             qs = qs.filter(cooker__id=self.request.user.pk)
-            if "is_enabled" not in self.request.query_params:
-                qs = qs.filter(is_enabled=True)
         return qs
 
     def get_serializer_class(self) -> type[BaseSerializer]:
