@@ -13,6 +13,8 @@ from core_app.models import (
     DrinkNutritionalInfo,
     IngredientDishModel,
     IngredientDrinkModel,
+    OrderDishItemModel,
+    OrderDrinkItemModel,
     OrderModel,
 )
 from core_app.serializers import (
@@ -502,6 +504,69 @@ class CookerOrderCookerGETSerializer(ModelSerializer):
             "acceptance_rate",
             "email",
         )
+
+
+class CookerOrderListDishSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(source="dish.id")
+    name = serializers.CharField(source="dish.name")
+    category = serializers.CharField(source="dish.category")
+    image = serializers.SerializerMethodField()
+    quantity = serializers.IntegerField(source="dish_quantity")
+    unit_price = serializers.FloatField(source="dish.price")
+
+    class Meta:
+        model = OrderDishItemModel
+        fields = (
+            "id",
+            "name",
+            "category",
+            "image",
+            "quantity",
+            "unit_price",
+        )
+
+    def get_image(self, obj: OrderDishItemModel) -> str | None:
+        if not obj.dish:
+            return None
+        primary = obj.dish.images.filter(is_primary=True).first()
+        if primary:
+            return get_pre_signed_url(primary.key)
+        return None
+
+
+class CookerOrderListDrinkSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(source="drink.id")
+    name = serializers.CharField(source="drink.name")
+    capacity = serializers.SerializerMethodField()
+    image = serializers.SerializerMethodField()
+    quantity = serializers.IntegerField(source="drink_quantity")
+    unit_price = serializers.FloatField(source="drink.price")
+
+    class Meta:
+        model = OrderDrinkItemModel
+        fields = (
+            "id",
+            "name",
+            "capacity",
+            "image",
+            "quantity",
+            "unit_price",
+        )
+
+    def get_capacity(self, obj: OrderDrinkItemModel) -> str:
+        if not obj.drink:
+            return ""
+        unit_map = {"liter": "L", "centiliters": "cl"}
+        unit_suffix = unit_map.get(obj.drink.unit, obj.drink.unit)
+        return f"{obj.drink.capacity}{unit_suffix}"
+
+    def get_image(self, obj: OrderDrinkItemModel) -> str | None:
+        if not obj.drink:
+            return None
+        primary = obj.drink.images.filter(is_primary=True).first()
+        if primary:
+            return get_pre_signed_url(primary.key)
+        return None
 
 
 class CookerOrderGETSerializer(ModelSerializer):
