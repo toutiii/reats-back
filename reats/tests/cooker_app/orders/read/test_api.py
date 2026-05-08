@@ -185,3 +185,71 @@ def test_orders_list_success_with_no_filters(
     diff = DeepDiff(response.json().get("data"), expected_data, ignore_order=True)
 
     assert not diff
+
+
+@pytest.fixture
+def other_cooker_id() -> int:
+    return 4
+
+
+@pytest.mark.django_db
+def test_retrieve_order_success(
+    auth_headers: dict,
+    client: APIClient,
+    cooker_id: int,
+    cookers_order_path: str,
+) -> None:
+    order = OrderModel.objects.filter(cooker__id=cooker_id).first()
+    assert order is not None, "Aucune commande trouvée pour ce cooker dans les fixtures"
+
+    url = f"{cookers_order_path}{order.id}/"
+
+    response = client.get(url, **auth_headers)
+    assert response.status_code == status.HTTP_200_OK
+
+    res_json = response.json()
+    assert res_json.get("success") is True
+    data = res_json.get("data")
+
+    # 1. Vérification structurelle de base
+    assert data["id"] == order.id
+    assert data["status"] == order.status
+    assert "customer" in data and "address" in data
+
+    # 2. Vérification des champs calculés (critique pour la facturation)
+    assert "items_count" in data
+    assert "sub_total" in data
+    assert "service_fees" in data
+    assert "total_amount" in data
+
+    # 3. Cohérence arithmétique basique (tolérance float)
+    expected_total = round(data["sub_total"] + data["service_fees"] + (order.delivery_fees or 0), 2)
+    assert abs(data["total_amount"] - expected_total) < 0.01
+
+    # 4. Structure des items
+    assert isinstance(data["dishes_items"], list)
+    assert isinstance(data["drinks_items"], list)
+
+
+@pytest.mark.django_db
+def test_retrieve_order_not_found_for_other_cooker_order(
+    auth_headers: dict,
+    client: APIClient,
+    other_cooker_id: int,
+    cookers_order_path: str,
+) -> None:
+    # Pick an order belonging to ANOTHER cooker
+    order = OrderModel.objects.filter(cooker__id=other_cooker_id).first()
+    assert order is not None
+
+    url = f"{cookers_order_path}{order.id}/"
+
+    response = client.get(
+        url,
+        follow=False,
+        **auth_headers,
+    )
+
+    # Should return 404 because of queryset filtering
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert response.json().get("success") is False

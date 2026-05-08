@@ -641,6 +641,7 @@ class CookerOrderGETSerializer(ModelSerializer):
     def to_representation(self, instance):
         data = super().to_representation(instance)
 
+        data["items_count"] = instance.dishes_items.count() + instance.drinks_items.count()
         data["sub_total"] = compute_order_items_total_amount(instance)
         data["service_fees"] = round(data["sub_total"] * settings.SERVICE_FEES_RATE, 2)
         data["total_amount"] = round(data["sub_total"] + data["service_fees"] + instance.delivery_fees, 2)
