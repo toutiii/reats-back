@@ -1917,6 +1917,7 @@ class CookerOrderView(
     GenericViewSet,
 ):
     permission_classes = [UserPermission]
+    pagination_class = StandardizedResultsSetPagination
     queryset = OrderModel.objects.all()
 
     def partial_update(self, request, *args, **kwargs):
@@ -2012,6 +2013,7 @@ class CookerOrderHistoryView(StandardizedResponseMixin, ListModelMixin, GenericV
         ]
     )
 
+    pagination_class = StandardizedResultsSetPagination
     serializer_class = CookerOrderGETSerializer
 
     def list(self, request, *args, **kwargs) -> Response:
