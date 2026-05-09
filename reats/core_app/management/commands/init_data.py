@@ -29,8 +29,17 @@ User = get_user_model()
 class Command(BaseCommand):
     help = "Seed the database with initial data for development (Users, Menu, Orders)"
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--phone",
+            type=str,
+            required=True,
+            help="Phone number used to create/retrieve sample customer, cooker, and deliver users.",
+        )
+
     def handle(self, *args, **options):
         self.stdout.write(self.style.SUCCESS("Starting data seeding..."))
+        phone = options["phone"].strip()
 
         # --- 0. Superuser Creation ---
         superuser_email = "admin@reats.com"
@@ -52,7 +61,7 @@ class Command(BaseCommand):
             defaults={
                 "firstname": "John",
                 "lastname": "Doe",
-                "phone": "+33753790506",
+                "phone": phone,
                 "siret": "12345678901234",
                 "postal_code": "75001",
                 "town": "Paris",
@@ -69,7 +78,7 @@ class Command(BaseCommand):
 
         # Customer
         customer, created = CustomerModel.objects.get_or_create(
-            phone="+33753790506",
+            phone=phone,
             defaults={
                 "firstname": "Jane",
                 "lastname": "Smith",
@@ -90,7 +99,7 @@ class Command(BaseCommand):
 
         # Deliver
         deliver, created = DeliverModel.objects.get_or_create(
-            phone="+33753790506",
+            phone=phone,
             defaults={
                 "firstname": "Jack",
                 "lastname": "Fast",
