@@ -207,28 +207,38 @@ def test_retrieve_order_success(
     response = client.get(url, **auth_headers)
     assert response.status_code == status.HTTP_200_OK
 
-    res_json = response.json()
-    assert res_json.get("success") is True
-    data = res_json.get("data")
-
-    # 1. Vérification structurelle de base
-    assert data["id"] == order.id
-    assert data["status"] == order.status
-    assert "customer" in data and "address" in data
-
-    # 2. Vérification des champs calculés (critique pour la facturation)
-    assert "items_count" in data
-    assert "sub_total" in data
-    assert "service_fees" in data
-    assert "total_amount" in data
-
-    # 3. Cohérence arithmétique basique (tolérance float)
-    expected_total = round(data["sub_total"] + data["service_fees"] + (order.delivery_fees or 0), 2)
-    assert abs(data["total_amount"] - expected_total) < 0.01
-
-    # 4. Structure des items
-    assert isinstance(data["dishes_items"], list)
-    assert isinstance(data["drinks_items"], list)
+    assert response.json() == {
+        "success": True,
+        "message": "Operation successful",
+        "data": {
+            "id": order.id,
+            "status": order.status,
+            "created": "2024-12-11T20:53:05.718117Z",
+            "scheduled_delivery_date": "2024-12-17T16:30:00Z",
+            "is_scheduled": False,
+            "processing_date": None,
+            "completed_date": None,
+            "delivery_in_progress_date": None,
+            "cancelled_date": None,
+            "delivered_date": None,
+            "paid_date": None,
+            "rating": 0.0,
+            "comment": None,
+            "delivery_man": None,
+            "delivery_fees": 2.4,
+            "delivery_fees_bonus": 1.1,
+            "delivery_distance": None,
+            "delivery_initial_distance": None,
+            "customer": {"id": 1, "lastname": "TEN", "firstname": "Ben"},
+            "address": {"id": 3, "postal_code": "91540", "town": "Mennecy"},
+            "dishes_items": [],
+            "drinks_items": [],
+            "items_count": 0,
+            "sub_total": 0.0,
+            "service_fees": 0.0,
+            "total_amount": 2.4,
+        },
+    }
 
 
 @pytest.mark.django_db
