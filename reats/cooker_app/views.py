@@ -83,6 +83,7 @@ from utils.paginations import StandardizedResultsSetPagination
 from .serializers import (
     CookerGETSerializer,
     CookerOrderGETSerializer,
+    CookerOrderHistorySerializer,
     CookerOrderListSerializer,
     CookerPATCHSerializer,
     CookerSerializer,
@@ -2020,7 +2021,7 @@ class CookerOrderHistoryView(StandardizedResponseMixin, ListModelMixin, GenericV
     )
 
     pagination_class = StandardizedResultsSetPagination
-    serializer_class = CookerOrderGETSerializer
+    serializer_class = CookerOrderHistorySerializer
 
     def list(self, request, *args, **kwargs) -> Response:
         order_status: Union[str, None] = self.request.query_params.get("status")
