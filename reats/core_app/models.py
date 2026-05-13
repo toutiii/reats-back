@@ -382,7 +382,7 @@ class OrderModel(ReatsModel):
     cancelled_date: DateTimeField = DateTimeField(null=True)
     delivered_date: DateTimeField = DateTimeField(null=True)
 
-    delivery_fees: FloatField = FloatField(null=True)
+    delivery_fees: FloatField = FloatField()
     delivery_fees_bonus: FloatField = FloatField(null=True)
     delivery_distance: FloatField = FloatField(null=True)
     delivery_initial_distance: FloatField = FloatField(null=True)

@@ -618,7 +618,7 @@ class CookerOrderListSerializer(serializers.ModelSerializer):
     def get_total_amount(self, obj: OrderModel) -> float:
         sub_total = compute_order_items_total_amount(obj)
         service_fees = round(sub_total * settings.SERVICE_FEES_RATE, 2)
-        return round(sub_total + service_fees + (obj.delivery_fees or 0), 2)
+        return round(sub_total + service_fees + obj.delivery_fees, 2)
 
 
 class CookerOrderGETSerializer(ModelSerializer):
@@ -626,11 +626,11 @@ class CookerOrderGETSerializer(ModelSerializer):
     dishes_items = OrderDishItemGETSerializer(many=True)
     drinks_items = OrderDrinkItemGETSerializer(many=True)
     customer = CookerOrderCustomerGETSerializer()
-    cooker = CookerOrderCookerGETSerializer()
 
     class Meta:
         model = OrderModel
         exclude = (
+            "cooker",
             "modified",
             "stripe_payment_intent_id",
             "stripe_payment_intent_secret",
@@ -641,11 +641,24 @@ class CookerOrderGETSerializer(ModelSerializer):
     def to_representation(self, instance):
         data = super().to_representation(instance)
 
+        data["items_count"] = instance.dishes_items.count() + instance.drinks_items.count()
         data["sub_total"] = compute_order_items_total_amount(instance)
         data["service_fees"] = round(data["sub_total"] * settings.SERVICE_FEES_RATE, 2)
         data["total_amount"] = round(data["sub_total"] + data["service_fees"] + instance.delivery_fees, 2)
 
         return data
+
+
+class CookerOrderHistorySerializer(CookerOrderGETSerializer):
+    cooker = CookerOrderCookerGETSerializer()
+
+    class Meta(CookerOrderGETSerializer.Meta):
+        exclude = (
+            "modified",
+            "stripe_payment_intent_id",
+            "stripe_payment_intent_secret",
+            "is_deleted",
+        )
 
 
 class RecentReviewSerializer(serializers.Serializer):

@@ -541,15 +541,13 @@ class OrderView(
             logger.error("Failed to compute distance")
             raise ValidationError("Failed to compute distance")
 
-        order_instance: OrderModel = serializer.save()
-        delivery_distance: float = distance_dict["rows"][0]["elements"][0]["distance"]["value"]
-        order_instance.delivery_distance = delivery_distance
-        order_instance.delivery_fees = get_delivery_fee(delivery_distance)
+        delivery_distance: float = float(distance_dict["rows"][0]["elements"][0]["distance"]["value"])
 
-        if serializer.validated_data.get("scheduled_delivery_date"):
-            order_instance.is_scheduled = True
-
-        order_instance.save()
+        order_instance: OrderModel = serializer.save(
+            delivery_fees=get_delivery_fee(delivery_distance),
+            delivery_distance=delivery_distance,
+            is_scheduled=bool(serializer.validated_data.get("scheduled_delivery_date")),
+        )
 
         # Create a payment intent and save the payment intent id in the order instance
         stripe_response: dict = create_payment_intent(order_instance)

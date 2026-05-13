@@ -260,9 +260,9 @@ def create_stripe_customer(
             break
 
 
-def compute_order_items_total_amount(order: OrderModel) -> int:
-    dish_total = 0
-    drink_total = 0
+def compute_order_items_total_amount(order: OrderModel) -> float:
+    dish_total = 0.0
+    drink_total = 0.0
 
     for dish_item in order.dishes_items.all():  # type: ignore
         dish_total += dish_item.dish.price * dish_item.dish_quantity

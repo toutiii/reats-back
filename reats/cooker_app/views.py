@@ -42,7 +42,7 @@ from drf_spectacular.utils import (
 from phonenumbers.phonenumberutil import NumberParseException
 from rest_framework import serializers, status
 from rest_framework.decorators import action
-from rest_framework.mixins import ListModelMixin, UpdateModelMixin
+from rest_framework.mixins import ListModelMixin, RetrieveModelMixin, UpdateModelMixin
 from rest_framework.permissions import BasePermission
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
@@ -83,6 +83,7 @@ from utils.paginations import StandardizedResultsSetPagination
 from .serializers import (
     CookerGETSerializer,
     CookerOrderGETSerializer,
+    CookerOrderHistorySerializer,
     CookerOrderListSerializer,
     CookerPATCHSerializer,
     CookerSerializer,
@@ -1913,12 +1914,18 @@ class LogoutView(StandardizedResponseMixin, APIView):
 class CookerOrderView(
     StandardizedResponseMixin,
     ListModelMixin,
+    RetrieveModelMixin,
     UpdateModelMixin,
     GenericViewSet,
 ):
     permission_classes = [UserPermission]
     pagination_class = StandardizedResultsSetPagination
     queryset = OrderModel.objects.all()
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return self.success(serializer.data)
 
     def partial_update(self, request, *args, **kwargs):
         instance: OrderModel = self.get_object()
@@ -2014,7 +2021,7 @@ class CookerOrderHistoryView(StandardizedResponseMixin, ListModelMixin, GenericV
     )
 
     pagination_class = StandardizedResultsSetPagination
-    serializer_class = CookerOrderGETSerializer
+    serializer_class = CookerOrderHistorySerializer
 
     def list(self, request, *args, **kwargs) -> Response:
         order_status: Union[str, None] = self.request.query_params.get("status")

@@ -126,6 +126,7 @@ class OrderSerializer(ModelSerializer):
             "status",
             "is_deleted",
         )
+        read_only_fields = ("delivery_fees",)
 
     def to_representation(self, instance: OrderModel):
         data = super().to_representation(instance)
