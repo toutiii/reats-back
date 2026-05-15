@@ -259,32 +259,32 @@ class Command(BaseCommand):
             {
                 "status": OrderStatusEnum.DELIVERED,
                 "date": now - timedelta(days=1),
-                "count": 3,
+                "count": 15,
             },
             {
                 "status": OrderStatusEnum.COMPLETED,
                 "date": now - timedelta(days=7),
-                "count": 2,
+                "count": 10,
             },
             {
                 "status": OrderStatusEnum.DELIVERED,
                 "date": now - timedelta(days=30),
-                "count": 5,
+                "count": 15,
             },
             # Active Orders
-            {"status": OrderStatusEnum.PENDING, "date": now, "count": 2},
-            {"status": OrderStatusEnum.PROCESSING, "date": now, "count": 1},
-            {"status": OrderStatusEnum.IN_DELIVERY, "date": now, "count": 1},
+            {"status": OrderStatusEnum.PENDING, "date": now, "count": 5},
+            {"status": OrderStatusEnum.PROCESSING, "date": now, "count": 5},
+            {"status": OrderStatusEnum.IN_DELIVERY, "date": now, "count": 5},
             # Cancelled Orders
             {
                 "status": OrderStatusEnum.CANCELLED_BY_CUSTOMER,
                 "date": now - timedelta(days=2),
-                "count": 1,
+                "count": 5,
             },
             {
                 "status": OrderStatusEnum.CANCELLED_BY_COOKER,
                 "date": now - timedelta(days=3),
-                "count": 1,
+                "count": 5,
             },
         ]
 
