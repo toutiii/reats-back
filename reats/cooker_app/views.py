@@ -1922,11 +1922,72 @@ class CookerOrderView(
     pagination_class = StandardizedResultsSetPagination
     queryset = OrderModel.objects.all()
 
+    @extend_schema(
+        summary="Get order details",
+        description="Returns the full details of an order for the authenticated cooker.",
+        responses={
+            200: OpenApiResponse(response=CookerOrderGETSerializer, description="Order details"),
+            404: OpenApiResponse(description="Order not found"),
+        },
+        examples=[
+            OpenApiExample(
+                name="Order details example",
+                value={
+                    "success": True,
+                    "data": {
+                        "id": 123,
+                        "status": "processing",
+                        "created": "2024-05-15T10:00:00Z",
+                        "customer": {"id": 1, "firstname": "John", "lastname": "Doe"},
+                        "address": {"id": 10, "street": "123 Main St", "town": "Paris"},
+                        "dishes_items": [
+                            {
+                                "dish": {"id": 1, "name": "Pizza"},
+                                "dish_quantity": 2,
+                                "unit_price": 12.5,
+                            }
+                        ],
+                        "drinks_items": [],
+                        "items_count": 2,
+                        "sub_total": 25.0,
+                        "delivery_fees": 3.0,
+                        "service_fees": 2.5,
+                        "total_amount": 30.5,
+                    },
+                    "message": "Operation successful",
+                },
+                response_only=True,
+            )
+        ],
+        tags=["Cooker Orders"],
+    )
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
         return self.success(serializer.data)
 
+    @extend_schema(
+        summary="Update order status",
+        description="Allows a cooker to transition an order to a new state (e.g., from PENDING to PROCESSING).",
+        request=OrderPATCHSerializer,
+        responses={
+            200: OpenApiResponse(response=CookerOrderGETSerializer, description="Order status updated"),
+            400: OpenApiResponse(description="Invalid status or transition error"),
+        },
+        examples=[
+            OpenApiExample(
+                name="Accept order (Transition to PROCESSING)",
+                value={"status": "processing"},
+                request_only=True,
+            ),
+            OpenApiExample(
+                name="Complete order (Transition to COMPLETED)",
+                value={"status": "completed"},
+                request_only=True,
+            ),
+        ],
+        tags=["Cooker Orders"],
+    )
     def partial_update(self, request, *args, **kwargs):
         instance: OrderModel = self.get_object()
         new_status = request.data.get("status")
@@ -1984,6 +2045,53 @@ class CookerOrderView(
     def get_queryset(self):
         return super().get_queryset().filter(cooker__id=self.request.user.pk)
 
+    @extend_schema(
+        summary="List active orders",
+        description=(
+            "Returns a paginated list of active orders for the authenticated cooker.\n\n"
+            "Active orders are those in `pending`, `processing`, or `completed` status."
+        ),
+        parameters=[
+            OpenApiParameter(
+                name="status",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                description="Filter by order status. Defaults to `pending`.",
+                required=False,
+                enum=["pending", "processing", "completed"],
+            ),
+        ],
+        responses={
+            200: OpenApiResponse(response=CookerOrderListSerializer(many=True), description="List of active orders"),
+        },
+        examples=[
+            OpenApiExample(
+                name="Active orders list",
+                value={
+                    "success": True,
+                    "data": {
+                        "count": 1,
+                        "next": None,
+                        "previous": None,
+                        "results": [
+                            {
+                                "id": 123,
+                                "status": "pending",
+                                "created": "2024-05-15T10:00:00Z",
+                                "customer": {"id": 1, "firstname": "John", "lastname": "Doe"},
+                                "address": {"town": "Paris", "postal_code": "75001"},
+                                "items_count": 2,
+                                "total_amount": 30.5,
+                            }
+                        ],
+                    },
+                    "message": "Operation successful",
+                },
+                response_only=True,
+            )
+        ],
+        tags=["Cooker Orders"],
+    )
     def list(self, request, *args, **kwargs) -> Response:
         queryset = self.filter_queryset(self.get_queryset())
         request_status = self.request.query_params.get("status", OrderStatusEnum.PENDING)
@@ -2023,6 +2131,64 @@ class CookerOrderHistoryView(StandardizedResponseMixin, ListModelMixin, GenericV
     pagination_class = StandardizedResultsSetPagination
     serializer_class = CookerOrderHistorySerializer
 
+    @extend_schema(
+        summary="List order history",
+        description=("Returns a paginated list of past orders (delivered or cancelled) for the authenticated cooker."),
+        parameters=[
+            OpenApiParameter(
+                name="status",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                description="Filter by order status.",
+                required=False,
+                enum=["delivered", "cancelled_by_customer", "cancelled_by_cooker"],
+            ),
+            OpenApiParameter(
+                name="start_date",
+                type=OpenApiTypes.DATETIME,
+                location=OpenApiParameter.QUERY,
+                description="Filter orders created after this date (ISO format).",
+                required=False,
+            ),
+            OpenApiParameter(
+                name="end_date",
+                type=OpenApiTypes.DATETIME,
+                location=OpenApiParameter.QUERY,
+                description="Filter orders created before this date (ISO format).",
+                required=False,
+            ),
+        ],
+        responses={
+            200: OpenApiResponse(response=CookerOrderHistorySerializer(many=True), description="List of past orders"),
+        },
+        examples=[
+            OpenApiExample(
+                name="Order history list",
+                value={
+                    "success": True,
+                    "data": {
+                        "count": 1,
+                        "next": None,
+                        "previous": None,
+                        "results": [
+                            {
+                                "id": 120,
+                                "status": "delivered",
+                                "created": "2024-05-10T15:00:00Z",
+                                "customer": {"id": 1, "firstname": "John", "lastname": "Doe"},
+                                "address": {"town": "Paris", "postal_code": "75001"},
+                                "items_count": 1,
+                                "total_amount": 15.0,
+                            }
+                        ],
+                    },
+                    "message": "Operation successful",
+                },
+                response_only=True,
+            )
+        ],
+        tags=["Cooker Orders"],
+    )
     def list(self, request, *args, **kwargs) -> Response:
         order_status: Union[str, None] = self.request.query_params.get("status")
         start_date: Union[str, None] = self.request.query_params.get("start_date")
