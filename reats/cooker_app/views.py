@@ -1935,24 +1935,46 @@ class CookerOrderView(
                 value={
                     "success": True,
                     "data": {
-                        "id": 123,
-                        "status": "processing",
-                        "created": "2024-05-15T10:00:00Z",
-                        "customer": {"id": 1, "firstname": "John", "lastname": "Doe"},
-                        "address": {"id": 10, "street": "123 Main St", "town": "Paris"},
+                        "id": 1582,
+                        "address": {"id": 10, "postal_code": "75008", "town": "Paris"},
                         "dishes_items": [
                             {
-                                "dish": {"id": 1, "name": "Pizza"},
-                                "dish_quantity": 2,
-                                "unit_price": 12.5,
+                                "dish": {
+                                    "id": 44,
+                                    "name": "Homemade Burger",
+                                    "description": "Juicy beef burger with cheese and fresh vegetables.",
+                                    "price": 12.5,
+                                    "category": "dish",
+                                    "image": "https://s3.../default_burger.jpg",
+                                    "is_enabled": True,
+                                    "cooker": {"id": 6, "firstname": "John", "lastname": "Doe"},
+                                },
+                                "dish_quantity": 1,
                             }
                         ],
-                        "drinks_items": [],
-                        "items_count": 2,
-                        "sub_total": 25.0,
-                        "delivery_fees": 3.0,
-                        "service_fees": 2.5,
-                        "total_amount": 30.5,
+                        "drinks_items": [
+                            {
+                                "drink": {
+                                    "id": 5,
+                                    "name": "Red Wine",
+                                    "description": "Full-bodied red wine.",
+                                    "price": 4.0,
+                                    "unit": "centiliters",
+                                    "capacity": 75,
+                                    "is_enabled": True,
+                                    "image": "https://s3.../default_wine.jpg",
+                                },
+                                "drink_quantity": 2,
+                            }
+                        ],
+                        "customer": {"id": 13, "firstname": "Jane", "lastname": "Smith"},
+                        "created": "2026-05-15T08:41:18.646583Z",
+                        "status": "pending",
+                        "delivery_fees": 5.0,
+                        "items_count": 3,
+                        "sub_total": 20.5,
+                        "service_fees": 1.44,
+                        "total_amount": 26.94,
                     },
                     "message": "Operation successful",
                 },
@@ -2070,18 +2092,41 @@ class CookerOrderView(
                 value={
                     "success": True,
                     "data": {
-                        "count": 1,
+                        "count": 2,
                         "next": None,
                         "previous": None,
                         "results": [
                             {
-                                "id": 123,
+                                "id": 1582,
                                 "status": "pending",
-                                "created": "2024-05-15T10:00:00Z",
-                                "customer": {"id": 1, "firstname": "John", "lastname": "Doe"},
-                                "address": {"town": "Paris", "postal_code": "75001"},
-                                "items_count": 2,
-                                "total_amount": 30.5,
+                                "created": "2026-05-15T08:41:18Z",
+                                "customer": {"id": 13, "firstname": "Jane", "lastname": "Smith"},
+                                "address": {"id": 10, "postal_code": "75008", "town": "Paris"},
+                                "dishes_items": [
+                                    {
+                                        "id": 44,
+                                        "name": "Homemade Burger",
+                                        "category": "dish",
+                                        "image": "https://s3.../default_burger.jpg",
+                                        "quantity": 1,
+                                        "unit_price": 12.5,
+                                    }
+                                ],
+                                "drinks_items": [
+                                    {
+                                        "id": 5,
+                                        "name": "Red Wine",
+                                        "capacity": "75cl",
+                                        "image": "https://s3.../default_wine.jpg",
+                                        "quantity": 2,
+                                        "unit_price": 4.0,
+                                    }
+                                ],
+                                "items_count": 3,
+                                "sub_total": 20.5,
+                                "delivery_fees": 5.0,
+                                "service_fees": 1.44,
+                                "total_amount": 26.94,
                             }
                         ],
                     },
@@ -2172,13 +2217,24 @@ class CookerOrderHistoryView(StandardizedResponseMixin, ListModelMixin, GenericV
                         "previous": None,
                         "results": [
                             {
-                                "id": 120,
+                                "id": 1582,
                                 "status": "delivered",
-                                "created": "2024-05-10T15:00:00Z",
-                                "customer": {"id": 1, "firstname": "John", "lastname": "Doe"},
-                                "address": {"town": "Paris", "postal_code": "75001"},
+                                "created": "2026-05-10T15:00:00Z",
+                                "customer": {"id": 13, "firstname": "Jane", "lastname": "Smith"},
+                                "address": {"id": 10, "postal_code": "75008", "town": "Paris"},
+                                "dishes_items": [
+                                    {
+                                        "id": 44,
+                                        "name": "Homemade Burger",
+                                        "category": "dish",
+                                        "image": "https://s3.../default_burger.jpg",
+                                        "quantity": 1,
+                                        "unit_price": 12.5,
+                                    }
+                                ],
+                                "drinks_items": [],
                                 "items_count": 1,
-                                "total_amount": 15.0,
+                                "total_amount": 17.5,
                             }
                         ],
                     },
