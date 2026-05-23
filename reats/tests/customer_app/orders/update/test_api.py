@@ -1076,6 +1076,8 @@ def test_update_order_success_with_asap_delivery(
             "preparing_date": None,
             "ready_date": None,
             "delivering_date": None,
+            "completed_date": None,
+            "cancelled_date": None,
             "cancelled_by": None,
             "delivery_distance": 1390.0,
             "delivery_fees": 3.19,
