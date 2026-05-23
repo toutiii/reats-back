@@ -135,8 +135,6 @@ def test_create_order_success_with_asap_delivery(
 
         assert order_dict == {
             "address": 2,
-            "cancelled_date": None,
-            "completed_date": None,
             "customer": 1,
             "cooker": 1,
             "accepted_date": None,
