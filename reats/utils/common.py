@@ -431,9 +431,9 @@ def update_cooker_acceptance_rate(
     :param new_status: The new status
     """
 
-    if new_status == OrderStatusEnum.CANCELLED_BY_COOKER:
+    if new_status == OrderStatusEnum.CANCELLED:
         new_value = instance.cooker.acceptance_rate - settings.ACCEPTANCE_RATE_DECREASE_VALUE
-    elif new_status == OrderStatusEnum.DELIVERED:
+    elif new_status == OrderStatusEnum.COMPLETED:
         new_value = instance.cooker.acceptance_rate + settings.ACCEPTANCE_RATE_INCREASE_VALUE
     else:
         logger.info(f"Status {new_status} is not taken into account")

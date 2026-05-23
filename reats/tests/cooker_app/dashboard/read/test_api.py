@@ -11,10 +11,9 @@ from utils.enums import ErrorCodeEnum, OrderStatusEnum
 def custom_counts() -> dict:
     return {
         OrderStatusEnum.PENDING: 3,
-        OrderStatusEnum.PROCESSING: 2,
-        OrderStatusEnum.COMPLETED: 4,
-        OrderStatusEnum.CANCELLED_BY_COOKER: 2,
-        OrderStatusEnum.DELIVERED: 1,
+        OrderStatusEnum.ACCEPTED: 2,
+        OrderStatusEnum.COMPLETED: 5,
+        OrderStatusEnum.CANCELLED: 2,
     }
 
 
@@ -34,12 +33,10 @@ def test_get_dashboard_data_when_cooker_has_orders(
     )
     assert response.json().get("success") is True
     assert response.json().get("data") == {
-        OrderStatusEnum.CANCELLED_BY_COOKER.value: 3,
-        OrderStatusEnum.CANCELLED_BY_CUSTOMER.value: 1,
-        OrderStatusEnum.COMPLETED.value: 5,
         OrderStatusEnum.PENDING.value: 5,
-        OrderStatusEnum.DELIVERED.value: 4,
-        OrderStatusEnum.PROCESSING.value: 3,
+        OrderStatusEnum.ACCEPTED.value: 3,
+        OrderStatusEnum.COMPLETED.value: 9,
+        OrderStatusEnum.CANCELLED.value: 4,
     }
 
 
