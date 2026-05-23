@@ -1996,7 +1996,7 @@ class CookerOrderView(
             "**Valid transition flow:**\n"
             "`pending` → `accepted` → `preparing` → `ready` → `delivering` → `completed`\n\n"
             "A cooker can also transition to `cancelled` from any non-terminal state, "
-            "which triggers a Stripe refund and sets `cancelled_by` to `\"cooker\"`."
+            'which triggers a Stripe refund and sets `cancelled_by` to `"cooker"`.'
         ),
         request=OrderPATCHSerializer,
         responses={
@@ -2216,7 +2216,7 @@ class CookerOrderHistoryView(StandardizedResponseMixin, ListModelMixin, GenericV
         description=(
             "Returns a paginated list of past orders (completed or cancelled) for the authenticated cooker.\n\n"
             "Use the `cancelled_by` field in the response to distinguish who cancelled the order "
-            "(`\"cooker\"`, `\"customer\"` or `\"system\"`).\n\n"
+            '(`"cooker"`, `"customer"` or `"system"`).\n\n'
             "Optionally filter by `status` and/or a date range (`start_date` / `end_date`)."
         ),
         parameters=[
@@ -2298,7 +2298,7 @@ class CookerOrderHistoryView(StandardizedResponseMixin, ListModelMixin, GenericV
                                 "drinks_items": [],
                                 "items_count": 0,
                                 "total_amount": 3.5,
-                            }
+                            },
                         ],
                         "pagination": {
                             "current_page": 1,
