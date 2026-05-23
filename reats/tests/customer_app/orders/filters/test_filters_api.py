@@ -24,8 +24,8 @@ def setup_filter_test_data(create_authenticated_customer, create_test_cooker, cr
 
     order_configs = [
         {"status": OrderStatusEnum.PENDING, "created_delta": 5, "fees": 2.0, "rating": 4.5},
-        {"status": OrderStatusEnum.PROCESSING, "created_delta": 3, "fees": 3.5, "rating": 3.0},
-        {"status": OrderStatusEnum.COMPLETED, "created_delta": 1, "fees": 5.0, "rating": 5.0, "scheduled": 1},
+        {"status": OrderStatusEnum.ACCEPTED, "created_delta": 3, "fees": 3.5, "rating": 3.0},
+        {"status": OrderStatusEnum.DELIVERING, "created_delta": 1, "fees": 5.0, "rating": 5.0, "scheduled": 1},
         {"status": OrderStatusEnum.PENDING, "created_delta": 0, "fees": 1.5, "rating": 0.0},
     ]
 
@@ -89,7 +89,7 @@ class TestOrderFiltersBasic:
         customer, orders = setup_filter_test_data
 
         # Test avec statuts PENDING et PROCESSING
-        statuses = [OrderStatusEnum.PENDING, OrderStatusEnum.PROCESSING]
+        statuses = [OrderStatusEnum.PENDING, OrderStatusEnum.ACCEPTED]
         response = client.get(customer_order_path, follow=False, **auth_headers, data={"status_in": ",".join(statuses)})
 
         assert response.status_code == status.HTTP_200_OK

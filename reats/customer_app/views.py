@@ -62,7 +62,7 @@ from utils.distance_computer import (
     compute_distance,
     get_closest_cookers_ids_from_customer_search_address,
 )
-from utils.enums import ErrorCodeEnum, ErrorMessageEnum, OrderStatusEnum, SuccessMessageEnum
+from utils.enums import CancelledByEnum, ErrorCodeEnum, ErrorMessageEnum, OrderStatusEnum, SuccessMessageEnum
 from utils.filters import DishFilter, OrderFilter
 from utils.paginations import StandardizedResultsSetPagination
 
@@ -586,7 +586,8 @@ class OrderView(
         instance: OrderModel = self.get_object()
         new_status = request.data.get("status")
 
-        if new_status == OrderStatusEnum.CANCELLED_BY_CUSTOMER:
+        if new_status == OrderStatusEnum.CANCELLED:
+            instance.cancelled_by = CancelledByEnum.CUSTOMER.value
             if instance.status == OrderStatusEnum.PENDING:
                 amount_to_refund_in_cents = Decimal(
                     str(compute_order_items_total_amount(instance) + instance.delivery_fees)
@@ -632,8 +633,10 @@ class OrderView(
         self.queryset = self.queryset.filter(
             status__in=[
                 OrderStatusEnum.PENDING,
-                OrderStatusEnum.PROCESSING,
-                OrderStatusEnum.COMPLETED,
+                OrderStatusEnum.ACCEPTED,
+                OrderStatusEnum.PREPARING,
+                OrderStatusEnum.READY,
+                OrderStatusEnum.DELIVERING,
             ]
         )
 
@@ -654,9 +657,9 @@ class CustomerOrderHistoryView(StandardizedResponseMixin, ListModelMixin, Generi
     permission_classes = [UserPermission]
     queryset = OrderModel.objects.all().filter(
         status__in=[
-            OrderStatusEnum.DELIVERED,
-            OrderStatusEnum.CANCELLED_BY_CUSTOMER,
-            OrderStatusEnum.CANCELLED_BY_COOKER,
+            OrderStatusEnum.COMPLETED,
+            OrderStatusEnum.CANCELLED,
+            OrderStatusEnum.NOT_ACCEPTED,
         ]
     )
     parser_classes = [MultiPartParser]

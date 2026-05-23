@@ -88,7 +88,7 @@ def test_add_rates_to_orders_and_orders_items(
 
     # Then we switch the order to processing few minutes later
     with freeze_time("2024-05-08T10:20:00+00:00"):
-        order.status = OrderStatusEnum.PROCESSING.value
+        order.status = OrderStatusEnum.ACCEPTED.value
         order.save()
 
     # Then we switch the order to completed few minutes later
@@ -98,10 +98,10 @@ def test_add_rates_to_orders_and_orders_items(
 
     # Then we switch the order to delivered few minutes later
     with freeze_time("2024-05-08T10:24:00+00:00"):
-        order.status = OrderStatusEnum.DELIVERED.value
+        order.status = OrderStatusEnum.COMPLETED.value
         order.save()
 
-    assert order.status == OrderStatusEnum.DELIVERED.value
+    assert order.status == OrderStatusEnum.COMPLETED.value
 
     # We update order to add overall rating infos
     order_rating_data: dict = {
