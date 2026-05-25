@@ -65,13 +65,9 @@ def test_update_order_from_pending_to_cancelled_by_cooker_status(
     mock_stripe_create_refund_success: MagicMock,
 ) -> None:
     with freeze_time("2024-05-08T10:16:00+00:00"):
-        # First we create a draft order
         response = client.post(
             customer_order_path,
-            encode_multipart(
-                BOUNDARY,
-                post_order_data,
-            ),
+            encode_multipart(BOUNDARY, post_order_data),
             content_type=MULTIPART_CONTENT,
             follow=False,
             **auth_headers,
@@ -79,27 +75,19 @@ def test_update_order_from_pending_to_cancelled_by_cooker_status(
         assert response.status_code == status.HTTP_201_CREATED
 
         order: OrderModel = OrderModel.objects.latest("pk")
-
         assert order.status == OrderStatusEnum.DRAFT.value
 
     with freeze_time("2024-05-08T10:18:00+00:00"):
-        # Then we switch the order to pending few minutes later
         order.status = OrderStatusEnum.PENDING.value
         order.save()
 
     with freeze_time("2024-05-08T10:41:00+00:00"):
-        # Then we switch the order to cancelled by cooker few minutes later
-        update_status_data = {
-            "status": OrderStatusEnum.CANCELLED.value,
-        }
-        update_to_cancelled_by_cooker_response = client.patch(
-            f"{cookers_order_path}{order.id}/",
-            encode_multipart(BOUNDARY, update_status_data),
-            content_type=MULTIPART_CONTENT,
+        response = client.post(
+            f"{cookers_order_path}{order.id}/cancel/",
             follow=False,
             **auth_headers,
         )
-        assert update_to_cancelled_by_cooker_response.status_code == status.HTTP_200_OK
+        assert response.status_code == status.HTTP_200_OK
 
         order.refresh_from_db()
 
@@ -159,61 +147,30 @@ def test_update_order_from_processing_to_cancelled_by_cooker_status(
     assert order.status == OrderStatusEnum.PENDING.value
 
     with freeze_time("2024-05-08T10:18:00+00:00"):
-        update_to_processing_state_response = client.patch(
-            f"{cookers_order_path}{order.id}/",
-            encode_multipart(
-                BOUNDARY,
-                {
-                    "status": OrderStatusEnum.ACCEPTED.value,
-                },
-            ),
-            content_type=MULTIPART_CONTENT,
+        response = client.post(
+            f"{cookers_order_path}{order.id}/accept/",
             follow=False,
             **auth_headers,
         )
-        assert update_to_processing_state_response.status_code == status.HTTP_200_OK
+        assert response.status_code == status.HTTP_200_OK
 
     order.refresh_from_db()
 
     assert order.status == OrderStatusEnum.ACCEPTED.value
-    assert order.accepted_date == datetime(
-        2024,
-        5,
-        8,
-        10,
-        18,
-        0,
-        tzinfo=timezone.utc,
-    )
+    assert order.accepted_date == datetime(2024, 5, 8, 10, 18, 0, tzinfo=timezone.utc)
 
     with freeze_time("2024-05-08T10:20:00+00:00"):
-        update_to_cancelled_by_cooker_response = client.patch(
-            f"{cookers_order_path}{order.id}/",
-            encode_multipart(
-                BOUNDARY,
-                {
-                    "status": OrderStatusEnum.CANCELLED.value,
-                },
-            ),
-            content_type=MULTIPART_CONTENT,
+        response = client.post(
+            f"{cookers_order_path}{order.id}/cancel/",
             follow=False,
             **auth_headers,
         )
-
-        assert update_to_cancelled_by_cooker_response.status_code == status.HTTP_200_OK
+        assert response.status_code == status.HTTP_200_OK
 
     order.refresh_from_db()
 
     assert order.status == OrderStatusEnum.CANCELLED.value
-    assert order.cancelled_date == datetime(
-        2024,
-        5,
-        8,
-        10,
-        20,
-        0,
-        tzinfo=timezone.utc,
-    )
+    assert order.cancelled_date == datetime(2024, 5, 8, 10, 20, 0, tzinfo=timezone.utc)
     mock_googlemaps_distance_matrix.assert_called_once_with(
         origins=["13 rue des Mazières 91000 Evry"],
         destinations=["1 rue André Lalande 91000 Evry"],
@@ -242,13 +199,9 @@ def test_update_order_from_pending_to_processing_state(
     mock_stripe_create_refund_success: MagicMock,
 ) -> None:
     with freeze_time("2024-05-08T10:16:00+00:00"):
-        # First we create a draft order
         response = client.post(
             customer_order_path,
-            encode_multipart(
-                BOUNDARY,
-                post_order_data,
-            ),
+            encode_multipart(BOUNDARY, post_order_data),
             content_type=MULTIPART_CONTENT,
             follow=False,
             **auth_headers,
@@ -256,42 +209,23 @@ def test_update_order_from_pending_to_processing_state(
         assert response.status_code == status.HTTP_201_CREATED
 
         order: OrderModel = OrderModel.objects.latest("pk")
-
         assert order.status == OrderStatusEnum.DRAFT.value
 
-    # Manually set the order to PENDING status
     order.status = OrderStatusEnum.PENDING.value
     order.save()
 
-    assert order.status == OrderStatusEnum.PENDING.value
-
     with freeze_time("2024-05-08T10:18:00+00:00"):
-        update_to_processing_state_response = client.patch(
-            f"{cookers_order_path}{order.id}/",
-            encode_multipart(
-                BOUNDARY,
-                {
-                    "status": OrderStatusEnum.ACCEPTED.value,
-                },
-            ),
-            content_type=MULTIPART_CONTENT,
+        response = client.post(
+            f"{cookers_order_path}{order.id}/accept/",
             follow=False,
             **auth_headers,
         )
-        assert update_to_processing_state_response.status_code == status.HTTP_200_OK
+        assert response.status_code == status.HTTP_200_OK
 
     order.refresh_from_db()
 
     assert order.status == OrderStatusEnum.ACCEPTED.value
-    assert order.accepted_date == datetime(
-        2024,
-        5,
-        8,
-        10,
-        18,
-        0,
-        tzinfo=timezone.utc,
-    )
+    assert order.accepted_date == datetime(2024, 5, 8, 10, 18, 0, tzinfo=timezone.utc)
     mock_googlemaps_distance_matrix.assert_called_once()
     mock_stripe_payment_intent_create.assert_called_once()
     mock_stripe_create_refund_success.assert_not_called()
@@ -333,85 +267,43 @@ def test_update_order_from_pending_to_completed_state(
     assert order.status == OrderStatusEnum.PENDING.value
 
     with freeze_time("2024-05-08T10:18:00+00:00"):
-        update_to_processing_state_response = client.patch(
-            f"{cookers_order_path}{order.id}/",
-            encode_multipart(
-                BOUNDARY,
-                {
-                    "status": OrderStatusEnum.ACCEPTED.value,
-                },
-            ),
-            content_type=MULTIPART_CONTENT,
+        response = client.post(
+            f"{cookers_order_path}{order.id}/accept/",
             follow=False,
             **auth_headers,
         )
-        assert update_to_processing_state_response.status_code == status.HTTP_200_OK
+        assert response.status_code == status.HTTP_200_OK
 
     order.refresh_from_db()
 
     assert order.status == OrderStatusEnum.ACCEPTED.value
-    assert order.accepted_date == datetime(
-        2024,
-        5,
-        8,
-        10,
-        18,
-        0,
-        tzinfo=timezone.utc,
-    )
+    assert order.accepted_date == datetime(2024, 5, 8, 10, 18, 0, tzinfo=timezone.utc)
     mock_googlemaps_distance_matrix.assert_called_once()
     mock_stripe_payment_intent_create.assert_called_once()
     mock_stripe_create_refund_success.assert_not_called()
 
     with freeze_time("2024-05-08T10:19:00+00:00"):
-        res = client.patch(
-            f"{cookers_order_path}{order.id}/",
-            encode_multipart(BOUNDARY, {"status": OrderStatusEnum.PREPARING.value}),
-            content_type=MULTIPART_CONTENT,
-            **auth_headers,
-        )
-        assert res.status_code == status.HTTP_200_OK
-        res = client.patch(
-            f"{cookers_order_path}{order.id}/",
-            encode_multipart(BOUNDARY, {"status": OrderStatusEnum.READY.value}),
-            content_type=MULTIPART_CONTENT,
-            **auth_headers,
-        )
-        assert res.status_code == status.HTTP_200_OK
-        res = client.patch(
-            f"{cookers_order_path}{order.id}/",
-            encode_multipart(BOUNDARY, {"status": OrderStatusEnum.DELIVERING.value}),
-            content_type=MULTIPART_CONTENT,
-            **auth_headers,
-        )
+        res = client.post(f"{cookers_order_path}{order.id}/start-preparation/", **auth_headers)
         assert res.status_code == status.HTTP_200_OK
 
+        res = client.post(f"{cookers_order_path}{order.id}/mark-ready/", **auth_headers)
+        assert res.status_code == status.HTTP_200_OK
+
+    # READY → DELIVERING and DELIVERING → COMPLETED are handled by the delivery app
+    with freeze_time("2024-05-08T10:19:30+00:00"):
+        order.refresh_from_db()
+        order.status = OrderStatusEnum.DELIVERING.value
+        order.delivering_date = datetime(2024, 5, 8, 10, 19, 30, tzinfo=timezone.utc)
+        order.save()
+
     with freeze_time("2024-05-08T10:20:00+00:00"):
-        update_to_completed_state_response = client.patch(
-            f"{cookers_order_path}{order.id}/",
-            encode_multipart(
-                BOUNDARY,
-                {
-                    "status": OrderStatusEnum.COMPLETED.value,
-                },
-            ),
-            content_type=MULTIPART_CONTENT,
-            follow=False,
-            **auth_headers,
-        )
-        assert update_to_completed_state_response.status_code == status.HTTP_200_OK
+        order.status = OrderStatusEnum.COMPLETED.value
+        order.completed_date = datetime(2024, 5, 8, 10, 20, 0, tzinfo=timezone.utc)
+        order.save()
 
     order.refresh_from_db()
     assert order.status == OrderStatusEnum.COMPLETED.value
-    assert order.completed_date == datetime(
-        2024,
-        5,
-        8,
-        10,
-        20,
-        0,
-        tzinfo=timezone.utc,
-    )
+    assert order.completed_date == datetime(2024, 5, 8, 10, 20, 0, tzinfo=timezone.utc)
 
 
 @pytest.mark.django_db
@@ -448,37 +340,24 @@ def test_update_order_with_invalid_transition_returns_400_validation_error(
     assert order.status == OrderStatusEnum.PENDING.value
 
     with freeze_time("2024-05-08T10:18:00+00:00"):
-        # Try to transition directly from PENDING to COMPLETED
-        invalid_transition_response = client.patch(
-            f"{cookers_order_path}{order.id}/",
-            encode_multipart(
-                BOUNDARY,
-                {
-                    "status": OrderStatusEnum.COMPLETED.value,
-                },
-            ),
-            content_type=MULTIPART_CONTENT,
+        # Try to call start-preparation on a PENDING order (requires ACCEPTED first)
+        invalid_transition_response = client.post(
+            f"{cookers_order_path}{order.id}/start-preparation/",
             follow=False,
             **auth_headers,
         )
 
-        # Should return 400 Bad Request
-        assert invalid_transition_response.status_code == status.HTTP_400_BAD_REQUEST
+        # Should return 409 Conflict
+        assert invalid_transition_response.status_code == status.HTTP_409_CONFLICT
         response_data = invalid_transition_response.json()
-        assert "Cannot transition from PendingState to CompletedState" in response_data["error"]["message"]
+        assert "Cannot transition from PendingState to PreparingState" in response_data["error"]["message"]
 
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(
-    "new_status",
-    [
-        OrderStatusEnum.ACCEPTED,
-        OrderStatusEnum.COMPLETED,
-    ],
-    ids=[
-        "switch_to_processing",
-        "switch_to_completed",
-    ],
+    "action_url",
+    ["accept", "cancel"],
+    ids=["accept", "cancel"],
 )
 def test_update_order_but_unexpected_exception_raises_on_cooker_app(
     auth_headers: dict,
@@ -492,15 +371,12 @@ def test_update_order_but_unexpected_exception_raises_on_cooker_app(
     mock_stripe_payment_intent_update: MagicMock,
     mock_stripe_webhook_construct_event_success: MagicMock,
     mock_stripe_webhook_construct_event_failed: MagicMock,
-    new_status: OrderStatusEnum,
+    action_url: str,
 ) -> None:
     with freeze_time("2024-05-08T10:16:00+00:00"):
         response = client.post(
             customer_order_path,
-            encode_multipart(
-                BOUNDARY,
-                post_data_for_order_with_asap_delivery,
-            ),
+            encode_multipart(BOUNDARY, post_data_for_order_with_asap_delivery),
             content_type=MULTIPART_CONTENT,
             follow=False,
             **auth_headers,
@@ -511,21 +387,11 @@ def test_update_order_but_unexpected_exception_raises_on_cooker_app(
 
         assert order.status == OrderStatusEnum.DRAFT.value
 
-        # Manually set the order to PENDING status
         order.status = OrderStatusEnum.PENDING.value
         order.save()
 
-        # Now we try to set the order to another status but
-        # an unexpected exception is raised
-        update_response = client.patch(
-            f"{cookers_order_path}{order_id}/",
-            encode_multipart(
-                BOUNDARY,
-                {
-                    "status": new_status.value,
-                },
-            ),
-            content_type=MULTIPART_CONTENT,
+        update_response = client.post(
+            f"{cookers_order_path}{order_id}/{action_url}/",
             follow=False,
             **auth_headers,
         )
@@ -540,18 +406,7 @@ def test_update_order_but_unexpected_exception_raises_on_cooker_app(
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize(
-    "new_status",
-    [
-        OrderStatusEnum.COMPLETED,
-        OrderStatusEnum.CANCELLED,
-    ],
-    ids=[
-        "switch_to_delivered",
-        "switch_to_cancelled_by_cooker",
-    ],
-)
-def test_update_cooker_acceptance_rate(
+def test_update_cooker_acceptance_rate_on_cancel(
     auth_headers: dict,
     client: APIClient,
     cookers_order_path: str,
@@ -561,11 +416,7 @@ def test_update_cooker_acceptance_rate(
     mock_stripe_payment_intent_create: MagicMock,
     mock_stripe_create_refund_success: MagicMock,
     cooker_id: int,
-    new_status: OrderStatusEnum,
 ) -> None:
-    # To start with a clean state we have to remove cookers orders
-    # except the delivered ones
-
     OrderModel.objects.exclude(status=OrderStatusEnum.COMPLETED.value).delete()
 
     for order_item in OrderModel.objects.filter(cooker_id=cooker_id):
@@ -575,13 +426,9 @@ def test_update_cooker_acceptance_rate(
     assert Decimal(str(cooker.acceptance_rate)) == Decimal("100.0")
 
     with freeze_time("2024-05-08T10:16:00+00:00"):
-        # First we create a draft order
         response = client.post(
             customer_order_path,
-            encode_multipart(
-                BOUNDARY,
-                post_order_data,
-            ),
+            encode_multipart(BOUNDARY, post_order_data),
             content_type=MULTIPART_CONTENT,
             follow=False,
             **auth_headers,
@@ -589,28 +436,15 @@ def test_update_cooker_acceptance_rate(
         assert response.status_code == status.HTTP_201_CREATED
 
         order: OrderModel = OrderModel.objects.latest("pk")
-
         assert order.status == OrderStatusEnum.DRAFT.value
 
     with freeze_time("2024-05-08T10:18:00+00:00"):
-        # Then we switch the order to pending few minutes later
         order.status = OrderStatusEnum.PENDING.value
         order.save()
 
-    if new_status == OrderStatusEnum.COMPLETED:
-        # Bypassing status update logic for simplicity
-        order.status = OrderStatusEnum.DELIVERING.value
-        order.save()
-
     with freeze_time("2024-05-08T10:41:00+00:00"):
-        # Then we switch the order to the new_status
-        update_status_data = {
-            "status": new_status.value,
-        }
-        update_response = client.patch(
-            f"{cookers_order_path}{order.id}/",
-            encode_multipart(BOUNDARY, update_status_data),
-            content_type=MULTIPART_CONTENT,
+        update_response = client.post(
+            f"{cookers_order_path}{order.id}/cancel/",
             follow=False,
             **auth_headers,
         )
@@ -618,31 +452,23 @@ def test_update_cooker_acceptance_rate(
 
         order.refresh_from_db()
 
-    if new_status == OrderStatusEnum.COMPLETED:
-        assert Decimal(str(order.cooker.acceptance_rate)) == Decimal("100.0")
-
-    if new_status == OrderStatusEnum.CANCELLED:
-        assert Decimal(str(order.cooker.acceptance_rate)) == Decimal("90.0")
-
+    assert Decimal(str(order.cooker.acceptance_rate)) == Decimal("90.0")
     assert order.cooker.last_acceptance_rate_update_date == datetime(2024, 5, 8, 10, 41, 0, tzinfo=timezone.utc)
 
     mock_googlemaps_distance_matrix.assert_called_once_with(
         origins=["13 rue des Mazières 91000 Evry"],
         destinations=["1 rue André Lalande 91000 Evry"],
     )
-
     mock_stripe_payment_intent_create.assert_called_once_with(
         amount=2459,
         currency="EUR",
         automatic_payment_methods={"enabled": True},
         customer="cus_QyZ76Ae0W5KeqP",
     )
-
-    if new_status == OrderStatusEnum.CANCELLED:
-        mock_stripe_create_refund_success.assert_called_once_with(
-            amount=2319,
-            payment_intent="pi_3Q6VU7EEYeaFww1W0xCZEUxw",
-        )
+    mock_stripe_create_refund_success.assert_called_once_with(
+        amount=2319,
+        payment_intent="pi_3Q6VU7EEYeaFww1W0xCZEUxw",
+    )
 
 
 @pytest.mark.django_db
@@ -688,10 +514,8 @@ def test_update_order_of_another_cooker_returns_404(
         delivery_fees=2.0,
     )
 
-    update_response = client.patch(
-        f"{cookers_order_path}{order.id}/",
-        data={"status": OrderStatusEnum.ACCEPTED.value},
-        format="json",
+    update_response = client.post(
+        f"{cookers_order_path}{order.id}/accept/",
         **auth_headers,
     )
 
