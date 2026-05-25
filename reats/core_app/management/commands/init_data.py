@@ -257,7 +257,7 @@ class Command(BaseCommand):
         scenarios = [
             # Past Orders (Completed/Delivered)
             {
-                "status": OrderStatusEnum.DELIVERED,
+                "status": OrderStatusEnum.COMPLETED,
                 "date": now - timedelta(days=1),
                 "count": 15,
             },
@@ -267,22 +267,22 @@ class Command(BaseCommand):
                 "count": 10,
             },
             {
-                "status": OrderStatusEnum.DELIVERED,
+                "status": OrderStatusEnum.COMPLETED,
                 "date": now - timedelta(days=30),
                 "count": 15,
             },
             # Active Orders
             {"status": OrderStatusEnum.PENDING, "date": now, "count": 5},
-            {"status": OrderStatusEnum.PROCESSING, "date": now, "count": 5},
-            {"status": OrderStatusEnum.IN_DELIVERY, "date": now, "count": 5},
+            {"status": OrderStatusEnum.ACCEPTED, "date": now, "count": 5},
+            {"status": OrderStatusEnum.DELIVERING, "date": now, "count": 5},
             # Cancelled Orders
             {
-                "status": OrderStatusEnum.CANCELLED_BY_CUSTOMER,
+                "status": OrderStatusEnum.CANCELLED,
                 "date": now - timedelta(days=2),
                 "count": 5,
             },
             {
-                "status": OrderStatusEnum.CANCELLED_BY_COOKER,
+                "status": OrderStatusEnum.CANCELLED,
                 "date": now - timedelta(days=3),
                 "count": 5,
             },
@@ -302,7 +302,7 @@ class Command(BaseCommand):
                     address=customer_address,
                     delivery_man=(
                         deliver
-                        if scenario["status"] in [OrderStatusEnum.IN_DELIVERY, OrderStatusEnum.DELIVERED]
+                        if scenario["status"] in [OrderStatusEnum.DELIVERING, OrderStatusEnum.COMPLETED]
                         else None
                     ),
                     status=scenario["status"],

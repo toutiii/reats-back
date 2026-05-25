@@ -216,7 +216,7 @@ class DeliverView(StandardizedResponseMixin, ModelViewSet):
 
 class DeliveryOrderStatsView(StandardizedResponseMixin, GenericViewSet, ListModelMixin):
     permission_classes = [UserPermission]
-    queryset = OrderModel.objects.all().filter(status=OrderStatusEnum.DELIVERED)
+    queryset = OrderModel.objects.all().filter(status=OrderStatusEnum.COMPLETED)
     parser_classes = [MultiPartParser]
 
     def list(self, request, *args, **kwargs) -> Response:
@@ -246,7 +246,11 @@ class DeliveryOrderStatsView(StandardizedResponseMixin, GenericViewSet, ListMode
 
         for order in self.queryset:
             stats["total_delivery_fees"] += order.delivery_fees + order.delivery_fees_bonus
-            stats["total_delivery_time"] += (order.delivered_date - order.delivery_in_progress_date).total_seconds()
+            stats["total_delivery_time"] += (
+                (order.completed_date - order.delivering_date).total_seconds()
+                if order.completed_date and order.delivering_date
+                else 0
+            )
             stats["total_delivery_distance"] += order.delivery_distance + order.delivery_initial_distance
 
         stats["total_delivery_fees"] = round(stats["total_delivery_fees"], 2)
@@ -260,7 +264,7 @@ class DeliveryOrderStatsView(StandardizedResponseMixin, GenericViewSet, ListMode
 
 class DeliveryHistoryView(StandardizedResponseMixin, ListModelMixin, GenericViewSet):
     permission_classes = [UserPermission]
-    queryset = OrderModel.objects.all().filter(status=OrderStatusEnum.DELIVERED)
+    queryset = OrderModel.objects.all().filter(status=OrderStatusEnum.COMPLETED)
     parser_classes = [MultiPartParser]
     serializer_class = OrderGETSerializer
 

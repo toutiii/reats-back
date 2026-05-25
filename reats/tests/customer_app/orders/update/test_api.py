@@ -90,7 +90,7 @@ def test_switch_order_status_from_draft_to_cancelled_by_customer(
     with freeze_time("2024-05-08T10:41:00+00:00"):
         # Then we switch the order to cancelled by customer few minutes later
         update_status_data = {
-            "status": OrderStatusEnum.CANCELLED_BY_CUSTOMER.value,
+            "status": OrderStatusEnum.CANCELLED.value,
         }
         update_to_cancelled_by_customer_response = client.patch(
             f"{customer_order_path}{order.id}/",
@@ -103,7 +103,7 @@ def test_switch_order_status_from_draft_to_cancelled_by_customer(
 
         order.refresh_from_db()
 
-        assert order.status == OrderStatusEnum.CANCELLED_BY_CUSTOMER.value
+        assert order.status == OrderStatusEnum.CANCELLED.value
         assert order.cancelled_date == datetime(2024, 5, 8, 10, 41, 0, tzinfo=timezone.utc)
         assert order
 
@@ -164,7 +164,7 @@ def test_switch_order_status_from_draft_to_cancelled_by_cooker(
     with freeze_time("2024-05-08T10:41:00+00:00"):
         # Then we switch the order to cancelled by cooker few minutes later
         update_status_data = {
-            "status": OrderStatusEnum.CANCELLED_BY_COOKER.value,
+            "status": OrderStatusEnum.CANCELLED.value,
         }
         update_to_cancelled_by_cooker_response = client.patch(
             f"{customer_order_path}{order.id}/",
@@ -177,14 +177,17 @@ def test_switch_order_status_from_draft_to_cancelled_by_cooker(
 
         order.refresh_from_db()
 
-        assert order.status == OrderStatusEnum.CANCELLED_BY_COOKER.value
+        assert order.status == OrderStatusEnum.CANCELLED.value
         assert order.cancelled_date == datetime(2024, 5, 8, 10, 41, 0, tzinfo=timezone.utc)
 
     mock_googlemaps_distance_matrix.assert_called_once_with(
         origins=["13 rue des Mazières 91000 Evry"],
         destinations=["1 rue André Lalande 91000 Evry"],
     )
-    mock_stripe_create_refund_success.assert_not_called()
+    mock_stripe_create_refund_success.assert_called_once_with(
+        amount=2319,
+        payment_intent="pi_3Q6VU7EEYeaFww1W0xCZEUxw",
+    )
     mock_stripe_payment_intent_create.assert_called_once_with(
         amount=2459,
         currency="EUR",
@@ -232,25 +235,82 @@ def test_switch_order_status_from_draft_to_delivered(
         order.save()
 
     with freeze_time("2024-05-08T10:30:00+00:00"):
-        # Then we switch the order to processing few minutes later
+        # Then we switch the order to accepted few minutes later
         update_status_data = {
-            "status": OrderStatusEnum.PROCESSING.value,
+            "status": OrderStatusEnum.ACCEPTED.value,
         }
-        update_to_processing_response = client.patch(
+        update_to_accepted_response = client.patch(
             f"{customer_order_path}{order.id}/",
             encode_multipart(BOUNDARY, update_status_data),
             content_type=MULTIPART_CONTENT,
             follow=False,
             **auth_headers,
         )
-        assert update_to_processing_response.status_code == status.HTTP_200_OK
+        assert update_to_accepted_response.status_code == status.HTTP_200_OK
 
         order.refresh_from_db()
 
-        assert order.status == OrderStatusEnum.PROCESSING.value
-        assert order.processing_date == datetime(2024, 5, 8, 10, 30, 0, tzinfo=timezone.utc)
+        assert order.status == OrderStatusEnum.ACCEPTED.value
+        assert order.accepted_date == datetime(2024, 5, 8, 10, 30, 0, tzinfo=timezone.utc)
 
     with freeze_time("2024-05-08T10:32:00+00:00"):
+        # Then we switch the order to preparing few minutes later
+        update_status_data = {
+            "status": OrderStatusEnum.PREPARING.value,
+        }
+        update_to_preparing_response = client.patch(
+            f"{customer_order_path}{order.id}/",
+            encode_multipart(BOUNDARY, update_status_data),
+            content_type=MULTIPART_CONTENT,
+            follow=False,
+            **auth_headers,
+        )
+        assert update_to_preparing_response.status_code == status.HTTP_200_OK
+
+        order.refresh_from_db()
+
+        assert order.status == OrderStatusEnum.PREPARING.value
+        assert order.preparing_date == datetime(2024, 5, 8, 10, 32, 0, tzinfo=timezone.utc)
+
+    with freeze_time("2024-05-08T10:35:00+00:00"):
+        # Then we switch the order to ready few minutes later
+        update_status_data = {
+            "status": OrderStatusEnum.READY.value,
+        }
+        update_to_ready_response = client.patch(
+            f"{customer_order_path}{order.id}/",
+            encode_multipart(BOUNDARY, update_status_data),
+            content_type=MULTIPART_CONTENT,
+            follow=False,
+            **auth_headers,
+        )
+        assert update_to_ready_response.status_code == status.HTTP_200_OK
+
+        order.refresh_from_db()
+
+        assert order.status == OrderStatusEnum.READY.value
+        assert order.ready_date == datetime(2024, 5, 8, 10, 35, 0, tzinfo=timezone.utc)
+
+    with freeze_time("2024-05-08T10:40:00+00:00"):
+        # Then we switch the order to delivering few minutes later
+        update_status_data = {
+            "status": OrderStatusEnum.DELIVERING.value,
+        }
+        update_to_delivering_response = client.patch(
+            f"{customer_order_path}{order.id}/",
+            encode_multipart(BOUNDARY, update_status_data),
+            content_type=MULTIPART_CONTENT,
+            follow=False,
+            **auth_headers,
+        )
+        assert update_to_delivering_response.status_code == status.HTTP_200_OK
+
+        order.refresh_from_db()
+
+        assert order.status == OrderStatusEnum.DELIVERING.value
+        assert order.delivering_date == datetime(2024, 5, 8, 10, 40, 0, tzinfo=timezone.utc)
+
+    with freeze_time("2024-05-08T10:47:00+00:00"):
         # Then we switch the order to completed few minutes later
         update_status_data = {
             "status": OrderStatusEnum.COMPLETED.value,
@@ -267,45 +327,7 @@ def test_switch_order_status_from_draft_to_delivered(
         order.refresh_from_db()
 
         assert order.status == OrderStatusEnum.COMPLETED.value
-        assert order.completed_date == datetime(2024, 5, 8, 10, 32, 0, tzinfo=timezone.utc)
-
-    with freeze_time("2024-05-08T10:35:00+00:00"):
-        # Then we switch the order to in delivery few minutes later
-        update_status_data = {
-            "status": OrderStatusEnum.IN_DELIVERY.value,
-        }
-        update_in_delivery_response = client.patch(
-            f"{customer_order_path}{order.id}/",
-            encode_multipart(BOUNDARY, update_status_data),
-            content_type=MULTIPART_CONTENT,
-            follow=False,
-            **auth_headers,
-        )
-        assert update_in_delivery_response.status_code == status.HTTP_200_OK
-
-        order.refresh_from_db()
-
-        assert order.status == OrderStatusEnum.IN_DELIVERY.value
-        assert order.delivery_in_progress_date == datetime(2024, 5, 8, 10, 35, 0, tzinfo=timezone.utc)
-
-    with freeze_time("2024-05-08T10:47:00+00:00"):
-        # Then we switch the order to delivered few minutes later
-        update_status_data = {
-            "status": OrderStatusEnum.DELIVERED.value,
-        }
-        update_to_delivered_response = client.patch(
-            f"{customer_order_path}{order.id}/",
-            encode_multipart(BOUNDARY, update_status_data),
-            content_type=MULTIPART_CONTENT,
-            follow=False,
-            **auth_headers,
-        )
-        assert update_to_delivered_response.status_code == status.HTTP_200_OK
-
-        order.refresh_from_db()
-
-        assert order.status == OrderStatusEnum.DELIVERED.value
-        assert order.delivered_date == datetime(2024, 5, 8, 10, 47, 0, tzinfo=timezone.utc)
+        assert order.completed_date == datetime(2024, 5, 8, 10, 47, 0, tzinfo=timezone.utc)
 
     mock_googlemaps_distance_matrix.assert_called_once_with(
         origins=["13 rue des Mazières 91000 Evry"],
@@ -348,12 +370,12 @@ def test_switch_order_status_from_draft_to_non_allowed_status(
         order = OrderModel.objects.latest("pk")
 
     non_allowed_statuses = [
-        OrderStatusEnum.PROCESSING.value,
+        OrderStatusEnum.ACCEPTED.value,
         OrderStatusEnum.COMPLETED.value,
-        OrderStatusEnum.IN_DELIVERY.value,
-        OrderStatusEnum.DELIVERED.value,
-        OrderStatusEnum.CANCELLED_BY_CUSTOMER.value,
-        OrderStatusEnum.CANCELLED_BY_COOKER.value,
+        OrderStatusEnum.DELIVERING.value,
+        OrderStatusEnum.COMPLETED.value,
+        OrderStatusEnum.CANCELLED.value,
+        OrderStatusEnum.CANCELLED.value,
     ]
 
     for order_status in non_allowed_statuses:
@@ -412,8 +434,8 @@ def test_switch_order_status_from_pending_to_non_allowed_status(
     non_allowed_statuses = [
         OrderStatusEnum.DRAFT.value,
         OrderStatusEnum.COMPLETED.value,
-        OrderStatusEnum.IN_DELIVERY.value,
-        OrderStatusEnum.DELIVERED.value,
+        OrderStatusEnum.DELIVERING.value,
+        OrderStatusEnum.COMPLETED.value,
     ]
 
     for order_status in non_allowed_statuses:
@@ -471,7 +493,7 @@ def test_switch_order_status_from_processing_to_non_allowed_status(
 
     # Transition from pending to processing
     with freeze_time("2024-05-08T10:41:00+00:00"):
-        update_status_data = {"status": OrderStatusEnum.PROCESSING.value}
+        update_status_data = {"status": OrderStatusEnum.ACCEPTED.value}
         response = client.patch(
             f"{customer_order_path}{order.id}/",
             encode_multipart(BOUNDARY, update_status_data),
@@ -485,8 +507,8 @@ def test_switch_order_status_from_processing_to_non_allowed_status(
     non_allowed_statuses = [
         OrderStatusEnum.DRAFT.value,
         OrderStatusEnum.PENDING.value,
-        OrderStatusEnum.IN_DELIVERY.value,
-        OrderStatusEnum.DELIVERED.value,
+        OrderStatusEnum.DELIVERING.value,
+        OrderStatusEnum.COMPLETED.value,
     ]
 
     for order_status in non_allowed_statuses:
@@ -544,7 +566,7 @@ def test_switch_order_status_from_completed_to_non_allowed_status(
 
     # Transition from pending to processing
     with freeze_time("2024-05-08T10:41:00+00:00"):
-        update_status_data = {"status": OrderStatusEnum.PROCESSING.value}
+        update_status_data = {"status": OrderStatusEnum.ACCEPTED.value}
         response = client.patch(
             f"{customer_order_path}{order.id}/",
             encode_multipart(BOUNDARY, update_status_data),
@@ -555,8 +577,47 @@ def test_switch_order_status_from_completed_to_non_allowed_status(
         assert response.status_code == status.HTTP_200_OK
         order.refresh_from_db()
 
-    # Transition from processing to completed
+    # Transition from accepted to preparing
     with freeze_time("2024-05-08T10:55:00+00:00"):
+        update_status_data = {"status": OrderStatusEnum.PREPARING.value}
+        response = client.patch(
+            f"{customer_order_path}{order.id}/",
+            encode_multipart(BOUNDARY, update_status_data),
+            content_type=MULTIPART_CONTENT,
+            follow=False,
+            **auth_headers,
+        )
+        assert response.status_code == status.HTTP_200_OK
+        order.refresh_from_db()
+
+    # Transition from preparing to ready
+    with freeze_time("2024-05-08T11:00:00+00:00"):
+        update_status_data = {"status": OrderStatusEnum.READY.value}
+        response = client.patch(
+            f"{customer_order_path}{order.id}/",
+            encode_multipart(BOUNDARY, update_status_data),
+            content_type=MULTIPART_CONTENT,
+            follow=False,
+            **auth_headers,
+        )
+        assert response.status_code == status.HTTP_200_OK
+        order.refresh_from_db()
+
+    # Transition from ready to delivering
+    with freeze_time("2024-05-08T11:05:00+00:00"):
+        update_status_data = {"status": OrderStatusEnum.DELIVERING.value}
+        response = client.patch(
+            f"{customer_order_path}{order.id}/",
+            encode_multipart(BOUNDARY, update_status_data),
+            content_type=MULTIPART_CONTENT,
+            follow=False,
+            **auth_headers,
+        )
+        assert response.status_code == status.HTTP_200_OK
+        order.refresh_from_db()
+
+    # Transition from delivering to completed
+    with freeze_time("2024-05-08T11:10:00+00:00"):
         update_status_data = {"status": OrderStatusEnum.COMPLETED.value}
         response = client.patch(
             f"{customer_order_path}{order.id}/",
@@ -571,12 +632,12 @@ def test_switch_order_status_from_completed_to_non_allowed_status(
     non_allowed_statuses = [
         OrderStatusEnum.DRAFT.value,
         OrderStatusEnum.PENDING.value,
-        OrderStatusEnum.PROCESSING.value,
-        OrderStatusEnum.CANCELLED_BY_COOKER.value,
+        OrderStatusEnum.ACCEPTED.value,
+        OrderStatusEnum.CANCELLED.value,
     ]
 
     for order_status in non_allowed_statuses:
-        with freeze_time("2024-05-08T11:10:00+00:00"):
+        with freeze_time("2024-05-08T11:15:00+00:00"):
             update_status_data = {"status": order_status}
             response = client.patch(
                 f"{customer_order_path}{order.id}/",
@@ -631,7 +692,7 @@ def test_switch_order_status_from_delivered_to_non_allowed_status(
 
     # Transition from pending to processing
     with freeze_time("2024-05-08T10:41:00+00:00"):
-        update_status_data = {"status": OrderStatusEnum.PROCESSING.value}
+        update_status_data = {"status": OrderStatusEnum.ACCEPTED.value}
         response = client.patch(
             f"{customer_order_path}{order.id}/",
             encode_multipart(BOUNDARY, update_status_data),
@@ -642,9 +703,9 @@ def test_switch_order_status_from_delivered_to_non_allowed_status(
         assert response.status_code == status.HTTP_200_OK
         order.refresh_from_db()
 
-    # Transition from processing to completed
+    # Transition from accepted to preparing
     with freeze_time("2024-05-08T10:55:00+00:00"):
-        update_status_data = {"status": OrderStatusEnum.COMPLETED.value}
+        update_status_data = {"status": OrderStatusEnum.PREPARING.value}
         response = client.patch(
             f"{customer_order_path}{order.id}/",
             encode_multipart(BOUNDARY, update_status_data),
@@ -655,9 +716,22 @@ def test_switch_order_status_from_delivered_to_non_allowed_status(
         assert response.status_code == status.HTTP_200_OK
         order.refresh_from_db()
 
-    # Transition from completed to in delivery
+    # Transition from preparing to ready
+    with freeze_time("2024-05-08T11:00:00+00:00"):
+        update_status_data = {"status": OrderStatusEnum.READY.value}
+        response = client.patch(
+            f"{customer_order_path}{order.id}/",
+            encode_multipart(BOUNDARY, update_status_data),
+            content_type=MULTIPART_CONTENT,
+            follow=False,
+            **auth_headers,
+        )
+        assert response.status_code == status.HTTP_200_OK
+        order.refresh_from_db()
+
+    # Transition from ready to delivering
     with freeze_time("2024-05-08T11:10:00+00:00"):
-        update_status_data = {"status": OrderStatusEnum.IN_DELIVERY.value}
+        update_status_data = {"status": OrderStatusEnum.DELIVERING.value}
         response = client.patch(
             f"{customer_order_path}{order.id}/",
             encode_multipart(BOUNDARY, update_status_data),
@@ -668,9 +742,9 @@ def test_switch_order_status_from_delivered_to_non_allowed_status(
         assert response.status_code == status.HTTP_200_OK
         order.refresh_from_db()
 
-    # Transition from completed to delivered
+    # Transition from delivering to completed
     with freeze_time("2024-05-08T11:20:00+00:00"):
-        update_status_data = {"status": OrderStatusEnum.DELIVERED.value}
+        update_status_data = {"status": OrderStatusEnum.COMPLETED.value}
         response = client.patch(
             f"{customer_order_path}{order.id}/",
             encode_multipart(BOUNDARY, update_status_data),
@@ -684,11 +758,11 @@ def test_switch_order_status_from_delivered_to_non_allowed_status(
     non_allowed_statuses = [
         OrderStatusEnum.DRAFT.value,
         OrderStatusEnum.PENDING.value,
-        OrderStatusEnum.PROCESSING.value,
+        OrderStatusEnum.ACCEPTED.value,
         OrderStatusEnum.COMPLETED.value,
-        OrderStatusEnum.IN_DELIVERY.value,
-        OrderStatusEnum.CANCELLED_BY_CUSTOMER.value,
-        OrderStatusEnum.CANCELLED_BY_COOKER.value,
+        OrderStatusEnum.DELIVERING.value,
+        OrderStatusEnum.CANCELLED.value,
+        OrderStatusEnum.CANCELLED.value,
     ]
 
     for order_status in non_allowed_statuses:
@@ -750,7 +824,7 @@ def test_switch_order_status_from_cancelled_by_customer_to_non_allowed_status(
     # Transition from pending to cancelled by customer
     with freeze_time("2024-05-08T11:10:00+00:00"):
         update_status_data = {
-            "status": OrderStatusEnum.CANCELLED_BY_CUSTOMER.value,
+            "status": OrderStatusEnum.CANCELLED.value,
         }
         response = client.patch(
             f"{customer_order_path}{order.id}/",
@@ -765,11 +839,11 @@ def test_switch_order_status_from_cancelled_by_customer_to_non_allowed_status(
     non_allowed_statuses = [
         OrderStatusEnum.DRAFT.value,
         OrderStatusEnum.PENDING.value,
-        OrderStatusEnum.PROCESSING.value,
+        OrderStatusEnum.ACCEPTED.value,
         OrderStatusEnum.COMPLETED.value,
-        OrderStatusEnum.DELIVERED.value,
-        OrderStatusEnum.IN_DELIVERY.value,
-        OrderStatusEnum.CANCELLED_BY_COOKER.value,
+        OrderStatusEnum.COMPLETED.value,
+        OrderStatusEnum.DELIVERING.value,
+        OrderStatusEnum.CANCELLED.value,
     ]
 
     for order_status in non_allowed_statuses:
@@ -810,6 +884,9 @@ def test_switch_order_status_from_cancelled_by_cooker_to_non_allowed_status(
     customer_order_path: str,
     post_order_data: dict,
     mock_googlemaps_distance_matrix: MagicMock,
+    mock_stripe_payment_intent_create: MagicMock,
+    mock_stripe_create_ephemeral_key: MagicMock,
+    mock_stripe_create_refund_success: MagicMock,
 ) -> None:
     with freeze_time("2024-05-08T10:16:00+00:00"):
         # Create a draft order
@@ -841,7 +918,7 @@ def test_switch_order_status_from_cancelled_by_cooker_to_non_allowed_status(
 
     # Transition from pending to cancelled by cooker
     with freeze_time("2024-05-08T11:10:00+00:00"):
-        update_status_data = {"status": OrderStatusEnum.CANCELLED_BY_COOKER.value}
+        update_status_data = {"status": OrderStatusEnum.CANCELLED.value}
         response = client.patch(
             f"{customer_order_path}{order.id}/",
             encode_multipart(BOUNDARY, update_status_data),
@@ -855,11 +932,11 @@ def test_switch_order_status_from_cancelled_by_cooker_to_non_allowed_status(
     non_allowed_statuses = [
         OrderStatusEnum.DRAFT.value,
         OrderStatusEnum.PENDING.value,
-        OrderStatusEnum.PROCESSING.value,
+        OrderStatusEnum.ACCEPTED.value,
         OrderStatusEnum.COMPLETED.value,
-        OrderStatusEnum.IN_DELIVERY.value,
-        OrderStatusEnum.DELIVERED.value,
-        OrderStatusEnum.CANCELLED_BY_CUSTOMER.value,
+        OrderStatusEnum.DELIVERING.value,
+        OrderStatusEnum.COMPLETED.value,
+        OrderStatusEnum.CANCELLED.value,
     ]
 
     for order_status in non_allowed_statuses:
@@ -949,11 +1026,13 @@ def test_update_order_success_with_asap_delivery(
                 ],
                 "scheduled_delivery_date": None,
                 "is_scheduled": False,
-                "processing_date": None,
+                "accepted_date": None,
+                "preparing_date": None,
+                "ready_date": None,
+                "delivering_date": None,
                 "completed_date": None,
-                "delivery_in_progress_date": None,
                 "cancelled_date": None,
-                "delivered_date": None,
+                "cancelled_by": None,
                 "delivery_fees": 3.19,
                 "delivery_distance": 1390.0,
                 "delivery_initial_distance": None,
@@ -993,16 +1072,18 @@ def test_update_order_success_with_asap_delivery(
             "completed_date": None,
             "customer": 1,
             "cooker": 1,
-            "delivered_date": None,
+            "accepted_date": None,
+            "preparing_date": None,
+            "ready_date": None,
+            "delivering_date": None,
+            "cancelled_by": None,
             "delivery_distance": 1390.0,
             "delivery_fees": 3.19,
             "delivery_fees_bonus": None,
-            "delivery_in_progress_date": None,
             "delivery_initial_distance": None,
             "delivery_man": None,
             "paid_date": None,
             "is_scheduled": False,
-            "processing_date": None,
             "rating": 0.0,
             "comment": None,
             "scheduled_delivery_date": None,
@@ -1047,10 +1128,13 @@ def test_update_order_success_with_asap_delivery(
                     "email": "test@gmail.com",
                     "acceptance_rate": 100.0,
                 },
-                "delivered_date": None,
+                "accepted_date": None,
+                "preparing_date": None,
+                "ready_date": None,
+                "delivering_date": None,
+                "cancelled_by": None,
                 "delivery_distance": 1390.0,
                 "delivery_fees": 3.19,
-                "delivery_in_progress_date": None,
                 "delivery_initial_distance": None,
                 "delivery_man": None,
                 "is_scheduled": False,
@@ -1075,7 +1159,6 @@ def test_update_order_success_with_asap_delivery(
                     },
                 ],
                 "paid_date": None,
-                "processing_date": None,
                 "scheduled_delivery_date": None,
                 "stripe_payment_intent_id": "pi_3Q6VU7EEYeaFww1W0xCZEUxw",
                 "stripe_payment_intent_secret": "pi_3Q6VU7EEYeaFww1W0xCZEUxw_secret_OJqlWW9QRZZuSmAwUBklpxUf4",
@@ -1100,11 +1183,13 @@ def test_update_order_success_with_asap_delivery(
             "scheduled_delivery_date": None,
             "is_scheduled": False,
             "status": OrderStatusEnum.DRAFT.value,
-            "processing_date": None,
+            "accepted_date": None,
+            "preparing_date": None,
+            "ready_date": None,
+            "delivering_date": None,
             "completed_date": None,
-            "delivery_in_progress_date": None,
             "cancelled_date": None,
-            "delivered_date": None,
+            "cancelled_by": None,
             "delivery_fees": 3.19,
             "delivery_fees_bonus": None,
             "delivery_distance": 1390.0,
@@ -1194,11 +1279,13 @@ def test_update_order_after_successful_stripe_payment(
                 ],
                 "scheduled_delivery_date": None,
                 "is_scheduled": False,
-                "processing_date": None,
+                "accepted_date": None,
+                "preparing_date": None,
+                "ready_date": None,
+                "delivering_date": None,
                 "completed_date": None,
-                "delivery_in_progress_date": None,
                 "cancelled_date": None,
-                "delivered_date": None,
+                "cancelled_by": None,
                 "delivery_fees": 3.19,
                 "delivery_distance": 1390.0,
                 "delivery_initial_distance": None,
@@ -1303,11 +1390,13 @@ def test_update_order_after_successful_stripe_payment_but_event_failed_to_be_ver
                 ],
                 "scheduled_delivery_date": None,
                 "is_scheduled": False,
-                "processing_date": None,
+                "accepted_date": None,
+                "preparing_date": None,
+                "ready_date": None,
+                "delivering_date": None,
                 "completed_date": None,
-                "delivery_in_progress_date": None,
                 "cancelled_date": None,
-                "delivered_date": None,
+                "cancelled_by": None,
                 "delivery_fees": 3.19,
                 "delivery_distance": 1390.0,
                 "delivery_initial_distance": None,
@@ -1472,7 +1561,7 @@ def test_cancel_order_when_initiated_by_customer_and_order_is_still_pending(
                 encode_multipart(
                     BOUNDARY,
                     {
-                        "status": OrderStatusEnum.CANCELLED_BY_CUSTOMER.value,
+                        "status": OrderStatusEnum.CANCELLED.value,
                     },
                 ),
                 content_type=MULTIPART_CONTENT,
@@ -1482,7 +1571,7 @@ def test_cancel_order_when_initiated_by_customer_and_order_is_still_pending(
 
             assert cancel_response.status_code == expected_cancel_response_status_code
             order.refresh_from_db()
-            assert order.status == OrderStatusEnum.CANCELLED_BY_CUSTOMER.value
+            assert order.status == OrderStatusEnum.CANCELLED.value
             assert order.cancelled_date == datetime.fromisoformat(cancel_freeze_time)
 
         mock_googlemaps_distance_matrix.assert_called_once_with(
@@ -1603,10 +1692,10 @@ def test_cancel_order_when_initiated_by_customer_but_order_is_in_processing_stat
         assert order.status == OrderStatusEnum.PENDING.value
 
         # Manual transition from pending to processing
-        order.status = OrderStatusEnum.PROCESSING.value
+        order.status = OrderStatusEnum.ACCEPTED.value
         order.save()
 
-        assert order.status == OrderStatusEnum.PROCESSING.value
+        assert order.status == OrderStatusEnum.ACCEPTED.value
 
         with freeze_time(cancel_freeze_time):
             # Now we cancel the order right after it has been paid
@@ -1615,7 +1704,7 @@ def test_cancel_order_when_initiated_by_customer_but_order_is_in_processing_stat
                 encode_multipart(
                     BOUNDARY,
                     {
-                        "status": OrderStatusEnum.CANCELLED_BY_CUSTOMER.value,
+                        "status": OrderStatusEnum.CANCELLED.value,
                     },
                 ),
                 content_type=MULTIPART_CONTENT,
@@ -1625,7 +1714,7 @@ def test_cancel_order_when_initiated_by_customer_but_order_is_in_processing_stat
 
             assert cancel_response.status_code == expected_cancel_response_status_code
             order.refresh_from_db()
-            assert order.status == OrderStatusEnum.CANCELLED_BY_CUSTOMER.value
+            assert order.status == OrderStatusEnum.CANCELLED.value
             assert order.cancelled_date == datetime.fromisoformat(cancel_freeze_time)
 
         mock_googlemaps_distance_matrix.assert_called_once_with(
@@ -1742,26 +1831,20 @@ def test_cancel_order_when_initiated_by_customer_but_order_is_in_completed_state
 
         assert order.status == OrderStatusEnum.PENDING.value
 
-        # Manual transition from pending to processing
-        order.status = OrderStatusEnum.PROCESSING.value
+        # Manual transition from pending to accepted
+        order.status = OrderStatusEnum.ACCEPTED.value
         order.save()
 
-        assert order.status == OrderStatusEnum.PROCESSING.value
-
-        # Then we switch the order to completed
-        order.status = OrderStatusEnum.COMPLETED.value
-        order.save()
-
-        assert order.status == OrderStatusEnum.COMPLETED.value
+        assert order.status == OrderStatusEnum.ACCEPTED.value
 
         with freeze_time(cancel_freeze_time):
-            # Now we cancel the order right after it has been paid
+            # Now we cancel the order while it is in accepted state
             cancel_response = client.patch(
                 f"{customer_order_path}{order_id}/",
                 encode_multipart(
                     BOUNDARY,
                     {
-                        "status": OrderStatusEnum.CANCELLED_BY_CUSTOMER.value,
+                        "status": OrderStatusEnum.CANCELLED.value,
                     },
                 ),
                 content_type=MULTIPART_CONTENT,
@@ -1771,7 +1854,7 @@ def test_cancel_order_when_initiated_by_customer_but_order_is_in_completed_state
 
             assert cancel_response.status_code == expected_cancel_response_status_code
             order.refresh_from_db()
-            assert order.status == OrderStatusEnum.CANCELLED_BY_CUSTOMER.value
+            assert order.status == OrderStatusEnum.CANCELLED.value
             assert order.cancelled_date == datetime.fromisoformat(cancel_freeze_time)
 
         mock_googlemaps_distance_matrix.assert_called_once_with(

@@ -6,12 +6,23 @@ from django.utils.translation import gettext_lazy as _
 class OrderStatusEnum(str, Enum):
     DRAFT = "draft"  # Initial state for an order, a draft order has not been paid yet
     PENDING = "pending"  # Order has been paid, waiting for the cooker acceptance or rejection
-    PROCESSING = "processing"  # State when the order has been accepted by the cooker
-    COMPLETED = "completed"  # State when the order is ready for delivery
-    IN_DELIVERY = "in_delivery"  # State when the order is on its way to the customer
-    CANCELLED_BY_CUSTOMER = "cancelled_by_customer"  # Final state when the order has been cancelled by the customer.
-    CANCELLED_BY_COOKER = "cancelled_by_cooker"  # Final state when the order has been cancelled by the cooker.
-    DELIVERED = "delivered"  # State when the order has been delivered, this is a final state.
+    ACCEPTED = "accepted"  # State when the order has been accepted by the cooker
+    PREPARING = "preparing"  # State when the cooker has started preparing the order
+    READY = "ready"  # State when the order is ready for delivery
+    DELIVERING = "delivering"  # State when the order is on its way to the customer
+    COMPLETED = "completed"  # State when the order has been delivered — final state
+    CANCELLED = "cancelled"  # State when the order has been cancelled — final state. See cancelled_by field.
+    NOT_ACCEPTED = "not_accepted"  # State when the cooker didn't respond within the timeout — final state
+
+    @classmethod
+    def choices(cls):
+        return [(key.value.lower(), key.name.lower()) for key in cls]
+
+
+class CancelledByEnum(str, Enum):
+    COOKER = "cooker"
+    CUSTOMER = "customer"
+    SYSTEM = "system"
 
     @classmethod
     def choices(cls):

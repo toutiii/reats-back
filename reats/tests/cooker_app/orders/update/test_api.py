@@ -90,7 +90,7 @@ def test_update_order_from_pending_to_cancelled_by_cooker_status(
     with freeze_time("2024-05-08T10:41:00+00:00"):
         # Then we switch the order to cancelled by cooker few minutes later
         update_status_data = {
-            "status": OrderStatusEnum.CANCELLED_BY_COOKER.value,
+            "status": OrderStatusEnum.CANCELLED.value,
         }
         update_to_cancelled_by_cooker_response = client.patch(
             f"{cookers_order_path}{order.id}/",
@@ -103,7 +103,7 @@ def test_update_order_from_pending_to_cancelled_by_cooker_status(
 
         order.refresh_from_db()
 
-        assert order.status == OrderStatusEnum.CANCELLED_BY_COOKER.value
+        assert order.status == OrderStatusEnum.CANCELLED.value
         assert order.cancelled_date == datetime(2024, 5, 8, 10, 41, 0, tzinfo=timezone.utc)
         assert order
 
@@ -164,7 +164,7 @@ def test_update_order_from_processing_to_cancelled_by_cooker_status(
             encode_multipart(
                 BOUNDARY,
                 {
-                    "status": OrderStatusEnum.PROCESSING.value,
+                    "status": OrderStatusEnum.ACCEPTED.value,
                 },
             ),
             content_type=MULTIPART_CONTENT,
@@ -175,8 +175,8 @@ def test_update_order_from_processing_to_cancelled_by_cooker_status(
 
     order.refresh_from_db()
 
-    assert order.status == OrderStatusEnum.PROCESSING.value
-    assert order.processing_date == datetime(
+    assert order.status == OrderStatusEnum.ACCEPTED.value
+    assert order.accepted_date == datetime(
         2024,
         5,
         8,
@@ -192,7 +192,7 @@ def test_update_order_from_processing_to_cancelled_by_cooker_status(
             encode_multipart(
                 BOUNDARY,
                 {
-                    "status": OrderStatusEnum.CANCELLED_BY_COOKER.value,
+                    "status": OrderStatusEnum.CANCELLED.value,
                 },
             ),
             content_type=MULTIPART_CONTENT,
@@ -204,7 +204,7 @@ def test_update_order_from_processing_to_cancelled_by_cooker_status(
 
     order.refresh_from_db()
 
-    assert order.status == OrderStatusEnum.CANCELLED_BY_COOKER.value
+    assert order.status == OrderStatusEnum.CANCELLED.value
     assert order.cancelled_date == datetime(
         2024,
         5,
@@ -271,7 +271,7 @@ def test_update_order_from_pending_to_processing_state(
             encode_multipart(
                 BOUNDARY,
                 {
-                    "status": OrderStatusEnum.PROCESSING.value,
+                    "status": OrderStatusEnum.ACCEPTED.value,
                 },
             ),
             content_type=MULTIPART_CONTENT,
@@ -282,8 +282,8 @@ def test_update_order_from_pending_to_processing_state(
 
     order.refresh_from_db()
 
-    assert order.status == OrderStatusEnum.PROCESSING.value
-    assert order.processing_date == datetime(
+    assert order.status == OrderStatusEnum.ACCEPTED.value
+    assert order.accepted_date == datetime(
         2024,
         5,
         8,
@@ -338,7 +338,7 @@ def test_update_order_from_pending_to_completed_state(
             encode_multipart(
                 BOUNDARY,
                 {
-                    "status": OrderStatusEnum.PROCESSING.value,
+                    "status": OrderStatusEnum.ACCEPTED.value,
                 },
             ),
             content_type=MULTIPART_CONTENT,
@@ -349,8 +349,8 @@ def test_update_order_from_pending_to_completed_state(
 
     order.refresh_from_db()
 
-    assert order.status == OrderStatusEnum.PROCESSING.value
-    assert order.processing_date == datetime(
+    assert order.status == OrderStatusEnum.ACCEPTED.value
+    assert order.accepted_date == datetime(
         2024,
         5,
         8,
@@ -362,6 +362,29 @@ def test_update_order_from_pending_to_completed_state(
     mock_googlemaps_distance_matrix.assert_called_once()
     mock_stripe_payment_intent_create.assert_called_once()
     mock_stripe_create_refund_success.assert_not_called()
+
+    with freeze_time("2024-05-08T10:19:00+00:00"):
+        res = client.patch(
+            f"{cookers_order_path}{order.id}/",
+            encode_multipart(BOUNDARY, {"status": OrderStatusEnum.PREPARING.value}),
+            content_type=MULTIPART_CONTENT,
+            **auth_headers,
+        )
+        assert res.status_code == status.HTTP_200_OK
+        res = client.patch(
+            f"{cookers_order_path}{order.id}/",
+            encode_multipart(BOUNDARY, {"status": OrderStatusEnum.READY.value}),
+            content_type=MULTIPART_CONTENT,
+            **auth_headers,
+        )
+        assert res.status_code == status.HTTP_200_OK
+        res = client.patch(
+            f"{cookers_order_path}{order.id}/",
+            encode_multipart(BOUNDARY, {"status": OrderStatusEnum.DELIVERING.value}),
+            content_type=MULTIPART_CONTENT,
+            **auth_headers,
+        )
+        assert res.status_code == status.HTTP_200_OK
 
     with freeze_time("2024-05-08T10:20:00+00:00"):
         update_to_completed_state_response = client.patch(
@@ -449,7 +472,7 @@ def test_update_order_with_invalid_transition_returns_400_validation_error(
 @pytest.mark.parametrize(
     "new_status",
     [
-        OrderStatusEnum.PROCESSING,
+        OrderStatusEnum.ACCEPTED,
         OrderStatusEnum.COMPLETED,
     ],
     ids=[
@@ -520,8 +543,8 @@ def test_update_order_but_unexpected_exception_raises_on_cooker_app(
 @pytest.mark.parametrize(
     "new_status",
     [
-        OrderStatusEnum.DELIVERED,
-        OrderStatusEnum.CANCELLED_BY_COOKER,
+        OrderStatusEnum.COMPLETED,
+        OrderStatusEnum.CANCELLED,
     ],
     ids=[
         "switch_to_delivered",
@@ -543,10 +566,10 @@ def test_update_cooker_acceptance_rate(
     # To start with a clean state we have to remove cookers orders
     # except the delivered ones
 
-    OrderModel.objects.exclude(status=OrderStatusEnum.DELIVERED.value).delete()
+    OrderModel.objects.exclude(status=OrderStatusEnum.COMPLETED.value).delete()
 
     for order_item in OrderModel.objects.filter(cooker_id=cooker_id):
-        assert order_item.status == OrderStatusEnum.DELIVERED.value
+        assert order_item.status == OrderStatusEnum.COMPLETED.value
 
     cooker: CookerModel = CookerModel.objects.get(id=cooker_id)
     assert Decimal(str(cooker.acceptance_rate)) == Decimal("100.0")
@@ -574,9 +597,9 @@ def test_update_cooker_acceptance_rate(
         order.status = OrderStatusEnum.PENDING.value
         order.save()
 
-    if new_status == OrderStatusEnum.DELIVERED:
+    if new_status == OrderStatusEnum.COMPLETED:
         # Bypassing status update logic for simplicity
-        order.status = OrderStatusEnum.IN_DELIVERY.value
+        order.status = OrderStatusEnum.DELIVERING.value
         order.save()
 
     with freeze_time("2024-05-08T10:41:00+00:00"):
@@ -595,10 +618,10 @@ def test_update_cooker_acceptance_rate(
 
         order.refresh_from_db()
 
-    if new_status == OrderStatusEnum.DELIVERED:
+    if new_status == OrderStatusEnum.COMPLETED:
         assert Decimal(str(order.cooker.acceptance_rate)) == Decimal("100.0")
 
-    if new_status == OrderStatusEnum.CANCELLED_BY_COOKER:
+    if new_status == OrderStatusEnum.CANCELLED:
         assert Decimal(str(order.cooker.acceptance_rate)) == Decimal("90.0")
 
     assert order.cooker.last_acceptance_rate_update_date == datetime(2024, 5, 8, 10, 41, 0, tzinfo=timezone.utc)
@@ -615,7 +638,7 @@ def test_update_cooker_acceptance_rate(
         customer="cus_QyZ76Ae0W5KeqP",
     )
 
-    if new_status == OrderStatusEnum.CANCELLED_BY_COOKER:
+    if new_status == OrderStatusEnum.CANCELLED:
         mock_stripe_create_refund_success.assert_called_once_with(
             amount=2319,
             payment_intent="pi_3Q6VU7EEYeaFww1W0xCZEUxw",
@@ -627,23 +650,23 @@ def test_update_cooker_acceptance_rate(
     "order_status",
     [
         OrderStatusEnum.PENDING,
-        OrderStatusEnum.PROCESSING,
+        OrderStatusEnum.ACCEPTED,
         OrderStatusEnum.COMPLETED,
-        OrderStatusEnum.IN_DELIVERY,
-        OrderStatusEnum.CANCELLED_BY_CUSTOMER,
-        OrderStatusEnum.CANCELLED_BY_COOKER,
-        OrderStatusEnum.DELIVERED,
+        OrderStatusEnum.DELIVERING,
+        OrderStatusEnum.CANCELLED,
+        OrderStatusEnum.CANCELLED,
+        OrderStatusEnum.COMPLETED,
     ],
     ids=[
         s.value
         for s in [
             OrderStatusEnum.PENDING,
-            OrderStatusEnum.PROCESSING,
+            OrderStatusEnum.ACCEPTED,
             OrderStatusEnum.COMPLETED,
-            OrderStatusEnum.IN_DELIVERY,
-            OrderStatusEnum.CANCELLED_BY_CUSTOMER,
-            OrderStatusEnum.CANCELLED_BY_COOKER,
-            OrderStatusEnum.DELIVERED,
+            OrderStatusEnum.DELIVERING,
+            OrderStatusEnum.CANCELLED,
+            OrderStatusEnum.CANCELLED,
+            OrderStatusEnum.COMPLETED,
         ]
     ],
 )
@@ -667,7 +690,7 @@ def test_update_order_of_another_cooker_returns_404(
 
     update_response = client.patch(
         f"{cookers_order_path}{order.id}/",
-        data={"status": OrderStatusEnum.PROCESSING.value},
+        data={"status": OrderStatusEnum.ACCEPTED.value},
         format="json",
         **auth_headers,
     )

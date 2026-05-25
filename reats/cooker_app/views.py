@@ -67,6 +67,7 @@ from utils.common import (
 from utils.custom_api_reponse import StandardizedResponseMixin
 from utils.custom_permissions import CustomAPIKeyPermission, IsCookerOwner, UserPermission
 from utils.enums import (
+    CancelledByEnum,
     ErrorCodeEnum,
     ErrorMessageEnum,
     MonthChartLabelEnum,
@@ -444,7 +445,7 @@ class DashboardView(StandardizedResponseMixin, GenericViewSet):
                 filter=Q(
                     status__in=[
                         OrderStatusEnum.PENDING,
-                        OrderStatusEnum.PROCESSING,
+                        OrderStatusEnum.ACCEPTED,
                         OrderStatusEnum.COMPLETED,
                     ]
                 ),
@@ -455,12 +456,12 @@ class DashboardView(StandardizedResponseMixin, GenericViewSet):
 
     def _get_revenue_for_orders(self, orders: QuerySet[OrderModel]) -> float:
         """Calculate total revenue from a queryset of orders."""
-        delivered_orders = list(orders.filter(status=OrderStatusEnum.DELIVERED))
+        delivered_orders = list(orders.filter(status=OrderStatusEnum.COMPLETED))
         return sum(compute_order_total_amount(order) for order in delivered_orders)
 
     def _get_customers_served(self, orders: QuerySet[OrderModel]) -> int:
         """Get distinct customer count from delivered orders."""
-        return orders.filter(status=OrderStatusEnum.DELIVERED).values("customer").distinct().count()
+        return orders.filter(status=OrderStatusEnum.COMPLETED).values("customer").distinct().count()
 
     def _calculate_stats(self, cooker_id: int, date_range: DateRangeDict) -> dict[str, Any]:
         current_orders = OrderModel.objects.filter(
@@ -498,7 +499,7 @@ class DashboardView(StandardizedResponseMixin, GenericViewSet):
             OrderModel.objects.filter(
                 cooker_id=cooker_id,
                 created__gte=date_range["current_period_start"],
-                status=OrderStatusEnum.DELIVERED,
+                status=OrderStatusEnum.COMPLETED,
             )
             .prefetch_related("dishes_items__dish", "drinks_items__drink")
             .order_by("created")
@@ -596,7 +597,7 @@ class DashboardView(StandardizedResponseMixin, GenericViewSet):
             OrderDishItemModel.objects.filter(
                 order__cooker_id=cooker_id,
                 order__created__gte=date_range["current_period_start"],
-                order__status=OrderStatusEnum.DELIVERED,
+                order__status=OrderStatusEnum.COMPLETED,
             )
             .annotate(primary_image_key=Subquery(primary_image_subq))
             .values(
@@ -617,7 +618,7 @@ class DashboardView(StandardizedResponseMixin, GenericViewSet):
             OrderDrinkItemModel.objects.filter(
                 order__cooker_id=cooker_id,
                 order__created__gte=date_range["current_period_start"],
-                order__status=OrderStatusEnum.DELIVERED,
+                order__status=OrderStatusEnum.COMPLETED,
             )
             .annotate(primary_image_key=Subquery(primary_drink_image_subq))
             .values(
@@ -763,8 +764,8 @@ class DishView(StandardizedResponseMixin, IngredientsEndpointMixin, ModelViewSet
                 "orderdishitemmodel",
                 filter=Q(
                     orderdishitemmodel__order__status__in=[
-                        OrderStatusEnum.PROCESSING,
-                        OrderStatusEnum.IN_DELIVERY,
+                        OrderStatusEnum.ACCEPTED,
+                        OrderStatusEnum.DELIVERING,
                     ]
                 ),
                 distinct=True,
@@ -1990,21 +1991,48 @@ class CookerOrderView(
 
     @extend_schema(
         summary="Update order status",
-        description="Allows a cooker to transition an order to a new state (e.g., from PENDING to PROCESSING).",
+        description=(
+            "Allows a cooker to transition an order through its lifecycle states.\n\n"
+            "**Valid transition flow:**\n"
+            "`pending` → `accepted` → `preparing` → `ready` → `delivering` → `completed`\n\n"
+            "A cooker can also transition to `cancelled` from any non-terminal state, "
+            'which triggers a Stripe refund and sets `cancelled_by` to `"cooker"`.'
+        ),
         request=OrderPATCHSerializer,
         responses={
             200: OpenApiResponse(response=CookerOrderGETSerializer, description="Order status updated"),
-            400: OpenApiResponse(description="Invalid status or transition error"),
+            400: OpenApiResponse(description="Invalid status or transition not allowed"),
+            500: OpenApiResponse(description="Internal server error"),
         },
         examples=[
             OpenApiExample(
-                name="Accept order (Transition to PROCESSING)",
-                value={"status": "processing"},
+                name="Accept order (PENDING → ACCEPTED)",
+                value={"status": "accepted"},
                 request_only=True,
             ),
             OpenApiExample(
-                name="Complete order (Transition to COMPLETED)",
+                name="Start preparing (ACCEPTED → PREPARING)",
+                value={"status": "preparing"},
+                request_only=True,
+            ),
+            OpenApiExample(
+                name="Mark as ready (PREPARING → READY)",
+                value={"status": "ready"},
+                request_only=True,
+            ),
+            OpenApiExample(
+                name="Out for delivery (READY → DELIVERING)",
+                value={"status": "delivering"},
+                request_only=True,
+            ),
+            OpenApiExample(
+                name="Complete order (DELIVERING → COMPLETED)",
                 value={"status": "completed"},
+                request_only=True,
+            ),
+            OpenApiExample(
+                name="Cancel order (any non-terminal state → CANCELLED)",
+                value={"status": "cancelled"},
                 request_only=True,
             ),
         ],
@@ -2022,6 +2050,9 @@ class CookerOrderView(
                 code=ErrorCodeEnum.INVALID_ORDER_STATUS,
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
+
+        if new_status == OrderStatusEnum.CANCELLED:
+            instance.cancelled_by = CancelledByEnum.COOKER.value
 
         if new_status:
             try:
@@ -2041,7 +2072,7 @@ class CookerOrderView(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
 
-        if new_status == OrderStatusEnum.CANCELLED_BY_COOKER:
+        if new_status == OrderStatusEnum.CANCELLED:
             amount_to_refund_in_cents = Decimal(
                 str(compute_order_items_total_amount(instance) + instance.delivery_fees)
             ) * Decimal("100")
@@ -2071,7 +2102,8 @@ class CookerOrderView(
         summary="List active orders",
         description=(
             "Returns a paginated list of active orders for the authenticated cooker.\n\n"
-            "Active orders are those in `pending`, `processing`, or `completed` status."
+            "Active orders are those in `pending`, `accepted`, or `preparing` status.\n"
+            "Defaults to `pending` if no status filter is provided."
         ),
         parameters=[
             OpenApiParameter(
@@ -2080,7 +2112,7 @@ class CookerOrderView(
                 location=OpenApiParameter.QUERY,
                 description="Filter by order status. Defaults to `pending`.",
                 required=False,
-                enum=["pending", "processing", "completed"],
+                enum=["pending", "accepted", "preparing", "ready", "delivering"],
             ),
         ],
         responses={
@@ -2091,10 +2123,8 @@ class CookerOrderView(
                 name="Active orders list",
                 value={
                     "success": True,
+                    "message": "Operation successful",
                     "data": {
-                        "count": 2,
-                        "next": None,
-                        "previous": None,
                         "results": [
                             {
                                 "id": 1582,
@@ -2129,8 +2159,13 @@ class CookerOrderView(
                                 "total_amount": 26.94,
                             }
                         ],
+                        "pagination": {
+                            "current_page": 1,
+                            "total_pages": 1,
+                            "total_items": 1,
+                            "items_per_page": 10,
+                        },
                     },
-                    "message": "Operation successful",
                 },
                 response_only=True,
             )
@@ -2143,7 +2178,7 @@ class CookerOrderView(
 
         valid_statuses = [
             OrderStatusEnum.PENDING,
-            OrderStatusEnum.PROCESSING,
+            OrderStatusEnum.ACCEPTED,
             OrderStatusEnum.COMPLETED,
         ]
 
@@ -2167,9 +2202,9 @@ class CookerOrderHistoryView(StandardizedResponseMixin, ListModelMixin, GenericV
     permission_classes = [UserPermission]
     queryset = OrderModel.objects.all().filter(
         status__in=[
-            OrderStatusEnum.DELIVERED,
-            OrderStatusEnum.CANCELLED_BY_CUSTOMER,
-            OrderStatusEnum.CANCELLED_BY_COOKER,
+            OrderStatusEnum.COMPLETED,
+            OrderStatusEnum.CANCELLED,
+            OrderStatusEnum.CANCELLED,
         ]
     )
 
@@ -2178,7 +2213,12 @@ class CookerOrderHistoryView(StandardizedResponseMixin, ListModelMixin, GenericV
 
     @extend_schema(
         summary="List order history",
-        description=("Returns a paginated list of past orders (delivered or cancelled) for the authenticated cooker."),
+        description=(
+            "Returns a paginated list of past orders (completed or cancelled) for the authenticated cooker.\n\n"
+            "Use the `cancelled_by` field in the response to distinguish who cancelled the order "
+            '(`"cooker"`, `"customer"` or `"system"`).\n\n'
+            "Optionally filter by `status` and/or a date range (`start_date` / `end_date`)."
+        ),
         parameters=[
             OpenApiParameter(
                 name="status",
@@ -2186,7 +2226,7 @@ class CookerOrderHistoryView(StandardizedResponseMixin, ListModelMixin, GenericV
                 location=OpenApiParameter.QUERY,
                 description="Filter by order status.",
                 required=False,
-                enum=["delivered", "cancelled_by_customer", "cancelled_by_cooker"],
+                enum=["completed", "cancelled"],
             ),
             OpenApiParameter(
                 name="start_date",
@@ -2211,15 +2251,20 @@ class CookerOrderHistoryView(StandardizedResponseMixin, ListModelMixin, GenericV
                 name="Order history list",
                 value={
                     "success": True,
+                    "message": "Operation successful",
                     "data": {
-                        "count": 1,
-                        "next": None,
-                        "previous": None,
                         "results": [
                             {
                                 "id": 1582,
-                                "status": "delivered",
+                                "status": "completed",
                                 "created": "2026-05-10T15:00:00Z",
+                                "accepted_date": "2026-05-10T15:05:00Z",
+                                "preparing_date": "2026-05-10T15:10:00Z",
+                                "ready_date": "2026-05-10T15:30:00Z",
+                                "delivering_date": "2026-05-10T15:45:00Z",
+                                "completed_date": "2026-05-10T16:00:00Z",
+                                "cancelled_date": None,
+                                "cancelled_by": None,
                                 "customer": {"id": 13, "firstname": "Jane", "lastname": "Smith"},
                                 "address": {"id": 10, "postal_code": "75008", "town": "Paris"},
                                 "dishes_items": [
@@ -2235,10 +2280,33 @@ class CookerOrderHistoryView(StandardizedResponseMixin, ListModelMixin, GenericV
                                 "drinks_items": [],
                                 "items_count": 1,
                                 "total_amount": 17.5,
-                            }
+                            },
+                            {
+                                "id": 1241,
+                                "status": "cancelled",
+                                "created": "2026-05-08T12:00:00Z",
+                                "accepted_date": None,
+                                "preparing_date": None,
+                                "ready_date": None,
+                                "delivering_date": None,
+                                "completed_date": None,
+                                "cancelled_date": "2026-05-08T12:05:00Z",
+                                "cancelled_by": "cooker",
+                                "customer": {"id": 8, "firstname": "Marc", "lastname": "Dupont"},
+                                "address": {"id": 7, "postal_code": "69001", "town": "Lyon"},
+                                "dishes_items": [],
+                                "drinks_items": [],
+                                "items_count": 0,
+                                "total_amount": 3.5,
+                            },
                         ],
+                        "pagination": {
+                            "current_page": 1,
+                            "total_pages": 1,
+                            "total_items": 2,
+                            "items_per_page": 10,
+                        },
                     },
-                    "message": "Operation successful",
                 },
                 response_only=True,
             )

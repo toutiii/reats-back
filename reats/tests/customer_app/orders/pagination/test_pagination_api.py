@@ -43,7 +43,7 @@ def customer_with_few_orders(clean_authenticated_user_orders, create_test_cooker
             customer=customer,
             cooker=cooker,
             address=address,
-            status=OrderStatusEnum.PROCESSING,
+            status=OrderStatusEnum.ACCEPTED,
             delivery_fees=2.4,
             created=datetime.now() - timedelta(days=i),
             modified=datetime.now() - timedelta(days=i),
@@ -133,7 +133,7 @@ class TestOrdersPaginationScenarios:
             customer_order_path,
             follow=False,
             **auth_headers,
-            data={"status": OrderStatusEnum.PROCESSING, "page_size": 10},
+            data={"status": OrderStatusEnum.ACCEPTED, "page_size": 10},
         )
         assert response.status_code == status.HTTP_200_OK
         data = response.json().get("data", {})
