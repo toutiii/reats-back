@@ -25,7 +25,6 @@ from core_app.serializers import (
     DrinkListSerializer,
     IngredientDishSerializer,
     IngredientDrinkSerializer,
-    OrderPATCHSerializer,
 )
 from django.conf import settings
 from django.db import IntegrityError
@@ -42,7 +41,7 @@ from drf_spectacular.utils import (
 from phonenumbers.phonenumberutil import NumberParseException
 from rest_framework import serializers, status
 from rest_framework.decorators import action
-from rest_framework.mixins import ListModelMixin, RetrieveModelMixin, UpdateModelMixin
+from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
 from rest_framework.permissions import BasePermission
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
@@ -1916,7 +1915,6 @@ class CookerOrderView(
     StandardizedResponseMixin,
     ListModelMixin,
     RetrieveModelMixin,
-    UpdateModelMixin,
     GenericViewSet,
 ):
     permission_classes = [UserPermission]
@@ -1989,110 +1987,105 @@ class CookerOrderView(
         serializer = self.get_serializer(instance)
         return self.success(serializer.data)
 
-    @extend_schema(
-        summary="Update order status",
-        description=(
-            "Allows a cooker to transition an order through its lifecycle states.\n\n"
-            "**Valid transition flow:**\n"
-            "`pending` → `accepted` → `preparing` → `ready` → `delivering` → `completed`\n\n"
-            "A cooker can also transition to `cancelled` from any non-terminal state, "
-            'which triggers a Stripe refund and sets `cancelled_by` to `"cooker"`.'
-        ),
-        request=OrderPATCHSerializer,
-        responses={
-            200: OpenApiResponse(response=CookerOrderGETSerializer, description="Order status updated"),
-            400: OpenApiResponse(description="Invalid status or transition not allowed"),
-            500: OpenApiResponse(description="Internal server error"),
-        },
-        examples=[
-            OpenApiExample(
-                name="Accept order (PENDING → ACCEPTED)",
-                value={"status": "accepted"},
-                request_only=True,
-            ),
-            OpenApiExample(
-                name="Start preparing (ACCEPTED → PREPARING)",
-                value={"status": "preparing"},
-                request_only=True,
-            ),
-            OpenApiExample(
-                name="Mark as ready (PREPARING → READY)",
-                value={"status": "ready"},
-                request_only=True,
-            ),
-            OpenApiExample(
-                name="Out for delivery (READY → DELIVERING)",
-                value={"status": "delivering"},
-                request_only=True,
-            ),
-            OpenApiExample(
-                name="Complete order (DELIVERING → COMPLETED)",
-                value={"status": "completed"},
-                request_only=True,
-            ),
-            OpenApiExample(
-                name="Cancel order (any non-terminal state → CANCELLED)",
-                value={"status": "cancelled"},
-                request_only=True,
-            ),
-        ],
-        tags=["Cooker Orders"],
-    )
-    def partial_update(self, request, *args, **kwargs):
-        instance: OrderModel = self.get_object()
-        new_status = request.data.get("status")
-
-        if new_status == OrderStatusEnum.PENDING:
-            error_message = f"Cookers orders are not supposed to be in the {OrderStatusEnum.PENDING.value} state"
-            logger.error(error_message)
-            return self.error(
-                message=error_message,
-                code=ErrorCodeEnum.INVALID_ORDER_STATUS,
-                status_code=status.HTTP_400_BAD_REQUEST,
-            )
-
+    def _perform_cooker_action(self, instance: OrderModel, new_status: OrderStatusEnum) -> Response:
         if new_status == OrderStatusEnum.CANCELLED:
             instance.cancelled_by = CancelledByEnum.COOKER.value
-
-        if new_status:
-            try:
-                instance.transition_to(new_status)
-            except ValueError as e:
-                logger.error(e)
-                return self.error(
-                    message=str(e),
-                    code=ErrorCodeEnum.TRANSITION_ERROR,
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                )
-            except Exception as e:
-                logger.error(e)
-                return self.error(
-                    message=ErrorMessageEnum.INTERNAL_SERVER_ERROR,
-                    code=ErrorCodeEnum.INTERNAL_SERVER_ERROR,
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                )
-
+        try:
+            instance.transition_to(new_status)
+        except ValueError as e:
+            logger.error(e)
+            return self.error(
+                message=str(e),
+                code=ErrorCodeEnum.TRANSITION_ERROR,
+                status_code=status.HTTP_409_CONFLICT,
+            )
+        except Exception as e:
+            logger.error(e)
+            return self.error(
+                message=ErrorMessageEnum.INTERNAL_SERVER_ERROR,
+                code=ErrorCodeEnum.INTERNAL_SERVER_ERROR,
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
         if new_status == OrderStatusEnum.CANCELLED:
             amount_to_refund_in_cents = Decimal(
                 str(compute_order_items_total_amount(instance) + instance.delivery_fees)
             ) * Decimal("100")
             create_stripe_refund(int(amount_to_refund_in_cents), instance.stripe_payment_intent_id)
-
         update_cooker_acceptance_rate(instance, new_status)
+        return self.success(CookerOrderGETSerializer(instance).data)
 
-        serializer = CookerOrderGETSerializer(instance)
-        return self.success(serializer.data)
+    @extend_schema(
+        summary="Accept an order",
+        description="Transitions the order from `pending` to `accepted`.",
+        request=None,
+        responses={
+            200: OpenApiResponse(response=CookerOrderGETSerializer, description="Order accepted"),
+            404: OpenApiResponse(description="Order not found"),
+            409: OpenApiResponse(description="Invalid state transition"),
+            500: OpenApiResponse(description="Internal server error"),
+        },
+        tags=["Cooker Orders"],
+    )
+    @action(detail=True, methods=["post"], url_path="accept")
+    def accept(self, request, *args, **kwargs) -> Response:
+        return self._perform_cooker_action(self.get_object(), OrderStatusEnum.ACCEPTED)
+
+    @extend_schema(
+        summary="Start preparing an order",
+        description="Transitions the order from `accepted` to `preparing`.",
+        request=None,
+        responses={
+            200: OpenApiResponse(response=CookerOrderGETSerializer, description="Order is now being prepared"),
+            404: OpenApiResponse(description="Order not found"),
+            409: OpenApiResponse(description="Invalid state transition"),
+            500: OpenApiResponse(description="Internal server error"),
+        },
+        tags=["Cooker Orders"],
+    )
+    @action(detail=True, methods=["post"], url_path="start-preparation")
+    def start_preparation(self, request, *args, **kwargs) -> Response:
+        return self._perform_cooker_action(self.get_object(), OrderStatusEnum.PREPARING)
+
+    @extend_schema(
+        summary="Mark an order as ready",
+        description="Transitions the order from `preparing` to `ready`.",
+        request=None,
+        responses={
+            200: OpenApiResponse(response=CookerOrderGETSerializer, description="Order is ready for pickup"),
+            404: OpenApiResponse(description="Order not found"),
+            409: OpenApiResponse(description="Invalid state transition"),
+            500: OpenApiResponse(description="Internal server error"),
+        },
+        tags=["Cooker Orders"],
+    )
+    @action(detail=True, methods=["post"], url_path="mark-ready")
+    def mark_ready(self, request, *args, **kwargs) -> Response:
+        return self._perform_cooker_action(self.get_object(), OrderStatusEnum.READY)
+
+    @extend_schema(
+        summary="Cancel an order",
+        description=(
+            "Transitions the order to `cancelled` from `pending`, `accepted`, or `preparing`.\n\n"
+            "Triggers a Stripe refund and sets `cancelled_by` to `cooker`."
+        ),
+        request=None,
+        responses={
+            200: OpenApiResponse(response=CookerOrderGETSerializer, description="Order cancelled"),
+            404: OpenApiResponse(description="Order not found"),
+            409: OpenApiResponse(description="Invalid state transition"),
+            500: OpenApiResponse(description="Internal server error"),
+        },
+        tags=["Cooker Orders"],
+    )
+    @action(detail=True, methods=["post"], url_path="cancel")
+    def cancel(self, request, *args, **kwargs) -> Response:
+        return self._perform_cooker_action(self.get_object(), OrderStatusEnum.CANCELLED)
 
     def get_serializer_class(self) -> type[BaseSerializer]:
-        if self.request.method == "GET":
-            if self.action == "list":
-                self.serializer_class = CookerOrderListSerializer
-            else:
-                self.serializer_class = CookerOrderGETSerializer
-
-        elif self.request.method == "PATCH":
-            self.serializer_class = OrderPATCHSerializer
-
+        if self.action == "list":
+            self.serializer_class = CookerOrderListSerializer
+        else:
+            self.serializer_class = CookerOrderGETSerializer
         return super().get_serializer_class()
 
     def get_queryset(self):
