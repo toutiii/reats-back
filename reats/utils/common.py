@@ -431,7 +431,7 @@ def update_cooker_acceptance_rate(
     :param new_status: The new status
     """
 
-    if new_status == OrderStatusEnum.CANCELLED:
+    if new_status in (OrderStatusEnum.CANCELLED, OrderStatusEnum.NOT_ACCEPTED):
         new_value = instance.cooker.acceptance_rate - settings.ACCEPTANCE_RATE_DECREASE_VALUE
     elif new_status == OrderStatusEnum.COMPLETED:
         new_value = instance.cooker.acceptance_rate + settings.ACCEPTANCE_RATE_INCREASE_VALUE
