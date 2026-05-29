@@ -14,7 +14,7 @@ def cooker_id() -> int:
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(
-    "status_query_parameter,expected_data,expected_status_code,ok_value",
+    "status_query_parameter,expected_data",
     [
         (
             {"status": OrderStatusEnum.PENDING},
@@ -64,8 +64,6 @@ def cooker_id() -> int:
                     "items_per_page": 10,
                 },
             },
-            200,
-            True,
         ),
         (
             {"status": OrderStatusEnum.ACCEPTED},
@@ -97,119 +95,9 @@ def cooker_id() -> int:
                     "items_per_page": 10,
                 },
             },
-            200,
-            True,
-        ),
-        (
-            {"status": OrderStatusEnum.COMPLETED},
-            {
-                "results": [
-                    {
-                        "id": 11,
-                        "status": "completed",
-                        "created": "2024-12-11T20:53:05.718117Z",
-                        "customer": {
-                            "id": 1,
-                            "lastname": "TEN",
-                            "firstname": "Ben",
-                        },
-                        "address": {"id": 3, "postal_code": "91540", "town": "Mennecy"},
-                        "dishes_items": [],
-                        "drinks_items": [],
-                        "items_count": 0,
-                        "sub_total": 0.0,
-                        "delivery_fees": 2.4,
-                        "service_fees": 0.0,
-                        "total_amount": 2.4,
-                    },
-                    {
-                        "id": 14,
-                        "status": "completed",
-                        "created": "2024-12-11T20:53:05.718117Z",
-                        "customer": {
-                            "id": 1,
-                            "lastname": "TEN",
-                            "firstname": "Ben",
-                        },
-                        "address": {"id": 3, "postal_code": "91540", "town": "Mennecy"},
-                        "dishes_items": [],
-                        "drinks_items": [],
-                        "items_count": 0,
-                        "sub_total": 0.0,
-                        "delivery_fees": 2.4,
-                        "service_fees": 0.0,
-                        "total_amount": 2.4,
-                    },
-                    {
-                        "id": 15,
-                        "status": "completed",
-                        "created": "2024-12-11T20:53:05.718117Z",
-                        "customer": {
-                            "id": 1,
-                            "lastname": "TEN",
-                            "firstname": "Ben",
-                        },
-                        "address": {"id": 3, "postal_code": "91540", "town": "Mennecy"},
-                        "dishes_items": [],
-                        "drinks_items": [],
-                        "items_count": 0,
-                        "sub_total": 0.0,
-                        "delivery_fees": 2.4,
-                        "service_fees": 0.0,
-                        "total_amount": 2.4,
-                    },
-                    {
-                        "id": 16,
-                        "status": "completed",
-                        "created": "2024-12-11T20:53:05.718117Z",
-                        "customer": {
-                            "id": 1,
-                            "lastname": "TEN",
-                            "firstname": "Ben",
-                        },
-                        "address": {"id": 3, "postal_code": "91540", "town": "Mennecy"},
-                        "dishes_items": [],
-                        "drinks_items": [],
-                        "items_count": 0,
-                        "sub_total": 0.0,
-                        "delivery_fees": 2.4,
-                        "service_fees": 0.0,
-                        "total_amount": 2.4,
-                    },
-                ],
-                "pagination": {
-                    "current_page": 1,
-                    "total_pages": 1,
-                    "total_items": 4,
-                    "items_per_page": 10,
-                },
-            },
-            200,
-            True,
-        ),
-        (
-            {
-                "status": "invalid",
-            },
-            {
-                "results": [],
-                "pagination": {
-                    "current_page": 1,
-                    "total_pages": 1,
-                    "total_items": 0,
-                    "items_per_page": 10,
-                },
-            },
-            200,
-            True,
         ),
     ],
-    ids=[
-        "fetching orders in pending status",
-        "fetching orders in processing status",
-        "fetching orders in completed status",
-        "fetching orders with invalid status",
-    ],
+    ids=["pending", "accepted"],
 )
 @freeze_time("2024-12-11T02:53:05.718117Z")
 def test_orders_list_success_with_no_filters(
@@ -218,14 +106,10 @@ def test_orders_list_success_with_no_filters(
     cooker_id: int,
     cookers_order_path: str,
     status_query_parameter: dict,
-    expected_data: list[dict],
-    expected_status_code: int,
-    ok_value: bool,
+    expected_data: dict,
 ) -> None:
-    # we check that the cooker has some orders
     assert OrderModel.objects.filter(cooker__id=cooker_id).count() > 0
 
-    # Then we list cooker orders
     response = client.get(
         cookers_order_path,
         follow=False,
@@ -237,8 +121,30 @@ def test_orders_list_success_with_no_filters(
     assert response.json().get("success") is True
 
     diff = DeepDiff(response.json().get("data"), expected_data, ignore_order=True)
-
     assert not diff
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "invalid_status",
+    [OrderStatusEnum.COMPLETED, "invalid"],
+    ids=["completed_is_not_an_active_status", "random_invalid_string"],
+)
+def test_orders_list_returns_400_for_invalid_active_status(
+    auth_headers: dict,
+    client: APIClient,
+    cookers_order_path: str,
+    invalid_status: str,
+) -> None:
+    response = client.get(
+        cookers_order_path,
+        follow=False,
+        **auth_headers,
+        data={"status": invalid_status},
+    )
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.json().get("success") is False
 
 
 @pytest.fixture

@@ -1921,6 +1921,13 @@ class CookerOrderView(
     pagination_class = StandardizedResultsSetPagination
     queryset = OrderModel.objects.all()
 
+    VALID_ACTIVE_STATUSES = [
+        OrderStatusEnum.PENDING,
+        OrderStatusEnum.ACCEPTED,
+        OrderStatusEnum.PREPARING,
+        OrderStatusEnum.READY,
+    ]
+
     @extend_schema(
         summary="Get order details",
         description="Returns the full details of an order for the authenticated cooker.",
@@ -2105,7 +2112,7 @@ class CookerOrderView(
                 location=OpenApiParameter.QUERY,
                 description="Filter by order status. Defaults to `pending`.",
                 required=False,
-                enum=["pending", "accepted", "preparing", "ready", "delivering"],
+                enum=["pending", "accepted", "preparing", "ready"],
             ),
         ],
         responses={
@@ -2166,21 +2173,16 @@ class CookerOrderView(
         tags=["Cooker Orders"],
     )
     def list(self, request, *args, **kwargs) -> Response:
-        queryset = self.filter_queryset(self.get_queryset())
-        request_status = self.request.query_params.get("status", OrderStatusEnum.PENDING)
+        request_status = request.query_params.get("status", OrderStatusEnum.PENDING)
 
-        valid_statuses = [
-            OrderStatusEnum.PENDING,
-            OrderStatusEnum.ACCEPTED,
-            OrderStatusEnum.COMPLETED,
-        ]
+        if request_status not in self.VALID_ACTIVE_STATUSES:
+            return self.error(
+                message=f"Invalid status. Valid values: {[s.value for s in self.VALID_ACTIVE_STATUSES]}",
+                code=ErrorCodeEnum.INVALID_ORDER_STATUS,
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
 
-        if request_status not in valid_statuses:
-            if request_status:
-                logger.error(f"Invalid status {request_status}")
-            queryset = queryset.none()
-        else:
-            queryset = queryset.filter(status=request_status).order_by("-modified")
+        queryset = self.filter_queryset(self.get_queryset()).filter(status=request_status).order_by("-modified")
 
         page = self.paginate_queryset(queryset)
         if page is not None:
@@ -2197,20 +2199,36 @@ class CookerOrderHistoryView(StandardizedResponseMixin, ListModelMixin, GenericV
         status__in=[
             OrderStatusEnum.COMPLETED,
             OrderStatusEnum.CANCELLED,
-            OrderStatusEnum.CANCELLED,
+            OrderStatusEnum.NOT_ACCEPTED,
         ]
     )
 
     pagination_class = StandardizedResultsSetPagination
     serializer_class = CookerOrderHistorySerializer
 
+    VALID_HISTORY_STATUSES = [
+        OrderStatusEnum.COMPLETED,
+        OrderStatusEnum.CANCELLED,
+        OrderStatusEnum.NOT_ACCEPTED,
+    ]
+
+    VALID_CANCELLED_BY = [
+        CancelledByEnum.COOKER,
+        CancelledByEnum.CUSTOMER,
+        CancelledByEnum.SYSTEM,
+    ]
+
+    def get_queryset(self):
+        return super().get_queryset().filter(cooker__id=self.request.user.pk)
+
     @extend_schema(
         summary="List order history",
         description=(
-            "Returns a paginated list of past orders (completed or cancelled) for the authenticated cooker.\n\n"
+            "Returns a paginated list of past orders (completed, cancelled or not accepted)"
+            " for the authenticated cooker.\n\n"
             "Use the `cancelled_by` field in the response to distinguish who cancelled the order "
             '(`"cooker"`, `"customer"` or `"system"`).\n\n'
-            "Optionally filter by `status` and/or a date range (`start_date` / `end_date`)."
+            "Optionally filter by `status`, `cancelled_by`, and/or a date range (`start_date` / `end_date`)."
         ),
         parameters=[
             OpenApiParameter(
@@ -2219,7 +2237,15 @@ class CookerOrderHistoryView(StandardizedResponseMixin, ListModelMixin, GenericV
                 location=OpenApiParameter.QUERY,
                 description="Filter by order status.",
                 required=False,
-                enum=["completed", "cancelled"],
+                enum=["completed", "cancelled", "not_accepted"],
+            ),
+            OpenApiParameter(
+                name="cancelled_by",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                description="Filter cancelled orders by who initiated the cancellation.",
+                required=False,
+                enum=["cooker", "customer", "system"],
             ),
             OpenApiParameter(
                 name="start_date",
@@ -2307,33 +2333,51 @@ class CookerOrderHistoryView(StandardizedResponseMixin, ListModelMixin, GenericV
         tags=["Cooker Orders"],
     )
     def list(self, request, *args, **kwargs) -> Response:
-        order_status: Union[str, None] = self.request.query_params.get("status")
-        start_date: Union[str, None] = self.request.query_params.get("start_date")
-        end_date: Union[str, None] = self.request.query_params.get("end_date")
-        self.queryset = self.queryset.filter(cooker__id=request.user.pk).order_by("-modified")
+        order_status: Union[str, None] = request.query_params.get("status")
+        cancelled_by: Union[str, None] = request.query_params.get("cancelled_by")
+        start_date: Union[str, None] = request.query_params.get("start_date")
+        end_date: Union[str, None] = request.query_params.get("end_date")
+
+        if order_status and order_status not in self.VALID_HISTORY_STATUSES:
+            return self.error(
+                message=f"Invalid status. Valid values: {[s.value for s in self.VALID_HISTORY_STATUSES]}",
+                code=ErrorCodeEnum.INVALID_ORDER_STATUS,
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if cancelled_by and cancelled_by not in self.VALID_CANCELLED_BY:
+            return self.error(
+                message=f"Invalid cancelled_by. Valid values: {[c.value for c in self.VALID_CANCELLED_BY]}",
+                code=ErrorCodeEnum.INVALID_DATA,
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        queryset = self.filter_queryset(self.get_queryset()).order_by("-modified")
+
+        if order_status:
+            queryset = queryset.filter(status=order_status)
+
+        if cancelled_by:
+            queryset = queryset.filter(cancelled_by=cancelled_by)
 
         if start_date and end_date:
             start_date_object = datetime.fromisoformat(start_date.replace("Z", "+00:00"))
             end_date_object = datetime.fromisoformat(end_date.replace("Z", "+00:00"))
             if start_date_object > end_date_object:
-                return Response(
-                    {
-                        "ok": False,
-                        "status_code": status.HTTP_400_BAD_REQUEST,
-                        "error": "Start date cannot be greater than end date",
-                    }
+                return self.error(
+                    message=ErrorMessageEnum.INVALID_DATE_RANGE,
+                    code=ErrorCodeEnum.INVALID_DATE_FORMAT,
+                    status_code=status.HTTP_400_BAD_REQUEST,
                 )
-            self.queryset = self.queryset.filter(
+            queryset = queryset.filter(
                 created__gte=start_date_object,
                 created__lte=end_date_object,
             )
-        if order_status:
-            self.queryset = self.queryset.filter(status=order_status)
 
-        page = self.paginate_queryset(self.queryset)
+        page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
             return self.get_paginated_response(serializer.data)
 
-        serializer = self.get_serializer(self.queryset, many=True)
+        serializer = self.get_serializer(queryset, many=True)
         return self.success(serializer.data, status_code=status.HTTP_200_OK)
