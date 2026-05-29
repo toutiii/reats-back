@@ -2105,7 +2105,7 @@ class CookerOrderView(
                 location=OpenApiParameter.QUERY,
                 description="Filter by order status. Defaults to `pending`.",
                 required=False,
-                enum=["pending", "accepted", "preparing", "ready", "delivering"],
+                enum=["pending", "accepted", "preparing", "ready"],
             ),
         ],
         responses={
@@ -2172,7 +2172,8 @@ class CookerOrderView(
         valid_statuses = [
             OrderStatusEnum.PENDING,
             OrderStatusEnum.ACCEPTED,
-            OrderStatusEnum.COMPLETED,
+            OrderStatusEnum.PREPARING,
+            OrderStatusEnum.READY,
         ]
 
         if request_status not in valid_statuses:
