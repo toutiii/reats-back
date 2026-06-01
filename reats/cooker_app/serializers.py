@@ -18,11 +18,11 @@ from core_app.models import (
     OrderModel,
 )
 from core_app.serializers import (
+    DishGETSerializer,
     DishNutritionalInfoSerializer,
+    DrinkListSerializer,
     DrinkNutritionalInfoSerializer,
     IngredientDrinkSerializer,
-    OrderDishItemGETSerializer,
-    OrderDrinkItemGETSerializer,
 )
 from django.conf import settings
 from django.contrib.auth.base_user import AbstractBaseUser
@@ -578,6 +578,20 @@ class CookerOrderListDrinkSerializer(BaseCookerOrderItemSerializer):
         return f"{obj.drink.capacity}{unit_suffix}"
 
 
+class CookerOrderDetailDishSerializer(serializers.Serializer):
+    def to_representation(self, instance):
+        data = DishGETSerializer(instance.dish, context=self.context).data
+        data["quantity"] = instance.dish_quantity
+        return data
+
+
+class CookerOrderDetailDrinkSerializer(serializers.Serializer):
+    def to_representation(self, instance):
+        data = DrinkListSerializer(instance.drink, context=self.context).data
+        data["quantity"] = instance.drink_quantity
+        return data
+
+
 class CookerOrderListSerializer(serializers.ModelSerializer):
     customer = CookerOrderCustomerGETSerializer()
     address = CookerAddressSerializer()
@@ -623,8 +637,8 @@ class CookerOrderListSerializer(serializers.ModelSerializer):
 
 class CookerOrderGETSerializer(ModelSerializer):
     address = CookerAddressSerializer()
-    dishes_items = OrderDishItemGETSerializer(many=True)
-    drinks_items = OrderDrinkItemGETSerializer(many=True)
+    dishes_items = CookerOrderDetailDishSerializer(many=True)
+    drinks_items = CookerOrderDetailDrinkSerializer(many=True)
     customer = CookerOrderCustomerGETSerializer()
 
     class Meta:
