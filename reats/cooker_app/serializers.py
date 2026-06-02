@@ -664,10 +664,9 @@ class CookerOrderGETSerializer(ModelSerializer):
 
 
 class CookerOrderHistorySerializer(CookerOrderGETSerializer):
-    cooker = CookerOrderCookerGETSerializer()
-
     class Meta(CookerOrderGETSerializer.Meta):
         exclude = (
+            "cooker",
             "modified",
             "stripe_payment_intent_id",
             "stripe_payment_intent_secret",
