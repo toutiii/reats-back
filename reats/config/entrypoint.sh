@@ -7,7 +7,7 @@ python manage.py makemigrations
 python manage.py migrate
 python manage.py loaddata */fixtures/*.json
 python manage.py init_data
-python manage.py generate_cooker_seed_data --reset
+python manage.py generate_cooker_seed_data -reset
 python manage.py generate_cooker_seed_data
 
 # Start Gunicorn

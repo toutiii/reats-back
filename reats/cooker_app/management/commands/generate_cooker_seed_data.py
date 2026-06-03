@@ -22,7 +22,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--reset",
+            "-reset",
             action="store_true",
             help="Delete all existing orders for the default cooker before generating new ones",
         )
