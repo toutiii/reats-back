@@ -10,6 +10,7 @@ python manage.py collectstatic --no-input
 python manage.py makemigrations
 python manage.py migrate
 python manage.py loaddata */fixtures/*.json
+python manage.py generate_cooker_seed_data --reset
 
 # Start Gunicorn
 gunicorn --reload --bind 0.0.0.0:8000 source.wsgi
