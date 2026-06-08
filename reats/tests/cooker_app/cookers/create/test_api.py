@@ -418,7 +418,7 @@ class TestCookerAskNewOTP:
         ],
     )
     @pytest.mark.django_db
-    def test_cooker_ask_new_OTP_failed(
+    def test_cooker_ask_new_OTP_failed_with_invalid_phone_number(
         self,
         cooker_api_key_header: dict,
         data: dict,
@@ -434,6 +434,27 @@ class TestCookerAskNewOTP:
             **cooker_api_key_header,
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
+        send_otp_message_success.assert_not_called()
+
+    @pytest.mark.django_db
+    def test_cooker_ask_new_OTP_failed_cooker_not_found(
+        self,
+        cooker_api_key_header: dict,
+        client: APIClient,
+        otp_path: str,
+        send_otp_message_success: MagicMock,
+    ) -> None:
+        response = client.post(
+            otp_path,
+            encode_multipart(BOUNDARY, {"phone": "0700000001"}),
+            content_type=MULTIPART_CONTENT,
+            follow=False,
+            **cooker_api_key_header,
+        )
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.json().get("success") is False
+        assert response.json().get("error").get("code") == ErrorCodeEnum.USER_NOT_FOUND
+        assert response.json().get("error").get("message") == ErrorMessageEnum.USER_NOT_FOUND
         send_otp_message_success.assert_not_called()
 
     @pytest.mark.django_db
