@@ -324,6 +324,16 @@ class CookerView(StandardizedResponseMixin, ModelViewSet):
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
 
+        try:
+            CookerModel.objects.get(phone=e164_phone_format)
+        except CookerModel.DoesNotExist:
+            logger.error(f"Cooker with phone {e164_phone_format} does not exist.")
+            return self.error(
+                message=ErrorMessageEnum.USER_NOT_FOUND,
+                code=ErrorCodeEnum.USER_NOT_FOUND,
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+
         send_otp(e164_phone_format)
 
         return self.success(message=SuccessMessageEnum.OTP_SENT_FR)
