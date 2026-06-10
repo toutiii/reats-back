@@ -26,8 +26,9 @@ from custom_renderers.renderers import (
 from django.conf import settings
 from django.db import IntegrityError
 from django_filters import rest_framework as filters
+from drf_spectacular.utils import OpenApiExample, OpenApiResponse, extend_schema, inline_serializer
 from phonenumbers.phonenumberutil import NumberParseException
-from rest_framework import status
+from rest_framework import serializers, status
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.mixins import CreateModelMixin, ListModelMixin, UpdateModelMixin
@@ -72,6 +73,7 @@ from .serializers import (
     BulkDishRatingSerializer,
     BulkDrinkRatingSerializer,
     CustomerGETSerializer,
+    CustomerPATCHSerializer,
     CustomerSerializer,
     DishCountriesGETSerializer,
     OrderGETSerializer,
@@ -82,14 +84,23 @@ logger = logging.getLogger("watchtower-logger")
 
 
 class CustomerView(StandardizedResponseMixin, ModelViewSet):
-    parser_classes = [MultiPartParser]
     queryset = CustomerModel.objects.all()
 
-    def get_serializer_class(self) -> type[BaseSerializer]:
-        if self.request.method in ("POST", "PATCH"):
-            self.serializer_class = CustomerSerializer
+    def get_queryset(self):
+        # For PATCH/PUT/photo: expose all customers so that a missing ID gives 404
+        if self.action in ("partial_update", "update", "photo"):
+            return CustomerModel.objects.all()
+        # For GET (list/retrieve): only the authenticated customer's own profile
+        if self.request.user and self.request.user.is_authenticated:
+            return CustomerModel.objects.filter(pk=self.request.user.pk)
+        return super().get_queryset()
 
-        if self.request.method == "GET":
+    def get_serializer_class(self) -> type[BaseSerializer]:
+        if self.request.method == "POST":
+            self.serializer_class = CustomerSerializer
+        elif self.action in ("partial_update", "update", "photo"):
+            self.serializer_class = CustomerPATCHSerializer
+        elif self.request.method == "GET":
             self.serializer_class = CustomerGETSerializer
 
         return super().get_serializer_class()
@@ -133,31 +144,50 @@ class CustomerView(StandardizedResponseMixin, ModelViewSet):
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
 
+    @extend_schema(request=CustomerPATCHSerializer, responses={200: CustomerGETSerializer})
     def partial_update(self, request, *args, **kwargs) -> Response:
-        kwargs.pop("pk")  # pk is unexpected in parent's partial_update method
+        kwargs.pop("pk", None)
+        super().partial_update(request, *args, **kwargs)
+
+        updated_customer = self.get_object()
+        logger.info(f"[PATCH] Customer {updated_customer.pk} updated in memory. Lastname: {updated_customer.lastname}")
+        return self.success(data=CustomerGETSerializer(updated_customer).data)
+
+    @extend_schema(request=CustomerPATCHSerializer, responses={200: CustomerGETSerializer})
+    def update(self, request, *args, **kwargs) -> Response:
+        kwargs.pop("pk", None)
+        super().update(request, *args, **kwargs)
+
+        updated_customer = self.get_object()
+        logger.info(f"[PUT] Customer {updated_customer.pk} updated in memory. Lastname: {updated_customer.lastname}")
+        return self.success(data=CustomerGETSerializer(updated_customer).data)
+
+    @extend_schema(
+        request=inline_serializer(name="CustomerPhotoUpdate", fields={"photo": serializers.FileField()}),
+        responses={200: inline_serializer(name="CustomerPhotoResponse", fields={"photo": serializers.CharField()})},
+    )
+    @action(detail=True, methods=["patch"], url_path="photo")
+    def photo(self, request, pk=None) -> Response:
         customer: CustomerModel = self.get_object()
         old_photo_key: str = customer.photo
-        new_photo_key = None
 
-        try:
-            self.request.FILES["photo"]
-        except KeyError:
-            pass
-        else:
-            new_photo_key = (
-                "customers" + "/" + str(customer.pk) + "/" + "profile_pics" + "/" + self.request.FILES["photo"].name
+        if "photo" not in self.request.FILES:
+            return self.error(
+                message="No photo provided",
+                code=ErrorCodeEnum.INVALID_DATA,
+                status_code=status.HTTP_400_BAD_REQUEST,
             )
 
-        if new_photo_key is not None:
-            upload_image_to_s3(self.request.FILES["photo"], new_photo_key)
-            customer.photo = new_photo_key
-            customer.save()
+        photo = "customers" + "/" + str(customer.pk) + "/" + "profile_pics" + "/" + self.request.FILES["photo"].name
+        upload_image_to_s3(self.request.FILES["photo"], photo)
 
-            if not old_photo_key.endswith("default-profile-pic.jpg"):
-                if old_photo_key != new_photo_key:
-                    delete_s3_object(old_photo_key)
+        customer.photo = photo
+        customer.save()
 
-        return super().partial_update(request, *args, **kwargs)
+        if old_photo_key and not old_photo_key.endswith("default-profile-pic.jpg"):
+            delete_s3_object(old_photo_key)
+
+        return self.success(data={"photo": customer.photo}, message=SuccessMessageEnum.OPERATION_SUCCESSFUL)
 
     def destroy(self, request, *args, **kwargs) -> Response:
         instance: CustomerModel = self.get_object()
@@ -166,6 +196,19 @@ class CustomerView(StandardizedResponseMixin, ModelViewSet):
         delete_stripe_customer(instance.stripe_id)
         return self.success(message=SuccessMessageEnum.ACCOUNT_DELETED, status_code=status.HTTP_200_OK)
 
+    @extend_schema(
+        request=inline_serializer(
+            name="OTPVerifyRequest", fields={"phone": serializers.CharField(), "otp_code": serializers.CharField()}
+        ),
+        examples=[
+            OpenApiExample(
+                "OTP Verify Example",
+                value={"phone": "+33612345678", "otp_code": "123456"},
+                request_only=True,
+            )
+        ],
+        responses={200: OpenApiResponse(description="Account successfully activated")},
+    )
     @action(methods=["post"], detail=False, url_path="otp-verify")
     def otp_verify(self, request) -> Response:
         result = is_otp_valid(request.data)
@@ -180,6 +223,17 @@ class CustomerView(StandardizedResponseMixin, ModelViewSet):
             status_code=status.HTTP_400_BAD_REQUEST,
         )
 
+    @extend_schema(
+        request=inline_serializer(name="OTPAskRequest", fields={"phone": serializers.CharField()}),
+        examples=[
+            OpenApiExample(
+                "OTP Ask Example",
+                value={"phone": "+33612345678"},
+                request_only=True,
+            )
+        ],
+        responses={200: OpenApiResponse(description="OTP successfully sent")},
+    )
     @action(methods=["post"], detail=False, url_path="otp/ask")
     def ask_otp(self, request) -> Response:
         phone = request.data.get("phone")
@@ -207,6 +261,17 @@ class CustomerView(StandardizedResponseMixin, ModelViewSet):
 
         return self.success(message=SuccessMessageEnum.OTP_SENT, status_code=status.HTTP_200_OK)
 
+    @extend_schema(
+        request=inline_serializer(name="AuthRequest", fields={"phone": serializers.CharField()}),
+        examples=[
+            OpenApiExample(
+                "Auth Request Example",
+                value={"phone": "+33612345678"},
+                request_only=True,
+            )
+        ],
+        responses={200: OpenApiResponse(description="OTP successfully sent for auth")},
+    )
     @action(methods=["post"], detail=False)
     def auth(self, request) -> Response:
         phone = request.data.get("phone")
@@ -236,7 +301,7 @@ class CustomerView(StandardizedResponseMixin, ModelViewSet):
             return self.error(
                 message=ErrorMessageEnum.USER_NOT_FOUND,
                 code=ErrorCodeEnum.USER_NOT_FOUND,
-                status_code=status.HTTP_400_BAD_REQUEST,
+                status_code=status.HTTP_404_NOT_FOUND,
             )
 
         if not customer.is_activated:
@@ -244,7 +309,7 @@ class CustomerView(StandardizedResponseMixin, ModelViewSet):
             return self.error(
                 message=ErrorMessageEnum.ACCOUNT_NOT_ACTIVATED,
                 code=ErrorCodeEnum.ACCOUNT_NOT_ACTIVATED,
-                status_code=status.HTTP_400_BAD_REQUEST,
+                status_code=status.HTTP_403_FORBIDDEN,
             )
 
         otp_response: Union[dict, None] = send_otp(e164_phone_format)
@@ -276,10 +341,10 @@ class CustomerView(StandardizedResponseMixin, ModelViewSet):
 
         if otp_response_delivery_status != "SUCCESSFUL":
             logger.error(f"Failed to send an OTP to {e164_phone_format}")
-            logger.error(f"Expected SUCCESSFUL but got {otp_response_delivery_status} in otp elivery status")
+            logger.error(f"Expected SUCCESSFUL but got {otp_response_delivery_status} in otp delivery status")
             return self.error(
-                message=ErrorMessageEnum.OTP_SEND_FAILED,
-                code=ErrorCodeEnum.OTP_SEND_FAILED,
+                message=ErrorMessageEnum.OTP_DELIVERY_FAILED,
+                code=ErrorCodeEnum.OTP_DELIVERY_FAILED,
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
 

@@ -20,6 +20,7 @@ from core_app.serializers import (
 )
 from django.conf import settings
 from django.db import transaction
+from drf_spectacular.utils import OpenApiExample, extend_schema_serializer
 from phonenumbers.phonenumberutil import NumberParseException
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
@@ -27,6 +28,19 @@ from utils.common import compute_order_items_total_amount, create_stripe_ephemer
 from utils.enums import OrderStatusEnum
 
 
+@extend_schema_serializer(
+    examples=[
+        OpenApiExample(
+            "Customer Inscription Example",
+            value={
+                "firstname": "Jean",
+                "lastname": "Dupont",
+                "phone": "+33612345678",
+            },
+            request_only=True,
+        )
+    ]
+)
 class CustomerSerializer(ModelSerializer):
     class Meta:
         model = CustomerModel
@@ -41,14 +55,74 @@ class CustomerSerializer(ModelSerializer):
             return e164_phone_format
 
 
+@extend_schema_serializer(
+    examples=[
+        OpenApiExample(
+            "Customer Profile Example",
+            value={
+                "id": 42,
+                "firstname": "Jean",
+                "lastname": "Dupont",
+                "phone": "+33612345678",
+                "photo": "customers/42/profile_pics/avatar.jpg",
+                "is_activated": True,
+                "stripe_id": "cus_abc123",
+                "is_deleted": False,
+            },
+            response_only=True,
+        )
+    ]
+)
 class CustomerGETSerializer(ModelSerializer):
     class Meta:
         model = CustomerModel
         exclude = ("created", "modified")
 
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        return {"personal_infos_section": data}
+
+@extend_schema_serializer(
+    examples=[
+        OpenApiExample(
+            "Customer Update Example",
+            value={
+                "firstname": "Jean",
+                "lastname": "Martin",
+                "phone": "+33612345678",
+            },
+            request_only=True,
+        )
+    ]
+)
+class CustomerPATCHSerializer(ModelSerializer):
+    class Meta:
+        model = CustomerModel
+        exclude = (
+            "photo",
+            "is_activated",
+            "stripe_id",
+            "is_deleted",
+            "created",
+            "modified",
+        )
+
+    def validate_phone(self, phone):
+        try:
+            e164_phone_format = format_phone(phone)
+        except NumberParseException:
+            raise serializers.ValidationError("Unparsable phone number")
+        else:
+            return e164_phone_format
+
+    def to_internal_value(self, data):
+        allowed_fields = set(self.fields.keys())
+        incoming_keys = set(data.keys())
+        forbidden_keys = incoming_keys - allowed_fields
+
+        if forbidden_keys:
+            raise serializers.ValidationError(
+                {field: ["Ce champ n'est pas autorisé dans cette requête."] for field in forbidden_keys}
+            )
+
+        return super().to_internal_value(data)
 
 
 class AddressSerializer(ModelSerializer):
