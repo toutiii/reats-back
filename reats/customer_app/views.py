@@ -84,15 +84,11 @@ logger = logging.getLogger("watchtower-logger")
 
 
 class CustomerView(StandardizedResponseMixin, ModelViewSet):
-    queryset = CustomerModel.objects.all()
+    queryset = CustomerModel.objects.filter(is_deleted=False)
 
     def get_queryset(self):
-        # For PATCH/PUT/photo: expose all customers so that a missing ID gives 404
-        if self.action in ("partial_update", "update", "photo"):
-            return CustomerModel.objects.all()
-        # For GET (list/retrieve): only the authenticated customer's own profile
         if self.request.user and self.request.user.is_authenticated:
-            return CustomerModel.objects.filter(pk=self.request.user.pk)
+            return CustomerModel.objects.filter(pk=self.request.user.pk, is_deleted=False)
         return super().get_queryset()
 
     def get_serializer_class(self) -> type[BaseSerializer]:
@@ -189,10 +185,15 @@ class CustomerView(StandardizedResponseMixin, ModelViewSet):
 
         return self.success(data={"photo": customer.photo}, message=SuccessMessageEnum.OPERATION_SUCCESSFUL)
 
+    @extend_schema(
+        responses={200: OpenApiResponse(description="Customer account successfully soft-deleted")},
+        description="Soft deletes the customer account and hard deletes their associated addresses.",
+    )
     def destroy(self, request, *args, **kwargs) -> Response:
         instance: CustomerModel = self.get_object()
         instance.is_deleted = True
         instance.save()
+        instance.addresses.all().delete()
         delete_stripe_customer(instance.stripe_id)
         return self.success(message=SuccessMessageEnum.ACCOUNT_DELETED, status_code=status.HTTP_200_OK)
 
