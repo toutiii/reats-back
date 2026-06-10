@@ -87,6 +87,8 @@ class CustomerView(StandardizedResponseMixin, ModelViewSet):
     queryset = CustomerModel.objects.filter(is_deleted=False)
 
     def get_queryset(self):
+        if self.action in ("partial_update", "update", "photo"):
+            return CustomerModel.objects.filter(is_deleted=False)
         if self.request.user and self.request.user.is_authenticated:
             return CustomerModel.objects.filter(pk=self.request.user.pk, is_deleted=False)
         return super().get_queryset()
