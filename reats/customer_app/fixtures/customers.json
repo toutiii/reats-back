@@ -9,7 +9,8 @@
       "lastname": "TEN",
       "phone": "+33700000001",
       "is_activated": true,
-      "stripe_id": "cus_QyZ76Ae0W5KeqP"
+      "stripe_id": "cus_QyZ76Ae0W5KeqP",
+      "is_deleted": false
     }
   },
   {
@@ -22,7 +23,8 @@
       "lastname": "DOE",
       "phone": "+33649510110",
       "is_activated": true,
-      "stripe_id": "cus_RBiuNyquyndC8O"
+      "stripe_id": "cus_RBiuNyquyndC8O",
+      "is_deleted": false
     }
   },
   {
@@ -34,7 +36,8 @@
       "firstname": "Adam",
       "lastname": "Smith",
       "phone": "+33700000003",
-      "is_activated": true
+      "is_activated": true,
+      "is_deleted": false
     }
   },
   {
@@ -45,7 +48,8 @@
       "modified": "2024-02-17T22:55:05.718117+02:00",
       "firstname": "Max",
       "lastname": "Payne",
-      "phone": "+33700000004"
+      "phone": "+33700000004",
+      "is_deleted": false
     }
   },
   {
@@ -56,7 +60,8 @@
       "modified": "2024-02-24T22:55:05.718117+02:00",
       "firstname": "Liam",
       "lastname": "N",
-      "phone": "+33700000005"
+      "phone": "+33700000005",
+      "is_deleted": false
     }
   },
   {
@@ -67,7 +72,8 @@
       "modified": "2024-02-24T22:56:05.718117+02:00",
       "firstname": "Reiner",
       "lastname": "Braun",
-      "phone": "+33700000006"
+      "phone": "+33700000006",
+      "is_deleted": false 
     }
   }
 ]
