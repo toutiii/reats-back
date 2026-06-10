@@ -331,7 +331,7 @@ def mock_googlemaps_distance_matrix() -> Iterator:
     patcher.stop()
 
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 def mock_stripe_payment_intent_create() -> Iterator:
     patcher = patch(
         "stripe.PaymentIntent.create",
@@ -396,7 +396,7 @@ def mock_stripe_payment_intent_create() -> Iterator:
     patcher.stop()
 
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 def mock_stripe_create_ephemeral_key() -> Iterator:
     patcher = patch(
         "stripe.EphemeralKey.create",
@@ -529,7 +529,7 @@ def mock_stripe_webhook_construct_event_failed() -> Iterator:
     patcher.stop()
 
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 def mock_stripe_create_refund_success() -> Iterator:
     patcher = patch("stripe.Refund.create", return_value=None)
     yield patcher.start()
