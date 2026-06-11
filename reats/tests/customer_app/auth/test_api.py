@@ -22,18 +22,14 @@ class TestCustomerAuth:
         [
             {},
             {"phone": "this_is_not_a_phone_number"},
-            {"phone": "0700000007"},
-            {"phone": "0700000004"},
         ],
         ids=[
             "missing_phone_number",
             "invalid_phone_number",
-            "unknown_user",
-            "known_but_non_activated_user",
         ],
     )
     @pytest.mark.django_db
-    def test_customer_auth_failed(
+    def test_customer_auth_failed_bad_request(
         self,
         customer_api_key_header: dict,
         auth_data: dict,
@@ -50,6 +46,44 @@ class TestCustomerAuth:
         )
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
+        send_otp_message_success.assert_not_called()
+
+    @pytest.mark.django_db
+    def test_customer_auth_failed_not_found(
+        self,
+        customer_api_key_header: dict,
+        client: APIClient,
+        auth_path: str,
+        send_otp_message_success: MagicMock,
+    ) -> None:
+        response = client.post(
+            auth_path,
+            encode_multipart(BOUNDARY, {"phone": "0700000007"}),
+            content_type=MULTIPART_CONTENT,
+            follow=False,
+            **customer_api_key_header,
+        )
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+        send_otp_message_success.assert_not_called()
+
+    @pytest.mark.django_db
+    def test_customer_auth_failed_forbidden(
+        self,
+        customer_api_key_header: dict,
+        client: APIClient,
+        auth_path: str,
+        send_otp_message_success: MagicMock,
+    ) -> None:
+        response = client.post(
+            auth_path,
+            encode_multipart(BOUNDARY, {"phone": "0700000004"}),
+            content_type=MULTIPART_CONTENT,
+            follow=False,
+            **customer_api_key_header,
+        )
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
         send_otp_message_success.assert_not_called()
 
     @pytest.mark.django_db

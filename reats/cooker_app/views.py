@@ -111,15 +111,15 @@ class DateRangeDict(TypedDict):
 
 
 class CookerView(StandardizedResponseMixin, ModelViewSet):
-    queryset = CookerModel.objects.all()
+    queryset = CookerModel.objects.filter(is_deleted=False)
 
     def get_queryset(self):
-        # For PATCH/PUT: expose all cookers so that a missing ID gives 404 and
+        # For PATCH/PUT: expose all active cookers so that a missing ID gives 404 and
         # a valid ID belonging to another cooker gives 403 (via IsCookerOwner).
         if self.action in ("partial_update", "update", "photo"):
-            return CookerModel.objects.all()
+            return CookerModel.objects.filter(is_deleted=False)
         if self.request.user and self.request.user.is_authenticated:
-            return CookerModel.objects.filter(pk=self.request.user.pk)
+            return CookerModel.objects.filter(pk=self.request.user.pk, is_deleted=False)
         return super().get_queryset()
 
     def get_permissions(self) -> List[BasePermission]:
@@ -219,6 +219,10 @@ class CookerView(StandardizedResponseMixin, ModelViewSet):
 
         return self.success(data={"photo": cooker.photo}, message=SuccessMessageEnum.OPERATION_SUCCESSFUL)
 
+    @extend_schema(
+        responses={200: OpenApiResponse(description="Cooker account successfully soft-deleted")},
+        description="Soft deletes the cooker account.",
+    )
     def destroy(self, request, *args, **kwargs) -> Response:
         instance: CookerModel = self.get_object()
         instance.is_deleted = True

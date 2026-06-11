@@ -48,7 +48,7 @@ def post_personal_information_data_with_photo(image: InMemoryUploadedFile) -> di
 
 @pytest.fixture
 def customer_id() -> int:
-    return 3
+    return 1
 
 
 @pytest.mark.django_db
@@ -102,9 +102,18 @@ class TestUpdateCustomerAccountInfoWithPhotoV1:
         upload_fileobj: MagicMock,
     ) -> None:
         with freeze_time("2023-10-14T22:00:00+00:00"):
-            response = client.patch(
+            response_info = client.patch(
                 f"{path}{customer_id}/",
-                encode_multipart(BOUNDARY, post_personal_information_data_with_photo),
+                encode_multipart(BOUNDARY, {"firstname": "John", "lastname": "DOE"}),
+                content_type=MULTIPART_CONTENT,
+                follow=False,
+                **auth_headers,
+            )
+            assert response_info.status_code == status.HTTP_200_OK
+
+            response = client.patch(
+                f"{path}{customer_id}/photo/",
+                encode_multipart(BOUNDARY, {"photo": post_personal_information_data_with_photo["photo"]}),
                 content_type=MULTIPART_CONTENT,
                 follow=False,
                 **auth_headers,
@@ -117,7 +126,7 @@ class TestUpdateCustomerAccountInfoWithPhotoV1:
             assert customer.modified.isoformat() == "2023-10-14T22:00:00+00:00"
             assert customer.firstname == "John"
             assert customer.lastname == "DOE"
-            assert customer.photo == "customers/3/profile_pics/test.jpg"
+            assert customer.photo == "customers/1/profile_pics/test.jpg"
 
             upload_fileobj.assert_called_once()
             assert len(upload_fileobj.call_args.args) == 3
@@ -127,7 +136,7 @@ class TestUpdateCustomerAccountInfoWithPhotoV1:
             assert isinstance(arg1, InMemoryUploadedFile)
             assert arg1.name == "test.jpg"
             assert arg2 == "reats-dev-bucket"
-            assert arg3 == "customers/3/profile_pics/test.jpg"
+            assert arg3 == "customers/1/profile_pics/test.jpg"
             delete_object.assert_not_called()
 
 
@@ -178,11 +187,20 @@ class TestUpdateCustomerAccountInfoWithPhotoV2:
         upload_fileobj: MagicMock,
     ) -> None:
         with freeze_time("2023-10-14T22:00:00+00:00"):
-            response = client.patch(
+            response_info = client.patch(
                 f"{path}{customer_id}/",
+                encode_multipart(BOUNDARY, {"firstname": "John", "lastname": "DOE"}),
+                content_type=MULTIPART_CONTENT,
+                follow=False,
+                **auth_headers,
+            )
+            assert response_info.status_code == status.HTTP_200_OK
+
+            response = client.patch(
+                f"{path}{customer_id}/photo/",
                 encode_multipart(
                     BOUNDARY,
-                    post_personal_information_data_with_photo,
+                    {"photo": post_personal_information_data_with_photo["photo"]},
                 ),
                 content_type=MULTIPART_CONTENT,
                 follow=False,
@@ -196,7 +214,7 @@ class TestUpdateCustomerAccountInfoWithPhotoV2:
             assert customer.modified.isoformat() == "2023-10-14T22:00:00+00:00"
             assert customer.firstname == "John"
             assert customer.lastname == "DOE"
-            assert customer.photo == "customers/3/profile_pics/test.jpg"
+            assert customer.photo == "customers/1/profile_pics/test.jpg"
 
             upload_fileobj.call_count == 1
             assert len(upload_fileobj.call_args.args) == 3
@@ -206,16 +224,25 @@ class TestUpdateCustomerAccountInfoWithPhotoV2:
             assert isinstance(arg1, InMemoryUploadedFile)
             assert arg1.name == "test.jpg"
             assert arg2 == "reats-dev-bucket"
-            assert arg3 == "customers/3/profile_pics/test.jpg"
+            assert arg3 == "customers/1/profile_pics/test.jpg"
             delete_object.assert_not_called()
 
         # SECOND CALL #
         with freeze_time("2023-10-22T22:00:00+00:00"):
-            response = client.patch(
+            response_info = client.patch(
                 f"{path}{customer_id}/",
+                encode_multipart(BOUNDARY, {"firstname": "John", "lastname": "DOE"}),
+                content_type=MULTIPART_CONTENT,
+                follow=False,
+                **auth_headers,
+            )
+            assert response_info.status_code == status.HTTP_200_OK
+
+            response = client.patch(
+                f"{path}{customer_id}/photo/",
                 encode_multipart(
                     BOUNDARY,
-                    second_post_personal_information_data_with_photo,
+                    {"photo": second_post_personal_information_data_with_photo["photo"]},
                 ),
                 content_type=MULTIPART_CONTENT,
                 follow=False,
@@ -229,7 +256,7 @@ class TestUpdateCustomerAccountInfoWithPhotoV2:
             assert customer.modified.isoformat() == "2023-10-22T22:00:00+00:00"
             assert customer.firstname == "John"
             assert customer.lastname == "DOE"
-            assert customer.photo == "customers/3/profile_pics/second_profile_pic.jpg"
+            assert customer.photo == "customers/1/profile_pics/second_profile_pic.jpg"
 
             upload_fileobj.call_count == 2
             assert len(upload_fileobj.call_args.args) == 3
@@ -239,11 +266,11 @@ class TestUpdateCustomerAccountInfoWithPhotoV2:
             assert isinstance(arg1, InMemoryUploadedFile)
             assert arg1.name == "second_profile_pic.jpg"
             assert arg2 == "reats-dev-bucket"
-            assert arg3 == "customers/3/profile_pics/second_profile_pic.jpg"
+            assert arg3 == "customers/1/profile_pics/second_profile_pic.jpg"
 
             delete_object.assert_called_once_with(
                 Bucket="reats-dev-bucket",
-                Key="customers/3/profile_pics/test.jpg",
+                Key="customers/1/profile_pics/test.jpg",
             )
 
 

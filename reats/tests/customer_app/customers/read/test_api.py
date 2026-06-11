@@ -7,7 +7,7 @@ from rest_framework.test import APIClient
 
 @pytest.fixture
 def customer_id() -> int:
-    return 3
+    return 1
 
 
 @pytest.fixture
@@ -31,16 +31,14 @@ def test_get_existing_customer_data(
     assert response.json() == {
         "success": True,
         "data": {
-            "personal_infos_section": {
-                "id": 3,
-                "firstname": "Adam",
-                "lastname": "Smith",
-                "phone": "+33700000003",
-                "photo": ANY,
-                "is_activated": True,
-                "stripe_id": ANY,
-                "is_deleted": False,
-            }
+            "id": 1,
+            "firstname": "Ben",
+            "lastname": "TEN",
+            "phone": "+33700000001",
+            "photo": ANY,
+            "is_activated": True,
+            "stripe_id": ANY,
+            "is_deleted": False,
         },
         "message": "Operation successful",
     }
