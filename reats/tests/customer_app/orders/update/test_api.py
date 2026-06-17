@@ -1056,6 +1056,7 @@ def test_update_order_success_with_asap_delivery(
                 },
                 "address": 2,
                 "delivery_man": None,
+                "status": "draft",
                 "stripe_payment_intent_id": "pi_3Q6VU7EEYeaFww1W0xCZEUxw",
                 "stripe_payment_intent_secret": "pi_3Q6VU7EEYeaFww1W0xCZEUxw_secret_OJqlWW9QRZZuSmAwUBklpxUf4",
                 "ephemeral_key": "ek_test_YWNjdF8xUTN6bTZFRVllYUZ3dzFXLGwwb3VMVEZnT0ljSUw0Q0xYNm5rWGlMYTExYXRhVm4_00uVE9aZDp",
@@ -1164,6 +1165,7 @@ def test_update_order_success_with_asap_delivery(
                 ],
                 "paid_date": None,
                 "scheduled_delivery_date": None,
+                "status": "draft",
                 "stripe_payment_intent_id": "pi_3Q6VU7EEYeaFww1W0xCZEUxw",
                 "stripe_payment_intent_secret": "pi_3Q6VU7EEYeaFww1W0xCZEUxw_secret_OJqlWW9QRZZuSmAwUBklpxUf4",
                 "ephemeral_key": "ek_test_YWNjdF8xUTN6bTZFRVllYUZ3dzFXLGwwb3VMVEZnT0ljSUw0Q0xYNm5rWGlMYTExYXRhVm4_00uVE9aZDp",
@@ -1310,6 +1312,7 @@ def test_update_order_after_successful_stripe_payment(
                 },
                 "address": 2,
                 "delivery_man": None,
+                "status": "draft",
                 "stripe_payment_intent_id": "pi_3Q6VU7EEYeaFww1W0xCZEUxw",
                 "stripe_payment_intent_secret": "pi_3Q6VU7EEYeaFww1W0xCZEUxw_secret_OJqlWW9QRZZuSmAwUBklpxUf4",
                 "ephemeral_key": "ek_test_YWNjdF8xUTN6bTZFRVllYUZ3dzFXLGwwb3VMVEZnT0ljSUw0Q0xYNm5rWGlMYTExYXRhVm4_00uVE9aZDp",
@@ -1422,6 +1425,7 @@ def test_update_order_after_successful_stripe_payment_but_event_failed_to_be_ver
                 },
                 "address": 2,
                 "delivery_man": None,
+                "status": "draft",
                 "stripe_payment_intent_id": "pi_3Q6VU7EEYeaFww1W0xCZEUxw",
                 "stripe_payment_intent_secret": "pi_3Q6VU7EEYeaFww1W0xCZEUxw_secret_OJqlWW9QRZZuSmAwUBklpxUf4",
                 "ephemeral_key": "ek_test_YWNjdF8xUTN6bTZFRVllYUZ3dzFXLGwwb3VMVEZnT0ljSUw0Q0xYNm5rWGlMYTExYXRhVm4_00uVE9aZDp",
@@ -1753,6 +1757,7 @@ def test_cancel_order_when_initiated_by_customer_but_order_is_in_processing_stat
                 "addressID": 1,
                 "customerID": 2,
                 "cookerID": 1,
+                "status": "draft",
                 "dishes_items": json.dumps(
                     [
                         {"dishID": "11", "dishOrderedQuantity": 1},
@@ -1772,6 +1777,7 @@ def test_cancel_order_when_initiated_by_customer_but_order_is_in_processing_stat
                 "addressID": 1,
                 "customerID": 2,
                 "cookerID": 1,
+                "status": "draft",
                 "dishes_items": json.dumps(
                     [
                         {"dishID": "11", "dishOrderedQuantity": 1},

@@ -197,10 +197,9 @@ class OrderSerializer(ModelSerializer):
             "created",
             "modified",
             "delivery_fees_bonus",
-            "status",
             "is_deleted",
         )
-        read_only_fields = ("delivery_fees",)
+        read_only_fields = ("delivery_fees", "status")
 
     def to_representation(self, instance: OrderModel):
         data = super().to_representation(instance)
