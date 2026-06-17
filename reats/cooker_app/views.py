@@ -53,6 +53,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenViewBase
 from utils.common import (
     activate_user,
+    capture_payment_intent,
     compute_order_items_total_amount,
     compute_order_total_amount,
     create_stripe_refund,
@@ -2076,6 +2077,8 @@ class CookerOrderView(
                 code=ErrorCodeEnum.INTERNAL_SERVER_ERROR,
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+        if new_status == OrderStatusEnum.ACCEPTED:
+            capture_payment_intent(instance)
         if new_status == OrderStatusEnum.CANCELLED:
             amount_to_refund_in_cents = Decimal(
                 str(compute_order_items_total_amount(instance) + instance.delivery_fees)

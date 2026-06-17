@@ -248,12 +248,17 @@ class OrderSerializer(ModelSerializer):
 
             data_to_validate["scheduled_delivery_date"] = utc_delivery_datetime
 
-        # We extract the dishes items from the request
         clean_order_dishes_items = []
-        dishes_order_items = [
-            ast.literal_eval(item) for item in self.context["request"].POST.getlist("dishes_items")
-        ]  # This will return a list of list
-        for dish_order_item in dishes_order_items[0]:
+        raw_dishes = data.get("dishes_items", [])
+
+        if isinstance(raw_dishes, str):
+            dishes_list = ast.literal_eval(raw_dishes)
+        elif isinstance(raw_dishes, list) and len(raw_dishes) > 0 and isinstance(raw_dishes[0], str):
+            dishes_list = ast.literal_eval(raw_dishes[0])
+        else:
+            dishes_list = raw_dishes
+
+        for dish_order_item in dishes_list:
             temp_data = {}
             temp_data["dish"] = dish_order_item["dishID"]
             temp_data["dish_quantity"] = dish_order_item["dishOrderedQuantity"]
@@ -263,11 +268,16 @@ class OrderSerializer(ModelSerializer):
 
         # Then we extract the drinks items from the request
         clean_order_drinks_items = []
-        drinks_order_items = [
-            ast.literal_eval(item) for item in self.context["request"].POST.getlist("drinks_items")
-        ]  # This will return a list of list
+        raw_drinks = data.get("drinks_items", [])
 
-        for drink_order_item in drinks_order_items[0]:
+        if isinstance(raw_drinks, str):
+            drinks_list = ast.literal_eval(raw_drinks)
+        elif isinstance(raw_drinks, list) and len(raw_drinks) > 0 and isinstance(raw_drinks[0], str):
+            drinks_list = ast.literal_eval(raw_drinks[0])
+        else:
+            drinks_list = raw_drinks
+
+        for drink_order_item in drinks_list:
             temp_data = {}
             temp_data["drink"] = drink_order_item["drinkID"]
             temp_data["drink_quantity"] = drink_order_item["drinkOrderedQuantity"]

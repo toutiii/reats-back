@@ -119,6 +119,7 @@ def test_switch_order_status_from_draft_to_cancelled_by_customer(
         amount=2459,
         currency="EUR",
         automatic_payment_methods={"enabled": True},
+        capture_method="manual",
         customer="cus_QyZ76Ae0W5KeqP",
     )
     mock_stripe_create_ephemeral_key.assert_called_once_with(
@@ -192,6 +193,7 @@ def test_switch_order_status_from_draft_to_cancelled_by_cooker(
         amount=2459,
         currency="EUR",
         automatic_payment_methods={"enabled": True},
+        capture_method="manual",
         customer="cus_QyZ76Ae0W5KeqP",
     )
     mock_stripe_create_ephemeral_key.assert_called_once_with(
@@ -338,6 +340,7 @@ def test_switch_order_status_from_draft_to_delivered(
         amount=2459,
         currency="EUR",
         automatic_payment_methods={"enabled": True},
+        capture_method="manual",
         customer="cus_QyZ76Ae0W5KeqP",
     )
     mock_stripe_create_ephemeral_key.assert_called_once_with(
@@ -869,6 +872,7 @@ def test_switch_order_status_from_cancelled_by_customer_to_non_allowed_status(
         amount=2459,
         currency="EUR",
         automatic_payment_methods={"enabled": True},
+        capture_method="manual",
         customer="cus_QyZ76Ae0W5KeqP",
     )
     mock_stripe_create_ephemeral_key.assert_called_once_with(
@@ -1222,6 +1226,7 @@ def test_update_order_success_with_asap_delivery(
             amount=2459,
             currency="EUR",
             automatic_payment_methods={"enabled": True},
+            capture_method="manual",
             customer="cus_QyZ76Ae0W5KeqP",
         )
         mock_stripe_payment_intent_update.assert_called_once_with(
@@ -1338,6 +1343,7 @@ def test_update_order_after_successful_stripe_payment(
             amount=2459,
             currency="EUR",
             automatic_payment_methods={"enabled": True},
+            capture_method="manual",
             customer="cus_QyZ76Ae0W5KeqP",
         )
         mock_stripe_create_ephemeral_key.assert_called_once_with(
@@ -1449,6 +1455,7 @@ def test_update_order_after_successful_stripe_payment_but_event_failed_to_be_ver
             amount=2459,
             currency="EUR",
             automatic_payment_methods={"enabled": True},
+            capture_method="manual",
             customer="cus_QyZ76Ae0W5KeqP",
         )
         mock_stripe_create_ephemeral_key.assert_called_once_with(
@@ -1582,6 +1589,7 @@ def test_cancel_order_when_initiated_by_customer_and_order_is_still_pending(
             amount=2459,
             currency="EUR",
             automatic_payment_methods={"enabled": True},
+            capture_method="manual",
             customer="cus_RBiuNyquyndC8O",
         )
         mock_stripe_create_ephemeral_key.assert_called_once_with(
@@ -1725,6 +1733,7 @@ def test_cancel_order_when_initiated_by_customer_but_order_is_in_processing_stat
             amount=2459,
             currency="EUR",
             automatic_payment_methods={"enabled": True},
+            capture_method="manual",
             customer="cus_RBiuNyquyndC8O",
         )
         mock_stripe_create_ephemeral_key.assert_called_once_with(
@@ -1865,6 +1874,7 @@ def test_cancel_order_when_initiated_by_customer_but_order_is_in_completed_state
             amount=2459,
             currency="EUR",
             automatic_payment_methods={"enabled": True},
+            capture_method="manual",
             customer="cus_RBiuNyquyndC8O",
         )
         mock_stripe_create_ephemeral_key.assert_called_once_with(

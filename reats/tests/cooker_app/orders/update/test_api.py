@@ -107,6 +107,7 @@ def test_update_order_from_pending_to_cancelled_by_cooker_status(
         amount=2459,
         currency="EUR",
         automatic_payment_methods={"enabled": True},
+        capture_method="manual",
         customer="cus_QyZ76Ae0W5KeqP",
     )
 
@@ -183,6 +184,7 @@ def test_update_order_from_processing_to_cancelled_by_cooker_status(
         amount=2459,
         currency="EUR",
         automatic_payment_methods={"enabled": True},
+        capture_method="manual",
         customer="cus_QyZ76Ae0W5KeqP",
     )
 
@@ -197,6 +199,7 @@ def test_update_order_from_pending_to_processing_state(
     mock_googlemaps_distance_matrix: MagicMock,
     mock_stripe_payment_intent_create: MagicMock,
     mock_stripe_create_refund_success: MagicMock,
+    mock_stripe_payment_intent_capture: MagicMock,
 ) -> None:
     with freeze_time("2024-05-08T10:16:00+00:00"):
         response = client.post(
@@ -229,6 +232,8 @@ def test_update_order_from_pending_to_processing_state(
     mock_googlemaps_distance_matrix.assert_called_once()
     mock_stripe_payment_intent_create.assert_called_once()
     mock_stripe_create_refund_success.assert_not_called()
+    # Manual capture: accepting the order is what actually charges the customer.
+    mock_stripe_payment_intent_capture.assert_called_once_with(order.stripe_payment_intent_id)
 
 
 @pytest.mark.django_db
@@ -463,6 +468,7 @@ def test_update_cooker_acceptance_rate_on_cancel(
         amount=2459,
         currency="EUR",
         automatic_payment_methods={"enabled": True},
+        capture_method="manual",
         customer="cus_QyZ76Ae0W5KeqP",
     )
     mock_stripe_create_refund_success.assert_called_once_with(

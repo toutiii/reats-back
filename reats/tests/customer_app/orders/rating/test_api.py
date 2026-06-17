@@ -183,6 +183,7 @@ def test_add_rates_to_orders_and_orders_items(
         amount=2459,
         currency="EUR",
         automatic_payment_methods={"enabled": True},
+        capture_method="manual",
         customer="cus_QyZ76Ae0W5KeqP",
     )
     mock_stripe_create_ephemeral_key.assert_called_once_with(

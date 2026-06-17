@@ -182,6 +182,7 @@ def test_create_order_success_with_asap_delivery(
             amount=2459,
             currency="EUR",
             automatic_payment_methods={"enabled": True},
+            capture_method="manual",
             customer="cus_QyZ76Ae0W5KeqP",
         )
         mock_stripe_create_ephemeral_key.assert_called_once_with(
@@ -342,6 +343,7 @@ def test_create_order_success_with_scheduled_delivery(
             amount=2459,
             currency="EUR",
             automatic_payment_methods={"enabled": True},
+            capture_method="manual",
             customer="cus_QyZ76Ae0W5KeqP",
         )
         mock_stripe_create_ephemeral_key.assert_called_once_with(
