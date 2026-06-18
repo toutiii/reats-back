@@ -1,9 +1,7 @@
-import json
 from unittest.mock import MagicMock
 
 import pytest
 from core_app.models import DishRatingModel, DrinkRatingModel, OrderModel
-from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from freezegun import freeze_time
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -35,16 +33,12 @@ def post_order_data(
         "addressID": address_id,
         "customerID": customer_id,
         "cookerID": cooker_id,
-        "dishes_items": json.dumps(
-            [
-                {"dishID": "11", "dishOrderedQuantity": 1},
-            ]
-        ),
-        "drinks_items": json.dumps(
-            [
-                {"drinkID": "2", "drinkOrderedQuantity": 3},
-            ]
-        ),
+        "dishes_items": [
+            {"dishID": "11", "dishOrderedQuantity": 1},
+        ],
+        "drinks_items": [
+            {"drinkID": "2", "drinkOrderedQuantity": 3},
+        ],
     }
 
 
@@ -67,11 +61,8 @@ def test_add_rates_to_orders_and_orders_items(
         # First we create a delivered order
         response = client.post(
             customer_order_path,
-            encode_multipart(
-                BOUNDARY,
-                post_order_data,
-            ),
-            content_type=MULTIPART_CONTENT,
+            post_order_data,
+            format="json",
             follow=False,
             **auth_headers,
         )

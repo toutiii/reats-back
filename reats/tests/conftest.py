@@ -311,7 +311,7 @@ def mock_googlemaps_distance_matrix() -> Iterator:
     patcher = patch(
         "utils.distance_computer.google_map_client.distance_matrix",
         return_value={
-            "destination_addresses": ["1 Rue André Lalande, 91000 Évry-Courcouronnes, " "France"],
+            "destination_addresses": ["1 Rue André Lalande, 91000 Évry-Courcouronnes, France"],
             "origin_addresses": ["13 Rue des Mazières, 91000 Évry-Courcouronnes, France"],
             "rows": [
                 {
@@ -575,14 +575,10 @@ def post_data_for_order_with_asap_delivery(
         "addressID": address_id,
         "customerID": customer_id,
         "cookerID": cooker_id,
-        "dishes_items": json.dumps(
-            [
-                {"dishID": "11", "dishOrderedQuantity": 1},
-            ]
-        ),
-        "drinks_items": json.dumps(
-            [
-                {"drinkID": "2", "drinkOrderedQuantity": 3},
-            ]
-        ),
+        "dishes_items": [
+            {"dishID": "11", "dishOrderedQuantity": 1},
+        ],
+        "drinks_items": [
+            {"drinkID": "2", "drinkOrderedQuantity": 3},
+        ],
     }

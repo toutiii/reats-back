@@ -593,7 +593,7 @@ class OrderView(
 ):
     permission_classes = [UserPermission]
     queryset = OrderModel.objects.all()
-    parser_classes = [MultiPartParser, JSONParser]
+
     pagination_class = StandardizedResultsSetPagination
     filter_backends = [filters.DjangoFilterBackend]
     filterset_class = OrderFilter

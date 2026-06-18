@@ -1,11 +1,9 @@
-import json
 from datetime import datetime, timezone
 from unittest.mock import MagicMock
 
 import pytest
 from core_app.models import OrderDishItemModel, OrderDrinkItemModel, OrderModel
 from django.forms import model_to_dict
-from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from freezegun import freeze_time
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -40,16 +38,12 @@ def post_data_for_order_with_asap_delivery(
         "addressID": address_id,
         "customerID": customer_id,
         "cookerID": cooker_id,
-        "dishes_items": json.dumps(
-            [
-                {"dishID": "11", "dishOrderedQuantity": 1},
-            ]
-        ),
-        "drinks_items": json.dumps(
-            [
-                {"drinkID": "2", "drinkOrderedQuantity": 3},
-            ]
-        ),
+        "dishes_items": [
+            {"dishID": "11", "dishOrderedQuantity": 1},
+        ],
+        "drinks_items": [
+            {"drinkID": "2", "drinkOrderedQuantity": 3},
+        ],
     }
 
 
@@ -66,11 +60,8 @@ def test_create_order_success_with_asap_delivery(
     with freeze_time("2024-05-08T10:16:00+00:00"):
         response = client.post(
             customer_order_path,
-            encode_multipart(
-                BOUNDARY,
-                post_data_for_order_with_asap_delivery,
-            ),
-            content_type=MULTIPART_CONTENT,
+            post_data_for_order_with_asap_delivery,
+            format="json",
             follow=False,
             **auth_headers,
         )
@@ -204,16 +195,12 @@ def post_data_for_order_with_scheduled_delivery(
         "cookerID": cooker_id,
         "date": "5/10/2024",
         "time": "14:30:00",
-        "dishes_items": json.dumps(
-            [
-                {"dishID": "11", "dishOrderedQuantity": 1},
-            ]
-        ),
-        "drinks_items": json.dumps(
-            [
-                {"drinkID": "2", "drinkOrderedQuantity": 3},
-            ]
-        ),
+        "dishes_items": [
+            {"dishID": "11", "dishOrderedQuantity": 1},
+        ],
+        "drinks_items": [
+            {"drinkID": "2", "drinkOrderedQuantity": 3},
+        ],
     }
 
 
@@ -230,8 +217,8 @@ def test_create_order_success_with_scheduled_delivery(
     with freeze_time("2024-05-09T10:16:00+00:00"):
         response = client.post(
             customer_order_path,
-            encode_multipart(BOUNDARY, post_data_for_order_with_scheduled_delivery),
-            content_type=MULTIPART_CONTENT,
+            post_data_for_order_with_scheduled_delivery,
+            format="json",
             follow=False,
             **auth_headers,
         )
@@ -391,23 +378,19 @@ def test_create_scheduled_order_failed_with_wrong_delivery_infos(
         "customerID": customer_id,
         "date": date,
         "time": time,
-        "dishes_items": json.dumps(
-            [
-                {"dishID": "11", "dishOrderedQuantity": 1},
-            ]
-        ),
-        "drinks_items": json.dumps(
-            [
-                {"drinkID": "2", "drinkOrderedQuantity": 3},
-            ]
-        ),
+        "dishes_items": [
+            {"dishID": "11", "dishOrderedQuantity": 1},
+        ],
+        "drinks_items": [
+            {"drinkID": "2", "drinkOrderedQuantity": 3},
+        ],
     }
 
     with freeze_time("2024-09-08T10:16:00+00:00"):
         response = client.post(
             customer_order_path,
-            encode_multipart(BOUNDARY, scheduled_order_data),
-            content_type=MULTIPART_CONTENT,
+            scheduled_order_data,
+            format="json",
             follow=False,
             **auth_headers,
         )
