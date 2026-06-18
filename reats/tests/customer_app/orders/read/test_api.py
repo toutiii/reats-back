@@ -446,3 +446,86 @@ def test_orders_list_success(
     diff = DeepDiff(actual_results, expected_data, ignore_order=True)
 
     assert not diff, f"Differences found: {diff}"
+
+
+@pytest.mark.django_db
+def test_retrieve_order_success_for_active_order(
+    auth_headers: dict,
+    client: APIClient,
+    customer_id: int,
+    customer_order_path: str,
+) -> None:
+    order = OrderModel.objects.filter(customer__id=customer_id, status=OrderStatusEnum.PENDING.value).first()
+    assert order is not None, "Aucune commande active trouvée pour ce client dans les fixtures"
+
+    response = client.get(f"{customer_order_path}{order.id}/", follow=False, **auth_headers)
+
+    assert response.status_code == status.HTTP_200_OK
+    body = response.json()
+    assert body.get("success") is True
+    assert body.get("message") == SuccessMessageEnum.OPERATION_SUCCESSFUL.value
+
+    data = body.get("data", {})
+    assert data.get("id") == order.id
+    assert data.get("status") == OrderStatusEnum.PENDING.value
+    # Computed fields exposed by OrderGETSerializer
+    assert "sub_total" in data
+    assert "service_fees" in data
+    assert "total_amount" in data
+
+
+@pytest.mark.django_db
+def test_retrieve_order_success_for_history_order(
+    auth_headers: dict,
+    client: APIClient,
+    customer_id: int,
+    customer_order_path: str,
+) -> None:
+    # The endpoint must work for any status, including terminal ones (history).
+    order = OrderModel.objects.filter(customer__id=customer_id, status=OrderStatusEnum.COMPLETED.value).first()
+    assert order is not None, "Aucune commande terminée trouvée pour ce client dans les fixtures"
+
+    response = client.get(f"{customer_order_path}{order.id}/", follow=False, **auth_headers)
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json().get("data", {}).get("id") == order.id
+
+
+@pytest.mark.django_db
+def test_retrieve_order_not_found_for_another_customer_order(
+    auth_headers: dict,
+    client: APIClient,
+    customer_id: int,
+    customer_order_path: str,
+) -> None:
+    # An order belonging to ANOTHER customer must not be distinguishable from
+    # a non-existent one: we return 404 to avoid leaking its existence.
+    order = OrderModel.objects.exclude(customer__id=customer_id).first()
+    assert order is not None
+
+    response = client.get(f"{customer_order_path}{order.id}/", follow=False, **auth_headers)
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert response.json().get("success") is False
+
+
+@pytest.mark.django_db
+def test_retrieve_order_not_found_for_unknown_order(
+    auth_headers: dict,
+    client: APIClient,
+    customer_order_path: str,
+) -> None:
+    response = client.get(f"{customer_order_path}999999/", follow=False, **auth_headers)
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert response.json().get("success") is False
+
+
+@pytest.mark.django_db
+def test_retrieve_order_requires_authentication(
+    client: APIClient,
+    customer_order_path: str,
+) -> None:
+    response = client.get(f"{customer_order_path}1/", follow=False)
+
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED

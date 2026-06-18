@@ -31,7 +31,7 @@ from phonenumbers.phonenumberutil import NumberParseException
 from rest_framework import serializers, status
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
-from rest_framework.mixins import CreateModelMixin, ListModelMixin, UpdateModelMixin
+from rest_framework.mixins import CreateModelMixin, ListModelMixin, RetrieveModelMixin, UpdateModelMixin
 from rest_framework.parsers import JSONParser, MultiPartParser
 from rest_framework.permissions import BasePermission
 from rest_framework.response import Response
@@ -587,6 +587,7 @@ class StarterView(StandardizedResponseMixin, ListModelMixin, GenericViewSet):
 class OrderView(
     StandardizedResponseMixin,
     CreateModelMixin,
+    RetrieveModelMixin,
     ListModelMixin,
     UpdateModelMixin,
     GenericViewSet,
@@ -697,6 +698,25 @@ class OrderView(
             self.serializer_class = OrderPATCHSerializer
 
         return super().get_serializer_class()
+
+    @extend_schema(
+        summary="Get order details",
+        description=(
+            "Returns the full details of a single order belonging to the authenticated customer.\n\n"
+            "Works for orders in any status (active orders as well as history). "
+            "Returns 404 if the order does not exist or belongs to another customer."
+        ),
+        responses={
+            200: OpenApiResponse(response=OrderGETSerializer, description="Order details"),
+            404: OpenApiResponse(description="Order not found"),
+        },
+        tags=["Customer Orders"],
+    )
+    def retrieve(self, request, *args, **kwargs) -> Response:
+        self.queryset = self.queryset.filter(customer__id=request.user.pk)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return self.success(data=serializer.data, message=SuccessMessageEnum.OPERATION_SUCCESSFUL)
 
     def list(self, request, *args, **kwargs) -> Response:
         self.queryset = self.queryset.filter(customer__id=request.user.pk)
