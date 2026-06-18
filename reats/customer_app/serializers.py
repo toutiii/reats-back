@@ -1,4 +1,3 @@
-import ast
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
@@ -197,10 +196,9 @@ class OrderSerializer(ModelSerializer):
             "created",
             "modified",
             "delivery_fees_bonus",
-            "status",
             "is_deleted",
         )
-        read_only_fields = ("delivery_fees",)
+        read_only_fields = ("delivery_fees", "status")
 
     def to_representation(self, instance: OrderModel):
         data = super().to_representation(instance)
@@ -248,32 +246,18 @@ class OrderSerializer(ModelSerializer):
 
             data_to_validate["scheduled_delivery_date"] = utc_delivery_datetime
 
-        # We extract the dishes items from the request
-        clean_order_dishes_items = []
-        dishes_order_items = [
-            ast.literal_eval(item) for item in self.context["request"].POST.getlist("dishes_items")
-        ]  # This will return a list of list
-        for dish_order_item in dishes_order_items[0]:
-            temp_data = {}
-            temp_data["dish"] = dish_order_item["dishID"]
-            temp_data["dish_quantity"] = dish_order_item["dishOrderedQuantity"]
-            clean_order_dishes_items.append(temp_data)
+        # The endpoint only accepts JSON, so dishes_items / drinks_items already
+        # arrive as lists of dicts. We just remap the client field names to the
+        # nested model fields expected by the serializer.
+        data_to_validate["dishes_items"] = [
+            {"dish": item["dishID"], "dish_quantity": item["dishOrderedQuantity"]}
+            for item in data.get("dishes_items", [])
+        ]
 
-        data_to_validate["dishes_items"] = clean_order_dishes_items
-
-        # Then we extract the drinks items from the request
-        clean_order_drinks_items = []
-        drinks_order_items = [
-            ast.literal_eval(item) for item in self.context["request"].POST.getlist("drinks_items")
-        ]  # This will return a list of list
-
-        for drink_order_item in drinks_order_items[0]:
-            temp_data = {}
-            temp_data["drink"] = drink_order_item["drinkID"]
-            temp_data["drink_quantity"] = drink_order_item["drinkOrderedQuantity"]
-            clean_order_drinks_items.append(temp_data)
-
-        data_to_validate["drinks_items"] = clean_order_drinks_items
+        data_to_validate["drinks_items"] = [
+            {"drink": item["drinkID"], "drink_quantity": item["drinkOrderedQuantity"]}
+            for item in data.get("drinks_items", [])
+        ]
 
         return super().to_internal_value(data_to_validate)
 

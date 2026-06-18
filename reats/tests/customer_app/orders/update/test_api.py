@@ -5,7 +5,6 @@ from unittest.mock import MagicMock, call
 import pytest
 from core_app.models import OrderDishItemModel, OrderDrinkItemModel, OrderModel
 from django.forms import model_to_dict
-from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from freezegun import freeze_time
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -40,16 +39,12 @@ def post_order_data(
         "addressID": address_id,
         "customerID": customer_id,
         "cookerID": cooker_id,
-        "dishes_items": json.dumps(
-            [
-                {"dishID": "11", "dishOrderedQuantity": 1},
-            ]
-        ),
-        "drinks_items": json.dumps(
-            [
-                {"drinkID": "2", "drinkOrderedQuantity": 3},
-            ]
-        ),
+        "dishes_items": [
+            {"dishID": "11", "dishOrderedQuantity": 1},
+        ],
+        "drinks_items": [
+            {"drinkID": "2", "drinkOrderedQuantity": 3},
+        ],
     }
 
 
@@ -68,11 +63,8 @@ def test_switch_order_status_from_draft_to_cancelled_by_customer(
         # First we create a draft order
         response = client.post(
             customer_order_path,
-            encode_multipart(
-                BOUNDARY,
-                post_order_data,
-            ),
-            content_type=MULTIPART_CONTENT,
+            post_order_data,
+            format="json",
             follow=False,
             **auth_headers,
         )
@@ -94,8 +86,8 @@ def test_switch_order_status_from_draft_to_cancelled_by_customer(
         }
         update_to_cancelled_by_customer_response = client.patch(
             f"{customer_order_path}{order.id}/",
-            encode_multipart(BOUNDARY, update_status_data),
-            content_type=MULTIPART_CONTENT,
+            update_status_data,
+            format="json",
             follow=False,
             **auth_headers,
         )
@@ -119,6 +111,7 @@ def test_switch_order_status_from_draft_to_cancelled_by_customer(
         amount=2459,
         currency="EUR",
         automatic_payment_methods={"enabled": True},
+        capture_method="manual",
         customer="cus_QyZ76Ae0W5KeqP",
     )
     mock_stripe_create_ephemeral_key.assert_called_once_with(
@@ -142,11 +135,8 @@ def test_switch_order_status_from_draft_to_cancelled_by_cooker(
         # First we create a draft order
         response = client.post(
             customer_order_path,
-            encode_multipart(
-                BOUNDARY,
-                post_order_data,
-            ),
-            content_type=MULTIPART_CONTENT,
+            post_order_data,
+            format="json",
             follow=False,
             **auth_headers,
         )
@@ -168,8 +158,8 @@ def test_switch_order_status_from_draft_to_cancelled_by_cooker(
         }
         update_to_cancelled_by_cooker_response = client.patch(
             f"{customer_order_path}{order.id}/",
-            encode_multipart(BOUNDARY, update_status_data),
-            content_type=MULTIPART_CONTENT,
+            update_status_data,
+            format="json",
             follow=False,
             **auth_headers,
         )
@@ -192,6 +182,7 @@ def test_switch_order_status_from_draft_to_cancelled_by_cooker(
         amount=2459,
         currency="EUR",
         automatic_payment_methods={"enabled": True},
+        capture_method="manual",
         customer="cus_QyZ76Ae0W5KeqP",
     )
     mock_stripe_create_ephemeral_key.assert_called_once_with(
@@ -215,11 +206,8 @@ def test_switch_order_status_from_draft_to_delivered(
         # First we create a draft order
         response = client.post(
             customer_order_path,
-            encode_multipart(
-                BOUNDARY,
-                post_order_data,
-            ),
-            content_type=MULTIPART_CONTENT,
+            post_order_data,
+            format="json",
             follow=False,
             **auth_headers,
         )
@@ -241,8 +229,8 @@ def test_switch_order_status_from_draft_to_delivered(
         }
         update_to_accepted_response = client.patch(
             f"{customer_order_path}{order.id}/",
-            encode_multipart(BOUNDARY, update_status_data),
-            content_type=MULTIPART_CONTENT,
+            update_status_data,
+            format="json",
             follow=False,
             **auth_headers,
         )
@@ -260,8 +248,8 @@ def test_switch_order_status_from_draft_to_delivered(
         }
         update_to_preparing_response = client.patch(
             f"{customer_order_path}{order.id}/",
-            encode_multipart(BOUNDARY, update_status_data),
-            content_type=MULTIPART_CONTENT,
+            update_status_data,
+            format="json",
             follow=False,
             **auth_headers,
         )
@@ -279,8 +267,8 @@ def test_switch_order_status_from_draft_to_delivered(
         }
         update_to_ready_response = client.patch(
             f"{customer_order_path}{order.id}/",
-            encode_multipart(BOUNDARY, update_status_data),
-            content_type=MULTIPART_CONTENT,
+            update_status_data,
+            format="json",
             follow=False,
             **auth_headers,
         )
@@ -298,8 +286,8 @@ def test_switch_order_status_from_draft_to_delivered(
         }
         update_to_delivering_response = client.patch(
             f"{customer_order_path}{order.id}/",
-            encode_multipart(BOUNDARY, update_status_data),
-            content_type=MULTIPART_CONTENT,
+            update_status_data,
+            format="json",
             follow=False,
             **auth_headers,
         )
@@ -317,8 +305,8 @@ def test_switch_order_status_from_draft_to_delivered(
         }
         update_to_completed_response = client.patch(
             f"{customer_order_path}{order.id}/",
-            encode_multipart(BOUNDARY, update_status_data),
-            content_type=MULTIPART_CONTENT,
+            update_status_data,
+            format="json",
             follow=False,
             **auth_headers,
         )
@@ -338,6 +326,7 @@ def test_switch_order_status_from_draft_to_delivered(
         amount=2459,
         currency="EUR",
         automatic_payment_methods={"enabled": True},
+        capture_method="manual",
         customer="cus_QyZ76Ae0W5KeqP",
     )
     mock_stripe_create_ephemeral_key.assert_called_once_with(
@@ -358,11 +347,8 @@ def test_switch_order_status_from_draft_to_non_allowed_status(
         # Create a draft order
         response = client.post(
             customer_order_path,
-            encode_multipart(
-                BOUNDARY,
-                post_order_data,
-            ),
-            content_type=MULTIPART_CONTENT,
+            post_order_data,
+            format="json",
             follow=False,
             **auth_headers,
         )
@@ -383,8 +369,8 @@ def test_switch_order_status_from_draft_to_non_allowed_status(
             update_status_data = {"status": order_status}
             response = client.patch(
                 f"{customer_order_path}{order.id}/",
-                encode_multipart(BOUNDARY, update_status_data),
-                content_type=MULTIPART_CONTENT,
+                update_status_data,
+                format="json",
                 follow=False,
                 **auth_headers,
             )
@@ -407,11 +393,8 @@ def test_switch_order_status_from_pending_to_non_allowed_status(
         # Create a draft order
         response = client.post(
             customer_order_path,
-            encode_multipart(
-                BOUNDARY,
-                post_order_data,
-            ),
-            content_type=MULTIPART_CONTENT,
+            post_order_data,
+            format="json",
             follow=False,
             **auth_headers,
         )
@@ -423,8 +406,8 @@ def test_switch_order_status_from_pending_to_non_allowed_status(
         update_status_data = {"status": OrderStatusEnum.PENDING.value}
         response = client.patch(
             f"{customer_order_path}{order.id}/",
-            encode_multipart(BOUNDARY, update_status_data),
-            content_type=MULTIPART_CONTENT,
+            update_status_data,
+            format="json",
             follow=False,
             **auth_headers,
         )
@@ -443,8 +426,8 @@ def test_switch_order_status_from_pending_to_non_allowed_status(
             update_status_data = {"status": order_status}
             response = client.patch(
                 f"{customer_order_path}{order.id}/",
-                encode_multipart(BOUNDARY, update_status_data),
-                content_type=MULTIPART_CONTENT,
+                update_status_data,
+                format="json",
                 follow=False,
                 **auth_headers,
             )
@@ -467,11 +450,8 @@ def test_switch_order_status_from_processing_to_non_allowed_status(
         # Create a draft order
         response = client.post(
             customer_order_path,
-            encode_multipart(
-                BOUNDARY,
-                post_order_data,
-            ),
-            content_type=MULTIPART_CONTENT,
+            post_order_data,
+            format="json",
             follow=False,
             **auth_headers,
         )
@@ -483,8 +463,8 @@ def test_switch_order_status_from_processing_to_non_allowed_status(
         update_status_data = {"status": OrderStatusEnum.PENDING.value}
         response = client.patch(
             f"{customer_order_path}{order.id}/",
-            encode_multipart(BOUNDARY, update_status_data),
-            content_type=MULTIPART_CONTENT,
+            update_status_data,
+            format="json",
             follow=False,
             **auth_headers,
         )
@@ -496,8 +476,8 @@ def test_switch_order_status_from_processing_to_non_allowed_status(
         update_status_data = {"status": OrderStatusEnum.ACCEPTED.value}
         response = client.patch(
             f"{customer_order_path}{order.id}/",
-            encode_multipart(BOUNDARY, update_status_data),
-            content_type=MULTIPART_CONTENT,
+            update_status_data,
+            format="json",
             follow=False,
             **auth_headers,
         )
@@ -516,8 +496,8 @@ def test_switch_order_status_from_processing_to_non_allowed_status(
             update_status_data = {"status": order_status}
             response = client.patch(
                 f"{customer_order_path}{order.id}/",
-                encode_multipart(BOUNDARY, update_status_data),
-                content_type=MULTIPART_CONTENT,
+                update_status_data,
+                format="json",
                 follow=False,
                 **auth_headers,
             )
@@ -540,11 +520,8 @@ def test_switch_order_status_from_completed_to_non_allowed_status(
         # Create a draft order
         response = client.post(
             customer_order_path,
-            encode_multipart(
-                BOUNDARY,
-                post_order_data,
-            ),
-            content_type=MULTIPART_CONTENT,
+            post_order_data,
+            format="json",
             follow=False,
             **auth_headers,
         )
@@ -556,8 +533,8 @@ def test_switch_order_status_from_completed_to_non_allowed_status(
         update_status_data = {"status": OrderStatusEnum.PENDING.value}
         response = client.patch(
             f"{customer_order_path}{order.id}/",
-            encode_multipart(BOUNDARY, update_status_data),
-            content_type=MULTIPART_CONTENT,
+            update_status_data,
+            format="json",
             follow=False,
             **auth_headers,
         )
@@ -569,8 +546,8 @@ def test_switch_order_status_from_completed_to_non_allowed_status(
         update_status_data = {"status": OrderStatusEnum.ACCEPTED.value}
         response = client.patch(
             f"{customer_order_path}{order.id}/",
-            encode_multipart(BOUNDARY, update_status_data),
-            content_type=MULTIPART_CONTENT,
+            update_status_data,
+            format="json",
             follow=False,
             **auth_headers,
         )
@@ -582,8 +559,8 @@ def test_switch_order_status_from_completed_to_non_allowed_status(
         update_status_data = {"status": OrderStatusEnum.PREPARING.value}
         response = client.patch(
             f"{customer_order_path}{order.id}/",
-            encode_multipart(BOUNDARY, update_status_data),
-            content_type=MULTIPART_CONTENT,
+            update_status_data,
+            format="json",
             follow=False,
             **auth_headers,
         )
@@ -595,8 +572,8 @@ def test_switch_order_status_from_completed_to_non_allowed_status(
         update_status_data = {"status": OrderStatusEnum.READY.value}
         response = client.patch(
             f"{customer_order_path}{order.id}/",
-            encode_multipart(BOUNDARY, update_status_data),
-            content_type=MULTIPART_CONTENT,
+            update_status_data,
+            format="json",
             follow=False,
             **auth_headers,
         )
@@ -608,8 +585,8 @@ def test_switch_order_status_from_completed_to_non_allowed_status(
         update_status_data = {"status": OrderStatusEnum.DELIVERING.value}
         response = client.patch(
             f"{customer_order_path}{order.id}/",
-            encode_multipart(BOUNDARY, update_status_data),
-            content_type=MULTIPART_CONTENT,
+            update_status_data,
+            format="json",
             follow=False,
             **auth_headers,
         )
@@ -621,8 +598,8 @@ def test_switch_order_status_from_completed_to_non_allowed_status(
         update_status_data = {"status": OrderStatusEnum.COMPLETED.value}
         response = client.patch(
             f"{customer_order_path}{order.id}/",
-            encode_multipart(BOUNDARY, update_status_data),
-            content_type=MULTIPART_CONTENT,
+            update_status_data,
+            format="json",
             follow=False,
             **auth_headers,
         )
@@ -641,8 +618,8 @@ def test_switch_order_status_from_completed_to_non_allowed_status(
             update_status_data = {"status": order_status}
             response = client.patch(
                 f"{customer_order_path}{order.id}/",
-                encode_multipart(BOUNDARY, update_status_data),
-                content_type=MULTIPART_CONTENT,
+                update_status_data,
+                format="json",
                 follow=False,
                 **auth_headers,
             )
@@ -666,11 +643,8 @@ def test_switch_order_status_from_delivered_to_non_allowed_status(
         # Create a draft order
         response = client.post(
             customer_order_path,
-            encode_multipart(
-                BOUNDARY,
-                post_order_data,
-            ),
-            content_type=MULTIPART_CONTENT,
+            post_order_data,
+            format="json",
             follow=False,
             **auth_headers,
         )
@@ -682,8 +656,8 @@ def test_switch_order_status_from_delivered_to_non_allowed_status(
         update_status_data = {"status": OrderStatusEnum.PENDING.value}
         response = client.patch(
             f"{customer_order_path}{order.id}/",
-            encode_multipart(BOUNDARY, update_status_data),
-            content_type=MULTIPART_CONTENT,
+            update_status_data,
+            format="json",
             follow=False,
             **auth_headers,
         )
@@ -695,8 +669,8 @@ def test_switch_order_status_from_delivered_to_non_allowed_status(
         update_status_data = {"status": OrderStatusEnum.ACCEPTED.value}
         response = client.patch(
             f"{customer_order_path}{order.id}/",
-            encode_multipart(BOUNDARY, update_status_data),
-            content_type=MULTIPART_CONTENT,
+            update_status_data,
+            format="json",
             follow=False,
             **auth_headers,
         )
@@ -708,8 +682,8 @@ def test_switch_order_status_from_delivered_to_non_allowed_status(
         update_status_data = {"status": OrderStatusEnum.PREPARING.value}
         response = client.patch(
             f"{customer_order_path}{order.id}/",
-            encode_multipart(BOUNDARY, update_status_data),
-            content_type=MULTIPART_CONTENT,
+            update_status_data,
+            format="json",
             follow=False,
             **auth_headers,
         )
@@ -721,8 +695,8 @@ def test_switch_order_status_from_delivered_to_non_allowed_status(
         update_status_data = {"status": OrderStatusEnum.READY.value}
         response = client.patch(
             f"{customer_order_path}{order.id}/",
-            encode_multipart(BOUNDARY, update_status_data),
-            content_type=MULTIPART_CONTENT,
+            update_status_data,
+            format="json",
             follow=False,
             **auth_headers,
         )
@@ -734,8 +708,8 @@ def test_switch_order_status_from_delivered_to_non_allowed_status(
         update_status_data = {"status": OrderStatusEnum.DELIVERING.value}
         response = client.patch(
             f"{customer_order_path}{order.id}/",
-            encode_multipart(BOUNDARY, update_status_data),
-            content_type=MULTIPART_CONTENT,
+            update_status_data,
+            format="json",
             follow=False,
             **auth_headers,
         )
@@ -747,8 +721,8 @@ def test_switch_order_status_from_delivered_to_non_allowed_status(
         update_status_data = {"status": OrderStatusEnum.COMPLETED.value}
         response = client.patch(
             f"{customer_order_path}{order.id}/",
-            encode_multipart(BOUNDARY, update_status_data),
-            content_type=MULTIPART_CONTENT,
+            update_status_data,
+            format="json",
             follow=False,
             **auth_headers,
         )
@@ -770,8 +744,8 @@ def test_switch_order_status_from_delivered_to_non_allowed_status(
             update_status_data = {"status": order_status}
             response = client.patch(
                 f"{customer_order_path}{order.id}/",
-                encode_multipart(BOUNDARY, update_status_data),
-                content_type=MULTIPART_CONTENT,
+                update_status_data,
+                format="json",
                 follow=False,
                 **auth_headers,
             )
@@ -797,11 +771,8 @@ def test_switch_order_status_from_cancelled_by_customer_to_non_allowed_status(
         # Create a draft order
         response = client.post(
             customer_order_path,
-            encode_multipart(
-                BOUNDARY,
-                post_order_data,
-            ),
-            content_type=MULTIPART_CONTENT,
+            post_order_data,
+            format="json",
             follow=False,
             **auth_headers,
         )
@@ -813,8 +784,8 @@ def test_switch_order_status_from_cancelled_by_customer_to_non_allowed_status(
         update_status_data = {"status": OrderStatusEnum.PENDING.value}
         response = client.patch(
             f"{customer_order_path}{order.id}/",
-            encode_multipart(BOUNDARY, update_status_data),
-            content_type=MULTIPART_CONTENT,
+            update_status_data,
+            format="json",
             follow=False,
             **auth_headers,
         )
@@ -828,8 +799,8 @@ def test_switch_order_status_from_cancelled_by_customer_to_non_allowed_status(
         }
         response = client.patch(
             f"{customer_order_path}{order.id}/",
-            encode_multipart(BOUNDARY, update_status_data),
-            content_type=MULTIPART_CONTENT,
+            update_status_data,
+            format="json",
             follow=False,
             **auth_headers,
         )
@@ -851,8 +822,8 @@ def test_switch_order_status_from_cancelled_by_customer_to_non_allowed_status(
             update_status_data = {"status": order_status}
             response = client.patch(
                 f"{customer_order_path}{order.id}/",
-                encode_multipart(BOUNDARY, update_status_data),
-                content_type=MULTIPART_CONTENT,
+                update_status_data,
+                format="json",
                 follow=False,
                 **auth_headers,
             )
@@ -869,6 +840,7 @@ def test_switch_order_status_from_cancelled_by_customer_to_non_allowed_status(
         amount=2459,
         currency="EUR",
         automatic_payment_methods={"enabled": True},
+        capture_method="manual",
         customer="cus_QyZ76Ae0W5KeqP",
     )
     mock_stripe_create_ephemeral_key.assert_called_once_with(
@@ -892,11 +864,8 @@ def test_switch_order_status_from_cancelled_by_cooker_to_non_allowed_status(
         # Create a draft order
         response = client.post(
             customer_order_path,
-            encode_multipart(
-                BOUNDARY,
-                post_order_data,
-            ),
-            content_type=MULTIPART_CONTENT,
+            post_order_data,
+            format="json",
             follow=False,
             **auth_headers,
         )
@@ -908,8 +877,8 @@ def test_switch_order_status_from_cancelled_by_cooker_to_non_allowed_status(
         update_status_data = {"status": OrderStatusEnum.PENDING.value}
         response = client.patch(
             f"{customer_order_path}{order.id}/",
-            encode_multipart(BOUNDARY, update_status_data),
-            content_type=MULTIPART_CONTENT,
+            update_status_data,
+            format="json",
             follow=False,
             **auth_headers,
         )
@@ -921,8 +890,8 @@ def test_switch_order_status_from_cancelled_by_cooker_to_non_allowed_status(
         update_status_data = {"status": OrderStatusEnum.CANCELLED.value}
         response = client.patch(
             f"{customer_order_path}{order.id}/",
-            encode_multipart(BOUNDARY, update_status_data),
-            content_type=MULTIPART_CONTENT,
+            update_status_data,
+            format="json",
             follow=False,
             **auth_headers,
         )
@@ -944,8 +913,8 @@ def test_switch_order_status_from_cancelled_by_cooker_to_non_allowed_status(
             update_status_data = {"status": order_status}
             response = client.patch(
                 f"{customer_order_path}{order.id}/",
-                encode_multipart(BOUNDARY, update_status_data),
-                content_type=MULTIPART_CONTENT,
+                update_status_data,
+                format="json",
                 follow=False,
                 **auth_headers,
             )
@@ -966,18 +935,14 @@ def post_data_for_order_update(
         "addressID": address_id,
         "customerID": customer_id,
         "cookerID": cooker_id,
-        "dishes_items": json.dumps(
-            [
-                {"dishID": "5", "dishOrderedQuantity": 2},
-                {"dishID": "6", "dishOrderedQuantity": 2},
-            ]
-        ),
-        "drinks_items": json.dumps(
-            [
-                {"drinkID": "2", "drinkOrderedQuantity": 3},
-                {"drinkID": "1", "drinkOrderedQuantity": 2},
-            ]
-        ),
+        "dishes_items": [
+            {"dishID": "5", "dishOrderedQuantity": 2},
+            {"dishID": "6", "dishOrderedQuantity": 2},
+        ],
+        "drinks_items": [
+            {"drinkID": "2", "drinkOrderedQuantity": 3},
+            {"drinkID": "1", "drinkOrderedQuantity": 2},
+        ],
     }
 
 
@@ -996,11 +961,8 @@ def test_update_order_success_with_asap_delivery(
     with freeze_time("2024-05-08T10:16:00+00:00"):
         response = client.post(
             customer_order_path,
-            encode_multipart(
-                BOUNDARY,
-                post_data_for_order_with_asap_delivery,
-            ),
-            content_type=MULTIPART_CONTENT,
+            post_data_for_order_with_asap_delivery,
+            format="json",
             follow=False,
             **auth_headers,
         )
@@ -1052,6 +1014,7 @@ def test_update_order_success_with_asap_delivery(
                 },
                 "address": 2,
                 "delivery_man": None,
+                "status": "draft",
                 "stripe_payment_intent_id": "pi_3Q6VU7EEYeaFww1W0xCZEUxw",
                 "stripe_payment_intent_secret": "pi_3Q6VU7EEYeaFww1W0xCZEUxw_secret_OJqlWW9QRZZuSmAwUBklpxUf4",
                 "ephemeral_key": "ek_test_YWNjdF8xUTN6bTZFRVllYUZ3dzFXLGwwb3VMVEZnT0ljSUw0Q0xYNm5rWGlMYTExYXRhVm4_00uVE9aZDp",
@@ -1099,8 +1062,8 @@ def test_update_order_success_with_asap_delivery(
         # Now we update the order with new items
         update_response = client.put(
             f"{customer_order_path}{last_order.id}/",
-            encode_multipart(BOUNDARY, post_data_for_order_update),
-            content_type=MULTIPART_CONTENT,
+            post_data_for_order_update,
+            format="json",
             follow=False,
             **auth_headers,
         )
@@ -1160,6 +1123,7 @@ def test_update_order_success_with_asap_delivery(
                 ],
                 "paid_date": None,
                 "scheduled_delivery_date": None,
+                "status": "draft",
                 "stripe_payment_intent_id": "pi_3Q6VU7EEYeaFww1W0xCZEUxw",
                 "stripe_payment_intent_secret": "pi_3Q6VU7EEYeaFww1W0xCZEUxw_secret_OJqlWW9QRZZuSmAwUBklpxUf4",
                 "ephemeral_key": "ek_test_YWNjdF8xUTN6bTZFRVllYUZ3dzFXLGwwb3VMVEZnT0ljSUw0Q0xYNm5rWGlMYTExYXRhVm4_00uVE9aZDp",
@@ -1222,6 +1186,7 @@ def test_update_order_success_with_asap_delivery(
             amount=2459,
             currency="EUR",
             automatic_payment_methods={"enabled": True},
+            capture_method="manual",
             customer="cus_QyZ76Ae0W5KeqP",
         )
         mock_stripe_payment_intent_update.assert_called_once_with(
@@ -1251,11 +1216,8 @@ def test_update_order_after_successful_stripe_payment(
     with freeze_time("2024-05-08T10:16:00+00:00"):
         response = client.post(
             customer_order_path,
-            encode_multipart(
-                BOUNDARY,
-                post_data_for_order_with_asap_delivery,
-            ),
-            content_type=MULTIPART_CONTENT,
+            post_data_for_order_with_asap_delivery,
+            format="json",
             follow=False,
             **auth_headers,
         )
@@ -1305,6 +1267,7 @@ def test_update_order_after_successful_stripe_payment(
                 },
                 "address": 2,
                 "delivery_man": None,
+                "status": "draft",
                 "stripe_payment_intent_id": "pi_3Q6VU7EEYeaFww1W0xCZEUxw",
                 "stripe_payment_intent_secret": "pi_3Q6VU7EEYeaFww1W0xCZEUxw_secret_OJqlWW9QRZZuSmAwUBklpxUf4",
                 "ephemeral_key": "ek_test_YWNjdF8xUTN6bTZFRVllYUZ3dzFXLGwwb3VMVEZnT0ljSUw0Q0xYNm5rWGlMYTExYXRhVm4_00uVE9aZDp",
@@ -1338,6 +1301,7 @@ def test_update_order_after_successful_stripe_payment(
             amount=2459,
             currency="EUR",
             automatic_payment_methods={"enabled": True},
+            capture_method="manual",
             customer="cus_QyZ76Ae0W5KeqP",
         )
         mock_stripe_create_ephemeral_key.assert_called_once_with(
@@ -1362,11 +1326,8 @@ def test_update_order_after_successful_stripe_payment_but_event_failed_to_be_ver
     with freeze_time("2024-05-08T10:16:00+00:00"):
         response = client.post(
             customer_order_path,
-            encode_multipart(
-                BOUNDARY,
-                post_data_for_order_with_asap_delivery,
-            ),
-            content_type=MULTIPART_CONTENT,
+            post_data_for_order_with_asap_delivery,
+            format="json",
             follow=False,
             **auth_headers,
         )
@@ -1416,6 +1377,7 @@ def test_update_order_after_successful_stripe_payment_but_event_failed_to_be_ver
                 },
                 "address": 2,
                 "delivery_man": None,
+                "status": "draft",
                 "stripe_payment_intent_id": "pi_3Q6VU7EEYeaFww1W0xCZEUxw",
                 "stripe_payment_intent_secret": "pi_3Q6VU7EEYeaFww1W0xCZEUxw_secret_OJqlWW9QRZZuSmAwUBklpxUf4",
                 "ephemeral_key": "ek_test_YWNjdF8xUTN6bTZFRVllYUZ3dzFXLGwwb3VMVEZnT0ljSUw0Q0xYNm5rWGlMYTExYXRhVm4_00uVE9aZDp",
@@ -1449,6 +1411,7 @@ def test_update_order_after_successful_stripe_payment_but_event_failed_to_be_ver
             amount=2459,
             currency="EUR",
             automatic_payment_methods={"enabled": True},
+            capture_method="manual",
             customer="cus_QyZ76Ae0W5KeqP",
         )
         mock_stripe_create_ephemeral_key.assert_called_once_with(
@@ -1467,16 +1430,12 @@ def test_update_order_after_successful_stripe_payment_but_event_failed_to_be_ver
                 "addressID": 1,
                 "customerID": 2,
                 "cookerID": 1,
-                "dishes_items": json.dumps(
-                    [
-                        {"dishID": "11", "dishOrderedQuantity": 1},
-                    ]
-                ),
-                "drinks_items": json.dumps(
-                    [
-                        {"drinkID": "2", "drinkOrderedQuantity": 3},
-                    ]
-                ),
+                "dishes_items": [
+                    {"dishID": "11", "dishOrderedQuantity": 1},
+                ],
+                "drinks_items": [
+                    {"drinkID": "2", "drinkOrderedQuantity": 3},
+                ],
             },
             status.HTTP_200_OK,
             "2024-11-10T08:45:00+00:00",
@@ -1486,16 +1445,12 @@ def test_update_order_after_successful_stripe_payment_but_event_failed_to_be_ver
                 "addressID": 1,
                 "customerID": 2,
                 "cookerID": 1,
-                "dishes_items": json.dumps(
-                    [
-                        {"dishID": "11", "dishOrderedQuantity": 1},
-                    ]
-                ),
-                "drinks_items": json.dumps(
-                    [
-                        {"drinkID": "2", "drinkOrderedQuantity": 3},
-                    ]
-                ),
+                "dishes_items": [
+                    {"dishID": "11", "dishOrderedQuantity": 1},
+                ],
+                "drinks_items": [
+                    {"drinkID": "2", "drinkOrderedQuantity": 3},
+                ],
                 "date": "11/15/2024",
                 "time": "14:30:00",
             },
@@ -1525,11 +1480,8 @@ def test_cancel_order_when_initiated_by_customer_and_order_is_still_pending(
     with freeze_time("2024-11-10T08:16:00+00:00"):
         response = client.post(
             customer_order_path,
-            encode_multipart(
-                BOUNDARY,
-                post_order_data,
-            ),
-            content_type=MULTIPART_CONTENT,
+            post_order_data,
+            format="json",
             follow=False,
             **auth_headers,
         )
@@ -1558,13 +1510,10 @@ def test_cancel_order_when_initiated_by_customer_and_order_is_still_pending(
             # Now we cancel the order right after it has been paid
             cancel_response = client.patch(
                 f"{customer_order_path}{order_id}/",
-                encode_multipart(
-                    BOUNDARY,
-                    {
-                        "status": OrderStatusEnum.CANCELLED.value,
-                    },
-                ),
-                content_type=MULTIPART_CONTENT,
+                {
+                    "status": OrderStatusEnum.CANCELLED.value,
+                },
+                format="json",
                 follow=False,
                 **auth_headers,
             )
@@ -1582,6 +1531,7 @@ def test_cancel_order_when_initiated_by_customer_and_order_is_still_pending(
             amount=2459,
             currency="EUR",
             automatic_payment_methods={"enabled": True},
+            capture_method="manual",
             customer="cus_RBiuNyquyndC8O",
         )
         mock_stripe_create_ephemeral_key.assert_called_once_with(
@@ -1604,16 +1554,12 @@ def test_cancel_order_when_initiated_by_customer_and_order_is_still_pending(
                 "addressID": 1,
                 "customerID": 2,
                 "cookerID": 1,
-                "dishes_items": json.dumps(
-                    [
-                        {"dishID": "11", "dishOrderedQuantity": 1},
-                    ]
-                ),
-                "drinks_items": json.dumps(
-                    [
-                        {"drinkID": "2", "drinkOrderedQuantity": 3},
-                    ]
-                ),
+                "dishes_items": [
+                    {"dishID": "11", "dishOrderedQuantity": 1},
+                ],
+                "drinks_items": [
+                    {"drinkID": "2", "drinkOrderedQuantity": 3},
+                ],
             },
             status.HTTP_200_OK,
             "2024-11-10T08:45:00+00:00",
@@ -1623,16 +1569,12 @@ def test_cancel_order_when_initiated_by_customer_and_order_is_still_pending(
                 "addressID": 1,
                 "customerID": 2,
                 "cookerID": 1,
-                "dishes_items": json.dumps(
-                    [
-                        {"dishID": "11", "dishOrderedQuantity": 1},
-                    ]
-                ),
-                "drinks_items": json.dumps(
-                    [
-                        {"drinkID": "2", "drinkOrderedQuantity": 3},
-                    ]
-                ),
+                "dishes_items": [
+                    {"dishID": "11", "dishOrderedQuantity": 1},
+                ],
+                "drinks_items": [
+                    {"drinkID": "2", "drinkOrderedQuantity": 3},
+                ],
                 "date": "11/15/2024",
                 "time": "14:30:00",
             },
@@ -1662,11 +1604,8 @@ def test_cancel_order_when_initiated_by_customer_but_order_is_in_processing_stat
     with freeze_time("2024-11-10T08:16:00+00:00"):
         response = client.post(
             customer_order_path,
-            encode_multipart(
-                BOUNDARY,
-                post_order_data,
-            ),
-            content_type=MULTIPART_CONTENT,
+            post_order_data,
+            format="json",
             follow=False,
             **auth_headers,
         )
@@ -1701,13 +1640,10 @@ def test_cancel_order_when_initiated_by_customer_but_order_is_in_processing_stat
             # Now we cancel the order right after it has been paid
             cancel_response = client.patch(
                 f"{customer_order_path}{order_id}/",
-                encode_multipart(
-                    BOUNDARY,
-                    {
-                        "status": OrderStatusEnum.CANCELLED.value,
-                    },
-                ),
-                content_type=MULTIPART_CONTENT,
+                {
+                    "status": OrderStatusEnum.CANCELLED.value,
+                },
+                format="json",
                 follow=False,
                 **auth_headers,
             )
@@ -1725,6 +1661,7 @@ def test_cancel_order_when_initiated_by_customer_but_order_is_in_processing_stat
             amount=2459,
             currency="EUR",
             automatic_payment_methods={"enabled": True},
+            capture_method="manual",
             customer="cus_RBiuNyquyndC8O",
         )
         mock_stripe_create_ephemeral_key.assert_called_once_with(
@@ -1744,16 +1681,13 @@ def test_cancel_order_when_initiated_by_customer_but_order_is_in_processing_stat
                 "addressID": 1,
                 "customerID": 2,
                 "cookerID": 1,
-                "dishes_items": json.dumps(
-                    [
-                        {"dishID": "11", "dishOrderedQuantity": 1},
-                    ]
-                ),
-                "drinks_items": json.dumps(
-                    [
-                        {"drinkID": "2", "drinkOrderedQuantity": 3},
-                    ]
-                ),
+                "status": "draft",
+                "dishes_items": [
+                    {"dishID": "11", "dishOrderedQuantity": 1},
+                ],
+                "drinks_items": [
+                    {"drinkID": "2", "drinkOrderedQuantity": 3},
+                ],
             },
             status.HTTP_200_OK,
             "2024-11-10T08:45:00+00:00",
@@ -1763,16 +1697,13 @@ def test_cancel_order_when_initiated_by_customer_but_order_is_in_processing_stat
                 "addressID": 1,
                 "customerID": 2,
                 "cookerID": 1,
-                "dishes_items": json.dumps(
-                    [
-                        {"dishID": "11", "dishOrderedQuantity": 1},
-                    ]
-                ),
-                "drinks_items": json.dumps(
-                    [
-                        {"drinkID": "2", "drinkOrderedQuantity": 3},
-                    ]
-                ),
+                "status": "draft",
+                "dishes_items": [
+                    {"dishID": "11", "dishOrderedQuantity": 1},
+                ],
+                "drinks_items": [
+                    {"drinkID": "2", "drinkOrderedQuantity": 3},
+                ],
                 "date": "11/15/2024",
                 "time": "14:30:00",
             },
@@ -1802,11 +1733,8 @@ def test_cancel_order_when_initiated_by_customer_but_order_is_in_completed_state
     with freeze_time("2024-11-10T08:16:00+00:00"):
         response = client.post(
             customer_order_path,
-            encode_multipart(
-                BOUNDARY,
-                post_order_data,
-            ),
-            content_type=MULTIPART_CONTENT,
+            post_order_data,
+            format="json",
             follow=False,
             **auth_headers,
         )
@@ -1841,13 +1769,10 @@ def test_cancel_order_when_initiated_by_customer_but_order_is_in_completed_state
             # Now we cancel the order while it is in accepted state
             cancel_response = client.patch(
                 f"{customer_order_path}{order_id}/",
-                encode_multipart(
-                    BOUNDARY,
-                    {
-                        "status": OrderStatusEnum.CANCELLED.value,
-                    },
-                ),
-                content_type=MULTIPART_CONTENT,
+                {
+                    "status": OrderStatusEnum.CANCELLED.value,
+                },
+                format="json",
                 follow=False,
                 **auth_headers,
             )
@@ -1865,6 +1790,7 @@ def test_cancel_order_when_initiated_by_customer_but_order_is_in_completed_state
             amount=2459,
             currency="EUR",
             automatic_payment_methods={"enabled": True},
+            capture_method="manual",
             customer="cus_RBiuNyquyndC8O",
         )
         mock_stripe_create_ephemeral_key.assert_called_once_with(
@@ -1892,11 +1818,8 @@ def test_update_order_but_unexpected_exception_raises_on_customer_app(
     with freeze_time("2024-05-08T10:16:00+00:00"):
         response = client.post(
             customer_order_path,
-            encode_multipart(
-                BOUNDARY,
-                post_data_for_order_with_asap_delivery,
-            ),
-            content_type=MULTIPART_CONTENT,
+            post_data_for_order_with_asap_delivery,
+            format="json",
             follow=False,
             **auth_headers,
         )
@@ -1910,13 +1833,10 @@ def test_update_order_but_unexpected_exception_raises_on_customer_app(
         # an unexpected exception is raised
         update_response = client.patch(
             f"{customer_order_path}{order_id}/",
-            encode_multipart(
-                BOUNDARY,
-                {
-                    "status": OrderStatusEnum.PENDING.value,
-                },
-            ),
-            content_type=MULTIPART_CONTENT,
+            {
+                "status": OrderStatusEnum.PENDING.value,
+            },
+            format="json",
             follow=False,
             **auth_headers,
         )

@@ -1,11 +1,9 @@
-import json
 from datetime import datetime, timezone
 from decimal import Decimal
 from unittest.mock import MagicMock
 
 import pytest
 from core_app.models import AddressModel, CookerModel, CustomerModel, OrderModel
-from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from freezegun import freeze_time
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -40,16 +38,12 @@ def post_order_data(
         "addressID": address_id,
         "customerID": customer_id,
         "cookerID": cooker_id,
-        "dishes_items": json.dumps(
-            [
-                {"dishID": "11", "dishOrderedQuantity": 1},
-            ]
-        ),
-        "drinks_items": json.dumps(
-            [
-                {"drinkID": "2", "drinkOrderedQuantity": 3},
-            ]
-        ),
+        "dishes_items": [
+            {"dishID": "11", "dishOrderedQuantity": 1},
+        ],
+        "drinks_items": [
+            {"drinkID": "2", "drinkOrderedQuantity": 3},
+        ],
     }
 
 
@@ -67,8 +61,8 @@ def test_update_order_from_pending_to_cancelled_by_cooker_status(
     with freeze_time("2024-05-08T10:16:00+00:00"):
         response = client.post(
             customer_order_path,
-            encode_multipart(BOUNDARY, post_order_data),
-            content_type=MULTIPART_CONTENT,
+            post_order_data,
+            format="json",
             follow=False,
             **auth_headers,
         )
@@ -107,6 +101,7 @@ def test_update_order_from_pending_to_cancelled_by_cooker_status(
         amount=2459,
         currency="EUR",
         automatic_payment_methods={"enabled": True},
+        capture_method="manual",
         customer="cus_QyZ76Ae0W5KeqP",
     )
 
@@ -126,11 +121,8 @@ def test_update_order_from_processing_to_cancelled_by_cooker_status(
         # First we create a draft order
         response = client.post(
             customer_order_path,
-            encode_multipart(
-                BOUNDARY,
-                post_order_data,
-            ),
-            content_type=MULTIPART_CONTENT,
+            post_order_data,
+            format="json",
             follow=False,
             **auth_headers,
         )
@@ -183,6 +175,7 @@ def test_update_order_from_processing_to_cancelled_by_cooker_status(
         amount=2459,
         currency="EUR",
         automatic_payment_methods={"enabled": True},
+        capture_method="manual",
         customer="cus_QyZ76Ae0W5KeqP",
     )
 
@@ -197,12 +190,13 @@ def test_update_order_from_pending_to_processing_state(
     mock_googlemaps_distance_matrix: MagicMock,
     mock_stripe_payment_intent_create: MagicMock,
     mock_stripe_create_refund_success: MagicMock,
+    mock_stripe_payment_intent_capture: MagicMock,
 ) -> None:
     with freeze_time("2024-05-08T10:16:00+00:00"):
         response = client.post(
             customer_order_path,
-            encode_multipart(BOUNDARY, post_order_data),
-            content_type=MULTIPART_CONTENT,
+            post_order_data,
+            format="json",
             follow=False,
             **auth_headers,
         )
@@ -229,6 +223,8 @@ def test_update_order_from_pending_to_processing_state(
     mock_googlemaps_distance_matrix.assert_called_once()
     mock_stripe_payment_intent_create.assert_called_once()
     mock_stripe_create_refund_success.assert_not_called()
+    # Manual capture: accepting the order is what actually charges the customer.
+    mock_stripe_payment_intent_capture.assert_called_once_with(order.stripe_payment_intent_id)
 
 
 @pytest.mark.django_db
@@ -246,11 +242,8 @@ def test_update_order_from_pending_to_completed_state(
         # First we create a draft order
         response = client.post(
             customer_order_path,
-            encode_multipart(
-                BOUNDARY,
-                post_order_data,
-            ),
-            content_type=MULTIPART_CONTENT,
+            post_order_data,
+            format="json",
             follow=False,
             **auth_headers,
         )
@@ -320,11 +313,8 @@ def test_update_order_with_invalid_transition_returns_400_validation_error(
         # First we create a draft order
         response = client.post(
             customer_order_path,
-            encode_multipart(
-                BOUNDARY,
-                post_order_data,
-            ),
-            content_type=MULTIPART_CONTENT,
+            post_order_data,
+            format="json",
             follow=False,
             **auth_headers,
         )
@@ -376,8 +366,8 @@ def test_update_order_but_unexpected_exception_raises_on_cooker_app(
     with freeze_time("2024-05-08T10:16:00+00:00"):
         response = client.post(
             customer_order_path,
-            encode_multipart(BOUNDARY, post_data_for_order_with_asap_delivery),
-            content_type=MULTIPART_CONTENT,
+            post_data_for_order_with_asap_delivery,
+            format="json",
             follow=False,
             **auth_headers,
         )
@@ -428,8 +418,8 @@ def test_update_cooker_acceptance_rate_on_cancel(
     with freeze_time("2024-05-08T10:16:00+00:00"):
         response = client.post(
             customer_order_path,
-            encode_multipart(BOUNDARY, post_order_data),
-            content_type=MULTIPART_CONTENT,
+            post_order_data,
+            format="json",
             follow=False,
             **auth_headers,
         )
@@ -463,6 +453,7 @@ def test_update_cooker_acceptance_rate_on_cancel(
         amount=2459,
         currency="EUR",
         automatic_payment_methods={"enabled": True},
+        capture_method="manual",
         customer="cus_QyZ76Ae0W5KeqP",
     )
     mock_stripe_create_refund_success.assert_called_once_with(

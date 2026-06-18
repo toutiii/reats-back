@@ -291,6 +291,7 @@ def create_payment_intent(order: OrderModel) -> dict:
             currency=settings.DEFAULT_CURRENCY,
             automatic_payment_methods={"enabled": True},
             customer=order_customer.stripe_id,
+            capture_method="manual",
         )
     except stripe.StripeError as e:
         logger.error(f"Failed to create payment intent for order {order.id}")
@@ -397,6 +398,51 @@ def create_stripe_refund(amount: int, payment_intent_id: str) -> None:
         raise
     else:
         logger.info(f"Refund for payment intent {payment_intent_id} created successfully")
+        logger.debug(response)
+
+
+def capture_payment_intent(order: OrderModel) -> None:
+    """
+    Capture the funds previously authorized on the order's payment intent.
+
+    Called when the cooker accepts the order: this is the moment the customer
+    is actually charged.
+    """
+    try:
+        response = stripe.PaymentIntent.capture(order.stripe_payment_intent_id)
+    except stripe.StripeError as e:
+        logger.error(f"Failed to capture payment intent {order.stripe_payment_intent_id} for order {order.id}")
+        logger.error(f"Stripe error: {e}")
+        raise
+    except Exception as e:
+        logger.error(f"Failed to capture payment intent {order.stripe_payment_intent_id} for order {order.id}")
+        logger.error(f"An unexpected error occurred: {e}")
+        raise
+    else:
+        logger.info(f"Payment intent {order.stripe_payment_intent_id} captured successfully for order {order.id}")
+        logger.debug(response)
+
+
+def cancel_payment_intent(order: OrderModel) -> None:
+    """
+    Cancel the order's payment intent, releasing the authorization hold.
+
+    Used when an order ends before the funds are captured (acceptance), e.g. a
+    customer cancellation while still pending, or a cooker acceptance timeout.
+    No money has been charged, so there is nothing to refund.
+    """
+    try:
+        response = stripe.PaymentIntent.cancel(order.stripe_payment_intent_id)
+    except stripe.StripeError as e:
+        logger.error(f"Failed to cancel payment intent {order.stripe_payment_intent_id} for order {order.id}")
+        logger.error(f"Stripe error: {e}")
+        raise
+    except Exception as e:
+        logger.error(f"Failed to cancel payment intent {order.stripe_payment_intent_id} for order {order.id}")
+        logger.error(f"An unexpected error occurred: {e}")
+        raise
+    else:
+        logger.info(f"Payment intent {order.stripe_payment_intent_id} cancelled successfully for order {order.id}")
         logger.debug(response)
 
 

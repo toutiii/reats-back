@@ -311,7 +311,7 @@ def mock_googlemaps_distance_matrix() -> Iterator:
     patcher = patch(
         "utils.distance_computer.google_map_client.distance_matrix",
         return_value={
-            "destination_addresses": ["1 Rue André Lalande, 91000 Évry-Courcouronnes, " "France"],
+            "destination_addresses": ["1 Rue André Lalande, 91000 Évry-Courcouronnes, France"],
             "origin_addresses": ["13 Rue des Mazières, 91000 Évry-Courcouronnes, France"],
             "rows": [
                 {
@@ -350,7 +350,7 @@ def mock_stripe_payment_intent_create() -> Iterator:
                 },
                 "canceled_at": null,
                 "cancellation_reason": null,
-                "capture_method": "automatic_async",
+                "capture_method": "manual",
                 "client_secret": "pi_3Q6VU7EEYeaFww1W0xCZEUxw_secret_OJqlWW9QRZZuSmAwUBklpxUf4",
                 "confirmation_method": "automatic",
                 "created": 1728125115,
@@ -443,9 +443,9 @@ def stripe_payment_intent_success_webhook_data() -> dict:
                 "id": "pi_3Q6VU7EEYeaFww1W0xCZEUxw",
                 "object": "payment_intent",
                 "amount": 2313,
-                "amount_capturable": 0,
+                "amount_capturable": 2313,
                 "amount_details": {"tip": {}},
-                "amount_received": 2313,
+                "amount_received": 0,
                 "application": None,
                 "application_fee_amount": None,
                 "automatic_payment_methods": {
@@ -454,7 +454,7 @@ def stripe_payment_intent_success_webhook_data() -> dict:
                 },
                 "canceled_at": None,
                 "cancellation_reason": None,
-                "capture_method": "automatic_async",
+                "capture_method": "manual",
                 "client_secret": "pi_3Q6VU7EEYeaFww1W0xCZEUxw_secret_OJqlWW9QRZZuSmAwUBklpxUf4",
                 "confirmation_method": "automatic",
                 "created": 1731178315,
@@ -490,7 +490,7 @@ def stripe_payment_intent_success_webhook_data() -> dict:
                 "source": None,
                 "statement_descriptor": None,
                 "statement_descriptor_suffix": None,
-                "status": "succeeded",
+                "status": "requires_capture",
                 "transfer_data": None,
                 "transfer_group": None,
             }
@@ -501,7 +501,7 @@ def stripe_payment_intent_success_webhook_data() -> dict:
             "id": "req_Q50llYH7NrdKeN",
             "idempotency_key": "359d36f4-80a2-4138-bd2d-0846239a6cc4",
         },
-        "type": "payment_intent.succeeded",
+        "type": "payment_intent.amount_capturable_updated",
     }
 
 
@@ -536,6 +536,20 @@ def mock_stripe_create_refund_success() -> Iterator:
     patcher.stop()
 
 
+@pytest.fixture(autouse=True)
+def mock_stripe_payment_intent_capture() -> Iterator:
+    patcher = patch("stripe.PaymentIntent.capture", return_value=None)
+    yield patcher.start()
+    patcher.stop()
+
+
+@pytest.fixture(autouse=True)
+def mock_stripe_payment_intent_cancel() -> Iterator:
+    patcher = patch("stripe.PaymentIntent.cancel", return_value=None)
+    yield patcher.start()
+    patcher.stop()
+
+
 @pytest.fixture(scope="session")
 def customer_order_path() -> str:
     return "/api/v1/customers-orders/"
@@ -561,14 +575,10 @@ def post_data_for_order_with_asap_delivery(
         "addressID": address_id,
         "customerID": customer_id,
         "cookerID": cooker_id,
-        "dishes_items": json.dumps(
-            [
-                {"dishID": "11", "dishOrderedQuantity": 1},
-            ]
-        ),
-        "drinks_items": json.dumps(
-            [
-                {"drinkID": "2", "drinkOrderedQuantity": 3},
-            ]
-        ),
+        "dishes_items": [
+            {"dishID": "11", "dishOrderedQuantity": 1},
+        ],
+        "drinks_items": [
+            {"drinkID": "2", "drinkOrderedQuantity": 3},
+        ],
     }

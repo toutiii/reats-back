@@ -593,7 +593,7 @@ class OrderView(
 ):
     permission_classes = [UserPermission]
     queryset = OrderModel.objects.all()
-    parser_classes = [MultiPartParser, JSONParser]
+
     pagination_class = StandardizedResultsSetPagination
     filter_backends = [filters.DjangoFilterBackend]
     filterset_class = OrderFilter
@@ -633,22 +633,26 @@ class OrderView(
     def perform_update(self, serializer: BaseSerializer) -> None:
         super().perform_update(serializer)
         order_instance: OrderModel = serializer.instance  # type: ignore
-        current_order_instance: OrderModel = OrderModel.objects.get(pk=order_instance.pk)
 
-        if current_order_instance.status == OrderStatusEnum.DRAFT:
+        # `status` is excluded from OrderSerializer, so the instance still holds
+        # the persisted status here — no need to reload it from the database.
+        if order_instance.status == OrderStatusEnum.DRAFT:
             # We can update a payment intent only if it has not been paid yet.
             update_payment_intent(order_instance)
 
     def update(self, request, *args, **kwargs):
-        super().update(request, *args, **kwargs)
-        instance = self.get_object()
+        partial = kwargs.pop("partial", False)
+        instance: OrderModel = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
 
         if instance.status == OrderStatusEnum.DRAFT:
-            serializer = OrderSerializer(instance)
+            response_serializer = OrderSerializer(instance)
         else:
-            serializer = OrderGETSerializer(instance)
+            response_serializer = OrderGETSerializer(instance)
 
-        return self.success(data=serializer.data)
+        return self.success(data=response_serializer.data)
 
     def partial_update(self, request, *args, **kwargs):
         instance: OrderModel = self.get_object()
@@ -773,12 +777,22 @@ class StripeWebhookView(GenericViewSet):
         except TypeError:
             event = request.data
 
-        if event["type"] == "payment_intent.succeeded":
+        # With manual capture, the customer payment only authorizes the funds.
+        # Stripe emits `amount_capturable_updated` at that point (not `succeeded`),
+        # which is when the order becomes PENDING and visible to the cooker.
+        if event["type"] == "payment_intent.amount_capturable_updated":
             payment_intent_id = event["data"]["object"]["id"]
-            order_instance: OrderModel = OrderModel.objects.get(stripe_payment_intent_id=payment_intent_id)
-
-            order_instance.paid_date = datetime.fromtimestamp(event["created"], timezone.utc)
+            order_instance = OrderModel.objects.get(stripe_payment_intent_id=payment_intent_id)
             order_instance.transition_to(OrderStatusEnum.PENDING)
+
+        # `succeeded` is now emitted only after the funds are captured, i.e. once
+        # the cooker has accepted the order. This is when the customer is actually
+        # charged, so we record `paid_date` here.
+        elif event["type"] == "payment_intent.succeeded":
+            payment_intent_id = event["data"]["object"]["id"]
+            order_instance = OrderModel.objects.get(stripe_payment_intent_id=payment_intent_id)
+            order_instance.paid_date = datetime.fromtimestamp(event["created"], timezone.utc)
+            order_instance.save()
 
         return Response(status=status.HTTP_200_OK)
 
