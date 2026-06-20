@@ -1,19 +1,18 @@
 from datetime import timedelta
-from decimal import Decimal
 
 from core_app.models import OrderModel
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db.models import Q
 from django.utils.timezone import now
-from utils.common import compute_order_items_total_amount, create_stripe_refund, update_cooker_acceptance_rate
+from utils.common import cancel_payment_intent, update_cooker_acceptance_rate
 from utils.enums import OrderStatusEnum
 
 
 class Command(BaseCommand):
     help = (
         "Expire pending orders that have exceeded the acceptance timeout. "
-        "Transitions them to NOT_ACCEPTED, triggers a Stripe refund, and updates the cooker acceptance rate. "
+        "Transitions them to NOT_ACCEPTED, cancels the Stripe authorization, and updates the cooker acceptance rate. "
     )
 
     def handle(self, *args, **kwargs) -> None:
@@ -29,13 +28,13 @@ class Command(BaseCommand):
         count = 0
         for order in expired_orders:
             try:
+                # The order is still PENDING: the customer only authorized the
+                # payment, it was never captured. We release the authorization
+                # rather than issuing a refund (which would fail on Stripe).
+                # Cancel first so we never leave a NOT_ACCEPTED order with a
+                # dangling Stripe authorization.
+                cancel_payment_intent(order)
                 order.transition_to(OrderStatusEnum.NOT_ACCEPTED)
-
-                amount_to_refund_in_cents = Decimal(
-                    str(compute_order_items_total_amount(order) + order.delivery_fees)
-                ) * Decimal("100")
-                create_stripe_refund(int(amount_to_refund_in_cents), order.stripe_payment_intent_id)
-
                 update_cooker_acceptance_rate(order, OrderStatusEnum.NOT_ACCEPTED)
 
                 count += 1

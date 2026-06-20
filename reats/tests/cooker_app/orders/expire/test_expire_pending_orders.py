@@ -41,7 +41,7 @@ def make_order(
 def test_expired_order_transitions_to_not_accepted(
     is_scheduled: bool,
     minutes_to_advance: int,
-    mock_stripe_create_refund_success: MagicMock,
+    mock_stripe_payment_intent_cancel: MagicMock,
 ) -> None:
     with freeze_time(BASE_FROZEN_TIME) as frozen_time:
         OrderModel.objects.filter(status=OrderStatusEnum.PENDING).delete()
@@ -52,7 +52,7 @@ def test_expired_order_transitions_to_not_accepted(
 
     order.refresh_from_db()
     assert order.status == OrderStatusEnum.NOT_ACCEPTED.value
-    mock_stripe_create_refund_success.assert_called_once()
+    mock_stripe_payment_intent_cancel.assert_called_once()
 
 
 @pytest.mark.django_db
@@ -72,7 +72,7 @@ def test_expired_order_transitions_to_not_accepted(
 def test_order_not_yet_expired_is_not_touched(
     is_scheduled: bool,
     minutes_to_advance: int,
-    mock_stripe_create_refund_success: MagicMock,
+    mock_stripe_payment_intent_cancel: MagicMock,
 ) -> None:
     with freeze_time(BASE_FROZEN_TIME) as frozen_time:
         OrderModel.objects.filter(status=OrderStatusEnum.PENDING).delete()
@@ -83,21 +83,25 @@ def test_order_not_yet_expired_is_not_touched(
 
     order.refresh_from_db()
     assert order.status == OrderStatusEnum.PENDING.value
-    mock_stripe_create_refund_success.assert_not_called()
+    mock_stripe_payment_intent_cancel.assert_not_called()
 
 
 @pytest.mark.django_db
-def test_expired_order_triggers_stripe_refund(
+def test_expired_order_cancels_stripe_authorization(
+    mock_stripe_payment_intent_cancel: MagicMock,
     mock_stripe_create_refund_success: MagicMock,
 ) -> None:
+    # A pending order is only authorized, never captured: we cancel the
+    # authorization and must NOT attempt a refund (which would fail on Stripe).
     with freeze_time(BASE_FROZEN_TIME) as frozen_time:
         OrderModel.objects.filter(status=OrderStatusEnum.PENDING).delete()
         cooker = CookerModel.objects.get(pk=1)
-        make_order(cooker, is_scheduled=False)
+        make_order(cooker, is_scheduled=False, stripe_payment_intent_id="pi_test_cancel")
         frozen_time.move_to(BASE_FROZEN_TIME + timedelta(minutes=6))
         call_command("expire_pending_orders")
 
-    mock_stripe_create_refund_success.assert_called_once()
+    mock_stripe_payment_intent_cancel.assert_called_once_with("pi_test_cancel")
+    mock_stripe_create_refund_success.assert_not_called()
 
 
 @pytest.mark.django_db
@@ -112,7 +116,7 @@ def test_expired_order_triggers_stripe_refund(
 def test_expired_order_updates_acceptance_rate(
     initial_rate: float,
     expected_rate: float,
-    mock_stripe_create_refund_success: MagicMock,
+    mock_stripe_payment_intent_cancel: MagicMock,
 ) -> None:
     with freeze_time(BASE_FROZEN_TIME) as frozen_time:
         OrderModel.objects.filter(status=OrderStatusEnum.PENDING).delete()
@@ -125,7 +129,7 @@ def test_expired_order_updates_acceptance_rate(
 
     cooker.refresh_from_db()
     assert cooker.acceptance_rate == expected_rate
-    mock_stripe_create_refund_success.assert_called_once()
+    mock_stripe_payment_intent_cancel.assert_called_once()
 
 
 @pytest.mark.django_db
@@ -143,7 +147,7 @@ def test_expired_order_updates_acceptance_rate(
 )
 def test_non_pending_orders_are_never_expired(
     non_pending_status: OrderStatusEnum,
-    mock_stripe_create_refund_success: MagicMock,
+    mock_stripe_payment_intent_cancel: MagicMock,
 ) -> None:
     with freeze_time(BASE_FROZEN_TIME) as frozen_time:
         OrderModel.objects.filter(status=OrderStatusEnum.PENDING).delete()
@@ -156,4 +160,4 @@ def test_non_pending_orders_are_never_expired(
         frozen_time.move_to(BASE_FROZEN_TIME + timedelta(minutes=6))
         call_command("expire_pending_orders")
 
-    mock_stripe_create_refund_success.assert_not_called()
+    mock_stripe_payment_intent_cancel.assert_not_called()
