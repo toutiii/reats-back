@@ -2084,7 +2084,11 @@ class CookerOrderView(
         if new_status == OrderStatusEnum.CANCELLED:
             if previous_status == OrderStatusEnum.PENDING:
                 cancel_payment_intent(instance)
-            else:
+            elif previous_status in (
+                OrderStatusEnum.ACCEPTED,
+                OrderStatusEnum.PREPARING,
+                OrderStatusEnum.READY,
+            ):
                 amount_to_refund_in_cents = Decimal(
                     str(compute_order_items_total_amount(instance) + instance.delivery_fees)
                 ) * Decimal("100")
