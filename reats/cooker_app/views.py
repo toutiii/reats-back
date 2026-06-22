@@ -53,6 +53,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenViewBase
 from utils.common import (
     activate_user,
+    cancel_payment_intent,
     capture_payment_intent,
     compute_order_items_total_amount,
     compute_order_total_amount,
@@ -2059,6 +2060,7 @@ class CookerOrderView(
         return self.success(serializer.data)
 
     def _perform_cooker_action(self, instance: OrderModel, new_status: OrderStatusEnum) -> Response:
+        previous_status = instance.status
         if new_status == OrderStatusEnum.CANCELLED:
             instance.cancelled_by = CancelledByEnum.COOKER.value
         try:
@@ -2080,10 +2082,13 @@ class CookerOrderView(
         if new_status == OrderStatusEnum.ACCEPTED:
             capture_payment_intent(instance)
         if new_status == OrderStatusEnum.CANCELLED:
-            amount_to_refund_in_cents = Decimal(
-                str(compute_order_items_total_amount(instance) + instance.delivery_fees)
-            ) * Decimal("100")
-            create_stripe_refund(int(amount_to_refund_in_cents), instance.stripe_payment_intent_id)
+            if previous_status == OrderStatusEnum.PENDING:
+                cancel_payment_intent(instance)
+            else:
+                amount_to_refund_in_cents = Decimal(
+                    str(compute_order_items_total_amount(instance) + instance.delivery_fees)
+                ) * Decimal("100")
+                create_stripe_refund(int(amount_to_refund_in_cents), instance.stripe_payment_intent_id)
         update_cooker_acceptance_rate(instance, new_status)
         return self.success(CookerOrderGETSerializer(instance).data)
 
