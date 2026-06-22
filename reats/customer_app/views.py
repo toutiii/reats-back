@@ -1,7 +1,6 @@
 import json
 import logging
 from datetime import datetime, timezone
-from decimal import Decimal
 from typing import Type, Union
 
 from core_app.models import (
@@ -39,10 +38,9 @@ from rest_framework.serializers import BaseSerializer
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from utils.common import (
     activate_user,
-    compute_order_items_total_amount,
+    cancel_payment_intent,
     create_payment_intent,
     create_stripe_customer,
-    create_stripe_refund,
     delete_s3_object,
     delete_stripe_customer,
     format_phone,
@@ -662,10 +660,7 @@ class OrderView(
         if new_status == OrderStatusEnum.CANCELLED:
             instance.cancelled_by = CancelledByEnum.CUSTOMER.value
             if instance.status == OrderStatusEnum.PENDING:
-                amount_to_refund_in_cents = Decimal(
-                    str(compute_order_items_total_amount(instance) + instance.delivery_fees)
-                ) * Decimal("100")
-                create_stripe_refund(int(amount_to_refund_in_cents), instance.stripe_payment_intent_id)
+                cancel_payment_intent(instance)
 
         if new_status:
             try:
