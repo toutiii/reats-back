@@ -2147,8 +2147,11 @@ class CookerOrderView(
     @extend_schema(
         summary="Cancel an order",
         description=(
-            "Transitions the order to `cancelled` from `pending`, `accepted`, or `preparing`.\n\n"
-            "Triggers a Stripe refund and sets `cancelled_by` to `cooker`."
+            "Transitions the order to `cancelled` from `pending`, `accepted`, `preparing`, or `ready`, "
+            "and sets `cancelled_by` to `cooker`.\n\n"
+            "Stripe handling depends on the previous status: a `pending` order is only authorized, so its "
+            "authorization is released; an order cancelled from `accepted`, `preparing`, or `ready` was "
+            "already captured, so it is refunded."
         ),
         request=None,
         responses={
