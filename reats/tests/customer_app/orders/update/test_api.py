@@ -58,6 +58,7 @@ def test_switch_order_status_from_draft_to_cancelled_by_customer(
     mock_stripe_payment_intent_create: MagicMock,
     mock_stripe_create_ephemeral_key: MagicMock,
     mock_stripe_create_refund_success: MagicMock,
+    mock_stripe_payment_intent_cancel: MagicMock,
 ) -> None:
     with freeze_time("2024-05-08T10:16:00+00:00"):
         # First we create a draft order
@@ -103,10 +104,8 @@ def test_switch_order_status_from_draft_to_cancelled_by_customer(
         origins=["13 rue des Mazières 91000 Evry"],
         destinations=["1 rue André Lalande 91000 Evry"],
     )
-    mock_stripe_create_refund_success.assert_called_once_with(
-        amount=2319,
-        payment_intent="pi_3Q6VU7EEYeaFww1W0xCZEUxw",
-    )
+    mock_stripe_payment_intent_cancel.assert_called_once_with("pi_3Q6VU7EEYeaFww1W0xCZEUxw")
+    mock_stripe_create_refund_success.assert_not_called()
     mock_stripe_payment_intent_create.assert_called_once_with(
         amount=2459,
         currency="EUR",
@@ -130,6 +129,7 @@ def test_switch_order_status_from_draft_to_cancelled_by_cooker(
     mock_stripe_payment_intent_create: MagicMock,
     mock_stripe_create_ephemeral_key: MagicMock,
     mock_stripe_create_refund_success: MagicMock,
+    mock_stripe_payment_intent_cancel: MagicMock,
 ) -> None:
     with freeze_time("2024-05-08T10:16:00+00:00"):
         # First we create a draft order
@@ -174,10 +174,8 @@ def test_switch_order_status_from_draft_to_cancelled_by_cooker(
         origins=["13 rue des Mazières 91000 Evry"],
         destinations=["1 rue André Lalande 91000 Evry"],
     )
-    mock_stripe_create_refund_success.assert_called_once_with(
-        amount=2319,
-        payment_intent="pi_3Q6VU7EEYeaFww1W0xCZEUxw",
-    )
+    mock_stripe_payment_intent_cancel.assert_called_once_with("pi_3Q6VU7EEYeaFww1W0xCZEUxw")
+    mock_stripe_create_refund_success.assert_not_called()
     mock_stripe_payment_intent_create.assert_called_once_with(
         amount=2459,
         currency="EUR",
@@ -766,6 +764,7 @@ def test_switch_order_status_from_cancelled_by_customer_to_non_allowed_status(
     mock_stripe_payment_intent_create: MagicMock,
     mock_stripe_create_ephemeral_key: MagicMock,
     mock_stripe_create_refund_success: MagicMock,
+    mock_stripe_payment_intent_cancel: MagicMock,
 ) -> None:
     with freeze_time("2024-05-08T10:16:00+00:00"):
         # Create a draft order
@@ -832,10 +831,8 @@ def test_switch_order_status_from_cancelled_by_customer_to_non_allowed_status(
                 origins=["13 rue des Mazières 91000 Evry"],
                 destinations=["1 rue André Lalande 91000 Evry"],
             )
-    mock_stripe_create_refund_success.assert_called_once_with(
-        amount=2319,
-        payment_intent="pi_3Q6VU7EEYeaFww1W0xCZEUxw",
-    )
+    mock_stripe_payment_intent_cancel.assert_called_once_with("pi_3Q6VU7EEYeaFww1W0xCZEUxw")
+    mock_stripe_create_refund_success.assert_not_called()
     mock_stripe_payment_intent_create.assert_called_once_with(
         amount=2459,
         currency="EUR",
@@ -1476,6 +1473,7 @@ def test_cancel_order_when_initiated_by_customer_and_order_is_still_pending(
     mock_stripe_create_ephemeral_key: MagicMock,
     mock_stripe_webhook_construct_event_success: MagicMock,
     mock_stripe_create_refund_success: MagicMock,
+    mock_stripe_payment_intent_cancel: MagicMock,
 ):
     with freeze_time("2024-11-10T08:16:00+00:00"):
         response = client.post(
@@ -1539,10 +1537,8 @@ def test_cancel_order_when_initiated_by_customer_and_order_is_still_pending(
             stripe_version="2024-06-20",
         )
         mock_stripe_webhook_construct_event_success.assert_called_once()
-        mock_stripe_create_refund_success.assert_called_once_with(
-            amount=2319,
-            payment_intent="pi_3Q6VU7EEYeaFww1W0xCZEUxw",
-        )
+        mock_stripe_payment_intent_cancel.assert_called_once_with("pi_3Q6VU7EEYeaFww1W0xCZEUxw")
+        mock_stripe_create_refund_success.assert_not_called()
 
 
 @pytest.mark.django_db
