@@ -7,7 +7,7 @@ from core_app.models import AddressModel, CookerModel, CustomerModel, OrderModel
 from freezegun import freeze_time
 from rest_framework import status
 from rest_framework.test import APIClient
-from utils.enums import OrderStatusEnum
+from utils.enums import CancelledByEnum, OrderStatusEnum
 
 # Add this line to ignore E501 errors
 # flake8: noqa: E501
@@ -176,6 +176,112 @@ def test_update_order_from_processing_to_cancelled_by_cooker_status(
         automatic_payment_methods={"enabled": True},
         capture_method="manual",
         customer="cus_QyZ76Ae0W5KeqP",
+    )
+
+
+@pytest.mark.django_db
+def test_update_order_from_preparing_to_cancelled_by_cooker_status(
+    auth_headers: dict,
+    client: APIClient,
+    cookers_order_path: str,
+    customer_order_path: str,
+    post_order_data: dict,
+    mock_googlemaps_distance_matrix: MagicMock,
+    mock_stripe_payment_intent_create: MagicMock,
+    mock_stripe_create_refund_success: MagicMock,
+) -> None:
+    with freeze_time("2024-05-08T10:16:00+00:00"):
+        response = client.post(
+            customer_order_path,
+            post_order_data,
+            format="json",
+            follow=False,
+            **auth_headers,
+        )
+        assert response.status_code == status.HTTP_201_CREATED
+
+        order: OrderModel = OrderModel.objects.latest("pk")
+        assert order.status == OrderStatusEnum.DRAFT.value
+
+    order.status = OrderStatusEnum.PENDING.value
+    order.save()
+
+    with freeze_time("2024-05-08T10:18:00+00:00"):
+        response = client.post(f"{cookers_order_path}{order.id}/accept/", follow=False, **auth_headers)
+        assert response.status_code == status.HTTP_200_OK
+
+    with freeze_time("2024-05-08T10:19:00+00:00"):
+        response = client.post(f"{cookers_order_path}{order.id}/start-preparation/", follow=False, **auth_headers)
+        assert response.status_code == status.HTTP_200_OK
+
+    order.refresh_from_db()
+    assert order.status == OrderStatusEnum.PREPARING.value
+
+    with freeze_time("2024-05-08T10:25:00+00:00"):
+        response = client.post(f"{cookers_order_path}{order.id}/cancel/", follow=False, **auth_headers)
+        assert response.status_code == status.HTTP_200_OK
+
+    order.refresh_from_db()
+    assert order.status == OrderStatusEnum.CANCELLED.value
+    assert order.cancelled_by == CancelledByEnum.COOKER.value
+    mock_stripe_create_refund_success.assert_called_once_with(
+        amount=2319,
+        payment_intent="pi_3Q6VU7EEYeaFww1W0xCZEUxw",
+    )
+
+
+@pytest.mark.django_db
+def test_update_order_from_ready_to_cancelled_by_cooker_status(
+    auth_headers: dict,
+    client: APIClient,
+    cookers_order_path: str,
+    customer_order_path: str,
+    post_order_data: dict,
+    mock_googlemaps_distance_matrix: MagicMock,
+    mock_stripe_payment_intent_create: MagicMock,
+    mock_stripe_create_refund_success: MagicMock,
+) -> None:
+    with freeze_time("2024-05-08T10:16:00+00:00"):
+        response = client.post(
+            customer_order_path,
+            post_order_data,
+            format="json",
+            follow=False,
+            **auth_headers,
+        )
+        assert response.status_code == status.HTTP_201_CREATED
+
+        order: OrderModel = OrderModel.objects.latest("pk")
+        assert order.status == OrderStatusEnum.DRAFT.value
+
+    order.status = OrderStatusEnum.PENDING.value
+    order.save()
+
+    with freeze_time("2024-05-08T10:18:00+00:00"):
+        response = client.post(f"{cookers_order_path}{order.id}/accept/", follow=False, **auth_headers)
+        assert response.status_code == status.HTTP_200_OK
+
+    with freeze_time("2024-05-08T10:19:00+00:00"):
+        response = client.post(f"{cookers_order_path}{order.id}/start-preparation/", follow=False, **auth_headers)
+        assert response.status_code == status.HTTP_200_OK
+
+    with freeze_time("2024-05-08T10:30:00+00:00"):
+        response = client.post(f"{cookers_order_path}{order.id}/mark-ready/", follow=False, **auth_headers)
+        assert response.status_code == status.HTTP_200_OK
+
+    order.refresh_from_db()
+    assert order.status == OrderStatusEnum.READY.value
+
+    with freeze_time("2024-05-08T10:35:00+00:00"):
+        response = client.post(f"{cookers_order_path}{order.id}/cancel/", follow=False, **auth_headers)
+        assert response.status_code == status.HTTP_200_OK
+
+    order.refresh_from_db()
+    assert order.status == OrderStatusEnum.CANCELLED.value
+    assert order.cancelled_by == CancelledByEnum.COOKER.value
+    mock_stripe_create_refund_success.assert_called_once_with(
+        amount=2319,
+        payment_intent="pi_3Q6VU7EEYeaFww1W0xCZEUxw",
     )
 
 
