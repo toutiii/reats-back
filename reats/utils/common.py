@@ -3,6 +3,7 @@ import logging
 import os
 import time
 from datetime import datetime, timedelta, timezone
+from decimal import Decimal
 from typing import Type, Union
 
 import boto3
@@ -399,6 +400,25 @@ def create_stripe_refund(amount: int, payment_intent_id: str) -> None:
     else:
         logger.info(f"Refund for payment intent {payment_intent_id} created successfully")
         logger.debug(response)
+
+
+def compute_customer_cancellation_refund_amount(order: OrderModel) -> int:
+    """
+    Refund amount, in cents, for a customer cancelling an accepted or preparing order.
+
+    The customer is refunded the full amount they paid (items sub-total, delivery
+    fees and service fees) minus a cooker compensation, computed as a percentage of
+    the items sub-total (settings.COOKER_COMPENSATION_RATE). The result is floored at 0.
+
+    :param order: The order being cancelled
+    :return: The amount to refund to the customer, in cents
+    """
+    total = Decimal(str(compute_order_total_amount(order)))
+    sub_total = Decimal(str(compute_order_items_total_amount(order)))
+    rate = Decimal(str(settings.COOKER_COMPENSATION_RATE))
+    compensation = sub_total * rate / Decimal("100")
+    refund_amount = (total - compensation) * Decimal("100")
+    return max(int(refund_amount), 0)
 
 
 def capture_payment_intent(order: OrderModel) -> None:

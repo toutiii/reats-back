@@ -39,8 +39,10 @@ from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from utils.common import (
     activate_user,
     cancel_payment_intent,
+    compute_customer_cancellation_refund_amount,
     create_payment_intent,
     create_stripe_customer,
+    create_stripe_refund,
     delete_s3_object,
     delete_stripe_customer,
     format_phone,
@@ -656,11 +658,10 @@ class OrderView(
     def partial_update(self, request, *args, **kwargs):
         instance: OrderModel = self.get_object()
         new_status = request.data.get("status")
+        previous_status = instance.status
 
         if new_status == OrderStatusEnum.CANCELLED:
             instance.cancelled_by = CancelledByEnum.CUSTOMER.value
-            if instance.status == OrderStatusEnum.PENDING:
-                cancel_payment_intent(instance)
 
         if new_status:
             try:
@@ -676,6 +677,24 @@ class OrderView(
                     message="An error occurred during status transition",
                     code=ErrorCodeEnum.INTERNAL_SERVER_ERROR,
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+
+        # The state transition succeeded: settle the payment based on how far the
+        # order had progressed when the customer cancelled. The cancellation is
+        # already persisted, so a Stripe failure here must not 500: we log it for
+        # manual reconciliation instead of leaving the customer with an error.
+        if new_status == OrderStatusEnum.CANCELLED:
+            try:
+                if previous_status == OrderStatusEnum.PENDING:
+                    cancel_payment_intent(instance)
+                elif previous_status in (OrderStatusEnum.ACCEPTED, OrderStatusEnum.PREPARING):
+                    create_stripe_refund(
+                        compute_customer_cancellation_refund_amount(instance),
+                        instance.stripe_payment_intent_id,
+                    )
+            except Exception as e:
+                logger.error(
+                    f"Order {instance.id} cancelled but Stripe settlement failed, " f"needs manual reconciliation: {e}"
                 )
 
         serializer = OrderGETSerializer(instance)
