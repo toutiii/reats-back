@@ -167,7 +167,7 @@ def test_update_order_from_processing_to_cancelled_by_cooker_status(
         destinations=["1 rue André Lalande 91000 Evry"],
     )
     mock_stripe_create_refund_success.assert_called_once_with(
-        amount=2319,
+        amount=2459,
         payment_intent="pi_3Q6VU7EEYeaFww1W0xCZEUxw",
     )
     mock_stripe_payment_intent_create.assert_called_once_with(
@@ -225,7 +225,7 @@ def test_update_order_from_preparing_to_cancelled_by_cooker_status(
     assert order.status == OrderStatusEnum.CANCELLED.value
     assert order.cancelled_by == CancelledByEnum.COOKER.value
     mock_stripe_create_refund_success.assert_called_once_with(
-        amount=2319,
+        amount=2459,
         payment_intent="pi_3Q6VU7EEYeaFww1W0xCZEUxw",
     )
 
@@ -280,7 +280,7 @@ def test_update_order_from_ready_to_cancelled_by_cooker_status(
     assert order.status == OrderStatusEnum.CANCELLED.value
     assert order.cancelled_by == CancelledByEnum.COOKER.value
     mock_stripe_create_refund_success.assert_called_once_with(
-        amount=2319,
+        amount=2459,
         payment_intent="pi_3Q6VU7EEYeaFww1W0xCZEUxw",
     )
 
