@@ -190,6 +190,180 @@ def test_switch_order_status_from_draft_to_cancelled_by_cooker(
 
 
 @pytest.mark.django_db
+def test_switch_order_status_from_preparing_to_cancelled_by_customer_refunds_partially(
+    auth_headers: dict,
+    client: APIClient,
+    customer_order_path: str,
+    post_order_data: dict,
+    mock_googlemaps_distance_matrix: MagicMock,
+    mock_stripe_payment_intent_create: MagicMock,
+    mock_stripe_create_refund_success: MagicMock,
+    settings,
+) -> None:
+    settings.COOKER_COMPENSATION_RATE = 30.0
+    with freeze_time("2024-05-08T10:16:00+00:00"):
+        response = client.post(
+            customer_order_path,
+            post_order_data,
+            format="json",
+            follow=False,
+            **auth_headers,
+        )
+        assert response.status_code == status.HTTP_201_CREATED
+        order: OrderModel = OrderModel.objects.latest("pk")
+
+    order.status = OrderStatusEnum.PREPARING.value
+    order.save()
+
+    with freeze_time("2024-05-08T10:41:00+00:00"):
+        cancel_response = client.patch(
+            f"{customer_order_path}{order.id}/",
+            {"status": OrderStatusEnum.CANCELLED.value},
+            format="json",
+            follow=False,
+            **auth_headers,
+        )
+        assert cancel_response.status_code == status.HTTP_200_OK
+
+    order.refresh_from_db()
+    assert order.status == OrderStatusEnum.CANCELLED.value
+    # total paid 24.59 - cooker compensation (30% * 20.0 sub_total = 6.0) = 18.59
+    mock_stripe_create_refund_success.assert_called_once_with(
+        amount=1859,
+        payment_intent="pi_3Q6VU7EEYeaFww1W0xCZEUxw",
+    )
+
+
+@pytest.mark.django_db
+def test_forbidden_cancellation_transition_does_not_touch_stripe(
+    auth_headers: dict,
+    client: APIClient,
+    customer_order_path: str,
+    post_order_data: dict,
+    mock_googlemaps_distance_matrix: MagicMock,
+    mock_stripe_payment_intent_create: MagicMock,
+    mock_stripe_create_refund_success: MagicMock,
+    mock_stripe_payment_intent_cancel: MagicMock,
+) -> None:
+    # Cancelling a completed order is a forbidden transition: it must return 400
+    # and never issue any Stripe refund or authorization release.
+    with freeze_time("2024-05-08T10:16:00+00:00"):
+        response = client.post(
+            customer_order_path,
+            post_order_data,
+            format="json",
+            follow=False,
+            **auth_headers,
+        )
+        assert response.status_code == status.HTTP_201_CREATED
+        order: OrderModel = OrderModel.objects.latest("pk")
+
+    order.status = OrderStatusEnum.COMPLETED.value
+    order.save()
+
+    cancel_response = client.patch(
+        f"{customer_order_path}{order.id}/",
+        {"status": OrderStatusEnum.CANCELLED.value},
+        format="json",
+        follow=False,
+        **auth_headers,
+    )
+
+    assert cancel_response.status_code == status.HTTP_400_BAD_REQUEST
+    order.refresh_from_db()
+    assert order.status == OrderStatusEnum.COMPLETED.value
+    mock_stripe_create_refund_success.assert_not_called()
+    mock_stripe_payment_intent_cancel.assert_not_called()
+
+
+@pytest.mark.django_db
+def test_customer_cancellation_refund_uses_configured_compensation_rate(
+    auth_headers: dict,
+    client: APIClient,
+    customer_order_path: str,
+    post_order_data: dict,
+    mock_googlemaps_distance_matrix: MagicMock,
+    mock_stripe_payment_intent_create: MagicMock,
+    mock_stripe_create_refund_success: MagicMock,
+    settings,
+) -> None:
+    # A different rate must change the refund: proves the amount is driven by the
+    # setting and not hard-coded. 50% of the 20.0 sub_total = 10.0 compensation,
+    # so refund = total paid 24.59 - 10.0 = 14.59.
+    settings.COOKER_COMPENSATION_RATE = 50.0
+    with freeze_time("2024-05-08T10:16:00+00:00"):
+        response = client.post(
+            customer_order_path,
+            post_order_data,
+            format="json",
+            follow=False,
+            **auth_headers,
+        )
+        assert response.status_code == status.HTTP_201_CREATED
+        order: OrderModel = OrderModel.objects.latest("pk")
+
+    order.status = OrderStatusEnum.ACCEPTED.value
+    order.save()
+
+    with freeze_time("2024-05-08T10:41:00+00:00"):
+        cancel_response = client.patch(
+            f"{customer_order_path}{order.id}/",
+            {"status": OrderStatusEnum.CANCELLED.value},
+            format="json",
+            follow=False,
+            **auth_headers,
+        )
+        assert cancel_response.status_code == status.HTTP_200_OK
+
+    order.refresh_from_db()
+    assert order.status == OrderStatusEnum.CANCELLED.value
+    mock_stripe_create_refund_success.assert_called_once_with(
+        amount=1459,
+        payment_intent="pi_3Q6VU7EEYeaFww1W0xCZEUxw",
+    )
+
+
+@pytest.mark.django_db
+def test_switch_order_status_from_ready_to_cancelled_by_customer_does_not_refund(
+    auth_headers: dict,
+    client: APIClient,
+    customer_order_path: str,
+    post_order_data: dict,
+    mock_googlemaps_distance_matrix: MagicMock,
+    mock_stripe_payment_intent_create: MagicMock,
+    mock_stripe_create_refund_success: MagicMock,
+) -> None:
+    with freeze_time("2024-05-08T10:16:00+00:00"):
+        response = client.post(
+            customer_order_path,
+            post_order_data,
+            format="json",
+            follow=False,
+            **auth_headers,
+        )
+        assert response.status_code == status.HTTP_201_CREATED
+        order: OrderModel = OrderModel.objects.latest("pk")
+
+    order.status = OrderStatusEnum.READY.value
+    order.save()
+
+    with freeze_time("2024-05-08T10:41:00+00:00"):
+        cancel_response = client.patch(
+            f"{customer_order_path}{order.id}/",
+            {"status": OrderStatusEnum.CANCELLED.value},
+            format="json",
+            follow=False,
+            **auth_headers,
+        )
+        assert cancel_response.status_code == status.HTTP_200_OK
+
+    order.refresh_from_db()
+    assert order.status == OrderStatusEnum.CANCELLED.value
+    # Cancelling from ready (or later) is too late: no refund.
+    mock_stripe_create_refund_success.assert_not_called()
+
+
+@pytest.mark.django_db
 def test_switch_order_status_from_draft_to_delivered(
     auth_headers: dict,
     client: APIClient,
@@ -1596,7 +1770,9 @@ def test_cancel_order_when_initiated_by_customer_but_order_is_in_processing_stat
     mock_stripe_create_ephemeral_key: MagicMock,
     mock_stripe_webhook_construct_event_success: MagicMock,
     mock_stripe_create_refund_success: MagicMock,
+    settings,
 ):
+    settings.COOKER_COMPENSATION_RATE = 30.0
     with freeze_time("2024-11-10T08:16:00+00:00"):
         response = client.post(
             customer_order_path,
@@ -1665,7 +1841,12 @@ def test_cancel_order_when_initiated_by_customer_but_order_is_in_processing_stat
             stripe_version="2024-06-20",
         )
         mock_stripe_webhook_construct_event_success.assert_called_once()
-        mock_stripe_create_refund_success.assert_not_called()
+        # Cancelling from accepted refunds the full amount paid (24.59) minus the
+        # cooker compensation (30% of the 20.0 sub_total = 6.0) = 18.59.
+        mock_stripe_create_refund_success.assert_called_once_with(
+            amount=1859,
+            payment_intent="pi_3Q6VU7EEYeaFww1W0xCZEUxw",
+        )
 
 
 @pytest.mark.django_db
@@ -1725,7 +1906,9 @@ def test_cancel_order_when_initiated_by_customer_but_order_is_in_completed_state
     mock_stripe_create_ephemeral_key: MagicMock,
     mock_stripe_webhook_construct_event_success: MagicMock,
     mock_stripe_create_refund_success: MagicMock,
+    settings,
 ):
+    settings.COOKER_COMPENSATION_RATE = 30.0
     with freeze_time("2024-11-10T08:16:00+00:00"):
         response = client.post(
             customer_order_path,
@@ -1794,7 +1977,11 @@ def test_cancel_order_when_initiated_by_customer_but_order_is_in_completed_state
             stripe_version="2024-06-20",
         )
         mock_stripe_webhook_construct_event_success.assert_called_once()
-        mock_stripe_create_refund_success.assert_not_called()
+        # This case cancels from accepted: partial refund applies (24.59 - 6.0).
+        mock_stripe_create_refund_success.assert_called_once_with(
+            amount=1859,
+            payment_intent="pi_3Q6VU7EEYeaFww1W0xCZEUxw",
+        )
 
 
 @pytest.mark.django_db

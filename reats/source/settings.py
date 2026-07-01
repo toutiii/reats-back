@@ -275,6 +275,10 @@ DEFAULT_CURRENCY = "EUR"
 ACCEPTANCE_RATE_INCREASE_VALUE = 2
 ACCEPTANCE_RATE_DECREASE_VALUE = 10
 
+# Percentage of the items sub-total kept as cooker compensation when a customer
+# cancels an order already accepted or being prepared. Configurable per env.
+COOKER_COMPENSATION_RATE = float(os.getenv("COOKER_COMPENSATION_RATE", "30"))
+
 propagate = True
 LOGGING: dict[str, Any] = {
     "version": 1,

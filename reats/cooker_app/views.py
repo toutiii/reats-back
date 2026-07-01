@@ -55,7 +55,6 @@ from utils.common import (
     activate_user,
     cancel_payment_intent,
     capture_payment_intent,
-    compute_order_items_total_amount,
     compute_order_total_amount,
     create_stripe_refund,
     delete_s3_object,
@@ -2082,17 +2081,24 @@ class CookerOrderView(
         if new_status == OrderStatusEnum.ACCEPTED:
             capture_payment_intent(instance)
         if new_status == OrderStatusEnum.CANCELLED:
-            if previous_status == OrderStatusEnum.PENDING:
-                cancel_payment_intent(instance)
-            elif previous_status in (
-                OrderStatusEnum.ACCEPTED,
-                OrderStatusEnum.PREPARING,
-                OrderStatusEnum.READY,
-            ):
-                amount_to_refund_in_cents = Decimal(
-                    str(compute_order_items_total_amount(instance) + instance.delivery_fees)
-                ) * Decimal("100")
-                create_stripe_refund(int(amount_to_refund_in_cents), instance.stripe_payment_intent_id)
+            # The cancellation is already persisted, so a Stripe failure here must
+            # not 500: we log it for manual reconciliation instead.
+            try:
+                if previous_status == OrderStatusEnum.PENDING:
+                    cancel_payment_intent(instance)
+                elif previous_status in (
+                    OrderStatusEnum.ACCEPTED,
+                    OrderStatusEnum.PREPARING,
+                    OrderStatusEnum.READY,
+                ):
+                    # Cooker-initiated cancellation: the customer is fully refunded
+                    # (items sub-total, delivery fees and service fees).
+                    amount_to_refund_in_cents = Decimal(str(compute_order_total_amount(instance))) * Decimal("100")
+                    create_stripe_refund(int(amount_to_refund_in_cents), instance.stripe_payment_intent_id)
+            except Exception as e:
+                logger.error(
+                    f"Order {instance.id} cancelled but Stripe settlement failed, " f"needs manual reconciliation: {e}"
+                )
         update_cooker_acceptance_rate(instance, new_status)
         return self.success(CookerOrderGETSerializer(instance).data)
 
