@@ -608,6 +608,8 @@ class CookerOrderListSerializer(serializers.ModelSerializer):
             "id",
             "status",
             "created",
+            "is_scheduled",
+            "scheduled_delivery_date",
             "customer",
             "address",
             "dishes_items",
