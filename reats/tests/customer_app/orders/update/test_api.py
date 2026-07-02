@@ -2032,3 +2032,32 @@ def test_update_order_but_unexpected_exception_raises_on_customer_app(
         mock_stripe_webhook_construct_event_failed.assert_not_called()
         mock_stripe_payment_intent_update.assert_not_called()
         mock_transition_to.assert_called_once()
+
+
+@pytest.mark.django_db
+def test_update_order_fails_once_order_has_been_placed(
+    auth_headers: dict,
+    client: APIClient,
+    customer_order_path: str,
+    post_order_data: dict,
+) -> None:
+    # Order 9 belongs to customer 1 and is pending: its content is frozen.
+    order_id = 9
+    order: OrderModel = OrderModel.objects.get(pk=order_id)
+    assert order.status == OrderStatusEnum.PENDING.value
+
+    response = client.put(
+        f"{customer_order_path}{order_id}/",
+        post_order_data,
+        format="json",
+        follow=False,
+        **auth_headers,
+    )
+
+    assert response.status_code == status.HTTP_409_CONFLICT
+    assert response.json()["error"]["code"] == "VALIDATION_ERROR"
+
+    order.refresh_from_db()
+    assert order.status == OrderStatusEnum.PENDING.value
+    assert not OrderDishItemModel.objects.filter(order=order).exists()
+    assert not OrderDrinkItemModel.objects.filter(order=order).exists()
