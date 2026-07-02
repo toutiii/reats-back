@@ -2,12 +2,13 @@ import json
 from unittest.mock import MagicMock
 
 import pytest
-from core_app.models import DishModel, DishNutritionalInfo, OrderDishItemModel
+from core_app.models import DishModel, DishNutritionalInfo, OrderDishItemModel, OrderModel
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from freezegun import freeze_time
 from rest_framework import status
 from rest_framework.test import APIClient
+from utils.enums import OrderStatusEnum
 
 
 @pytest.fixture
@@ -266,7 +267,9 @@ class TestUpdateDishPriceWithOngoingOrderFailure:
 
     @pytest.fixture
     def ongoing_order_item(self, dish_id: int) -> OrderDishItemModel:
-        # Order 9 belongs to cooker 1 and is pending.
+        order = OrderModel.objects.get(pk=9)
+        assert int(order.cooker.id) == 1
+        assert order.status == OrderStatusEnum.PENDING
         return OrderDishItemModel.objects.create(order_id=9, dish_id=dish_id, dish_quantity=1)
 
     def test_response(
@@ -298,17 +301,35 @@ class TestUpdateDishPriceWithOngoingOrderFailure:
         dish_id: int,
         ongoing_order_item: OrderDishItemModel,
         path: str,
+        post_data_without_photo: dict,
     ) -> None:
+        patch_data = {
+            "category": "dessert",
+            "description": "New description",
+            "name": "New name",
+            "cost": "10",
+            "preparation_time": 15,
+            "max_concurrent_orders": 5,
+            "is_enabled": False,
+        }
+
         response = client.patch(
             f"{path}{dish_id}/",
-            encode_multipart(BOUNDARY, {"description": "Still editable"}),
+            encode_multipart(BOUNDARY, patch_data),
             content_type=MULTIPART_CONTENT,
             follow=False,
             **auth_headers,
         )
 
         assert response.status_code == status.HTTP_200_OK
-        assert DishModel.objects.get(pk=dish_id).description == "Still editable"
+        dish_object = DishModel.objects.get(pk=dish_id)
+        assert dish_object.category == patch_data["category"]
+        assert dish_object.description == patch_data["description"]
+        assert dish_object.name == patch_data["name"]
+        assert dish_object.cost == 10.0
+        assert dish_object.preparation_time == 15
+        assert dish_object.max_concurrent_orders == 5
+        assert dish_object.is_enabled is False
 
     def test_unchanged_price_is_allowed(
         self,
