@@ -24,6 +24,8 @@ def cooker_id() -> int:
                         "id": 9,
                         "status": "pending",
                         "created": "2024-12-11T20:53:05.718117Z",
+                        "is_scheduled": False,
+                        "scheduled_delivery_date": "2024-12-17T16:30:00Z",
                         "customer": {
                             "id": 1,
                             "lastname": "TEN",
@@ -42,6 +44,8 @@ def cooker_id() -> int:
                         "id": 10,
                         "status": "pending",
                         "created": "2024-12-11T20:53:05.718117Z",
+                        "is_scheduled": False,
+                        "scheduled_delivery_date": "2024-12-17T16:30:00Z",
                         "customer": {
                             "id": 1,
                             "lastname": "TEN",
@@ -73,6 +77,8 @@ def cooker_id() -> int:
                         "id": 13,
                         "status": "accepted",
                         "created": "2024-12-11T20:53:05.718117Z",
+                        "is_scheduled": False,
+                        "scheduled_delivery_date": "2024-12-17T16:30:00Z",
                         "customer": {
                             "id": 1,
                             "lastname": "TEN",
