@@ -2,12 +2,13 @@ import json
 from unittest.mock import MagicMock
 
 import pytest
-from core_app.models import DishModel, DishNutritionalInfo
+from core_app.models import DishModel, DishNutritionalInfo, OrderDishItemModel, OrderModel
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from freezegun import freeze_time
 from rest_framework import status
 from rest_framework.test import APIClient
+from utils.enums import OrderStatusEnum
 
 
 @pytest.fixture
@@ -258,3 +259,95 @@ class TestUpdateDishNutritionalInfoSuccess:
         dish_nutritional_info = DishNutritionalInfo.objects.get(dish=dish)
         for key, value in patch_nutritional_info.items():
             assert getattr(dish_nutritional_info, key) == value
+
+
+@pytest.mark.django_db
+class TestUpdateDishPriceWithOngoingOrderFailure:
+    """The price of a dish referenced by an ongoing order is frozen."""
+
+    @pytest.fixture
+    def ongoing_order_item(self, dish_id: int) -> OrderDishItemModel:
+        order = OrderModel.objects.get(pk=9)
+        assert int(order.cooker.id) == 1
+        assert order.status == OrderStatusEnum.PENDING
+        return OrderDishItemModel.objects.create(order_id=9, dish_id=dish_id, dish_quantity=1)
+
+    def test_response(
+        self,
+        auth_headers: dict,
+        client: APIClient,
+        dish_id: int,
+        ongoing_order_item: OrderDishItemModel,
+        path: str,
+    ) -> None:
+        original_price = DishModel.objects.get(pk=dish_id).price
+
+        response = client.patch(
+            f"{path}{dish_id}/",
+            encode_multipart(BOUNDARY, {"price": "20"}),
+            content_type=MULTIPART_CONTENT,
+            follow=False,
+            **auth_headers,
+        )
+
+        assert response.status_code == status.HTTP_409_CONFLICT
+        assert response.json()["error"]["code"] == "VALIDATION_ERROR"
+        assert DishModel.objects.get(pk=dish_id).price == original_price
+
+    def test_other_fields_remain_editable(
+        self,
+        auth_headers: dict,
+        client: APIClient,
+        dish_id: int,
+        ongoing_order_item: OrderDishItemModel,
+        path: str,
+        post_data_without_photo: dict,
+    ) -> None:
+        patch_data = {
+            "category": "dessert",
+            "description": "New description",
+            "name": "New name",
+            "cost": "10",
+            "preparation_time": 15,
+            "max_concurrent_orders": 5,
+            "is_enabled": False,
+        }
+
+        response = client.patch(
+            f"{path}{dish_id}/",
+            encode_multipart(BOUNDARY, patch_data),
+            content_type=MULTIPART_CONTENT,
+            follow=False,
+            **auth_headers,
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        dish_object = DishModel.objects.get(pk=dish_id)
+        assert dish_object.category == patch_data["category"]
+        assert dish_object.description == patch_data["description"]
+        assert dish_object.name == patch_data["name"]
+        assert dish_object.cost == 10.0
+        assert dish_object.preparation_time == 15
+        assert dish_object.max_concurrent_orders == 5
+        assert dish_object.is_enabled is False
+
+    def test_unchanged_price_is_allowed(
+        self,
+        auth_headers: dict,
+        client: APIClient,
+        dish_id: int,
+        ongoing_order_item: OrderDishItemModel,
+        path: str,
+    ) -> None:
+        original_price = DishModel.objects.get(pk=dish_id).price
+
+        response = client.patch(
+            f"{path}{dish_id}/",
+            encode_multipart(BOUNDARY, {"price": str(original_price), "description": "New text"}),
+            content_type=MULTIPART_CONTENT,
+            follow=False,
+            **auth_headers,
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert DishModel.objects.get(pk=dish_id).description == "New text"

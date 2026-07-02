@@ -27,7 +27,7 @@ def post_data_without_photo(ingredients: list[dict]) -> dict:
         "country": "Togo",
         "description": "New description",
         "name": "New name",
-        "price": "3",
+        "price": "5",
         "cooker": 1,
         "capacity": "10",
         "ingredients": json.dumps(ingredients),
@@ -61,7 +61,7 @@ class TestUpdateDrinkWithoutPhotoSuccess:
             assert drink_object.country == "Togo"
             assert drink_object.description == "New description"
             assert drink_object.name == "New name"
-            assert drink_object.price == 3.0
+            assert drink_object.price == 5.0
             assert drink_object.is_enabled is True
             assert drink_object.images.filter(is_primary=True).first().key == "cookers/1/drinks/gingembre.jpg"  # type: ignore
             assert drink_object.modified.isoformat() == "2023-10-14T22:00:00+00:00"
@@ -84,7 +84,7 @@ def post_data_with_photo(image: InMemoryUploadedFile) -> dict:
         "country": "Togo",
         "description": "New description",
         "name": "New name",
-        "price": "3",
+        "price": "5",
         "cooker": 1,
         "capacity": "10",
         "photos": image,
@@ -120,7 +120,7 @@ class TestUpdateDrinkWithPhotoSuccess:
             assert drink_object.country == "Togo"
             assert drink_object.description == "New description"
             assert drink_object.name == "New name"
-            assert drink_object.price == 3.0
+            assert drink_object.price == 5.0
             assert drink_object.is_enabled is True
             assert drink_object.images.filter(is_primary=True).first().key == "cookers/1/drinks/test.jpg"  # type: ignore
             assert drink_object.modified.isoformat() == "2023-10-14T22:00:00+00:00"
@@ -205,3 +205,54 @@ class TestUpdateDrinkToEnableState:
 
             assert drink_object.is_enabled is True
             assert drink_object.modified.isoformat() == "2023-10-21T22:00:00+00:00"
+
+
+@pytest.mark.django_db
+class TestUpdateDrinkPriceWithOngoingOrderFailure:
+    """Drink 2 is referenced by the pending order 1: its price is frozen."""
+
+    def test_response(
+        self,
+        auth_headers: dict,
+        client: APIClient,
+        drink_id: int,
+        path: str,
+    ) -> None:
+        response = client.patch(
+            f"{path}{drink_id}/",
+            encode_multipart(BOUNDARY, {"price": "6"}),
+            content_type=MULTIPART_CONTENT,
+            follow=False,
+            **auth_headers,
+        )
+
+        assert response.status_code == status.HTTP_409_CONFLICT
+        assert response.json()["error"]["code"] == "VALIDATION_ERROR"
+        assert DrinkModel.objects.get(pk=drink_id).price == 5.0
+
+
+@pytest.mark.django_db
+class TestUpdateDrinkPriceWithoutOngoingOrderSuccess:
+    """Drink 1 is not referenced by any ongoing order: its price can change."""
+
+    @pytest.fixture
+    def drink_id(self) -> int:
+        return 1
+
+    def test_response(
+        self,
+        auth_headers: dict,
+        client: APIClient,
+        drink_id: int,
+        path: str,
+    ) -> None:
+        response = client.patch(
+            f"{path}{drink_id}/",
+            encode_multipart(BOUNDARY, {"price": "6"}),
+            content_type=MULTIPART_CONTENT,
+            follow=False,
+            **auth_headers,
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert DrinkModel.objects.get(pk=drink_id).price == 6.0
