@@ -2,7 +2,7 @@ import json
 from unittest.mock import MagicMock
 
 import pytest
-from core_app.models import DishModel, DishNutritionalInfo
+from core_app.models import DishModel, DishNutritionalInfo, OrderDishItemModel
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from freezegun import freeze_time
@@ -258,3 +258,75 @@ class TestUpdateDishNutritionalInfoSuccess:
         dish_nutritional_info = DishNutritionalInfo.objects.get(dish=dish)
         for key, value in patch_nutritional_info.items():
             assert getattr(dish_nutritional_info, key) == value
+
+
+@pytest.mark.django_db
+class TestUpdateDishPriceWithOngoingOrderFailure:
+    """The price of a dish referenced by an ongoing order is frozen."""
+
+    @pytest.fixture
+    def ongoing_order_item(self, dish_id: int) -> OrderDishItemModel:
+        # Order 9 belongs to cooker 1 and is pending.
+        return OrderDishItemModel.objects.create(order_id=9, dish_id=dish_id, dish_quantity=1)
+
+    def test_response(
+        self,
+        auth_headers: dict,
+        client: APIClient,
+        dish_id: int,
+        ongoing_order_item: OrderDishItemModel,
+        path: str,
+    ) -> None:
+        original_price = DishModel.objects.get(pk=dish_id).price
+
+        response = client.patch(
+            f"{path}{dish_id}/",
+            encode_multipart(BOUNDARY, {"price": "20"}),
+            content_type=MULTIPART_CONTENT,
+            follow=False,
+            **auth_headers,
+        )
+
+        assert response.status_code == status.HTTP_409_CONFLICT
+        assert response.json()["error"]["code"] == "VALIDATION_ERROR"
+        assert DishModel.objects.get(pk=dish_id).price == original_price
+
+    def test_other_fields_remain_editable(
+        self,
+        auth_headers: dict,
+        client: APIClient,
+        dish_id: int,
+        ongoing_order_item: OrderDishItemModel,
+        path: str,
+    ) -> None:
+        response = client.patch(
+            f"{path}{dish_id}/",
+            encode_multipart(BOUNDARY, {"description": "Still editable"}),
+            content_type=MULTIPART_CONTENT,
+            follow=False,
+            **auth_headers,
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert DishModel.objects.get(pk=dish_id).description == "Still editable"
+
+    def test_unchanged_price_is_allowed(
+        self,
+        auth_headers: dict,
+        client: APIClient,
+        dish_id: int,
+        ongoing_order_item: OrderDishItemModel,
+        path: str,
+    ) -> None:
+        original_price = DishModel.objects.get(pk=dish_id).price
+
+        response = client.patch(
+            f"{path}{dish_id}/",
+            encode_multipart(BOUNDARY, {"price": str(original_price), "description": "New text"}),
+            content_type=MULTIPART_CONTENT,
+            follow=False,
+            **auth_headers,
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert DishModel.objects.get(pk=dish_id).description == "New text"

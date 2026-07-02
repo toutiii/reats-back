@@ -756,6 +756,30 @@ class IngredientsEndpointMixin:
         return self.success(data=response_data)  # type: ignore
 
 
+# Statuses of orders whose amounts are already fixed: while such an order
+# references an item, the item's price cannot change.
+ONGOING_ORDER_STATUSES = [
+    OrderStatusEnum.PENDING,
+    OrderStatusEnum.ACCEPTED,
+    OrderStatusEnum.PREPARING,
+    OrderStatusEnum.READY,
+    OrderStatusEnum.DELIVERING,
+]
+
+
+def _price_change_forbidden(instance, data, item_model, **item_filter) -> bool:
+    """The submitted price differs from the current one while ongoing orders reference the item."""
+    price = data.get("price")
+    if price is None:
+        return False
+    try:
+        if float(price) == float(instance.price):
+            return False
+    except (TypeError, ValueError):
+        pass  # Invalid price: let the guard block it rather than change anything.
+    return item_model.objects.filter(order__status__in=ONGOING_ORDER_STATUSES, **item_filter).exists()
+
+
 class DishView(StandardizedResponseMixin, IngredientsEndpointMixin, ModelViewSet):
     """
     Dish management for the authenticated restaurant (cooker).
@@ -987,6 +1011,14 @@ class DishView(StandardizedResponseMixin, IngredientsEndpointMixin, ModelViewSet
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop("partial", False)
         instance = self.get_object()
+
+        if _price_change_forbidden(instance, request.data, OrderDishItemModel, dish=instance):
+            return self.error(
+                message="The price cannot be changed while ongoing orders reference this dish",
+                code=ErrorCodeEnum.VALIDATION_ERROR,
+                status_code=status.HTTP_409_CONFLICT,
+            )
+
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
@@ -1505,6 +1537,16 @@ class DrinkView(StandardizedResponseMixin, IngredientsEndpointMixin, ModelViewSe
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop("partial", False)
         instance = self.get_object()
+
+        # The price cannot change while ongoing orders reference this drink:
+        # the amounts of those orders were computed with the current price.
+        if _price_change_forbidden(instance, request.data, OrderDrinkItemModel, drink=instance):
+            return self.error(
+                message="The price cannot be changed while ongoing orders reference this drink",
+                code=ErrorCodeEnum.VALIDATION_ERROR,
+                status_code=status.HTTP_409_CONFLICT,
+            )
+
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
