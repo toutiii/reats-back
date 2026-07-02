@@ -644,6 +644,14 @@ class OrderView(
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop("partial", False)
         instance: OrderModel = self.get_object()
+
+        if instance.status != OrderStatusEnum.DRAFT:
+            return self.error(
+                message="An order can no longer be modified once it has been placed",
+                code=ErrorCodeEnum.VALIDATION_ERROR,
+                status_code=status.HTTP_409_CONFLICT,
+            )
+
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
