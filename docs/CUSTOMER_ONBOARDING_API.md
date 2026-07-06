@@ -1,4 +1,4 @@
-# API Customer — Documentation Onboarding (Authentification)
+# API Customer — Documentation complète
 
 **Base URL :** `/api/v1/`  
 **Version :** v1
@@ -482,6 +482,93 @@ DELETE /api/v1/customers/{id}/
   "data": {}
 }
 ```
+
+---
+
+## Discovery & Commande
+
+> Auth : `Authorization: Bearer <access_token>`
+
+### 12. Discovery — Liste des plats
+
+```
+GET /api/v1/customers-dishes/
+```
+
+**Auth :** Bearer JWT
+
+**Query params :**
+
+| Paramètre | Type | Obligatoire | Description |
+|---|---|---|---|
+| `search_address_id` | integer | ✅ | ID de l'adresse de livraison du client |
+| `delivery_mode` | string | Non | `now` ou `scheduled` |
+| `category` | string | Non | Filtre par catégorie |
+| `country` | string | Non | Filtre par pays d'origine |
+| `search_radius` | integer | Non | Rayon en km (défaut : 10) |
+| `sort` | string | Non | `new` ou `famous` |
+
+**Comportement :** Retourne les plats des cuisiniers en ligne dans la zone géographique du client, triés aléatoirement. Si aucun cuisinier trouvé dans la zone, retourne une liste vide.
+
+**Response `200` :**
+
+```json
+{
+  "success": true,
+  "message": "Operation successful",
+  "data": [
+    {
+      "id": 5,
+      "name": "Poulet braisé",
+      "price": 3500,
+      "category": "dish",
+      "country": "Cameroun",
+      "is_enabled": true,
+      "cooker": { "id": 1, "firstname": "Marie" }
+    }
+  ]
+}
+```
+
+---
+
+### 13. Menu du cuisinier (EDB)
+
+```
+GET /api/v1/customers-cookers/{cooker_id}/menu/
+```
+
+**Auth :** Bearer JWT
+
+**Quand l'appeler :** immédiatement après que le client a sélectionné un plat. Permet de savoir quelles étapes upsell afficher dans le tunnel de commande.
+
+**Règle d'affichage :** si une liste est vide, ne pas afficher l'étape correspondante. Entre 0 et 3 étapes supplémentaires selon ce que le cuisinier propose.
+
+**Response `200` :**
+
+```json
+{
+  "success": true,
+  "message": "Operation successful",
+  "data": {
+    "extras": [
+      { "id": 10, "name": "Salade de feuilles", "price": 1500, "category": "starter" }
+    ],
+    "desserts": [
+      { "id": 11, "name": "Beignets", "price": 500, "category": "dessert" }
+    ],
+    "drinks": [
+      { "id": 12, "name": "Bissap", "price": 500 }
+    ]
+  }
+}
+```
+
+**Erreurs :**
+
+| HTTP | `error.code` | Cause |
+|---|---|---|
+| `404` | `NOT_FOUND` | Cuisinier introuvable |
 
 ---
 
