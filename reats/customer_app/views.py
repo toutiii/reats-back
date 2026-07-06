@@ -491,8 +491,7 @@ class DishView(StandardizedResponseMixin, ListModelMixin, GenericViewSet):
             self.queryset = DishModel.objects.none()
         else:
             if request_sort is None:
-                # Default sort: by acceptance_rate; search_rank ordering is handled by DishFilter
-                self.queryset = self.queryset.order_by("-cooker__acceptance_rate")
+                self.queryset = self.queryset.order_by("?")
 
         response = super().list(request, *args, **kwargs)
         return self.success(response.data)
