@@ -583,6 +583,62 @@ class StarterView(StandardizedResponseMixin, ListModelMixin, GenericViewSet):
         return self.success(response.data)
 
 
+class CookerMenuView(StandardizedResponseMixin, RetrieveModelMixin, GenericViewSet):
+    permission_classes = [UserPermission]
+
+    @extend_schema(
+        summary="Get cooker full menu (extras, desserts, drinks)",
+        description=(
+            "Returns all enabled extras, desserts and drinks for a given cooker.\n\n"
+            "Call this endpoint immediately after the customer selects a dish. "
+            "Use the response to determine which upsell steps to show: "
+            "only present a category step if its list is non-empty. "
+            "Between 0 and 3 additional steps depending on what the cooker offers. "
+            "No pagination — item count per category is always small."
+        ),
+        responses={
+            200: OpenApiResponse(
+                description="Cooker menu",
+                examples=[
+                    OpenApiExample(
+                        "Cooker with all categories",
+                        value={
+                            "extras": [{"id": 1, "name": "Salade de feuilles", "price": 1500}],
+                            "desserts": [{"id": 2, "name": "Beignets", "price": 500}],
+                            "drinks": [{"id": 3, "name": "Bissap", "price": 500}],
+                        },
+                    ),
+                    OpenApiExample(
+                        "Cooker with drinks only",
+                        value={"extras": [], "desserts": [], "drinks": [{"id": 3, "name": "Bissap", "price": 500}]},
+                    ),
+                ],
+            ),
+            404: OpenApiResponse(description="Cooker not found"),
+        },
+        tags=["Customer Discovery"],
+    )
+    def retrieve(self, request, pk=None) -> Response:
+        if not CookerModel.objects.filter(pk=pk).exists():
+            return self.error(
+                message="Cooker not found",
+                code=ErrorCodeEnum.NOT_FOUND,
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+
+        extras = DishModel.objects.filter(cooker__id=pk, category="starter", is_enabled=True, is_deleted=False)
+        desserts = DishModel.objects.filter(cooker__id=pk, category="dessert", is_enabled=True, is_deleted=False)
+        drinks = DrinkModel.objects.filter(cooker__id=pk, is_enabled=True, is_deleted=False)
+
+        return self.success(
+            {
+                "extras": DishCustomerSerializer(extras, many=True, context={"request": request}).data,
+                "desserts": DishCustomerSerializer(desserts, many=True, context={"request": request}).data,
+                "drinks": DrinkCustomerSerializer(drinks, many=True, context={"request": request}).data,
+            }
+        )
+
+
 class OrderView(
     StandardizedResponseMixin,
     CreateModelMixin,
