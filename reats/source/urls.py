@@ -34,6 +34,7 @@ router.register(r"customers-dishes-countries", customer_app_views.DishCountriesV
 router.register(r"customers-drinks", customer_app_views.DrinkView)
 router.register(r"customers-desserts", customer_app_views.DessertView)
 router.register(r"customers-starters", customer_app_views.StarterView)
+router.register(r"customers-cookers", customer_app_views.CookerMenuView, basename="customers-cookers")
 router.register(
     r"customers-addresses",
     customer_app_views.AddressView,
