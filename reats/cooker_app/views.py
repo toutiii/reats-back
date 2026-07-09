@@ -7,6 +7,7 @@ from typing import Any, Callable, List, Optional, Tuple, Type, TypedDict, Union
 
 import django_filters
 from core_app.models import (
+    CookerFCMDeviceModel,
     CookerModel,
     DishImageModel,
     DishModel,
@@ -82,6 +83,7 @@ from utils.filters import DishFilter, DrinkFilter
 from utils.paginations import StandardizedResultsSetPagination
 
 from .serializers import (
+    CookerFCMDeviceSerializer,
     CookerGETSerializer,
     CookerOrderGETSerializer,
     CookerOrderHistorySerializer,
@@ -2554,3 +2556,54 @@ class CookerOrderHistoryView(StandardizedResponseMixin, ListModelMixin, GenericV
 
         serializer = self.get_serializer(queryset, many=True)
         return self.success(serializer.data, status_code=status.HTTP_200_OK)
+
+
+class CookerFCMDeviceView(StandardizedResponseMixin, ModelViewSet):
+    queryset = CookerFCMDeviceModel.objects.all()
+    serializer_class = CookerFCMDeviceSerializer
+    permission_classes = [UserPermission]
+
+    def get_queryset(self):
+        return self.queryset.filter(cooker__id=self.request.user.pk)
+
+    def create(self, request, *args, **kwargs):
+        token = request.data.get("token")
+        device_type = request.data.get("device_type")
+        if not token or not device_type:
+            return self.error(
+                message=ErrorMessageEnum.INVALID_DATA,
+                code=ErrorCodeEnum.VALIDATION_ERROR,
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        device, created = CookerFCMDeviceModel.objects.update_or_create(
+            token=token,
+            defaults={
+                "cooker_id": request.user.pk,
+                "device_type": device_type,
+                "is_active": True,
+            },
+        )
+        serializer = self.get_serializer(device)
+        return self.success(
+            data=serializer.data,
+            status_code=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+        )
+
+    def list(self, request, *args, **kwargs) -> Response:
+        queryset = self.filter_queryset(self.get_queryset())
+        serializer = self.get_serializer(queryset, many=True)
+        return self.success(serializer.data)
+
+    @action(methods=["post"], detail=False, url_path="deregister")
+    def deregister(self, request) -> Response:
+        token = request.data.get("token")
+        if not token:
+            return self.error(
+                message=ErrorMessageEnum.INVALID_DATA,
+                code=ErrorCodeEnum.VALIDATION_ERROR,
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        CookerFCMDeviceModel.objects.filter(token=token, cooker__id=request.user.pk).delete()
+        return self.success(message=SuccessMessageEnum.OPERATION_SUCCESSFUL)

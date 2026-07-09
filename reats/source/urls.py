@@ -26,6 +26,11 @@ router.register(
     cooker_app_views.CookerOrderHistoryView,
     basename="cookers-orders-history",
 )
+router.register(
+    r"cookers-devices",
+    cooker_app_views.CookerFCMDeviceView,
+    basename="cookers-devices",
+)
 router.register(r"dishes", cooker_app_views.DishView, basename="dishes")
 router.register(r"drinks", cooker_app_views.DrinkView, basename="drinks")
 router.register(r"customers", customer_app_views.CustomerView, basename="customers")
