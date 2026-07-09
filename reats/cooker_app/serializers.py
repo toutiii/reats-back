@@ -4,6 +4,7 @@ from typing import Any, Dict, Union, cast
 import phonenumbers
 from core_app.models import (
     AddressModel,
+    CookerFCMDeviceModel,
     CookerModel,
     CustomerModel,
     DeliverModel,
@@ -778,3 +779,9 @@ class DashboardStatsSerializer(serializers.Serializer):
             "stats": data["stats"],
             "revenueChart": data["revenue_chart"],
         }
+
+
+class CookerFCMDeviceSerializer(ModelSerializer):
+    class Meta:
+        model = CookerFCMDeviceModel
+        fields = ("token", "device_type")

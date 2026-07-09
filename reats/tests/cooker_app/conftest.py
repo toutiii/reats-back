@@ -26,6 +26,11 @@ def cookers_order_history_path() -> str:
     return "/api/v1/cookers-orders-history/"
 
 
+@pytest.fixture(scope="session")
+def cooker_devices_path() -> str:
+    return "/api/v1/cookers-devices/"
+
+
 @pytest.fixture
 def create_orders(custom_counts: dict):
     """
