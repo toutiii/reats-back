@@ -128,7 +128,7 @@ class CustomerPATCHSerializer(ModelSerializer):
 class AddressSerializer(ModelSerializer):
     class Meta:
         model = AddressModel
-        exclude = ("is_deleted",)
+        exclude = ("is_enabled",)
 
 
 class FCMDeviceSerializer(ModelSerializer):
