@@ -79,3 +79,8 @@ def customer_orders_drink_rating_path() -> str:
 @pytest.fixture(scope="session")
 def customer_orders_rating_path() -> str:
     return "/api/v1/customers-orders-rating/"
+
+
+@pytest.fixture(scope="session")
+def customer_devices_path() -> str:
+    return "/api/v1/customers-devices/"
