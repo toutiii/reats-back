@@ -69,14 +69,14 @@ def test_create_customer_device_token_duplicate_overwrites(
     assert response.status_code == status.HTTP_201_CREATED
 
     # Second POST (updates/overwrites it for customer 1)
-    response2 = client.post(
+    second_request_response = client.post(
         customer_devices_path,
         post_data,
         format="json",
         **auth_headers,
     )
     # Since we use update_or_create, it should return 200 OK and update the token
-    assert response2.status_code == status.HTTP_200_OK
+    assert second_request_response.status_code == status.HTTP_200_OK
     assert CustomerFCMDeviceModel.objects.count() == 1
 
 
