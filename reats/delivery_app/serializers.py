@@ -1,4 +1,4 @@
-from core_app.models import DeliverModel
+from core_app.models import DeliverFCMDeviceModel, DeliverModel
 from django.conf import settings
 from phonenumbers import PhoneNumberFormat, format_number, parse
 from phonenumbers.phonenumberutil import NumberParseException
@@ -39,3 +39,9 @@ class DeliverGETSerializer(ModelSerializer):
         )
         data["photo"] = get_pre_signed_url(data["photo"])
         return data
+
+
+class DeliverFCMDeviceSerializer(ModelSerializer):
+    class Meta:
+        model = DeliverFCMDeviceModel
+        fields = ("token", "device_type")

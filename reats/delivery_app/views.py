@@ -1,7 +1,7 @@
 import logging
 from typing import Type, Union
 
-from core_app.models import DeliverModel, OrderModel
+from core_app.models import DeliverFCMDeviceModel, DeliverModel, OrderModel
 from customer_app.serializers import OrderGETSerializer
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import IntegrityError
@@ -25,9 +25,9 @@ from utils.common import (
 )
 from utils.custom_api_reponse import StandardizedResponseMixin
 from utils.custom_permissions import CustomAPIKeyPermission, UserPermission
-from utils.enums import ErrorCodeEnum, ErrorMessageEnum, OrderStatusEnum
+from utils.enums import ErrorCodeEnum, ErrorMessageEnum, OrderStatusEnum, SuccessMessageEnum
 
-from .serializers import DeliverGETSerializer, DeliverSerializer
+from .serializers import DeliverFCMDeviceSerializer, DeliverGETSerializer, DeliverSerializer
 
 logger = logging.getLogger("watchtower-logger")
 
@@ -284,3 +284,54 @@ class DeliveryHistoryView(StandardizedResponseMixin, ListModelMixin, GenericView
             data=response.data,
             status_code=status.HTTP_200_OK,
         )
+
+
+class DeliverFCMDeviceView(StandardizedResponseMixin, ModelViewSet):
+    queryset = DeliverFCMDeviceModel.objects.all()
+    serializer_class = DeliverFCMDeviceSerializer
+    permission_classes = [UserPermission]
+
+    def get_queryset(self):
+        return self.queryset.filter(deliver__id=self.request.user.pk)
+
+    def create(self, request, *args, **kwargs):
+        token = request.data.get("token")
+        device_type = request.data.get("device_type")
+        if not token or not device_type:
+            return self.error(
+                message=ErrorMessageEnum.INVALID_DATA,
+                code=ErrorCodeEnum.VALIDATION_ERROR,
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        device, created = DeliverFCMDeviceModel.objects.update_or_create(
+            token=token,
+            defaults={
+                "deliver_id": request.user.pk,
+                "device_type": device_type,
+                "is_active": True,
+            },
+        )
+        serializer = self.get_serializer(device)
+        return self.success(
+            data=serializer.data,
+            status_code=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+        )
+
+    def list(self, request, *args, **kwargs) -> Response:
+        queryset = self.filter_queryset(self.get_queryset())
+        serializer = self.get_serializer(queryset, many=True)
+        return self.success(serializer.data)
+
+    @action(methods=["post"], detail=False, url_path="deregister")
+    def deregister(self, request) -> Response:
+        token = request.data.get("token")
+        if not token:
+            return self.error(
+                message=ErrorMessageEnum.INVALID_DATA,
+                code=ErrorCodeEnum.VALIDATION_ERROR,
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        DeliverFCMDeviceModel.objects.filter(token=token, deliver__id=request.user.pk).delete()
+        return self.success(message=SuccessMessageEnum.OPERATION_SUCCESSFUL)

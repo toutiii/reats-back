@@ -39,3 +39,8 @@ def delivery_stats_path() -> str:
 @pytest.fixture(scope="session")
 def delivery_history_path() -> str:
     return "/api/v1/delivers-history/"
+
+
+@pytest.fixture(scope="session")
+def deliverer_devices_path() -> str:
+    return "/api/v1/delivers-devices/"
