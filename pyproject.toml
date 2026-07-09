@@ -9,6 +9,7 @@ dependencies = [
     "django-extensions==3.2.3",
     "django-filter>=24.0",
     "django-phonenumber-field[phonenumberslite]==7.1.0",
+    "firebase-admin>=6.2.0",
     "djangorestframework==3.14.0",
     "djangorestframework-simplejwt[crypto]==5.3.1",
     "drf-spectacular==0.29.0",
