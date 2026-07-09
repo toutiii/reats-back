@@ -66,13 +66,13 @@ def test_create_cooker_device_token_duplicate_overwrites(
     assert response.status_code == status.HTTP_201_CREATED
 
     # Second POST
-    response2 = client.post(
+    second_request_response = client.post(
         cooker_devices_path,
         post_data,
         format="json",
         **auth_headers,
     )
-    assert response2.status_code == status.HTTP_200_OK
+    assert second_request_response.status_code == status.HTTP_200_OK
     assert CookerFCMDeviceModel.objects.count() == 1
 
 
