@@ -350,6 +350,16 @@ class CookerFCMDeviceModel(BaseFCMDeviceModel):
         return f"{self.cooker.firstname} {self.cooker.lastname} - {self.device_type}"
 
 
+class DeliverFCMDeviceModel(BaseFCMDeviceModel):
+    deliver: ForeignKey = ForeignKey(DeliverModel, on_delete=CASCADE, related_name="fcm_devices")
+
+    class Meta:
+        db_table = "deliver_fcm_devices"
+
+    def __str__(self):
+        return f"{self.deliver.firstname} {self.deliver.lastname} - {self.device_type}"
+
+
 class AddressModel(ReatsModel):
     id: AutoField = AutoField(primary_key=True)
     street_name: CharField = CharField(max_length=100)

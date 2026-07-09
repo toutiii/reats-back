@@ -90,6 +90,11 @@ router.register(
     delivery_app_views.DeliveryHistoryView,
     basename="delivers-history",
 )
+router.register(
+    r"delivers-devices",
+    delivery_app_views.DeliverFCMDeviceView,
+    basename="delivers-devices",
+)
 # The API URLs are now determined automatically by the router.
 urlpatterns = [
     path("admin/", admin.site.urls),
