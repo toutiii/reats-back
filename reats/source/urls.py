@@ -66,6 +66,11 @@ router.register(
     basename="orders-rating",
 )
 router.register(
+    r"customers-devices",
+    customer_app_views.FCMDeviceView,
+    basename="customers-devices",
+)
+router.register(
     r"delivers",
     delivery_app_views.DeliverView,
     basename="delivers",

@@ -320,6 +320,26 @@ class CustomerModel(ReatsModel):
     objects: Manager = Manager()  # For linting purposes
 
 
+class BaseFCMDeviceModel(ReatsModel):
+    id: AutoField = AutoField(primary_key=True)
+    token: CharField = CharField(max_length=255, unique=True)
+    device_type: CharField = CharField(max_length=10, choices=[("ios", "iOS"), ("android", "Android"), ("web", "Web")])
+    is_active: BooleanField = BooleanField(default=True)
+
+    class Meta:
+        abstract = True
+
+
+class CustomerFCMDeviceModel(BaseFCMDeviceModel):
+    customer: ForeignKey = ForeignKey(CustomerModel, on_delete=CASCADE, related_name="fcm_devices")
+
+    class Meta:
+        db_table = "customer_fcm_devices"
+
+    def __str__(self):
+        return f"{self.customer.firstname} {self.customer.lastname} - {self.device_type}"
+
+
 class AddressModel(ReatsModel):
     id: AutoField = AutoField(primary_key=True)
     street_name: CharField = CharField(max_length=100)

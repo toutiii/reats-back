@@ -3,6 +3,7 @@ from zoneinfo import ZoneInfo
 
 from core_app.models import (
     AddressModel,
+    CustomerFCMDeviceModel,
     CustomerModel,
     DishModel,
     DishRatingModel,
@@ -127,7 +128,13 @@ class CustomerPATCHSerializer(ModelSerializer):
 class AddressSerializer(ModelSerializer):
     class Meta:
         model = AddressModel
-        exclude = ("is_enabled",)
+        exclude = ("is_deleted",)
+
+
+class FCMDeviceSerializer(ModelSerializer):
+    class Meta:
+        model = CustomerFCMDeviceModel
+        fields = ("token", "device_type")
 
 
 class AddressGETSerializer(ModelSerializer):
