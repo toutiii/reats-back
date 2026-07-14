@@ -1,11 +1,12 @@
 import json
 import logging
 import os
+from dataclasses import dataclass
 from typing import Any, Sequence
 
 import firebase_admin
 from django.apps import apps
-from firebase_admin import credentials, messaging
+from firebase_admin import credentials, exceptions, messaging
 
 from utils.enums import CancelledByEnum, OrderStatusEnum
 
@@ -58,45 +59,57 @@ def initialize_firebase() -> bool:
     return True
 
 
-def send_push_notification(
-    tokens: Sequence[str], title: str, body: str, data: dict[str, str] | None = None
-) -> dict[str, Any]:
-    """
-    Sends a push notification to a list of tokens.
-    """
-    if not tokens:
-        return {"success_count": 0, "failure_count": 0}
+@dataclass(frozen=True)
+class PushResult:
+    success_count: int
+    failure_count: int
+    dry_run: bool = False
+    error: str | None = None
 
-    initialized = initialize_firebase()
 
-    if not initialized:
-        logger.info(f"[FCM DRY RUN] Send to tokens={tokens} | Title='{title}' | Body='{body}' | Data={data}")
-        return {"success_count": len(tokens), "failure_count": 0, "dry_run": True}
-
-    message = messaging.MulticastMessage(
+def _build_message(
+    tokens: Sequence[str], title: str, body: str, data: dict[str, str] | None
+) -> messaging.MulticastMessage:
+    return messaging.MulticastMessage(
         tokens=list(tokens),
-        notification=messaging.Notification(
-            title=title,
-            body=body,
-        ),
+        notification=messaging.Notification(title=title, body=body),
         data=data or {},
     )
 
+
+def _handle_failures(tokens: Sequence[str], responses: Sequence[messaging.SendResponse]) -> None:
+    for token, resp in zip(tokens, responses):
+        if resp.success:
+            continue
+        logger.warning(f"Échec d'envoi vers le token {token} : {resp.exception}")
+        deactivate_token(token)
+
+
+def send_push_notification(
+    tokens: Sequence[str], title: str, body: str, data: dict[str, str] | None = None
+) -> PushResult:
+    if not tokens:
+        return PushResult(success_count=0, failure_count=0)
+
+    if not initialize_firebase():
+        logger.info(f"[FCM DRY RUN] tokens={tokens} | Title='{title}' | Body='{body}' | Data={data}")
+        return PushResult(success_count=len(tokens), failure_count=0, dry_run=True)
+
+    message = _build_message(tokens, title, body, data)
+
     try:
         response = messaging.send_each_for_multicast(message)
-        logger.info(f"FCM multicast success count: {response.success_count}, failure count: {response.failure_count}")
+    except exceptions.FirebaseError as e:
+        logger.error(f"Erreur lors de l'envoi FCM multicast : {e}")
+        return PushResult(success_count=0, failure_count=len(tokens), error=str(e))
 
-        if response.failure_count > 0:
-            for idx, resp in enumerate(response.responses):
-                if not resp.success:
-                    failed_token = tokens[idx]
-                    logger.warning(f"Failed to send to token {failed_token}: {resp.exception}")
-                    deactivate_token(failed_token)
+    logger.info(f"FCM multicast — succès : {response.success_count}, échecs : {response.failure_count}")
+    _handle_failures(tokens, response.responses)
 
-        return {"success_count": response.success_count, "failure_count": response.failure_count, "dry_run": False}
-    except Exception as e:
-        logger.error(f"Error sending FCM multicast: {e}")
-        return {"success_count": 0, "failure_count": len(tokens), "error": str(e)}
+    return PushResult(
+        success_count=response.success_count,
+        failure_count=response.failure_count,
+    )
 
 
 def deactivate_token(token: str) -> None:

@@ -52,8 +52,8 @@ class TestPushNotifications:
         # Without firebase initialization, it runs in dry run mode
         with patch("utils.push_notifications.initialize_firebase", return_value=False):
             res = send_push_notification(tokens=["token_123"], title="Hello", body="World")
-            assert res["dry_run"] is True
-            assert res["success_count"] == 1
+            assert res.dry_run is True
+            assert res.success_count == 1
 
     @patch("firebase_admin.messaging.send_each_for_multicast")
     def test_send_push_notification_success(self, mock_send):
@@ -64,9 +64,9 @@ class TestPushNotifications:
 
         with patch("utils.push_notifications.initialize_firebase", return_value=True):
             res = send_push_notification(tokens=["token_123"], title="Hello", body="World")
-            assert res["dry_run"] is False
-            assert res["success_count"] == 1
-            assert res["failure_count"] == 0
+            assert res.dry_run is False
+            assert res.success_count == 1
+            assert res.failure_count == 0
             mock_send.assert_called_once()
 
     @patch("firebase_admin.messaging.send_each_for_multicast")
@@ -88,8 +88,8 @@ class TestPushNotifications:
 
         with patch("utils.push_notifications.initialize_firebase", return_value=True):
             res = send_push_notification(tokens=["token_ok", "token_bad"], title="Hello", body="World")
-            assert res["success_count"] == 1
-            assert res["failure_count"] == 1
+            assert res.success_count == 1
+            assert res.failure_count == 1
             mock_deactivate.assert_called_once_with("token_bad")
 
     def test_deactivate_token(self):
