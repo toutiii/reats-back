@@ -46,7 +46,7 @@ def test_delete_deliver_success(
     data: dict,
     delivery_api_key_header: dict,
     e164_phone: str,
-    token_path: str,
+    deliver_access_token,
     client: APIClient,
     path: str,
     post_data: dict,
@@ -83,18 +83,7 @@ def test_delete_deliver_success(
     }
 
     with freeze_time("2024-01-20T17:05:45+00:00"):
-        token_response = client.post(
-            token_path,
-            encode_multipart(BOUNDARY, data),
-            content_type=MULTIPART_CONTENT,
-            follow=False,
-            **delivery_api_key_header,
-        )
-
-        assert token_response.status_code == status.HTTP_200_OK
-        assert token_response.json().get("success") is True
-        assert isinstance(token_response.json().get("data").get("token"), dict)
-        access_token = token_response.json().get("data").get("token").get("access")
+        access_token = deliver_access_token(data["phone"])
         access_auth_header = {"HTTP_AUTHORIZATION": f"Bearer {access_token}"}
 
         response = client.delete(
@@ -135,22 +124,12 @@ class TestDeliverDeleteFailedWithExpiredToken:
         client: APIClient,
         data: dict,
         path: str,
+        deliver_access_token,
     ) -> None:
         deliver_id = 1
 
         with freeze_time("2024-01-20T17:05:45+00:00"):
-            token_response = client.post(
-                "/api/v1/token/",
-                encode_multipart(BOUNDARY, data),
-                content_type=MULTIPART_CONTENT,
-                follow=False,
-                **delivery_api_key_header,
-            )
-
-            assert token_response.status_code == status.HTTP_200_OK
-            assert token_response.json().get("success") is True
-            assert isinstance(token_response.json().get("data").get("token"), dict)
-            access_token = token_response.json().get("data").get("token").get("access")
+            access_token = deliver_access_token(data["phone"])
             access_auth_header = {"HTTP_AUTHORIZATION": f"Bearer {access_token}"}
 
         with freeze_time("2024-01-20T17:15:45+00:00"):

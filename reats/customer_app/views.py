@@ -67,6 +67,7 @@ from utils.distance_computer import (
 from utils.enums import CancelledByEnum, ErrorCodeEnum, ErrorMessageEnum, OrderStatusEnum, SuccessMessageEnum
 from utils.filters import DishFilter, OrderFilter
 from utils.paginations import StandardizedResultsSetPagination
+from utils.tokens import issue_token_pair
 
 from .serializers import (
     AddressGETSerializer,
@@ -219,8 +220,14 @@ class CustomerView(StandardizedResponseMixin, ModelViewSet):
         result = is_otp_valid(request.data)
 
         if result:
-            activate_user(CustomerModel, request.data)
-            return self.success(message=SuccessMessageEnum.ACCOUNT_ACTIVATED, status_code=status.HTTP_200_OK)
+            # Les tokens sont émis ici, et nulle part ailleurs : c'est le seul endroit du
+            # code où l'on sait que l'appelant possède réellement le numéro qu'il revendique.
+            user = activate_user(CustomerModel, request.data)
+            return self.success(
+                data=issue_token_pair(user),
+                message=SuccessMessageEnum.ACCOUNT_ACTIVATED,
+                status_code=status.HTTP_200_OK,
+            )
 
         return self.error(
             message=ErrorMessageEnum.INVALID_OTP_CODE,

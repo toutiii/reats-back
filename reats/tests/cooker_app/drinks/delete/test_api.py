@@ -49,19 +49,10 @@ class TestDrinkDeleteFailedWithExpiredToken:
         data: dict,
         drink_id: int,
         path: str,
-        token_path: str,
+        cooker_access_token,
     ) -> None:
         with freeze_time("2024-01-20T17:05:45+00:00"):
-            token_response = client.post(
-                token_path,
-                encode_multipart(BOUNDARY, data),
-                content_type=MULTIPART_CONTENT,
-                follow=False,
-                **cooker_api_key_header,
-            )
-
-            assert token_response.status_code == status.HTTP_200_OK
-            access_token = token_response.json().get("data").get("token").get("access")
+            access_token = cooker_access_token(data["phone"])
             auth_headers = {"HTTP_AUTHORIZATION": f"Bearer {access_token}"}
 
         with freeze_time("2024-01-20T17:30:45+00:00"):

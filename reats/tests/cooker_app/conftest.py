@@ -6,9 +6,20 @@ from core_app.models import AddressModel, CookerModel, CustomerModel, OrderModel
 from django.db import transaction
 
 
-@pytest.fixture(scope="session")
-def token_path() -> str:
-    return "/api/v1/token/"
+@pytest.fixture
+def cooker_access_token(access_token_for):
+    def _cooker_access_token(phone: str) -> str:
+        return access_token_for(CookerModel, phone)
+
+    return _cooker_access_token
+
+
+@pytest.fixture
+def cooker_token_pair(token_pair_for):
+    def _cooker_token_pair(phone: str) -> dict:
+        return token_pair_for(CookerModel, phone)
+
+    return _cooker_token_pair
 
 
 @pytest.fixture(scope="session")

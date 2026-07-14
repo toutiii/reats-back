@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import Any, Dict, Union, cast
+from typing import Any, Dict, Union
 
 import phonenumbers
 from core_app.models import (
@@ -7,7 +7,6 @@ from core_app.models import (
     CookerFCMDeviceModel,
     CookerModel,
     CustomerModel,
-    DeliverModel,
     DishModel,
     DishNutritionalInfo,
     DrinkModel,
@@ -26,20 +25,14 @@ from core_app.serializers import (
     IngredientDrinkSerializer,
 )
 from django.conf import settings
-from django.contrib.auth.base_user import AbstractBaseUser
 from django.db import transaction
 from phonenumbers.phonenumberutil import NumberParseException
-from rest_framework import serializers, status
+from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.serializers import ModelSerializer
 from rest_framework_simplejwt.serializers import (
-    TokenObtainPairSerializer,
     TokenRefreshSerializer,
 )
-from rest_framework_simplejwt.settings import api_settings
-from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
-from rest_framework_simplejwt.tokens import RefreshToken, Token
-from rest_framework_simplejwt.utils import datetime_from_epoch
 from utils.common import (
     compute_order_items_total_amount,
     format_phone,
@@ -384,87 +377,6 @@ class DrinkPATCHSerializer(DrinkSerializer):
             "ingredients",
             "nutritional_info",
         )
-
-
-class CustomRefreshToken(RefreshToken):
-    @classmethod
-    def for_user(cls, user):
-        token = Token.for_user.__func__(cls, user)
-
-        if "rest_framework_simplejwt.token_blacklist" in settings.INSTALLED_APPS:
-            jti = token[api_settings.JTI_CLAIM]
-            exp = token["exp"]
-
-            OutstandingToken.objects.create(
-                user=None,
-                jti=jti,
-                token=str(token),
-                created_at=token.current_time,
-                expires_at=datetime_from_epoch(exp),
-            )
-
-        return token
-
-
-class TokenObtainPairWithoutPasswordSerializer(TokenObtainPairSerializer):
-    token_class = CustomRefreshToken
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields["password"].required = False
-        self.fields["username"].required = False
-        self.fields["phone"].required = True
-
-    phone = serializers.CharField()
-
-    def validate(self, attrs) -> dict:
-        phone = attrs["phone"]
-        request_headers = self.context["request"].headers
-        app_origin = request_headers.get("App-Origin")
-        formatted_phone = format_phone(phone)
-
-        if app_origin not in ["cooker", "customer", "delivery"]:
-            raise ValidationError(f"Unknown App-Origin header value {app_origin}")
-
-        try:
-            cooker_user: Union[CookerModel, None] = CookerModel.objects.get(phone=formatted_phone)
-        except CookerModel.DoesNotExist:
-            cooker_user = None
-
-        try:
-            customer_user: Union[CustomerModel, None] = CustomerModel.objects.get(phone=formatted_phone)
-
-        except CustomerModel.DoesNotExist:
-            customer_user = None
-
-        try:
-            deliver_user: Union[DeliverModel, None] = DeliverModel.objects.get(phone=formatted_phone)
-        except DeliverModel.DoesNotExist:
-            deliver_user = None
-
-        if cooker_user is None and customer_user is None and deliver_user is None:
-            return {"ok": False, "status": status.HTTP_400_BAD_REQUEST}
-
-        self.user: Union[CookerModel, CustomerModel, DeliverModel, None] = None
-
-        if app_origin == "cooker":
-            self.user = cooker_user
-        elif app_origin == "customer":
-            self.user = customer_user
-        elif app_origin == "delivery":
-            self.user = deliver_user
-        else:
-            self.user = None
-
-        if self.user is None:
-            return {"ok": False, "status": status.HTTP_400_BAD_REQUEST}
-
-        refresh = cast(CustomRefreshToken, self.get_token(cast(AbstractBaseUser, self.user)))
-        data = {}
-        data["refresh"] = str(refresh)
-        data["access"] = str(refresh.access_token)
-
-        return {"token": data, "user_id": self.user.pk}
 
 
 class TokenObtainRefreshWithoutPasswordSerializer(TokenRefreshSerializer):

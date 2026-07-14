@@ -121,6 +121,32 @@ def verify_otp_message_success() -> Iterator:
 
 
 @pytest.fixture
+def token_pair_for():
+    """Émet une paire de tokens pour un utilisateur, comme le fait `otp-verify`.
+
+    Remplace l'aller-retour HTTP vers /api/v1/token/, endpoint supprimé : un token ne
+    s'obtient plus qu'en validant un OTP. Les tests qui ont seulement besoin d'un appelant
+    authentifié n'ont pas à rejouer tout le parcours SMS.
+    """
+    from utils.common import format_phone
+    from utils.tokens import issue_token_pair
+
+    def _token_pair_for(model, phone: str) -> dict:
+        user = model.objects.get(phone=format_phone(phone))
+        return issue_token_pair(user)
+
+    return _token_pair_for
+
+
+@pytest.fixture
+def access_token_for(token_pair_for):
+    def _access_token_for(model, phone: str) -> str:
+        return token_pair_for(model, phone)["token"]["access"]
+
+    return _access_token_for
+
+
+@pytest.fixture
 def verify_otp_message_failed() -> Iterator:
     patcher = patch(
         "utils.common.pinpoint_client.verify_otp_message",

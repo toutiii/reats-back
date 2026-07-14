@@ -1,9 +1,13 @@
 import pytest
+from core_app.models import DeliverModel
 
 
-@pytest.fixture(scope="session")
-def token_path() -> str:
-    return "/api/v1/token/"
+@pytest.fixture
+def deliver_access_token(access_token_for):
+    def _deliver_access_token(phone: str) -> str:
+        return access_token_for(DeliverModel, phone)
+
+    return _deliver_access_token
 
 
 @pytest.fixture(scope="session")

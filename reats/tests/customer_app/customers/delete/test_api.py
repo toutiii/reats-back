@@ -2,7 +2,6 @@ from unittest.mock import MagicMock
 
 import pytest
 from core_app.models import CustomerModel
-from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from freezegun import freeze_time
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -54,25 +53,14 @@ class TestCustomerDeleteFailedWithExpiredToken:
         client: APIClient,
         data: dict,
         path: str,
-        token_path: str,
+        customer_access_token,
         mock_stripe_customer_delete: MagicMock,
     ) -> None:
         customer_id = 3
 
         with freeze_time("2024-01-20T17:05:45+00:00"):
-            # First we ask a token as usual
-            token_response = client.post(
-                token_path,
-                encode_multipart(BOUNDARY, data),
-                content_type=MULTIPART_CONTENT,
-                follow=False,
-                **customer_api_key_header,
-            )
-
-            assert token_response.status_code == status.HTTP_200_OK
-            assert token_response.json().get("success") is True
-            assert isinstance(token_response.json().get("data").get("token"), dict)
-            access_token = token_response.json().get("data").get("token").get("access")
+            # On part d'un token fraîchement émis, comme au sortir d'une validation d'OTP
+            access_token = customer_access_token(data["phone"])
             access_auth_header = {"HTTP_AUTHORIZATION": f"Bearer {access_token}"}
 
         # Then we skip 15 minutes in the future to make the token expired

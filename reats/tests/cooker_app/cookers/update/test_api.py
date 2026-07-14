@@ -663,27 +663,15 @@ class TestAccessTokenRenew:
         data: dict,
         path: str,
         post_switch_cooker_online: dict,
+        cooker_token_pair,
         refresh_token_path: str,
-        token_path: str,
     ) -> None:
         with freeze_time("2024-01-07T14:00:00+00:00") as frozen_datetime:
-            # First we ask a token as usual
-            response = client.post(
-                token_path,
-                encode_multipart(BOUNDARY, data),
-                content_type=MULTIPART_CONTENT,
-                follow=False,
-                **cooker_api_key_header,
-            )
-            assert response.status_code == status.HTTP_200_OK
-            assert response.json().get("success") is True
-            assert response.json().get("data").get("token") is not None
-            assert response.json().get("data").get("user_id") is not None
-
-            # Extracting access and refresh tokens from the API response
-            access_token = response.json().get("data").get("token").get("access")
-            refresh_token = response.json().get("data").get("token").get("refresh")
-            user_id = response.json().get("data").get("user_id")
+            # On part d'une paire fraîchement émise, comme au sortir d'une validation d'OTP
+            token_data = cooker_token_pair(data["phone"])
+            access_token = token_data["token"]["access"]
+            refresh_token = token_data["token"]["refresh"]
+            user_id = token_data["user_id"]
             access_auth_header = {"HTTP_AUTHORIZATION": f"Bearer {access_token}"}
             refresh_token_data = {"refresh": refresh_token}
 
@@ -760,27 +748,15 @@ class TestRefreshTokenRenew:
         data: dict,
         path: str,
         post_switch_cooker_online: dict,
+        cooker_token_pair,
         refresh_token_path: str,
-        token_path: str,
     ) -> None:
         with freeze_time("2024-01-13T14:00:00+00:00") as frozen_datetime:
-            # First we ask a token pair as usual
-            response = client.post(
-                token_path,
-                encode_multipart(BOUNDARY, data),
-                content_type=MULTIPART_CONTENT,
-                follow=False,
-                **cooker_api_key_header,
-            )
-            assert response.status_code == status.HTTP_200_OK
-            assert response.json().get("success") is True
-            assert response.json().get("data").get("token") is not None
-            assert response.json().get("data").get("user_id") is not None
-
-            # Extracting access and refresh tokens from the API response
-            access_token = response.json().get("data").get("token").get("access")
-            refresh_token = response.json().get("data").get("token").get("refresh")
-            user_id = response.json().get("data").get("user_id")
+            # On part d'une paire fraîchement émise, comme au sortir d'une validation d'OTP
+            token_data = cooker_token_pair(data["phone"])
+            access_token = token_data["token"]["access"]
+            refresh_token = token_data["token"]["refresh"]
+            user_id = token_data["user_id"]
             access_auth_header = {"HTTP_AUTHORIZATION": f"Bearer {access_token}"}
             refresh_token_data = {"refresh": refresh_token}
 
@@ -794,11 +770,11 @@ class TestRefreshTokenRenew:
             )
             assert response.status_code == status.HTTP_200_OK
 
-            # Travel to one day and plus in the future
-            refresh_token_expired_date = datetime.now(timezone.utc) + timedelta(hours=24.1)
+            # Travel past the refresh token lifetime (90 days)
+            refresh_token_expired_date = datetime.now(timezone.utc) + timedelta(days=90, hours=1)
             frozen_datetime.move_to(refresh_token_expired_date)
 
-            # Then we attempt the same request as approximtively 24h ago
+            # Then we attempt the same request as 90 days ago
             response = client.patch(
                 f"{path}{user_id}/",
                 encode_multipart(BOUNDARY, post_switch_cooker_online),
@@ -819,21 +795,9 @@ class TestRefreshTokenRenew:
             assert response.status_code == status.HTTP_401_UNAUTHORIZED
             assert response.json().get("error").get("code") == ErrorCodeEnum.TOKEN_NOT_VALID
 
-            # So now we have to ask again a new token pair
-            response = client.post(
-                token_path,
-                encode_multipart(BOUNDARY, data),
-                content_type=MULTIPART_CONTENT,
-                follow=False,
-                **cooker_api_key_header,
-            )
-            assert response.status_code == status.HTTP_200_OK
-            assert response.json().get("success") is True
-            assert response.json().get("data").get("token") is not None
-            assert response.json().get("data").get("user_id") is not None
-
-            # Finally we try again the request with our new access token
-            new_access_token = response.json().get("data").get("token").get("access")
+            # Le refresh token est mort : il n'existe plus de raccourci pour se reconnecter,
+            # il faut repasser par un OTP. C'est otp-verify, et lui seul, qui émet la paire.
+            new_access_token = cooker_token_pair(data["phone"])["token"]["access"]
             new_access_auth_header = {"HTTP_AUTHORIZATION": f"Bearer {new_access_token}"}
             response = client.patch(
                 f"{path}{user_id}/",

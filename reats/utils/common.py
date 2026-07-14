@@ -189,12 +189,17 @@ def is_otp_valid(data: dict) -> bool:
     return response["VerificationResponse"]["Valid"]
 
 
-def activate_user(model: Type[Union[CookerModel, CustomerModel, DeliverModel]], data: dict) -> None:
+def activate_user(
+    model: Type[Union[CookerModel, CustomerModel, DeliverModel]], data: dict
+) -> Union[CookerModel, CustomerModel, DeliverModel]:
+    """Active le compte et renvoie l'utilisateur, à qui l'appelant émettra ses tokens."""
     user = model.objects.get(phone=format_phone(data["phone"]))
 
     if not user.is_activated:
         user.is_activated = True
         user.save()
+
+    return user
 
 
 def get_stripe_customer_by_email(email: str) -> Union[stripe.Customer, None]:

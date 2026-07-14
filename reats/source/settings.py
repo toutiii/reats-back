@@ -260,11 +260,13 @@ DRINK_SEARCH_SIMILARITY_THRESHOLD = 0.1
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    # Le refresh token est désormais le seul moyen de rester connecté sans refaire un OTP :
+    # une durée courte imposerait un SMS à chaque retour dans l'app après quelques heures.
+    # La rotation + le blacklist ci-dessous en font un secret par appareil, révocable.
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=90),
     "ALGORITHM": os.getenv("DJANGO_SIMPLE_JWT_ALGORITHM"),
     "SIGNING_KEY": private_key,
     "VERIFYING_KEY": public_key,
-    "TOKEN_OBTAIN_SERIALIZER": "cookers_app.serializers.TokenObtainPairWithoutPasswordSerializer",
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
 }

@@ -81,6 +81,7 @@ from utils.enums import (
 )
 from utils.filters import DishFilter, DrinkFilter
 from utils.paginations import StandardizedResultsSetPagination
+from utils.tokens import issue_token_pair
 
 from .serializers import (
     CookerFCMDeviceSerializer,
@@ -97,7 +98,6 @@ from .serializers import (
     DrinkPOSTSerializer,
     PopularItemSerializer,
     RecentReviewSerializer,
-    TokenObtainPairWithoutPasswordSerializer,
     TokenObtainRefreshWithoutPasswordSerializer,
 )
 
@@ -237,8 +237,10 @@ class CookerView(StandardizedResponseMixin, ModelViewSet):
         result = is_otp_valid(request.data)
 
         if result:
-            activate_user(CookerModel, request.data)
-            return self.success(message=SuccessMessageEnum.ACCOUNT_ACTIVATED)
+            # Les tokens sont émis ici, et nulle part ailleurs : c'est le seul endroit du
+            # code où l'on sait que l'appelant possède réellement le numéro qu'il revendique.
+            user = activate_user(CookerModel, request.data)
+            return self.success(data=issue_token_pair(user), message=SuccessMessageEnum.ACCOUNT_ACTIVATED)
 
         return self.error(
             message=ErrorMessageEnum.INVALID_OTP_CODE,
@@ -1898,30 +1900,6 @@ class DrinkView(StandardizedResponseMixin, IngredientsEndpointMixin, ModelViewSe
         return self.success(
             message=SuccessMessageEnum.DRINK_DELETED,
         )
-
-
-class TokenObtainPairWithoutPasswordView(StandardizedResponseMixin, TokenViewBase):
-    serializer_class = TokenObtainPairWithoutPasswordSerializer
-    permission_classes = [CustomAPIKeyPermission]
-    renderer_classes = [JSONRenderer]
-
-    def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-
-        try:
-            serializer.is_valid(raise_exception=True)
-        except Exception:
-            raise
-
-        validated_data = serializer.validated_data
-        if isinstance(validated_data, dict) and validated_data.get("status") == status.HTTP_400_BAD_REQUEST:
-            return self.error(
-                ErrorMessageEnum.INVALID_USER,
-                code=ErrorCodeEnum.USER_NOT_FOUND,
-                status_code=status.HTTP_400_BAD_REQUEST,
-            )
-
-        return self.success(data=validated_data, message=SuccessMessageEnum.TOKEN_GENERATED)
 
 
 class TokenObtainRefreshWithoutPasswordView(StandardizedResponseMixin, TokenViewBase):

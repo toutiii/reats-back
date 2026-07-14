@@ -1,5 +1,4 @@
 import pytest
-from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from freezegun import freeze_time
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -40,20 +39,10 @@ class TestGetDishesCountriesFailedWithExpiredToken:
         client: APIClient,
         data: dict,
         customer_dishes_countries_path: str,
+        customer_access_token,
     ) -> None:
         with freeze_time("2024-01-20T17:05:45+00:00"):
-            token_response = client.post(
-                "/api/v1/token/",
-                encode_multipart(BOUNDARY, data),
-                content_type=MULTIPART_CONTENT,
-                follow=False,
-                **customer_api_key_header,
-            )
-
-            assert token_response.status_code == status.HTTP_200_OK
-            assert token_response.json().get("success") is True
-            assert isinstance(token_response.json().get("data").get("token"), dict)
-            access_token = token_response.json().get("data").get("token").get("access")
+            access_token = customer_access_token(data["phone"])
             access_auth_header = {"HTTP_AUTHORIZATION": f"Bearer {access_token}"}
 
         with freeze_time("2024-01-20T17:30:45+00:00"):

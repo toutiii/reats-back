@@ -490,60 +490,73 @@ class TestCookerAskNewOTP:
         )
 
 
-class TestTokenFetch:
-    @pytest.mark.parametrize(
-        "data",
-        [
-            {},
-            {"unexpected_field": "test_data"},
-            {"username": "test", "password": "test"},
-        ],
-        ids=[
-            "missing_field",
-            "invalid_field",
-            "deprecated_fields",
-        ],
-    )
-    def test_fetch_token_failed_with_missing_phone_field(
-        self,
-        cooker_api_key_header: dict,
-        client: APIClient,
-        data: dict,
-        token_path: str,
-        secrets_manager_get_secret: MagicMock,
-    ) -> None:
-        response = client.post(
-            token_path,
-            encode_multipart(BOUNDARY, data),
-            content_type=MULTIPART_CONTENT,
-            follow=False,
-            **cooker_api_key_header,
-        )
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-        secrets_manager_get_secret.assert_not_called()
+@pytest.mark.django_db
+class TestTokenIssuanceIsBoundToOTP:
+    """L'émission d'un token est adossée à la validation de l'OTP, et à rien d'autre.
+
+    Il n'existe plus de route qui délivre une paire sur simple présentation d'un numéro :
+    la clé d'API voyage dans le bundle des apps, donc elle est publique — un tel endpoint
+    authentifierait n'importe qui.
+    """
 
     @pytest.fixture
     def data(self) -> dict:
-        return {"phone": "0600000003"}
+        return {"phone": "0600000003", "otp": "111111"}
 
-    @pytest.mark.django_db
-    def test_fetch_token_success(
+    def test_token_obtain_route_no_longer_exists(
+        self,
+        cooker_api_key_header: dict,
+        client: APIClient,
+    ) -> None:
+        response = client.post(
+            "/api/v1/token/",
+            encode_multipart(BOUNDARY, {"phone": "0600000003"}),
+            content_type=MULTIPART_CONTENT,
+            follow=False,
+            **cooker_api_key_header,
+        )
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_otp_verify_returns_a_token_pair(
         self,
         cooker_api_key_header: dict,
         client: APIClient,
         data: dict,
-        token_path: str,
-        secrets_manager_get_secret: MagicMock,
+        otp_verify_path: str,
+        verify_otp_message_success: MagicMock,
     ) -> None:
         response = client.post(
-            token_path,
+            otp_verify_path,
             encode_multipart(BOUNDARY, data),
             content_type=MULTIPART_CONTENT,
             follow=False,
             **cooker_api_key_header,
         )
+
         assert response.status_code == status.HTTP_200_OK
         assert response.json().get("success") is True
-        assert response.json().get("data").get("token") is not None
+        assert response.json().get("data").get("token").get("access") is not None
+        assert response.json().get("data").get("token").get("refresh") is not None
         assert response.json().get("data").get("user_id") is not None
-        secrets_manager_get_secret.assert_not_called()
+        verify_otp_message_success.assert_called_once()
+
+    def test_otp_verify_issues_no_token_when_the_code_is_wrong(
+        self,
+        cooker_api_key_header: dict,
+        client: APIClient,
+        data: dict,
+        otp_verify_path: str,
+        verify_otp_message_failed: MagicMock,
+    ) -> None:
+        response = client.post(
+            otp_verify_path,
+            encode_multipart(BOUNDARY, data),
+            content_type=MULTIPART_CONTENT,
+            follow=False,
+            **cooker_api_key_header,
+        )
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.json().get("error").get("code") == ErrorCodeEnum.OTP_INVALID
+        assert response.json().get("data") is None or "token" not in response.json().get("data", {})

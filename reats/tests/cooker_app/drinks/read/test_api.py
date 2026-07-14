@@ -1,6 +1,5 @@
 import pytest
 from core_app.models import DrinkModel
-from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from freezegun import freeze_time
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -85,23 +84,11 @@ class TestOneCookerCantSeeOtherCookerDrinks:
         client: APIClient,
         data: dict,
         path: str,
-        token_path: str,
+        cooker_access_token,
     ) -> None:
         with freeze_time("2024-01-20T17:05:45+00:00"):
             # First we ask a token as usual
-            token_response = client.post(
-                token_path,
-                encode_multipart(BOUNDARY, data),
-                content_type=MULTIPART_CONTENT,
-                follow=False,
-                **cooker_api_key_header,
-            )
-
-            assert token_response.status_code == status.HTTP_200_OK
-            assert token_response.json().get("success") is True
-            assert token_response.json().get("data") is not None
-
-            access_token = token_response.json().get("data").get("token").get("access")
+            access_token = cooker_access_token(data["phone"])
             assert access_token is not None
             access_auth_header = {"HTTP_AUTHORIZATION": f"Bearer {access_token}"}
 

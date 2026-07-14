@@ -1,9 +1,13 @@
 import pytest
+from core_app.models import CustomerModel
 
 
-@pytest.fixture(scope="session")
-def token_path() -> str:
-    return "/api/v1/token/"
+@pytest.fixture
+def customer_access_token(access_token_for):
+    def _customer_access_token(phone: str) -> str:
+        return access_token_for(CustomerModel, phone)
+
+    return _customer_access_token
 
 
 @pytest.fixture(scope="session")

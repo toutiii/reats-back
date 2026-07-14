@@ -100,11 +100,10 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/v1/", include(router.urls)),
     path("api/v1/health/", CoreAppViews.HealthCheckView.as_view(), name="health-check"),
-    path(
-        "api/v1/token/",
-        cooker_app_views.TokenObtainPairWithoutPasswordView.as_view(),
-        name="token_obtain_pair",
-    ),
+    # Il n'existe volontairement plus de route d'obtention de token : une paire ne s'obtient
+    # qu'en validant un OTP (`/api/v1/<app>/otp-verify/`). Un endpoint qui délivrerait un token
+    # sur simple présentation d'un numéro de téléphone authentifierait n'importe qui, la clé
+    # d'API étant publique (embarquée dans le bundle des apps).
     path(
         "api/v1/token/refresh/",
         cooker_app_views.TokenObtainRefreshWithoutPasswordView.as_view(),

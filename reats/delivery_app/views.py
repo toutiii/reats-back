@@ -26,6 +26,7 @@ from utils.common import (
 from utils.custom_api_reponse import StandardizedResponseMixin
 from utils.custom_permissions import CustomAPIKeyPermission, UserPermission
 from utils.enums import ErrorCodeEnum, ErrorMessageEnum, OrderStatusEnum, SuccessMessageEnum
+from utils.tokens import issue_token_pair
 
 from .serializers import DeliverFCMDeviceSerializer, DeliverGETSerializer, DeliverSerializer
 
@@ -127,14 +128,23 @@ class DeliverView(StandardizedResponseMixin, ModelViewSet):
 
     @action(methods=["post"], detail=False, url_path="otp-verify")
     def otp_verify(self, request) -> Response:
-        # return Response(status=status.HTTP_200_OK)
         result = is_otp_valid(request.data)
 
         if result:
-            activate_user(DeliverModel, request.data)
-            return Response(status=status.HTTP_200_OK)
+            # Les tokens sont émis ici, et nulle part ailleurs : c'est le seul endroit du
+            # code où l'on sait que l'appelant possède réellement le numéro qu'il revendique.
+            user = activate_user(DeliverModel, request.data)
+            return self.success(
+                data=issue_token_pair(user),
+                message=SuccessMessageEnum.ACCOUNT_ACTIVATED,
+                status_code=status.HTTP_200_OK,
+            )
 
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+        return self.error(
+            message=ErrorMessageEnum.INVALID_OTP_CODE,
+            code=ErrorCodeEnum.OTP_INVALID,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
 
     @action(methods=["post"], detail=False, url_path="otp/ask")
     def ask_otp(self, request) -> Response:
