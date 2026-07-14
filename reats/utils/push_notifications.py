@@ -11,39 +11,51 @@ from utils.enums import CancelledByEnum, OrderStatusEnum
 
 logger = logging.getLogger("reats_logger")
 
-_firebase_initialized = False
+
+def _is_initialized() -> bool:
+    try:
+        firebase_admin.get_app()
+        return True
+    except ValueError:
+        return False
+
+
+def _load_credentials() -> credentials.Certificate | None:
+    cred_path = os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON_PATH")
+    if cred_path and os.path.exists(cred_path):
+        logger.info("Credentials Firebase chargés depuis le fichier de certificat.")
+        return credentials.Certificate(cred_path)
+
+    cred_json_str = os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON")
+    if cred_json_str:
+        logger.info("Credentials Firebase chargés depuis la variable d'environnement JSON.")
+        return credentials.Certificate(json.loads(cred_json_str))
+
+    return None
 
 
 def initialize_firebase() -> bool:
-    global _firebase_initialized
-    if _firebase_initialized:
+    if _is_initialized():
         return True
-
-    if firebase_admin._apps:
-        _firebase_initialized = True
-        return True
-
-    cred_path = os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON_PATH")
-    cred_json_str = os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON")
 
     try:
-        if cred_path and os.path.exists(cred_path):
-            cred = credentials.Certificate(cred_path)
-            firebase_admin.initialize_app(cred)
-            _firebase_initialized = True
-            logger.info("Firebase Admin SDK initialized using certificate file.")
-        elif cred_json_str:
-            cred_info = json.loads(cred_json_str)
-            cred = credentials.Certificate(cred_info)
-            firebase_admin.initialize_app(cred)
-            _firebase_initialized = True
-            logger.info("Firebase Admin SDK initialized using JSON string from environment.")
-        else:
-            logger.warning("Firebase credentials not configured. Push notifications will run in DRY RUN mode.")
+        cred = _load_credentials()
     except Exception as e:
-        logger.error(f"Failed to initialize Firebase Admin SDK: {e}. Push notifications will run in DRY RUN mode.")
+        logger.error(f"Credentials Firebase invalides : {e}. Push notifications en mode DRY RUN.")
+        return False
 
-    return _firebase_initialized
+    if cred is None:
+        logger.warning("Credentials Firebase non configurés. Push notifications en mode DRY RUN.")
+        return False
+
+    try:
+        firebase_admin.initialize_app(cred)
+    except Exception as e:
+        logger.error(f"Échec de l'initialisation du SDK Firebase Admin : {e}. Push notifications en mode DRY RUN.")
+        return False
+
+    logger.info("SDK Firebase Admin initialisé.")
+    return True
 
 
 def send_push_notification(
