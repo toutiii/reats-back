@@ -175,10 +175,11 @@ def handle_order_status_change(order: Any, previous_status: Any, new_status: Any
 
     # 2. ACCEPTED: Cooker accepted the order
     elif new_status_str == OrderStatusEnum.ACCEPTED.value:
+        cooker_name = order.cooker.firstname if order.cooker else "Le cuisinier"
         send_notification_to_customer(
             order.customer,
             title="Commande acceptée !",
-            body=f"Votre commande #{order.id} a été acceptée par le cuisinier.",
+            body=f"{cooker_name} a accepté votre commande !",
             data=data,
         )
 
@@ -209,10 +210,11 @@ def handle_order_status_change(order: Any, previous_status: Any, new_status: Any
 
     # 5. DELIVERING: Order is on the way
     elif new_status_str == OrderStatusEnum.DELIVERING.value:
+        delivery_name = order.delivery_man.firstname if order.delivery_man else "Le livreur"
         send_notification_to_customer(
             order.customer,
             title="Commande en cours de livraison",
-            body="Le livreur est en route avec votre commande.",
+            body=f"{delivery_name} arrive avec votre commande !",
             data=data,
         )
 

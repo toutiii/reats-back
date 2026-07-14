@@ -131,6 +131,7 @@ class TestPushNotifications:
 
         order = OrderModel.objects.get(id=1)
         order.customer = CustomerModel.objects.get(id=1)
+        order.cooker = CookerModel.objects.get(id=1)
         order.save()
 
         handle_order_status_change(order, OrderStatusEnum.PENDING, OrderStatusEnum.ACCEPTED)
@@ -138,7 +139,7 @@ class TestPushNotifications:
         mock_send_push.assert_called_once_with(
             ["customer_token"],
             "Commande acceptée !",
-            f"Votre commande #{order.id} a été acceptée par le cuisinier.",
+            f"{order.cooker.firstname} a accepté votre commande !",
             {"order_id": str(order.id), "status": "accepted"},
         )
 
@@ -195,6 +196,7 @@ class TestPushNotifications:
 
         order = OrderModel.objects.get(id=1)
         order.customer = CustomerModel.objects.get(id=1)
+        order.delivery_man = DeliverModel.objects.get(id=1)
         order.save()
 
         handle_order_status_change(order, OrderStatusEnum.READY, OrderStatusEnum.DELIVERING)
@@ -202,7 +204,7 @@ class TestPushNotifications:
         mock_send_push.assert_called_once_with(
             ["customer_token"],
             "Commande en cours de livraison",
-            "Le livreur est en route avec votre commande.",
+            f"{order.delivery_man.firstname} arrive avec votre commande !",
             {"order_id": str(order.id), "status": "delivering"},
         )
 
