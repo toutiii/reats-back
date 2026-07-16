@@ -106,7 +106,7 @@ def _build_message(
     tokens: Sequence[str], title: str, body: str, data: dict[str, str] | None
 ) -> messaging.MulticastMessage:
     return messaging.MulticastMessage(
-        tokens=list(tokens),
+        fids=list(tokens),
         notification=messaging.Notification(title=title, body=body),
         data=data or {},
     )
