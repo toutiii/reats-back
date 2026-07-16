@@ -120,7 +120,7 @@ class TestPushNotifications:
         mock_send_push.assert_called_once_with(
             ["cooker_token"],
             "Nouvelle commande !",
-            f"Vous avez reçu une nouvelle commande #{order.id} en attente d'acceptation.",
+            "Nouvelle commande ! Veuillez la consulter pour l'accepter.",
             {"order_id": str(order.id), "status": "pending"},
         )
 
@@ -128,18 +128,37 @@ class TestPushNotifications:
     def test_handle_order_status_change_accepted(self, mock_send_push):
         CustomerFCMDeviceModel.objects.all().delete()
         CustomerFCMDeviceModel.objects.create(customer_id=1, token="customer_token", device_type="ios")
+        DeliverFCMDeviceModel.objects.all().delete()
+        DeliverFCMDeviceModel.objects.create(deliver_id=1, token="deliver_token", device_type="android")
 
         order = OrderModel.objects.get(id=1)
         order.customer = CustomerModel.objects.get(id=1)
         order.cooker = CookerModel.objects.get(id=1)
+        order.delivery_man = DeliverModel.objects.get(id=1)
+        order.is_scheduled = False
         order.save()
+
+        from core_app.models import DishModel, OrderDishItemModel
+
+        OrderDishItemModel.objects.filter(order=order).delete()
+        dish = DishModel.objects.create(
+            name="Pizza", category="dish", country="Italy", price=10.0, cooker=order.cooker, preparation_time=15
+        )
+        OrderDishItemModel.objects.create(order=order, dish=dish, dish_quantity=1)
 
         handle_order_status_change(order, OrderStatusEnum.PENDING, OrderStatusEnum.ACCEPTED)
 
-        mock_send_push.assert_called_once_with(
+        assert mock_send_push.call_count == 2
+        mock_send_push.assert_any_call(
             ["customer_token"],
             "Commande acceptée !",
             f"{order.cooker.firstname} a accepté votre commande !",
+            {"order_id": str(order.id), "status": "accepted"},
+        )
+        mock_send_push.assert_any_call(
+            ["deliver_token"],
+            "Commande acceptée par le cuisinier",
+            f"La commande sera disponible chez {order.cooker.firstname} dans 15 minutes.",
             {"order_id": str(order.id), "status": "accepted"},
         )
 
@@ -182,10 +201,11 @@ class TestPushNotifications:
             f"Votre commande #{order.id} est prête !",
             {"order_id": str(order.id), "status": "ready"},
         )
+        cooker_name = order.cooker.firstname if order.cooker else "le cuisinier"
         mock_send_push.assert_any_call(
             ["deliver_token"],
             "Commande prête à être récupérée",
-            f"La commande #{order.id} est prête chez le cuisinier.",
+            f"La commande #{order.id} peut-être retirée chez {cooker_name}.",
             {"order_id": str(order.id), "status": "ready"},
         )
 
@@ -222,7 +242,7 @@ class TestPushNotifications:
         mock_send_push.assert_called_once_with(
             ["customer_token"],
             "Commande livrée !",
-            f"Votre commande #{order.id} a été livrée. Bon appétit !",
+            "Votre commande a été livrée. Bon appétit !",
             {"order_id": str(order.id), "status": "completed"},
         )
 
@@ -233,6 +253,7 @@ class TestPushNotifications:
 
         order = OrderModel.objects.get(id=1)
         order.customer = CustomerModel.objects.get(id=1)
+        order.cooker = CookerModel.objects.get(id=1)
         order.cancelled_by = CancelledByEnum.COOKER.value
         order.save()
 
@@ -241,7 +262,7 @@ class TestPushNotifications:
         mock_send_push.assert_called_once_with(
             ["customer_token"],
             "Commande annulée",
-            f"Votre commande #{order.id} a été annulée par le cuisinier.",
+            f"{order.cooker.firstname} a annulé votre commande.",
             {"order_id": str(order.id), "status": "cancelled"},
         )
 
@@ -258,7 +279,32 @@ class TestPushNotifications:
         order.cancelled_by = CancelledByEnum.CUSTOMER.value
         order.save()
 
+        # Assuming previous_status is PENDING, delivery_man should not be notified
         handle_order_status_change(order, OrderStatusEnum.PENDING, OrderStatusEnum.CANCELLED)
+
+        assert mock_send_push.call_count == 1
+        mock_send_push.assert_called_once_with(
+            ["cooker_token"],
+            "Commande annulée",
+            f"La commande #{order.id} a été annulée par le client.",
+            {"order_id": str(order.id), "status": "cancelled"},
+        )
+
+    @patch("utils.push_notifications.send_push_notification")
+    def test_handle_order_status_change_cancelled_by_customer_after_accepted(self, mock_send_push):
+        CookerFCMDeviceModel.objects.all().delete()
+        CookerFCMDeviceModel.objects.create(cooker_id=1, token="cooker_token", device_type="ios")
+        DeliverFCMDeviceModel.objects.all().delete()
+        DeliverFCMDeviceModel.objects.create(deliver_id=1, token="deliver_token", device_type="android")
+
+        order = OrderModel.objects.get(id=1)
+        order.cooker = CookerModel.objects.get(id=1)
+        order.delivery_man = DeliverModel.objects.get(id=1)
+        order.cancelled_by = CancelledByEnum.CUSTOMER.value
+        order.save()
+
+        # If previous_status is ACCEPTED, delivery_man should be notified
+        handle_order_status_change(order, OrderStatusEnum.ACCEPTED, OrderStatusEnum.CANCELLED)
 
         assert mock_send_push.call_count == 2
         mock_send_push.assert_any_call(
@@ -281,6 +327,7 @@ class TestPushNotifications:
 
         order = OrderModel.objects.get(id=1)
         order.customer = CustomerModel.objects.get(id=1)
+        order.cooker = CookerModel.objects.get(id=1)
         order.save()
 
         handle_order_status_change(order, OrderStatusEnum.PENDING, OrderStatusEnum.NOT_ACCEPTED)
@@ -288,6 +335,6 @@ class TestPushNotifications:
         mock_send_push.assert_called_once_with(
             ["customer_token"],
             "Commande non acceptée",
-            f"Désolé, votre commande #{order.id} n'a pas pu être acceptée par le cuisinier à temps.",
+            f"{order.cooker.firstname} n'a pas pu accepter votre commande.",
             {"order_id": str(order.id), "status": "not_accepted"},
         )

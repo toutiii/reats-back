@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import json
 import logging
 import os
 from dataclasses import dataclass
-from typing import Any, Sequence
+from typing import TYPE_CHECKING, Any, Sequence
 
 import firebase_admin
 from django.apps import apps
@@ -10,7 +12,40 @@ from firebase_admin import credentials, exceptions, messaging
 
 from utils.enums import CancelledByEnum, OrderStatusEnum
 
+if TYPE_CHECKING:
+    from core_app.models import OrderModel
+
 logger = logging.getLogger("reats_logger")
+
+
+NOTIFICATION_TEMPLATES = {
+    "pending_cooker": ("Nouvelle commande !", "Nouvelle commande ! Veuillez la consulter pour l'accepter."),
+    "accepted_customer": ("Commande acceptée !", "{cooker_name} a accepté votre commande !"),
+    "accepted_deliverer_time": (
+        "Commande acceptée par le cuisinier",
+        "La commande sera disponible chez {cooker_name_lower} dans {prep_time} minutes.",
+    ),
+    "accepted_deliverer_soon": (
+        "Commande acceptée par le cuisinier",
+        "La commande sera disponible chez {cooker_name_lower} d'ici peu.",
+    ),
+    "preparing_customer": ("En cours de préparation", "Le cuisinier prépare votre commande #{order_id}."),
+    "ready_customer": ("Commande prête !", "Votre commande #{order_id} est prête !"),
+    "ready_deliverer": (
+        "Commande prête à être récupérée",
+        "La commande #{order_id} peut-être retirée chez {cooker_name_lower}.",
+    ),
+    "delivering_customer": ("Commande en cours de livraison", "{delivery_name} arrive avec votre commande !"),
+    "completed_customer": ("Commande livrée !", "Votre commande a été livrée. Bon appétit !"),
+    "cancelled_by_cooker": ("Commande annulée", "{cooker_name} a annulé votre commande."),
+    "cancelled_by_customer": ("Commande annulée", "La commande #{order_id} a été annulée par le client."),
+    "not_accepted": ("Commande non acceptée", "{cooker_name} n'a pas pu accepter votre commande."),
+}
+
+
+def _get_msg(key: str, **kwargs) -> tuple[str, str]:
+    title, body = NOTIFICATION_TEMPLATES[key]
+    return title.format(**kwargs), body.format(**kwargs)
 
 
 def _is_initialized() -> bool:
@@ -150,113 +185,91 @@ def send_notification_to_deliverer(deliverer: Any, title: str, body: str, data: 
         send_push_notification(tokens, title, body, data)
 
 
-def handle_order_status_change(order: Any, previous_status: Any, new_status: Any) -> None:
+def handle_order_status_change(
+    order: OrderModel, previous_status: OrderStatusEnum, new_status: OrderStatusEnum
+) -> None:
     """
     Dispatches push notifications based on order status transition.
     """
-    # Convert enum objects to string values to be consistent
-    prev_status_str = previous_status.value if hasattr(previous_status, "value") else str(previous_status)
-    new_status_str = new_status.value if hasattr(new_status, "value") else str(new_status)
-
     # Avoid dispatching if status hasn't changed
-    if prev_status_str == new_status_str:
+    if previous_status == new_status:
         return
 
-    data = {"order_id": str(order.id), "status": new_status_str}
+    data = {"order_id": str(order.id), "status": new_status.value}
+
+    # Common variables used in templates
+    cooker_name = order.cooker.firstname if order.cooker else "Le cuisinier"
+    cooker_name_lower = order.cooker.firstname if order.cooker else "le cuisinier"
+    delivery_name = order.delivery_man.firstname if order.delivery_man else "Le livreur"
+    ctx = {
+        "order_id": order.id,
+        "cooker_name": cooker_name,
+        "cooker_name_lower": cooker_name_lower,
+        "delivery_name": delivery_name,
+    }
 
     # 1. PENDING: Order placed, waiting for cooker
-    if new_status_str == OrderStatusEnum.PENDING.value:
-        send_notification_to_cooker(
-            order.cooker,
-            title="Nouvelle commande !",
-            body=f"Vous avez reçu une nouvelle commande #{order.id} en attente d'acceptation.",
-            data=data,
-        )
+    if new_status == OrderStatusEnum.PENDING:
+        title, body = _get_msg("pending_cooker", **ctx)
+        send_notification_to_cooker(order.cooker, title, body, data)
 
     # 2. ACCEPTED: Cooker accepted the order
-    elif new_status_str == OrderStatusEnum.ACCEPTED.value:
-        cooker_name = order.cooker.firstname if order.cooker else "Le cuisinier"
-        send_notification_to_customer(
-            order.customer,
-            title="Commande acceptée !",
-            body=f"{cooker_name} a accepté votre commande !",
-            data=data,
-        )
+    elif new_status == OrderStatusEnum.ACCEPTED:
+        title, body = _get_msg("accepted_customer", **ctx)
+        send_notification_to_customer(order.customer, title, body, data)
+
+        if order.delivery_man and not order.is_scheduled:
+            prep_times = [
+                item.dish.preparation_time
+                for item in order.dishes_items.select_related("dish")  # type: ignore
+                if item.dish and item.dish.preparation_time is not None
+            ]
+            prep_time = max(prep_times) if prep_times else 0
+
+            if prep_time > 0:
+                title, body = _get_msg("accepted_deliverer_time", prep_time=prep_time, **ctx)
+            else:
+                title, body = _get_msg("accepted_deliverer_soon", **ctx)
+
+            send_notification_to_deliverer(order.delivery_man, title, body, data)
 
     # 3. PREPARING: Cooker is preparing the order
-    elif new_status_str == OrderStatusEnum.PREPARING.value:
-        send_notification_to_customer(
-            order.customer,
-            title="En cours de préparation",
-            body=f"Le cuisinier prépare votre commande #{order.id}.",
-            data=data,
-        )
+    elif new_status == OrderStatusEnum.PREPARING:
+        title, body = _get_msg("preparing_customer", **ctx)
+        send_notification_to_customer(order.customer, title, body, data)
 
     # 4. READY: Order is ready
-    elif new_status_str == OrderStatusEnum.READY.value:
-        send_notification_to_customer(
-            order.customer,
-            title="Commande prête !",
-            body=f"Votre commande #{order.id} est prête !",
-            data=data,
-        )
+    elif new_status == OrderStatusEnum.READY:
+        title, body = _get_msg("ready_customer", **ctx)
+        send_notification_to_customer(order.customer, title, body, data)
+
         if order.delivery_man:
-            send_notification_to_deliverer(
-                order.delivery_man,
-                title="Commande prête à être récupérée",
-                body=f"La commande #{order.id} est prête chez le cuisinier.",
-                data=data,
-            )
+            title, body = _get_msg("ready_deliverer", **ctx)
+            send_notification_to_deliverer(order.delivery_man, title, body, data)
 
     # 5. DELIVERING: Order is on the way
-    elif new_status_str == OrderStatusEnum.DELIVERING.value:
-        delivery_name = order.delivery_man.firstname if order.delivery_man else "Le livreur"
-        send_notification_to_customer(
-            order.customer,
-            title="Commande en cours de livraison",
-            body=f"{delivery_name} arrive avec votre commande !",
-            data=data,
-        )
+    elif new_status == OrderStatusEnum.DELIVERING:
+        title, body = _get_msg("delivering_customer", **ctx)
+        send_notification_to_customer(order.customer, title, body, data)
 
     # 6. COMPLETED: Order is completed
-    elif new_status_str == OrderStatusEnum.COMPLETED.value:
-        send_notification_to_customer(
-            order.customer,
-            title="Commande livrée !",
-            body=f"Votre commande #{order.id} a été livrée. Bon appétit !",
-            data=data,
-        )
+    elif new_status == OrderStatusEnum.COMPLETED:
+        title, body = _get_msg("completed_customer", **ctx)
+        send_notification_to_customer(order.customer, title, body, data)
 
     # 7. CANCELLED: Order cancelled
-    elif new_status_str == OrderStatusEnum.CANCELLED.value:
+    elif new_status == OrderStatusEnum.CANCELLED:
         cancelled_by = getattr(order, "cancelled_by", None)
         if cancelled_by == CancelledByEnum.COOKER.value:
-            send_notification_to_customer(
-                order.customer,
-                title="Commande annulée",
-                body=f"Votre commande #{order.id} a été annulée par le cuisinier.",
-                data=data,
-            )
+            title, body = _get_msg("cancelled_by_cooker", **ctx)
+            send_notification_to_customer(order.customer, title, body, data)
         elif cancelled_by == CancelledByEnum.CUSTOMER.value:
-            send_notification_to_cooker(
-                order.cooker,
-                title="Commande annulée",
-                body=f"La commande #{order.id} a été annulée par le client.",
-                data=data,
-            )
-            if order.delivery_man:
-                send_notification_to_deliverer(
-                    order.delivery_man,
-                    title="Commande annulée",
-                    body=f"La commande #{order.id} a été annulée par le client.",
-                    data=data,
-                )
+            title, body = _get_msg("cancelled_by_customer", **ctx)
+            send_notification_to_cooker(order.cooker, title, body, data)
+            if order.delivery_man and previous_status not in (OrderStatusEnum.PENDING, OrderStatusEnum.NOT_ACCEPTED):
+                send_notification_to_deliverer(order.delivery_man, title, body, data)
 
     # 8. NOT_ACCEPTED: Cooker did not accept the order
-    elif new_status_str == OrderStatusEnum.NOT_ACCEPTED.value:
-        send_notification_to_customer(
-            order.customer,
-            title="Commande non acceptée",
-            body=f"Désolé, votre commande #{order.id} n'a pas pu être acceptée par le cuisinier à temps.",
-            data=data,
-        )
+    elif new_status == OrderStatusEnum.NOT_ACCEPTED:
+        title, body = _get_msg("not_accepted", **ctx)
+        send_notification_to_customer(order.customer, title, body, data)
