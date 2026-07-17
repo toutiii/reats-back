@@ -22,6 +22,7 @@ from django.db.models import (
 )
 from utils.enums import CancelledByEnum, OrderStatusEnum
 from utils.models import ReatsModel
+from utils.push_notifications import handle_order_status_change
 
 
 class CookerModel(ReatsModel):
@@ -525,6 +526,7 @@ class OrderState:
 
     def transition_to(self, order: OrderModel, new_state):
         if self.can_transition_to(new_state):
+            previous_status = order.status
             new_status = order.get_reverse_state_map().get(new_state.__class__.__name__)
             order.status = new_status
 
@@ -543,6 +545,9 @@ class OrderState:
                 order.completed_date = now
 
             order.save()
+
+            if previous_status and new_status:
+                handle_order_status_change(order, previous_status, new_status)  # type: ignore
         else:
             raise ValueError(f"Cannot transition from {self.__class__.__name__} to {new_state.__class__.__name__}")
 
