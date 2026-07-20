@@ -129,6 +129,7 @@ class AddressSerializer(ModelSerializer):
     class Meta:
         model = AddressModel
         exclude = ("is_enabled",)
+        read_only_fields = ("customer",)
 
 
 class FCMDeviceSerializer(ModelSerializer):

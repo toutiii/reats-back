@@ -547,7 +547,7 @@ class OrderState:
             order.save()
 
             if previous_status and new_status:
-                handle_order_status_change(order, previous_status, new_status)  # type: ignore
+                handle_order_status_change(order, previous_status, new_status)
         else:
             raise ValueError(f"Cannot transition from {self.__class__.__name__} to {new_state.__class__.__name__}")
 

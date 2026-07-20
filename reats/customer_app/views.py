@@ -361,8 +361,11 @@ class AddressView(StandardizedResponseMixin, ModelViewSet):
     parser_classes = [MultiPartParser]
     permission_classes = [UserPermission]
 
+    def get_queryset(self):
+        return AddressModel.objects.filter(customer__id=self.request.user.pk, is_enabled=True)
+
     def get_serializer_class(self) -> type[BaseSerializer]:
-        if self.request.method in ("POST", "PUT"):
+        if self.request.method in ("POST", "PUT", "PATCH"):
             self.serializer_class = AddressSerializer
 
         if self.request.method == "GET":
@@ -377,33 +380,19 @@ class AddressView(StandardizedResponseMixin, ModelViewSet):
         return self.success(message=SuccessMessageEnum.OPERATION_SUCCESSFUL, status_code=status.HTTP_200_OK)
 
     def list(self, request, *args, **kwargs) -> Response:
-        self.queryset = self.queryset.filter(customer__id=request.user.pk).filter(is_enabled=True)
         response = super().list(request, *args, **kwargs)
         return self.success(response.data)
 
+    def perform_create(self, serializer):
+        serializer.save(customer_id=self.request.user.pk)
+
     def create(self, request, *args, **kwargs):
-        try:
-            response = super().create(request, *args, **kwargs)
-            return self.success(response.data, status_code=status.HTTP_201_CREATED)
-        except IntegrityError as err:
-            logger.error(f"Address creation failed- duplicate address: {err}")
-            return self.error(
-                message=ErrorMessageEnum.ADDRESS_ALREADY_EXISTS,
-                code=ErrorCodeEnum.ALREADY_EXISTS,
-                status_code=status.HTTP_400_BAD_REQUEST,
-            )
+        response = super().create(request, *args, **kwargs)
+        return self.success(response.data, status_code=status.HTTP_201_CREATED)
 
     def update(self, request, *args, **kwargs) -> Response:
-        try:
-            response = super().update(request, *args, **kwargs)
-            return self.success(response.data, status_code=status.HTTP_200_OK)
-        except IntegrityError as err:
-            logger.error(f"Address update failed- duplicate address: {err}")
-            return self.error(
-                message=ErrorMessageEnum.OPERATION_FAILED,
-                code=ErrorCodeEnum.UPDATE_FAILED,
-                status_code=status.HTTP_400_BAD_REQUEST,
-            )
+        response = super().update(request, *args, **kwargs)
+        return self.success(response.data, status_code=status.HTTP_200_OK)
 
 
 class DishView(StandardizedResponseMixin, ListModelMixin, GenericViewSet):
