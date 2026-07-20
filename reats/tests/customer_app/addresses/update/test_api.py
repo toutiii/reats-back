@@ -8,30 +8,28 @@ from rest_framework.test import APIClient
 
 @pytest.fixture
 def customer_id() -> int:
-    return 3
+    return 1
 
 
 @pytest.fixture
-def post_payload(customer_id: int) -> dict:
+def post_payload() -> dict:
     return {
         "street_name": "rue du terrier du rat",
         "street_number": "1",
         "postal_code": "91100",
         "address_complement": "résidence test",
         "town": "Ville-De-Test",
-        "customer": customer_id,
     }
 
 
 @pytest.fixture
-def update_payload(customer_id: int) -> dict:
+def update_payload() -> dict:
     return {
         "street_name": "rue du nouveau terrier du rat",
         "street_number": "99",
         "postal_code": "91100",
         "address_complement": "résidence nouveau test",
         "town": "Ville-De-Nouveau-Test",
-        "customer": customer_id,
     }
 
 

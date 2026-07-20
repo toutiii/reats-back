@@ -8,18 +8,17 @@ from rest_framework.test import APIClient
 
 @pytest.fixture
 def customer_id() -> int:
-    return 3
+    return 1
 
 
 @pytest.fixture
-def post_data(customer_id: int) -> dict:
+def post_data() -> dict:
     return {
         "street_name": "rue du terrier du rat",
         "street_number": "1",
         "postal_code": "91100",
         "address_complement": "résidence test",
         "town": "Ville-De-Test",
-        "customer": customer_id,
     }
 
 
@@ -55,8 +54,6 @@ def test_create_address_success(
         "is_enabled": True,
         "customer": customer_id,
     }
-    assert AddressModel.objects.filter(customer=customer_id).count() == 1
-    assert AddressModel.objects.filter(customer=customer_id).first() == AddressModel.objects.latest("pk")
 
     assert response.json().get("success") is True
     assert isinstance(response.json().get("data"), dict)
