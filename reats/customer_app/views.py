@@ -8,6 +8,7 @@ from core_app.models import (
     CookerModel,
     CustomerFCMDeviceModel,
     CustomerModel,
+    DeliverModel,
     DishModel,
     DishRatingModel,
     DrinkModel,
@@ -265,6 +266,105 @@ class CustomerView(StandardizedResponseMixin, ModelViewSet):
         send_otp(e164_phone_format)
 
         return self.success(message=SuccessMessageEnum.OTP_SENT, status_code=status.HTTP_200_OK)
+
+    @extend_schema(
+        request=inline_serializer(name="ChangePhoneAskOTPRequest", fields={"phone": serializers.CharField()}),
+        examples=[
+            OpenApiExample(
+                "Change Phone Ask OTP Example",
+                value={"phone": "+33612345678"},
+                request_only=True,
+            )
+        ],
+        responses={200: OpenApiResponse(description="OTP successfully sent to new phone number")},
+    )
+    @action(methods=["post"], detail=False, url_path="change-phone/ask-otp")
+    def change_phone_ask_otp(self, request) -> Response:
+        phone = request.data.get("phone")
+
+        if not phone:
+            return self.error(
+                message=ErrorMessageEnum.PHONE_INVALID_FORMAT,
+                code=ErrorCodeEnum.PHONE_INVALID_FORMAT,
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            e164_phone_format = format_phone(phone)
+        except NumberParseException:
+            return self.error(
+                message=ErrorMessageEnum.PHONE_INVALID_FORMAT,
+                code=ErrorCodeEnum.PHONE_INVALID_FORMAT,
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Check if phone number is already used by another account
+        if (
+            CustomerModel.objects.filter(phone=e164_phone_format).exclude(pk=request.user.pk).exists()
+            or CookerModel.objects.filter(phone=e164_phone_format).exists()
+            or DeliverModel.objects.filter(phone=e164_phone_format).exists()
+        ):
+            return self.error(
+                message=ErrorMessageEnum.CUSTOMER_ALREADY_EXISTS,
+                code=ErrorCodeEnum.USER_ALREADY_EXISTS,
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        send_otp(e164_phone_format)
+        return self.success(message=SuccessMessageEnum.OTP_SENT, status_code=status.HTTP_200_OK)
+
+    @extend_schema(
+        request=inline_serializer(
+            name="ChangePhoneVerifyOTPRequest",
+            fields={"phone": serializers.CharField(), "otp_code": serializers.CharField()},
+        ),
+        examples=[
+            OpenApiExample(
+                "Change Phone Verify OTP Example",
+                value={"phone": "+33612345678", "otp_code": "123456"},
+                request_only=True,
+            )
+        ],
+        responses={
+            200: OpenApiResponse(description="Phone number successfully updated", response=CustomerGETSerializer)
+        },
+    )
+    @action(methods=["post"], detail=False, url_path="change-phone/verify-otp")
+    def change_phone_verify_otp(self, request) -> Response:
+        phone = request.data.get("phone")
+        if not phone:
+            return self.error(
+                message=ErrorMessageEnum.PHONE_INVALID_FORMAT,
+                code=ErrorCodeEnum.PHONE_INVALID_FORMAT,
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            e164_phone_format = format_phone(phone)
+        except NumberParseException:
+            return self.error(
+                message=ErrorMessageEnum.PHONE_INVALID_FORMAT,
+                code=ErrorCodeEnum.PHONE_INVALID_FORMAT,
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        result = is_otp_valid(request.data)
+        if not result:
+            return self.error(
+                message=ErrorMessageEnum.INVALID_OTP_CODE,
+                code=ErrorCodeEnum.OTP_INVALID,
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        customer = CustomerModel.objects.get(pk=request.user.pk)
+        customer.phone = e164_phone_format
+        customer.save()
+
+        return self.success(
+            data=CustomerGETSerializer(customer).data,
+            message=SuccessMessageEnum.OPERATION_SUCCESSFUL,
+            status_code=status.HTTP_200_OK,
+        )
 
     @extend_schema(
         request=inline_serializer(name="AuthRequest", fields={"phone": serializers.CharField()}),
