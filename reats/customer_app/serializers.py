@@ -96,6 +96,7 @@ class CustomerPATCHSerializer(ModelSerializer):
     class Meta:
         model = CustomerModel
         exclude = (
+            "phone",
             "photo",
             "is_activated",
             "stripe_id",
@@ -103,14 +104,6 @@ class CustomerPATCHSerializer(ModelSerializer):
             "created",
             "modified",
         )
-
-    def validate_phone(self, phone):
-        try:
-            e164_phone_format = format_phone(phone)
-        except NumberParseException:
-            raise serializers.ValidationError("Unparsable phone number")
-        else:
-            return e164_phone_format
 
     def to_internal_value(self, data):
         allowed_fields = set(self.fields.keys())
