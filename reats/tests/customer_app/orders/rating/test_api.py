@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock
 
 import pytest
-from core_app.models import DishRatingModel, DrinkRatingModel, OrderModel
+from core_app.models import CustomerModel, DishRatingModel, DrinkRatingModel, OrderModel
 from freezegun import freeze_time
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -123,7 +123,6 @@ def test_add_rates_to_orders_and_orders_items(
         "dishes_ids": [11],
         "ratings": [3],
         "comments": ["Good"],
-        "customer_id": customer_id,
     }
 
     create_dish_rating_response = client.post(
@@ -140,13 +139,13 @@ def test_add_rates_to_orders_and_orders_items(
         dish_rating_instance: DishRatingModel = DishRatingModel.objects.get(dish_id=dish_rating_data["dishes_ids"][idx])
         assert dish_rating_instance.rating == dish_rating_data["ratings"][idx]
         assert dish_rating_instance.comment == dish_rating_data["comments"][idx]
+        assert dish_rating_instance.customer.id == customer_id
 
     # We add infos in drink ratings table
     drink_rating_data: dict = {
         "drink_ids": [2],
         "ratings": [4],
         "comments": ["Very good"],
-        "customer_id": customer_id,
     }
 
     create_drink_rating_response = client.post(
@@ -164,6 +163,7 @@ def test_add_rates_to_orders_and_orders_items(
         )
         assert drink_rating_instance.rating == drink_rating_data["ratings"][idx]
         assert drink_rating_instance.comment == drink_rating_data["comments"][idx]
+        assert drink_rating_instance.customer.id == customer_id
 
     mock_googlemaps_distance_matrix.assert_called_once_with(
         origins=["13 rue des Mazières 91000 Evry"],
@@ -181,3 +181,49 @@ def test_add_rates_to_orders_and_orders_items(
         customer="cus_QyZ76Ae0W5KeqP",
         stripe_version="2024-06-20",
     )
+
+
+@pytest.mark.django_db
+def test_order_rating_invalid_bounds(
+    auth_headers: dict,
+    client: APIClient,
+    customer_orders_rating_path: str,
+) -> None:
+    order = OrderModel.objects.create(customer_id=1, cooker_id=1, delivery_fees=2.0)
+
+    # Test rating > 5.0
+    response = client.put(
+        f"{customer_orders_rating_path}{order.id}/",
+        {"rating": 10.0, "comment": "Too high"},
+        format="json",
+        **auth_headers,
+    )
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    # Test rating < 0.0
+    response = client.put(
+        f"{customer_orders_rating_path}{order.id}/",
+        {"rating": -1.0, "comment": "Negative"},
+        format="json",
+        **auth_headers,
+    )
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+
+@pytest.mark.django_db
+def test_order_rating_idor_prevention(
+    auth_headers: dict,
+    client: APIClient,
+    customer_orders_rating_path: str,
+) -> None:
+    # Create another customer and an order belonging to that customer
+    other_customer = CustomerModel.objects.create(firstname="Other", lastname="Customer", phone="+33600000099")
+    other_order = OrderModel.objects.create(customer_id=other_customer.id, cooker_id=1, delivery_fees=2.0)
+
+    response = client.put(
+        f"{customer_orders_rating_path}{other_order.id}/",
+        {"rating": 5.0, "comment": "Hacked rating"},
+        format="json",
+        **auth_headers,
+    )
+    assert response.status_code == status.HTTP_404_NOT_FOUND
