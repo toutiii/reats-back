@@ -1,7 +1,7 @@
 import os
 from datetime import datetime, timedelta, timezone
 from io import BytesIO
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
 import jwt
@@ -395,3 +395,71 @@ ct4oFdWCTtEg1i4CV0LS43lOnu1Gv168nOvqc-WFXqMMNJnT88Ruz1St96KbpPw0m6K
         )
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
         assert response.json().get("error").get("code") == ErrorCodeEnum.TOKEN_NOT_VALID
+
+
+@pytest.mark.django_db
+def test_patch_phone_directly_is_rejected(
+    auth_headers: dict,
+    client: APIClient,
+    customer_id: int,
+    path: str,
+) -> None:
+    response = client.patch(
+        f"{path}{customer_id}/",
+        {"phone": "+33699999999"},
+        format="json",
+        **auth_headers,
+    )
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+
+@pytest.mark.django_db
+@patch("customer_app.views.send_otp")
+@patch("customer_app.views.is_otp_valid", return_value=True)
+def test_change_phone_flow_ask_and_verify_otp(
+    mock_is_otp_valid: MagicMock,
+    mock_send_otp: MagicMock,
+    auth_headers: dict,
+    client: APIClient,
+    customer_id: int,
+) -> None:
+    new_phone = "+33699999999"
+
+    # Step 1: Ask OTP
+    ask_response = client.post(
+        "/api/v1/customers/change-phone/ask-otp/",
+        {"phone": new_phone},
+        format="json",
+        **auth_headers,
+    )
+    assert ask_response.status_code == status.HTTP_200_OK
+    mock_send_otp.assert_called_once_with(new_phone)
+
+    # Step 2: Verify OTP
+    verify_response = client.post(
+        "/api/v1/customers/change-phone/verify-otp/",
+        {"phone": new_phone, "otp_code": "123456"},
+        format="json",
+        **auth_headers,
+    )
+    assert verify_response.status_code == status.HTTP_200_OK
+
+    customer = CustomerModel.objects.get(pk=customer_id)
+    assert customer.phone == new_phone
+
+
+@pytest.mark.django_db
+def test_change_phone_ask_otp_duplicate_phone_rejected(
+    auth_headers: dict,
+    client: APIClient,
+) -> None:
+    # Create another customer with an existing phone number
+    CustomerModel.objects.create(firstname="Other", lastname="Customer", phone="+33611112222")
+
+    response = client.post(
+        "/api/v1/customers/change-phone/ask-otp/",
+        {"phone": "+33611112222"},
+        format="json",
+        **auth_headers,
+    )
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
