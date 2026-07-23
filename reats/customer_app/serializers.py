@@ -318,14 +318,13 @@ class BulkDishRatingSerializer(serializers.Serializer):
         required=True,
     )
     ratings = serializers.ListField(
-        child=serializers.FloatField(),
+        child=serializers.FloatField(min_value=0.0, max_value=5.0),
         required=True,
     )
     comments = serializers.ListField(
         child=serializers.CharField(allow_blank=True),
         required=False,
     )
-    customer_id = serializers.IntegerField(required=True)
 
     def validate(self, attrs):
         dishes_ids = attrs.get("dishes_ids")
@@ -367,14 +366,13 @@ class BulkDrinkRatingSerializer(serializers.Serializer):
         required=True,
     )
     ratings = serializers.ListField(
-        child=serializers.FloatField(),
+        child=serializers.FloatField(min_value=0.0, max_value=5.0),
         required=True,
     )
     comments = serializers.ListField(
         child=serializers.CharField(allow_blank=True),
         required=False,
     )
-    customer_id = serializers.IntegerField(required=True)
 
     def validate(self, attrs):
         drink_ids = attrs.get("drink_ids")

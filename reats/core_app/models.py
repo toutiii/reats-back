@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 
 from django.contrib.postgres.indexes import GinIndex
-from django.core.validators import MinLengthValidator, RegexValidator
+from django.core.validators import MaxValueValidator, MinLengthValidator, MinValueValidator, RegexValidator
 from django.db.models import (
     CASCADE,
     AutoField,
@@ -438,7 +438,7 @@ class OrderModel(ReatsModel):
     paid_date: DateTimeField = DateTimeField(null=True)
     stripe_payment_intent_id: CharField = CharField(max_length=100, null=True)
     stripe_payment_intent_secret: CharField = CharField(max_length=100, null=True)
-    rating: FloatField = FloatField(default=0.0)
+    rating: FloatField = FloatField(default=0.0, validators=[MinValueValidator(0.0), MaxValueValidator(5.0)])
     comment: TextField = TextField(null=True, blank=True)
     is_deleted: BooleanField = BooleanField(default=False)
 
@@ -603,7 +603,7 @@ class NotAcceptedState(OrderState):
 
 class RatingsModel(ReatsModel):
     id: AutoField = AutoField(primary_key=True)
-    rating: FloatField = FloatField()
+    rating: FloatField = FloatField(validators=[MinValueValidator(0.0), MaxValueValidator(5.0)])
     comment: TextField = TextField(null=True, blank=True)
 
     class Meta:

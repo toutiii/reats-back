@@ -900,7 +900,7 @@ class CustomerDishRatingView(StandardizedResponseMixin, GenericViewSet):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save()  # Cela appelle create(), mais on ignore le retour
+        serializer.save(customer_id=request.user.pk)
         return self.success(message=SuccessMessageEnum.OPERATION_SUCCESSFUL, status_code=status.HTTP_201_CREATED)
 
 
@@ -920,7 +920,7 @@ class CustomerDrinkRatingView(StandardizedResponseMixin, GenericViewSet):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+        serializer.save(customer_id=request.user.pk)
 
         return self.success(message=SuccessMessageEnum.OPERATION_SUCCESSFUL, status_code=status.HTTP_201_CREATED)
 
@@ -930,6 +930,9 @@ class CustomerOrderRatingView(StandardizedResponseMixin, UpdateModelMixin, Gener
     queryset = OrderModel.objects.all()
     parser_classes = [JSONParser]
     serializer_class = OrderRatingSerializer
+
+    def get_queryset(self):
+        return self.queryset.filter(customer__id=self.request.user.pk)
 
     def update(self, request, *args, **kwargs):
         super().update(request, *args, **kwargs)
